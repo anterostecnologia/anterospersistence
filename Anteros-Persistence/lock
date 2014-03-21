@@ -1,0 +1,55 @@
+Exception in thread "main" javax.persistence.PersistenceException: Invalid lock mode type on for an entity that does not 
+have a version locking index. Only a PESSIMISTIC lock mode type can be used when there is no version locking index.
+
+
+Toda vez que um Entity Manager modifica um registro da tabela correspondente à classe Conta,
+o campo referente ao atributo anotado com @Version é atualizado.
+Agora, antes de modificar umregistro da tabela referente à classe Conta, os EntityManagers comparam
+a versão do registro no banco de dados com a do objeto que eles possuem.
+Se as versões forem a mesma, significa que nenhum outro Entity Manager modificou o registro
+e então as modificações podem ser executadas sem problemas. Caso contrário, se as versões forem
+diferentes, significa que algum outro Entity Manager modificou o registro e então as modificações
+são abortadas e uma exceção é lançada. Emgeral, as aplicações devem capturar essa exceção e tentar
+refazer a operação.
+
+
+
+1) Se tentar usar os modos de lock OPTIMISTIC e OPTIMISTIC_FORCE_INCREMENT e a entidade não possuir um campo para controle de versão lança 
+   a seguinte exception OptimisticLockException: Tipo de modo de bloqueio inválido para a Entidade "NOME" pois a mesma não possuí um campo para controle de versão.
+   Apenas um tipo de modo de bloqueio PESSIMISTA pode ser utilizado quando não há nenhum campo para controle de versão. 
+2) Para lock no modo PESSIMISTA deve haver uma transação em andamento. Se não houver lançar uma exception TransactionExceptionRequired: Nenhuma transação está ativa.
+3) LockTimeoutException 
+
+    try {
+            result = session.executeQuery(query);
+        } catch (DatabaseException e) {
+            // If we catch a database exception as a result of executing a
+            // pessimistic locking query we need to ask the platform which
+            // JPA 2.0 locking exception we should throw. It will be either
+            // be a PessimisticLockException or a LockTimeoutException (if
+            // the query was executed using a wait timeout value)
+            if (lockMode != null && lockMode.name().contains(ObjectLevelReadQuery.PESSIMISTIC_)) {
+                // ask the platform if it is a lock timeout
+                if (query.getExecutionSession().getPlatform().isLockTimeoutException(e)) {
+                    throw new LockTimeoutException(e);
+                } else {
+                    throw new PessimisticLockException(e);
+                }
+            } else {
+                throw e;
+            }
+4) Um pedido de bloqueio PESSIMISTIC_READ(Compartilhado) falha se outro usuário (que é representado por outra Sessão)  mantém um bloqueio PESSIMISTIC_WRITE(Exclusivo) no objeto do banco de dados.
+   Um pedido de bloqueio PESSIMISTIC_WRITE(Exclusivo) falha se outro usuário possua um bloqueio PESSIMISTIC_WRITE ou um bloqueio PESSIMISTIC_READ(Compartilhado) no objeto do banco de dados.
+   - Se uma destas combinações ocorrer será lançada uma LockTimeoutException ou PessimistLockException.
+   
+5) Os bloqueios pessimistas são liberados automaticamente ao final da transação usando commmit ou rollback:
+   O bloqueio também pode ser desfeito explicitamente setando LockModeType.NONE no objeto;
+   
+6) Um modo de bloqueio também pode ser configurado para uma consulta, a fim de bloquear todos os objetos de resultado da consulta.   
+    Setar LockModeType na SQLQuery ou nos métodos para recuperação de objetos;
+	
+7) No modo de bloqueio OPTIMISTIC_FORCE_INCREMENT quando o objeto é salvo ou quando é realizado um flush na Sessão é incrementado a versão do objeto mesmo que ele não tenha sido alterado. Isso força que todas as 
+   alterações em paralelo do objeto em outras sessões sejam desfeitas e seja lançada uma exception OptimisticLockException.
+   
+8   
+	
