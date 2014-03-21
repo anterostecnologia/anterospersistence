@@ -261,16 +261,15 @@ public class H2Dialect extends DatabaseDialect {
 						+ sequenceName.toUpperCase() + "'");
 
 		if (resultSet.next()){
-			statement.close();		
 			return true;
 		}
 
+		statement = conn.createStatement();
 		statement
 				.executeQuery("SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_NAME = '"
 						+ sequenceName + "'");
 
-		if (resultSet.next()) {
-			statement.close();			
+		if (resultSet.next()) {		
 			return true;
 		}
 
