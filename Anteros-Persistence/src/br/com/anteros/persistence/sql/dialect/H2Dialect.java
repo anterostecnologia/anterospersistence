@@ -282,6 +282,7 @@ public class H2Dialect extends DatabaseDialect {
 		List<String> result = new ArrayList<String>();
 		Statement statement = conn.createStatement();
 		ResultSet columns = statement.executeQuery("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME =  '"+tableName+"' ORDER BY ORDINAL_POSITION");
+		
 		while (columns.next()) {
 			result.add(columns.getString("COLUMN_NAME"));
 		}
