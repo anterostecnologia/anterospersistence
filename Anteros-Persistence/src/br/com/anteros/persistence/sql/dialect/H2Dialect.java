@@ -19,9 +19,12 @@ import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -257,17 +260,33 @@ public class H2Dialect extends DatabaseDialect {
 				.executeQuery("SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_NAME = '"
 						+ sequenceName.toUpperCase() + "'");
 
-		if (resultSet.next())
+		if (resultSet.next()){
+			statement.close();		
 			return true;
+		}
 
 		statement
 				.executeQuery("SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_NAME = '"
 						+ sequenceName + "'");
 
-		if (resultSet.next())
+		if (resultSet.next()) {
+			statement.close();			
 			return true;
+		}
 
 		return false;
+	}
+	
+	@Override
+	public String[] getColumnNamesFromTable(Connection conn, String tableName) throws SQLException, Exception {
+		List<String> result = new ArrayList<String>();
+		Statement statement = conn.createStatement();
+		ResultSet columns = statement.executeQuery("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME =  '"+tableName+"' ORDER BY ORDINAL_POSITION");
+		while (columns.next()) {
+			result.add(columns.getString("COLUMN_NAME"));
+		}
+		
+		return result.toArray(new String[]{});
 	}
 
 }
