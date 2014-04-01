@@ -1,0 +1,160 @@
+- Qdo usar anotação @ForeignKey e não usar @Column ou @Columns usar as colunas da Classe estrangeira. Pra isso será necessário garantir
+  que esta classe já tenha sido lida.
+  
+ - Colunas usadas em fields com anotação @ForeignKey devem ser obrigatoriamente ID's na outra classe
+   Para não permitir que ocorra este tipo de erro, onde foi usado um atributo que não era ID:
+   @ForeignKey
+	@Column(name = "ID_FORNECEDOR", inversedColumn = "ID_PESSOA")
+	private Fornecedor fornecedor;
+   Deveria ser ID_PESSOA_PAPEL mas como havia a coluna na outra classe não deu erro e só foi gerar o erro na hora
+   da geração do script.
+   
+- Corrigir problema no relacionamento ONY_TO_MANY com EAGER, o framework tenta buscar a lista antes de adicionar o objeto pai ao cache.
+  
+- Terminar implementação de Convert
+
+- Implementar estratégias de Lock
+
+- Join Table anotação bidirecional. Utilizar mappedBy, para não ser necessario anotação de ambos lados;
+
+- Integração com API de Validação do JAVA
+
+- Fazer LOB carregar com lazy
+
+- Implementar nas anotações para verificar quando salvar
+   boolean insertable() default true;
+   boolean updatable() default true;
+   
+- Implementar Criteria   
+
+- Possibilidade de trabalhar as classes do Joda Time
+
+- Forma de fazer paginação de objetos
+- Internacionalização de Log's
+
+- Permitir consultas com Query By Example
+
+- Fazer internacionalização das mensagens - EM ANDAMENTO (Já definido como fazer)
+
+- Implementar comandos sql para sugestão de indices
+
+- Implementar limit para trazer registros
+
+- Ver possibilidade de implementar @SecondaryTables, @SecondaryTable: Ver exemplo MovimentoEstoque x MovimentoEstoqueValor
+ sendo que a segunda tabela seria a de valor.
+
+   @Entity 
+@IdClass(EmployeeId.class)
+@SecondaryTables({
+  @SecondaryTable(name="EMP_Photo", pkJoinColumns={
+      @PrimaryKeyJoinColumn(name="EMP_Name", referencedColumnName="name"),
+      @PrimaryKeyJoinColumn(name="EMP_ID", referencedColumnName="ID")}),  
+  @SecondaryTable(name="EMP_LOB", pkJoinColumns={
+      @PrimaryKeyJoinColumn(name="EMP_Name", referencedColumnName="name"),
+      @PrimaryKeyJoinColumn(name="ID", referencedColumnName="ID")})
+})
+public class Employee {
+
+    @Id
+    private int id;
+    @Id
+    private String name;
+
+    @Basic(fetch=FetchType.LAZY)
+    @Lob
+    @Column(table="EMP_Photo")
+    private byte[] photo;
+    
+    @Basic(fetch=FetchType.LAZY)
+    @Lob
+    @Column(table="EMP_LOB")
+    private char[] comments;
+    
+    
+    obs: ver link  http://www.java2s.com/Tutorial/Java/0355__JPA/OneEntityWithTwoSecondaryTables.htm
+
+- Plugin para executar SQL's, gerar schemas e engenharia reversa
+
+- Fazer Log só para estatisticas de tempo de sql e de parser de objetos no handler
+
+- Criar property para o tamanho do cache
+
+- Fazer Refresh na Session para permitir atualizar o objeto pela chave primária
+
+- Criar eventos para permitir integração com view no caso aplicações desktop
+
+- Estratégia Herança Table per Class
+
+- Fazer opção de alterar configurações de um dialeto tipo:
+   final DSLContext dsl = DSL.using(
+            connection,
+            SQLDialect.MYSQL,
+            new Settings()
+                .withRenderFormatted(true)
+                .withRenderNameStyle(RenderNameStyle.AS_IS)
+                .withRenderKeywordStyle(RenderKeywordStyle.UPPER)
+                .withRenderSchema(false)
+        );
+
+- Implementar anotações @Embeddable e @Embedded 
+
+- Gerar valores padrões para colunas de Entidades que não foram anotadas permitindo assim definir o mínimo possível de configurações para persistir um objeto. 
+  Ex. Anotando apenas @Entity deveria conseguir salvar o objeto
+
+ - Terminar validação das referencedColumn no cacheManager
+ 
+ - Implementar métodos de callback:
+    PrePersist: Disparado quandoumobjeto novo é persistido através da operação persist() ou merge()
+                dos EntityManagers. Esse evento tambémé disparado para os objetos persistidos em cascata.
+    PostPersist: Disparado durante a execução de uma sincronização, após a operação insert correspondente
+                 ao objeto que foi persistido. Um rollback na trasanção corrente pode desfazer a
+                 operação insert, mas não o evento.
+    PreRemove: Disparado quando um objeto gerenciado é removido através da operação remove()
+               dos EntityManagers. Esse evento também é disparado para os objetos removidos em cascata.
+    PostRemove: Disparado durante a execução de uma sincronização, após a operação delete correspondente
+                ao objeto que foi removido. Um rollback na transação corrente pode desfazer a
+                operação delete, mas não o evento.
+    PreUpdate: Disparado durante a execução de uma sincronização, antes da operação update correspondente
+               ao objeto que foi alterado.
+    PostUpdate: Disparado durante a execução de uma sincronização, após a operação update correspondente
+                ao objeto que foi alterado. Umrollback na transanção corrente pode desfazer a operação
+                update, mas não o evento.
+    PostLoad: Disparado depois que uma instância de uma entidade foi carregada com os dados do
+              banco de dados.
+              
+              
+- Implementar validação de campos requeridos em geranças das entidades no modo "single table".
+              
+              
+              
+              
+              
+BUGS:
+
+1) Tipo enum sem enumerated
+@Column(name="FINALIDADE", length=15, required=true)
+FinalidadeConta finalidadeConta;
+
+
+2) Entidade sem foreignkey
+  * Usuario do sistema do colaborador
+  */
+ @Column(name = "ID_USUARIO_COLABORADOR", inversedColumn = "ID_SEGURANCA")
+ private Usuario usuarioSistema;
+ 
+@Column(name="ID_ESTRUTURACARGOITEMPAI")
+private EstruturaCargoItem cargoPai;
+
+
+  * Tipo de Referência Comercial Ex.: Pessoal, Comercial e Banc ria
+  */
+ @Column(name = "TP_REFERENCIA_COMERCIAL", length = 15, required = true)
+ private TipoReferenciaComercial tipoReferenciaComercial;
+ 
+@Column(name = "ID_PESSOA_CLIENTE", inversedColumn = "ID_PESSOA", required = true)
+ private Pessoa pessoaCliente;     
+ 
+ 3) Gerando "default" errado quando o BooleanType é omitido.
+ 	@BooleanValue(trueValue = "S", falseValue = "N")
+	@Column(name = "BO_LIDO", required = true, defaultValue = "'N'")
+	private Boolean lido;         
