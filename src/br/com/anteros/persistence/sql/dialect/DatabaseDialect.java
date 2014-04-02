@@ -162,12 +162,12 @@ public abstract class DatabaseDialect {
 		registerJavaColumnType(java.math.BigDecimal.class, new ColumnDatabaseType("NUMBER", 19, 0).setLimits(19, 0, 19));
 		registerJavaColumnType(String.class, new ColumnDatabaseType("VARCHAR"));
 		registerJavaColumnType(Character.class, new ColumnDatabaseType("CHAR"));
-		registerJavaColumnType(Byte[].class, new ColumnDatabaseType("BLOB"));
-		registerJavaColumnType(Character[].class, new ColumnDatabaseType("CLOB"));
-		registerJavaColumnType(byte[].class, new ColumnDatabaseType("BLOB"));
-		registerJavaColumnType(char[].class, new ColumnDatabaseType("CLOB"));
-		registerJavaColumnType(java.sql.Blob.class, new ColumnDatabaseType("BLOB"));
-		registerJavaColumnType(java.sql.Clob.class, new ColumnDatabaseType("CLOB"));
+		registerJavaColumnType(Byte[].class, new ColumnDatabaseType("BLOB", false));
+		registerJavaColumnType(Character[].class, new ColumnDatabaseType("CLOB", false));
+		registerJavaColumnType(byte[].class, new ColumnDatabaseType("BLOB", false));
+		registerJavaColumnType(char[].class, new ColumnDatabaseType("CLOB", false));
+		registerJavaColumnType(java.sql.Blob.class, new ColumnDatabaseType("BLOB", false));
+		registerJavaColumnType(java.sql.Clob.class, new ColumnDatabaseType("CLOB", false));
 		registerJavaColumnType(java.sql.Date.class, new ColumnDatabaseType("DATE"));
 		registerJavaColumnType(java.util.Date.class, new ColumnDatabaseType("DATE"));
 		registerJavaColumnType(java.sql.Timestamp.class, new ColumnDatabaseType("TIMESTAMP"));

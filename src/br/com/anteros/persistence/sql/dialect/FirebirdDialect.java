@@ -44,11 +44,11 @@ public class FirebirdDialect extends DatabaseDialect {
 		registerJavaColumnType(Number.class, new ColumnDatabaseType("NUMERIC", 38).setLimits(18, -18, 18));
 		registerJavaColumnType(String.class, new ColumnDatabaseType("VARCHAR", DEFAULT_VARCHAR_SIZE));
 		registerJavaColumnType(Character.class, new ColumnDatabaseType("VARCHAR", 1));
-		registerJavaColumnType(Byte[].class, new ColumnDatabaseType("BLOB"));
+		registerJavaColumnType(Byte[].class, new ColumnDatabaseType("BLOB", false));
 		registerJavaColumnType(Character[].class, new ColumnDatabaseType("VARCHAR", 32000));
-		registerJavaColumnType(byte[].class, new ColumnDatabaseType("BLOB"));
+		registerJavaColumnType(byte[].class, new ColumnDatabaseType("BLOB", false));
 		registerJavaColumnType(char[].class, new ColumnDatabaseType("VARCHAR", 32000));
-		registerJavaColumnType(java.sql.Blob.class, new ColumnDatabaseType("BLOB"));
+		registerJavaColumnType(java.sql.Blob.class, new ColumnDatabaseType("BLOB", false));
 		registerJavaColumnType(java.sql.Clob.class, new ColumnDatabaseType("VARCHAR", 32000));
 		registerJavaColumnType(java.sql.Date.class, new ColumnDatabaseType("DATE", false));
 		registerJavaColumnType(java.sql.Timestamp.class, new ColumnDatabaseType("TIMESTAMP", false));

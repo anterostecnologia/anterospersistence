@@ -573,6 +573,8 @@ public class SchemaManager implements Comparator<TableSchema> {
 			} else {
 				dbType = session.getDialect().convertJavaToDatabaseType(descriptionColumn.getFieldType());
 			}
+		else if (descriptionColumn.isLob()  && descriptionColumn.getFieldType() == String.class)
+			dbType = session.getDialect().convertJavaToDatabaseType(byte[].class);
 		else
 			dbType = session.getDialect().convertJavaToDatabaseType(descriptionColumn.getFieldType());
 
