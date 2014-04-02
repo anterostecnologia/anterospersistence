@@ -472,6 +472,7 @@ public class SQLSessionImpl implements SQLSession {
 		synchronized (commandQueue) {
 			commandQueue.clear();
 		}
+		connection.close();
 	}
 
 	@Override
