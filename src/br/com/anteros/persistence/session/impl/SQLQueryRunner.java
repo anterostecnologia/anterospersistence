@@ -136,7 +136,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			try {
 				close(resultSet);
 			} finally {
-				statement.close();
+				close(statement);
 			}
 		}
 		return result;
@@ -164,7 +164,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			result.resultSet = resultSet;
 			result.resultList = ((List) resultHandler);
 		} catch (SQLException e) {
-			stmt.close();
+			close(stmt);
 			this.rethrow(e, sql, parameters, clientId);
 		}
 
@@ -191,7 +191,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			result.resultSet = resultSet;
 			result.resultList = (List) resultHandler;
 		} catch (SQLException e) {
-			statement.close();
+			close(statement);
 			this.rethrow(e, sql, parameters, clientId);
 		}
 
@@ -227,7 +227,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			try {
 				close(resultSet);
 			} finally {
-				statement.close();
+				close(statement);
 			}
 		}
 		return result;
@@ -284,7 +284,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 					if ((parameterType >= 3) && (parameterType <= 4))
 						result.add(resultSet.getInt("DATA_TYPE"));
 				} while (resultSet.next());
-				resultSet.close();
+				close(resultSet);
 			}
 			resultInt = new int[result.size()];
 			for (int i = 0; i < result.size(); i++)
@@ -455,7 +455,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			this.rethrow(e, sql, parameters, clientId);
 
 		} finally {
-			statement.close();
+			close(statement);
 		}
 
 		return resultSet;
@@ -519,15 +519,15 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			rsGeneratedKeys = statement.getGeneratedKeys();
 			if (rsGeneratedKeys.next()) {
 				identifierPostInsert.setGeneratedValue(rsGeneratedKeys);
-				rsGeneratedKeys.close();
+				close(rsGeneratedKeys);
 			} else {
-				rsGeneratedKeys.close();
+				close(rsGeneratedKeys);
 				if ((identitySelectString != null) && ("".equals(identitySelectString))) {
 					statementGeneratedKeys = connection.prepareStatement(identitySelectString);
 					rsGeneratedKeys = statementGeneratedKeys.executeQuery();
 					if (rsGeneratedKeys.next())
 						identifierPostInsert.setGeneratedValue(rsGeneratedKeys);
-					rsGeneratedKeys.close();
+					close(rsGeneratedKeys);
 				}
 			}
 
@@ -560,7 +560,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			this.rethrow(e, sql, parameters, clientId);
 
 		} finally {
-			statement.close();
+			close(statement);
 		}
 
 		return rows;
@@ -586,16 +586,16 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			rsGeneratedKeys = statement.getStatement().getGeneratedKeys();
 			if (rsGeneratedKeys.next()) {
 				identifierPostInsert.setGeneratedValue(rsGeneratedKeys);
-				rsGeneratedKeys.close();
+				close(rsGeneratedKeys);
 			} else {
-				rsGeneratedKeys.close();
+				close(rsGeneratedKeys);
 				if ((identitySelectString != null) && ("".equals(identitySelectString))) {
 					stmtGeneratedKeys = connection.prepareStatement(identitySelectString);
 					rsGeneratedKeys = stmtGeneratedKeys.executeQuery();
 					if (rsGeneratedKeys.next()) {
 						identifierPostInsert.setGeneratedValue(rsGeneratedKeys);
 					}
-					rsGeneratedKeys.close();
+					close(rsGeneratedKeys);
 				}
 			}
 
