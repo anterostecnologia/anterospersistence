@@ -528,6 +528,7 @@ public abstract class DatabaseDialect {
 			if (appendDelimiter)
 				schemaWriter.write(",");
 			schemaWriter.write(columnSchema.getName());
+			appendDelimiter = true;
 		}
 		schemaWriter.write(")");
 		return schemaWriter;
