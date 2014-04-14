@@ -37,6 +37,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	protected ThreadLocal<SQLSession> localSession = new ThreadLocal<SQLSession>();
 	private boolean showSql = false;
 	private boolean formatSql = false;
+	private int queryTimeout = 0;
 
 	public AbstractSQLSessionFactory(EntityCacheManager entityCacheManager, DataSource dataSource, SessionFactoryConfiguration configuration)
 			throws Exception {
@@ -63,6 +64,9 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
 		if (configuration.getProperty(AnterosProperties.FORMAT_SQL) != null)
 			this.showSql = new Boolean(configuration.getProperty(AnterosProperties.FORMAT_SQL));
+		
+		if (configuration.getProperty(AnterosProperties.QUERY_TIMEOUT) != null)
+			this.queryTimeout = new Integer(configuration.getProperty(AnterosProperties.QUERY_TIMEOUT)).intValue();
 	}
 	
 
@@ -256,6 +260,16 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
 	public void setConfiguration(SessionFactoryConfiguration configuration) {
 		this.configuration = configuration;
+	}
+
+
+	public int getQueryTimeout() {
+		return queryTimeout;
+	}
+
+
+	public void setQueryTimeout(int queryTimeout) {
+		this.queryTimeout = queryTimeout;
 	}
 
 }

@@ -17,11 +17,39 @@ package br.com.anteros.persistence.session;
 
 import java.io.Serializable;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 public class SQLSessionResult {
 
-	public List<? extends Serializable> resultList;
+	private List<? extends Serializable> resultList;
 	
-	public ResultSet resultSet;
+	private ResultSet resultSet;
+
+	public List<? extends Serializable> getResultList() {
+		return resultList;
+	}
+
+	public void setResultList(List<? extends Serializable> resultList) {
+		this.resultList = resultList;
+	}
+
+	public ResultSet getResultSet() {
+		return resultSet;
+	}
+
+	public void setResultSet(ResultSet resultSet) {
+		this.resultSet = resultSet;
+	}
+	
+	public void close() throws SQLException {
+		if (resultSet != null) {
+			if (!resultSet.isClosed())
+				resultSet.close();
+			if (!resultSet.getStatement().isClosed())
+				resultSet.getStatement().close();
+		}
+	}
+	
+	
 }

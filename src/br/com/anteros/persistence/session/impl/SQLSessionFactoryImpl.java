@@ -41,7 +41,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 		if (localSession.get() == null) {
 			Connection connection = ConnectionUtils.getConnection(this.getDatasource());
 			localSession.set(new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(), this.getDialect(), this
-					.isShowSql(), this.isFormatSql()));
+					.isShowSql(), this.isFormatSql(), this.getQueryTimeout()));
 		}
 		return localSession.get();
 	}
@@ -54,7 +54,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	@Override
 	public SQLSession getNewSession() throws Exception {
 		return new SQLSessionImpl(this, this.getDatasource().getConnection(), this.getEntityCacheManager(), new SQLQueryRunner(), this.getDialect(),
-				this.isShowSql(), this.isFormatSql());
+				this.isShowSql(), this.isFormatSql(), this.getQueryTimeout());
 	}
 
 	@Override

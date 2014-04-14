@@ -39,8 +39,8 @@ public class InsertCommandSQL extends CommandSQL {
 	private DescriptionColumn identifyColumn;
 
 	public InsertCommandSQL(SQLSession session, String sql, List<NamedParameter> namedParameters, Object targetObject,
-			EntityCache entityCache, String targetTableName, boolean showSql, IdentifierPostInsert identifierPostInsert,
-			DescriptionColumn identifyColumn, DescriptionSQL descriptionSQL) {
+			EntityCache entityCache, String targetTableName, boolean showSql,
+			IdentifierPostInsert identifierPostInsert, DescriptionColumn identifyColumn, DescriptionSQL descriptionSQL) {
 		super(session, sql, namedParameters, targetObject, entityCache, targetTableName, showSql, descriptionSQL);
 		this.identifierPostInsert = identifierPostInsert;
 		this.identifyColumn = identifyColumn;
@@ -61,42 +61,49 @@ public class InsertCommandSQL extends CommandSQL {
 		 */
 		if (StringUtils.isNotEmpty(this.getSql())) {
 			if ((descriptionSQL != null) && descriptionSQL.isCallable()) {
-				ProcedureResult result = queryRunner.executeProcedure(session, session.getDialect(),
-						descriptionSQL.getCallableType(), descriptionSQL.getSql(),
-						descriptionSQL.getInputParameters(namedParameters),
-						descriptionSQL.getOutputParameters(namedParameters), showSql, 0, session.clientId());
-				/*
-				 * Verifica se houve sucesso na execução
-				 */
-				Object successValue;
-				if (descriptionSQL.getCallableType() == CallableType.PROCEDURE)
-					successValue = result.getOutPutParameter(descriptionSQL.getSuccessParameter());
-				else
-					successValue = result.getFunctionResult();
+				ProcedureResult result = null;
+				try {
+					result = queryRunner.executeProcedure(session, session.getDialect(),
+							descriptionSQL.getCallableType(), descriptionSQL.getSql(),
+							descriptionSQL.getInputParameters(namedParameters),
+							descriptionSQL.getOutputParameters(namedParameters), showSql, 0, session.clientId());
+					/*
+					 * Verifica se houve sucesso na execução
+					 */
+					Object successValue;
+					if (descriptionSQL.getCallableType() == CallableType.PROCEDURE)
+						successValue = result.getOutPutParameter(descriptionSQL.getSuccessParameter());
+					else
+						successValue = result.getFunctionResult();
 
-				if (showSql) {
-					System.out.println("RESULT = " + successValue);
-					System.out.println("");
-				}
-
-				if (!descriptionSQL.getSuccessValue().equalsIgnoreCase(successValue.toString()))
-					throw new SQLSessionException(successValue.toString());
-
-				if (descriptionSQL.getParametersId().size() > 0) {
-					Identifier identifier = session.getIdentifier(targetObject);
-					EntityCache entityCache = session.getEntityCacheManager().getEntityCache(targetObject.getClass());
-					DescriptionField[] primaryKeyFields = entityCache.getPrimaryKeyFields();
-					IdentifierColumnList identifierList = IdentifierColumn.list();
-					for (DescriptionField descriptionField : primaryKeyFields) {
-						for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
-							identifierList.add(new IdentifierColumn(column.getColumnName(), result
-									.getOutPutParameter(descriptionSQL.getParameterIdByColumnName(column
-											.getColumnName()))));
-						}
-						identifier
-								.setFieldValue(descriptionField.getName(), identifierList.toArray(new IdentifierColumn[] {}));
+					if (showSql) {
+						System.out.println("RESULT = " + successValue);
+						System.out.println("");
 					}
 
+					if (!descriptionSQL.getSuccessValue().equalsIgnoreCase(successValue.toString()))
+						throw new SQLSessionException(successValue.toString());
+
+					if (descriptionSQL.getParametersId().size() > 0) {
+						Identifier identifier = session.getIdentifier(targetObject);
+						EntityCache entityCache = session.getEntityCacheManager().getEntityCache(
+								targetObject.getClass());
+						DescriptionField[] primaryKeyFields = entityCache.getPrimaryKeyFields();
+						IdentifierColumnList identifierList = IdentifierColumn.list();
+						for (DescriptionField descriptionField : primaryKeyFields) {
+							for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
+								identifierList.add(new IdentifierColumn(column.getColumnName(), result
+										.getOutPutParameter(descriptionSQL.getParameterIdByColumnName(column
+												.getColumnName()))));
+							}
+							identifier.setFieldValue(descriptionField.getName(),
+									identifierList.toArray(new IdentifierColumn[] {}));
+						}
+
+					}
+				} finally {
+					if (result != null)
+						result.close();
 				}
 
 			} else {
@@ -104,10 +111,11 @@ public class InsertCommandSQL extends CommandSQL {
 					if (descriptionSQL != null) {
 						queryRunner.update(session.getConnection(), descriptionSQL.getSql(), descriptionSQL
 								.processParameters(namedParameters), identifierPostInsert, session.getDialect()
-								.getIdentitySelectString(), showSql,session.getListeners(),session.clientId());
+								.getIdentitySelectString(), showSql, session.getListeners(), session.clientId());
 					} else {
 						queryRunner.update(session.getConnection(), sql, NamedParameter.getAllValues(namedParameters),
-								identifierPostInsert, session.getDialect().getIdentitySelectString(), showSql,session.getListeners(), session.clientId());
+								identifierPostInsert, session.getDialect().getIdentitySelectString(), showSql,
+								session.getListeners(), session.clientId());
 					}
 					generatedId = identifierPostInsert.generate();
 					ReflectionUtils.setObjectValueByFieldName(targetObject, identifyColumn.getField().getName(),
@@ -115,10 +123,11 @@ public class InsertCommandSQL extends CommandSQL {
 				} else {
 					if (descriptionSQL != null) {
 						queryRunner.update(session.getConnection(), descriptionSQL.getSql(),
-								descriptionSQL.processParameters(namedParameters), showSql,session.getListeners(), session.clientId());
+								descriptionSQL.processParameters(namedParameters), showSql, session.getListeners(),
+								session.clientId());
 					} else
 						queryRunner.update(session.getConnection(), sql, NamedParameter.getAllValues(namedParameters),
-								showSql,session.getListeners(),session.clientId());
+								showSql, session.getListeners(), session.clientId());
 
 				}
 			}

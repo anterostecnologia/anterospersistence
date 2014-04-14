@@ -92,6 +92,7 @@ public class TableGenerator implements IdentifierGenerator {
 			else
 				currentValue = rsSelect.getLong(1);
 			rsSelect.close();
+			rsSelect.getStatement().close();
 			
 			if (currentValue == 0) {
 				currentValue += 1;

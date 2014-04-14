@@ -90,11 +90,6 @@ public class JDBCDataSource implements DataSource {
 		return result;
 	}
 
-	@Override
-	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-		return null;
-	}
-
 	public String getDriverClassName() {
 		return driverClassName;
 	}

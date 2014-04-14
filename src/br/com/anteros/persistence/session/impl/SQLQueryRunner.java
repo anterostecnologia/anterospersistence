@@ -161,8 +161,8 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 
 			resultSet = this.wrap(stmt.executeQuery());
 			Object resultHandler = resultSetHandler.handle(resultSet);
-			result.resultSet = resultSet;
-			result.resultList = ((List) resultHandler);
+			result.setResultSet(resultSet);
+			result.setResultList(((List) resultHandler));
 		} catch (SQLException e) {
 			close(stmt);
 			this.rethrow(e, sql, parameters, clientId);
@@ -188,8 +188,8 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 
 			resultSet = this.wrap(statement.executeQuery());
 			Object resultHandler = resultSetHandler.handle(resultSet);
-			result.resultSet = resultSet;
-			result.resultList = (List) resultHandler;
+			result.setResultSet(resultSet);
+			result.setResultList((List) resultHandler);
 		} catch (SQLException e) {
 			close(statement);
 			this.rethrow(e, sql, parameters, clientId);
@@ -232,6 +232,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		}
 		return result;
 	}
+
 
 	public Object queryProcedure(SQLSession session, DatabaseDialect dialect, CallableType type, String name, ResultSetHandler resultSetHandler,
 			Object[] inputParameters, String[] outputParametersName, boolean showSql, int timeOut, String clientId) throws Exception {
@@ -337,6 +338,12 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		} catch (SQLException e) {
 			this.rethrow(e, "", new Object[] {}, clientId);
 		}
+		
+		if (result.getResultSet()==null) {
+			statement.close();
+		}
+			
+		
 		return result;
 
 	}

@@ -152,6 +152,8 @@ public class OracleDialect extends DatabaseDialect {
 		}
 
 		CallableStatement call = (CallableStatement) connection.prepareCall(sql.toString());
+		if (queryTimeOut > 0)
+			call.setQueryTimeout(queryTimeOut);
 
 		if (type == CallableType.FUNCTION) {
 			if (outputTypes.length > 0)

@@ -82,6 +82,7 @@ public class SequenceGenerator implements IdentifierGenerator {
 					return new BigDecimal(value.longValue());
 			} finally {
 				rs.close();
+				rs.getStatement().close();
 			}
 
 		} catch (SQLException ex) {

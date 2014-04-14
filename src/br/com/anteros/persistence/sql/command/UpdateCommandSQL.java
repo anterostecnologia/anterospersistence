@@ -50,34 +50,42 @@ public class UpdateCommandSQL extends CommandSQL {
 					namedParameter.setValue(((IdentifierPostInsert) namedParameter.getValue()).generate());
 			}
 			if ((descriptionSQL != null) && descriptionSQL.isCallable()) {
-				ProcedureResult result = queryRunner.executeProcedure(session, session.getDialect(),
-						descriptionSQL.getCallableType(), descriptionSQL.getSql(),
-						descriptionSQL.getInputParameters(namedParameters),
-						descriptionSQL.getOutputParameters(namedParameters), showSql, 0,session.clientId());
-				/*
-				 * Verifica se houve sucesso na execução
-				 */
-				Object successValue;
-				if (descriptionSQL.getCallableType() == CallableType.PROCEDURE)
-					successValue = result.getOutPutParameter(descriptionSQL.getSuccessParameter());
-				else
-					successValue = result.getFunctionResult();
+				ProcedureResult result = null;
+				try {
+					result = queryRunner.executeProcedure(session, session.getDialect(),
+							descriptionSQL.getCallableType(), descriptionSQL.getSql(),
+							descriptionSQL.getInputParameters(namedParameters),
+							descriptionSQL.getOutputParameters(namedParameters), showSql, 0, session.clientId());
+					/*
+					 * Verifica se houve sucesso na execução
+					 */
+					Object successValue;
+					if (descriptionSQL.getCallableType() == CallableType.PROCEDURE)
+						successValue = result.getOutPutParameter(descriptionSQL.getSuccessParameter());
+					else
+						successValue = result.getFunctionResult();
 
-				if (showSql) {
-					System.out.println("RESULT = " + successValue);
-					System.out.println("");
+					if (showSql) {
+						System.out.println("RESULT = " + successValue);
+						System.out.println("");
+					}
+
+					if (!descriptionSQL.getSuccessValue().equalsIgnoreCase(successValue.toString()))
+						throw new SQLSessionException(successValue.toString());
+				} finally {
+					if (result != null)
+						result.close();
 				}
-
-				if (!descriptionSQL.getSuccessValue().equalsIgnoreCase(successValue.toString()))
-					throw new SQLSessionException(successValue.toString());
 			} else {
 				int rowsUpdated;
 				if (descriptionSQL != null)
 					rowsUpdated = queryRunner.update(session.getConnection(), descriptionSQL.getSql(),
-							descriptionSQL.processParameters(namedParameters), showSql, session.getListeners(),session.clientId());
+							descriptionSQL.processParameters(namedParameters), showSql, session.getListeners(),
+							session.clientId());
 				else
 					rowsUpdated = queryRunner.update(this.getSession().getConnection(), sql,
-							NamedParameter.getAllValues(namedParameters), showSql, session.getListeners(),session.clientId());
+							NamedParameter.getAllValues(namedParameters), showSql, session.getListeners(),
+							session.clientId());
 				if (rowsUpdated == 0) {
 					if (entityCache.isVersioned())
 						throw new SQLException("Objeto foi atualizado ou removido por outra transação. "
@@ -93,7 +101,7 @@ public class UpdateCommandSQL extends CommandSQL {
 			 * Map<String,Object> retorna
 			 */
 
-			if (targetObject == null) 
+			if (targetObject == null)
 				return;
 		}
 		setEntityManaged();

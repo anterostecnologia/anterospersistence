@@ -38,6 +38,8 @@ public class AnterosProperties {
 	public static final String SHOW_SQL = "showsql";
 
 	public static final String FORMAT_SQL = "formatsql";
+	
+	public static final String QUERY_TIMEOUT = "queryTimeout";
 
 	public static final String DATABASE_DDL_GENERATION = "database-ddl-generation";
 

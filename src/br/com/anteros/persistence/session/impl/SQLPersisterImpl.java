@@ -149,6 +149,7 @@ public class SQLPersisterImpl implements SQLPersister {
 		if (rs.next()) {
 			boolean result = rs.getInt("numRows") > 0;
 			rs.close();
+			rs.getStatement().close();
 			return result;
 		}
 		rs.close();

@@ -16,6 +16,7 @@
 package br.com.anteros.persistence.session;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -32,7 +33,7 @@ public class ProcedureResult {
 		this.outputParameters = outputParameters;
 	}
 
-	public ResultSet getResultSet() {
+	public ResultSet getResultSet() throws SQLException {
 		return resultSet;
 	}
 
@@ -57,4 +58,14 @@ public class ProcedureResult {
 			return outputParameters.values().iterator().next();
 		return null;
 	}
+
+	public void close() throws SQLException {
+		if (resultSet != null) {
+			if (!resultSet.isClosed())
+				resultSet.close();
+			if (!resultSet.getStatement().isClosed())
+				resultSet.getStatement().close();
+		}
+	}
+
 }

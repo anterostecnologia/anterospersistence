@@ -49,34 +49,42 @@ public class DeleteCommandSQL extends CommandSQL {
 		 */
 		if (StringUtils.isNotEmpty(this.getSql())) {
 			if ((descriptionSQL != null) && descriptionSQL.isCallable()) {
-				
-				ProcedureResult result = queryRunner.executeProcedure(session, session.getDialect(),
-						descriptionSQL.getCallableType(), descriptionSQL.getSql(),
-						descriptionSQL.getInputParameters(namedParameters),
-						descriptionSQL.getOutputParameters(namedParameters), showSql, 0, session.clientId());
-				/*
-				 * Verifica se houve sucesso na execução
-				 */
-				Object successValue;
-				if (descriptionSQL.getCallableType() == CallableType.PROCEDURE)
-					successValue = result.getOutPutParameter(descriptionSQL.getSuccessParameter());
-				else
-					successValue = result.getFunctionResult();
 
-				if (showSql) {
-					System.out.println("RESULT = " + successValue);
-					System.out.println("");
+				ProcedureResult result = null;
+				try {
+					result = queryRunner.executeProcedure(session, session.getDialect(),
+							descriptionSQL.getCallableType(), descriptionSQL.getSql(),
+							descriptionSQL.getInputParameters(namedParameters),
+							descriptionSQL.getOutputParameters(namedParameters), showSql, 0, session.clientId());
+					/*
+					 * Verifica se houve sucesso na execução
+					 */
+					Object successValue;
+					if (descriptionSQL.getCallableType() == CallableType.PROCEDURE)
+						successValue = result.getOutPutParameter(descriptionSQL.getSuccessParameter());
+					else
+						successValue = result.getFunctionResult();
+
+					if (showSql) {
+						System.out.println("RESULT = " + successValue);
+						System.out.println("");
+					}
+
+					if (!descriptionSQL.getSuccessValue().equals(successValue.toString()))
+						throw new SQLSessionException(successValue.toString());
+				} finally {
+					if (result != null)
+						result.close();
 				}
-
-				if (!descriptionSQL.getSuccessValue().equals(successValue.toString()))
-					throw new SQLSessionException(successValue.toString());
 			} else {
 				if (descriptionSQL != null)
 					queryRunner.update(session.getConnection(), descriptionSQL.getSql(),
-							descriptionSQL.processParameters(namedParameters), showSql,session.getListeners(), session.clientId());
+							descriptionSQL.processParameters(namedParameters), showSql, session.getListeners(),
+							session.clientId());
 				else
 					queryRunner.update(this.getSession().getConnection(), sql,
-							NamedParameter.getAllValues(namedParameters), showSql,session.getListeners(),session.clientId());
+							NamedParameter.getAllValues(namedParameters), showSql, session.getListeners(),
+							session.clientId());
 			}
 			/*
 			 * Se o objeto alvo não for uma entidade for um List<String> ou
