@@ -25,6 +25,8 @@ import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
+
+
 public class JDBCDataSource implements DataSource {
 	private PrintWriter logWriter;
 	private int loginTimeout = 0;
@@ -120,6 +122,12 @@ public class JDBCDataSource implements DataSource {
 
 	public void setUrl(String url) {
 		this.url = url;
+	}
+
+	@Override
+	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
