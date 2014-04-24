@@ -88,7 +88,6 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 			}
 		}
 		for (EntityManaged entityManaged : keysToRemove) {
-			System.out.println("Removed: " + entityManaged);
 			entities.remove(entityManaged);
 		}
 		return em;
