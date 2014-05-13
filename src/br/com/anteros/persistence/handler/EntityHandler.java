@@ -139,18 +139,7 @@ public class EntityHandler implements ResultSetHandler {
 		for (String expression : expressions.keySet()) {
 			String columnName = expressions.get(expression);
 
-			Object value = null;
-			try {
-				value = resultSet.getObject(columnName);
-			} catch (Exception ex) {
-				if ((ex.getMessage() + "").toUpperCase().contains("BLOB")) {
-					value = resultSet.getBlob(columnName);
-				} else
-					throw new EntityHandlerException(
-							"Erro processando expressão " + expression
-									+ " na classe " + targetClass.getName()
-									+ " coluna " + columnName);
-			}
+			Object value = resultSet.getObject(columnName);
 
 			try {
 				processExpression(mainObject, targetClass, expression, value,
