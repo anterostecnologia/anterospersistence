@@ -359,18 +359,21 @@ public class SQLPersisterImpl implements SQLPersister {
 	protected List<CommandSQL> getCommandsToUpdateObject(Object targetObject, EntityCache entityCache) throws Exception {
 		List<DescriptionField> fieldsModified = entityCache.getDescriptionFields();
 		boolean hasFieldsModified = true;
-		if (session.getPersistenceContext().isExistsEntityManaged(targetObject)) {
-			List<DescriptionField> fieldModified = entityCache.getFieldsModified(session, targetObject);
+		EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(targetObject);
+		
+		if (entityManaged != null) {
 			if (!entityCache.isExistsDescriptionSQL()) {
+				List<DescriptionField> fieldModified = entityCache.getFieldsModified(session, targetObject);
 				fieldsModified = fieldModified;
-				hasFieldsModified = (((fieldsModified != null) && (fieldsModified.size() > 0)));
+				hasFieldsModified = (fieldsModified != null) && (fieldsModified.size() > 0);
 			}
 		}
 
 		ArrayList<NamedParameter> namedParameters = new ArrayList<NamedParameter>();
 		List<CommandSQL> result = new ArrayList<CommandSQL>();
-		EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(targetObject);
+		
 		updateRelationships(targetObject, entityCache);
+		
 		if (hasFieldsModified) {			
 			updateCommonsParameters(targetObject, entityCache, fieldsModified, namedParameters);
 			Object oldVersion = updateVersion(targetObject, entityCache, namedParameters, entityManaged);
