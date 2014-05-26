@@ -30,12 +30,12 @@ public class FieldEntityValue implements Comparable<FieldEntityValue> {
 
 	private String name;
 	private Object value;
-	private Reference source;
+	private Object source;
 
 	public FieldEntityValue(String fieldName, Object value, Object source) {
 		this.name = fieldName;
 		this.value = value;
-		this.source = new WeakReference(source);
+		this.source = source;
 	}
 
 	@Override
@@ -166,11 +166,11 @@ public class FieldEntityValue implements Comparable<FieldEntityValue> {
 	}
 
 	public Object getSource() {
-		return source.get();
+		return source;
 	}
 
 	public void setSource(Object source) {
-		this.source = new WeakReference(source);
+		this.source = source;
 	}
 
 	@Override
