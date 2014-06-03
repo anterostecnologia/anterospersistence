@@ -15,6 +15,8 @@
  ******************************************************************************/
 package br.com.anteros.persistence.sql.parser;
 
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.sql.parser.node.AliasNode;
 import br.com.anteros.persistence.sql.parser.node.CaseCauseNode;
 import br.com.anteros.persistence.sql.parser.node.ExpressionNode;
@@ -28,6 +30,8 @@ import br.com.anteros.persistence.sql.parser.node.SelectStatementNode;
 import br.com.anteros.persistence.sql.parser.node.TableNode;
 
 public class ParserVisitorToString implements IVisitor {
+	
+	private static Logger LOG = LoggerProvider.getInstance().getLogger(ParserVisitorToString.class.getName());
 
 	StringBuffer sb = new StringBuffer();
 
@@ -135,6 +139,6 @@ public class ParserVisitorToString implements IVisitor {
 	}
 
 	public void print() {
-		System.out.println(sb.toString());
+		LOG.debug(sb.toString());
 	}
 }

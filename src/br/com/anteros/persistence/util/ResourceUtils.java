@@ -27,7 +27,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
+
 public class ResourceUtils {
+	
+	private static Logger LOG = LoggerProvider.getInstance().getLogger(ResourceUtils.class.getName());
 
 	private static ResourceBundle bundle;
 
@@ -52,7 +57,7 @@ public class ResourceUtils {
 		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 		if (classLoader != null) {
 			URL url = classLoader.getResource(stripped);
-			System.out.println(url);
+			LOG.info(url);
 			stream = classLoader.getResourceAsStream(stripped);
 		}
 		if (stream == null) {

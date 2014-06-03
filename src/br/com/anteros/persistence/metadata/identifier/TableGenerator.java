@@ -20,9 +20,8 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.sql.command.Insert;
 import br.com.anteros.persistence.sql.command.Select;
@@ -30,7 +29,7 @@ import br.com.anteros.persistence.sql.command.Update;
 
 public class TableGenerator implements IdentifierGenerator {
 
-	private static Logger log = LoggerFactory.getLogger(TableGenerator.class);
+	private static Logger log = LoggerProvider.getInstance().getLogger(TableGenerator.class.getName());
 
 	private SQLSession session;
 	private String tableName;
@@ -45,7 +44,8 @@ public class TableGenerator implements IdentifierGenerator {
 	private Insert insert;
 	private int initialValue;
 
-	public TableGenerator(SQLSession session, String tableName, String pkColumnName, String valueColumnName, String value, Type type,
+	public TableGenerator(SQLSession session, String tableName, String pkColumnName, String valueColumnName,
+			String value, Type type,
 			String parameters, String catalog, String schema, int initialValue) {
 		this.session = session;
 		this.tableName = tableName;
@@ -85,7 +85,8 @@ public class TableGenerator implements IdentifierGenerator {
 	public Serializable generate() throws Exception {
 		long currentValue = 1;
 		try {
-			ResultSet rsSelect = session.executeQuery(select.toStatementString() + " " + session.getDialect().getSelectForUpdateNoWaitString(),
+			ResultSet rsSelect = session.executeQuery(select.toStatementString() + " "
+					+ session.getDialect().getSelectForUpdateNoWaitString(),
 					new Object[] { value });
 			if (!rsSelect.next())
 				currentValue = 0;
@@ -93,7 +94,7 @@ public class TableGenerator implements IdentifierGenerator {
 				currentValue = rsSelect.getLong(1);
 			rsSelect.close();
 			rsSelect.getStatement().close();
-			
+
 			if (currentValue == 0) {
 				currentValue += 1;
 				session.update(insert.toStatementString(), new Object[] { value, currentValue });
@@ -105,7 +106,7 @@ public class TableGenerator implements IdentifierGenerator {
 			log.error(ex.getMessage(), ex);
 			throw ex;
 		}
-		
+
 		Long value = new Long(currentValue);
 		if (type == Long.class)
 			return value;

@@ -39,13 +39,12 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import br.com.anteros.persistence.beans.IntrospectionException;
 import br.com.anteros.persistence.beans.Introspector;
 import br.com.anteros.persistence.beans.PropertyDescriptor;
 import br.com.anteros.persistence.handler.ResultSetHandler;
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
 import br.com.anteros.persistence.parameter.NamedParameter;
@@ -64,7 +63,7 @@ import br.com.anteros.persistence.util.StringUtils;
 
 public abstract class AbstractSQLRunner {
 
-	protected static Logger log = LoggerFactory.getLogger(SQLQueryRunner.class);
+	protected static Logger log = LoggerProvider.getInstance().getLogger(SQLQueryRunner.class.getName());
 	protected volatile boolean pmdKnownBroken = false;
 	protected DataSource dataSource;
 	protected Map<String, int[]> cacheOutputTypes = new HashMap<String, int[]>();

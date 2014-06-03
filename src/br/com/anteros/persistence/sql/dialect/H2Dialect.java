@@ -19,22 +19,20 @@ import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 
 public class H2Dialect extends DatabaseDialect {
 
-	private static Logger log = LoggerFactory.getLogger(H2Dialect.class);
+	private static Logger log = LoggerProvider.getInstance().getLogger(H2Dialect.class.getName());
 
 	public H2Dialect() {
 		super();

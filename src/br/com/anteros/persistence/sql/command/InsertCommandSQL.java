@@ -17,6 +17,8 @@ package br.com.anteros.persistence.sql.command;
 
 import java.util.List;
 
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
@@ -37,6 +39,8 @@ public class InsertCommandSQL extends CommandSQL {
 
 	private IdentifierPostInsert identifierPostInsert;
 	private DescriptionColumn identifyColumn;
+	
+	private static Logger LOG = LoggerProvider.getInstance().getLogger(InsertCommandSQL.class.getName());
 
 	public InsertCommandSQL(SQLSession session, String sql, List<NamedParameter> namedParameters, Object targetObject,
 			EntityCache entityCache, String targetTableName, boolean showSql,
@@ -77,8 +81,8 @@ public class InsertCommandSQL extends CommandSQL {
 						successValue = result.getFunctionResult();
 
 					if (showSql) {
-						System.out.println("RESULT = " + successValue);
-						System.out.println("");
+						LOG.debug("RESULT = " + successValue);
+						LOG.debug("");
 					}
 
 					if (!descriptionSQL.getSuccessValue().equalsIgnoreCase(successValue.toString()))

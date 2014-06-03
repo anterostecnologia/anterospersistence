@@ -38,7 +38,7 @@ public class AnterosProperties {
 	public static final String SHOW_SQL = "showsql";
 
 	public static final String FORMAT_SQL = "formatsql";
-	
+
 	public static final String QUERY_TIMEOUT = "queryTimeout";
 
 	public static final String DATABASE_DDL_GENERATION = "database-ddl-generation";
@@ -50,7 +50,7 @@ public class AnterosProperties {
 	public static final String DROP_AND_CREATE = "drop-and-create-tables";
 
 	public static final String CREATE_OR_EXTEND = "create-or-extend-tables";
-	
+
 	public static final String CREATE_REFERENCIAL_INTEGRITY = "create-referencial-integrity";
 
 	public static final String NONE = "none";
@@ -80,7 +80,13 @@ public class AnterosProperties {
 	public static final String DEFAULT_DDL_GENERATION_MODE = DDL_DATABASE_OUTPUT;
 
 	public static final String DEFAULT_APPLICATION_LOCATION = "." + File.separator;
+
+	public static final String LOCK_TIMEOUT = "lock-timeout";
+
+	public static final String LOGGER_PROVIDER = "loggerProviderClassName";
 	
-	public static final String LOCK_TIMEOUT = "lock-timeout"; 
+	public static final String CONSOLE_LOG_LEVEL = "consoleLogLevel";
+	
+	public static final String LOGCAT_LOG_LEVEL = "logCatLogLevel";
 
 }

@@ -25,9 +25,8 @@ import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 import br.com.anteros.persistence.util.IOUtils;
@@ -35,7 +34,7 @@ import br.com.anteros.persistence.util.ReflectionUtils;
 
 public class OracleDialect extends DatabaseDialect {
 
-	private static Logger log = LoggerFactory.getLogger(OracleDialect.class);
+	private static Logger log = LoggerProvider.getInstance().getLogger(OracleDialect.class.getName());
 
 	public final static Object RAW_CONNECTION = new Object();
 	public final static int ORACLE_BLOB = 1;

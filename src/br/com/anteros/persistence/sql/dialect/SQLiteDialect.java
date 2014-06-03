@@ -20,15 +20,12 @@ import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 
 public class SQLiteDialect extends DatabaseDialect {
-	private static Logger log = LoggerFactory.getLogger(SQLiteDialect.class);
-
 	
 	public SQLiteDialect() {
 		super();

@@ -328,4 +328,6 @@ public interface SQLSession {
 	 * Limpa o cache de entidades gerenciadas da sessão
 	 */
 	public void evictAll();
+	
+	public boolean isClosed() throws Exception;
 }

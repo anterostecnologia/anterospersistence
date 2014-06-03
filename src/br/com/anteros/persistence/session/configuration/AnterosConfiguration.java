@@ -15,6 +15,10 @@
  ******************************************************************************/
 package br.com.anteros.persistence.session.configuration;
 
+import java.io.InputStream;
+import java.net.URL;
+import java.util.List;
+
 import javax.sql.DataSource;
 
 import br.com.anteros.persistence.metadata.configuration.ModelConfiguration;
@@ -22,6 +26,7 @@ import br.com.anteros.persistence.session.configuration.exception.AnterosConfigu
 import br.com.anteros.persistence.sql.datasource.JDBCDataSource;
 import br.com.anteros.persistence.sql.datasource.JNDIDataSourceFactory;
 import br.com.anteros.persistence.util.ReflectionUtils;
+import br.com.anteros.persistence.util.ResourceUtils;
 import br.com.anteros.persistence.util.StringUtils;
 
 public class AnterosConfiguration extends AbstractSQLConfiguration {
@@ -84,6 +89,18 @@ public class AnterosConfiguration extends AbstractSQLConfiguration {
 					throw new AnterosConfigurationException("Nenhum DataSource foi configurado.");
 			}
 		}
+	}
+	
+	public static InputStream getDefaultXmlInputStream() throws Exception {	
+		List<URL> resources = ResourceUtils.getResources("/anteros-config.xml", AnterosConfiguration.class);
+		if ((resources == null) || (resources.isEmpty())) {
+			resources = ResourceUtils.getResources("/assets/anteros-config.xml", AnterosConfiguration.class);
+			if ((resources != null) && (!resources.isEmpty())) {
+				final URL url = resources.get(0);
+				return url.openStream();
+			}
+		}
+		return null;
 	}
 
 }

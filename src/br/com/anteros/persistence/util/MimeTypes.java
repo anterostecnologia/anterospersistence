@@ -17,7 +17,12 @@ package br.com.anteros.persistence.util;
 
 import java.util.HashMap;
 
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
+
 public class MimeTypes {
+	
+	private static Logger LOG = LoggerProvider.getInstance().getLogger(MimeTypes.class.getName());
 
 	public static final String MIME_APPLICATION_ANDREW_INSET = "application/andrew-inset";
 	public static final String MIME_APPLICATION_JSON = "application/json";
@@ -312,7 +317,7 @@ public class MimeTypes {
 	}
 
 	public static void main(String[] args) {
-		System.out.println(mimeTypeMapping.size());
+		LOG.debug(mimeTypeMapping.size());
 	}
 
 	/**

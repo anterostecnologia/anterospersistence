@@ -13,32 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package br.com.anteros.persistence.session.configuration;
-
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
+package br.com.anteros.persistence.log.impl;
 
 import br.com.anteros.persistence.log.Logger;
 import br.com.anteros.persistence.log.LoggerProvider;
 
-public class AnterosConfigurationErrorHandler implements ErrorHandler {
+/**
+ * 
+ * @author Douglas Junior (nassifrroma@gmail.com)
+ * 
+ */
+public class Slf4jLoggerProvider extends LoggerProvider {
 
-	private static Logger LOG = LoggerProvider.getInstance().getLogger(AnterosConfigurationErrorHandler.class.getName());
-	
-	public void warning(SAXParseException exception) throws SAXException {
-		LOG.warn("\nWARNING");
-		exception.printStackTrace();
-	}
-
-	public void error(SAXParseException exception) throws SAXException {
-		LOG.error("\nERROR");
-		exception.printStackTrace();
-	}
-
-	public void fatalError(SAXParseException exception) throws SAXException {
-		LOG.error("\nFATAL ERROR");
-		exception.printStackTrace();
+	@Override
+	public Logger getLogger(String name) {
+		return new Slf4jLogger(name);
 	}
 
 }

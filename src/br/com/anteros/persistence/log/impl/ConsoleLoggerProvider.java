@@ -13,32 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package br.com.anteros.persistence.session.configuration;
+package br.com.anteros.persistence.log.impl;
 
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
+import org.simpleframework.xml.Serializer;
+import org.simpleframework.xml.core.Persister;
+import org.simpleframework.xml.stream.Format;
 
+import br.com.anteros.persistence.log.LogLevel;
 import br.com.anteros.persistence.log.Logger;
 import br.com.anteros.persistence.log.LoggerProvider;
+import br.com.anteros.persistence.session.configuration.AnterosConfiguration;
+import br.com.anteros.persistence.session.configuration.AnterosProperties;
 
-public class AnterosConfigurationErrorHandler implements ErrorHandler {
+/**
+ * 
+ * @author Douglas Junior (nassifrroma@gmail.com)
+ * 
+ */
+public class ConsoleLoggerProvider extends LoggerProvider {
 
-	private static Logger LOG = LoggerProvider.getInstance().getLogger(AnterosConfigurationErrorHandler.class.getName());
-	
-	public void warning(SAXParseException exception) throws SAXException {
-		LOG.warn("\nWARNING");
-		exception.printStackTrace();
-	}
+	private final LogLevel level = findLevel(AnterosProperties.CONSOLE_LOG_LEVEL);
 
-	public void error(SAXParseException exception) throws SAXException {
-		LOG.error("\nERROR");
-		exception.printStackTrace();
-	}
-
-	public void fatalError(SAXParseException exception) throws SAXException {
-		LOG.error("\nFATAL ERROR");
-		exception.printStackTrace();
+	@Override
+	public Logger getLogger(String name) {
+		return new ConsoleLogger(name, level);
 	}
 
 }

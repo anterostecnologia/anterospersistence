@@ -892,4 +892,9 @@ public class SQLSessionImpl implements SQLSession {
 		return this.sqlQueryAnalyzer;
 	}
 
+	@Override
+	public boolean isClosed() throws Exception {
+		return getConnection() == null || getConnection().isClosed();
+	}
+
 }

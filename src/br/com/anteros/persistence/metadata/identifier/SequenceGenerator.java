@@ -21,14 +21,13 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.session.SQLSession;
 
 public class SequenceGenerator implements IdentifierGenerator {
 
-	private static Logger log = LoggerFactory.getLogger(SequenceGenerator.class);
+	private static Logger log = LoggerProvider.getInstance().getLogger(SequenceGenerator.class.getName());
 	
 	private String catalogName;
 	private String schemaName;

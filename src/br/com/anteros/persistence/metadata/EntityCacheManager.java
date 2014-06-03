@@ -235,24 +235,27 @@ public class EntityCacheManager {
 					}
 				}
 
-				/*
-				 * for (DescriptionColumn column :
-				 * field.getDescriptionColumns()) { if (column.isForeignKey() &&
-				 * (column.getReferencedTableName() != null)) { EntityCache
-				 * referencedCache = field.getTargetEntity(); if
-				 * (referencedCache == null) { throw new
-				 * EntityCacheException("Tabela " +
-				 * column.getReferencedTableName() +
-				 * " não encontrada na lista de entidades gerenciadas. Verifique o Campo "
-				 * + field.getName() + " da classe " +
-				 * entityCache.getEntityClass().getName()); } if
-				 * (referencedCache.getDescriptionByColumnName
-				 * (column.getReferencedColumnName()) == null) { throw new
-				 * EntityCacheException("A coluna " +
-				 * column.getReferencedColumnName() + " referenciada no campo "
-				 * + field.getName() + " não foi encontrada na classe " +
-				 * referencedCache.getEntityClass().getName()); } } }
-				 */
+//				for (DescriptionColumn column : field.getDescriptionColumns()) {
+//					if (column.isForeignKey() &&
+//							(column.getReferencedTableName() != null)) {
+//						EntityCache referencedCache = field.getTargetEntity();
+//						if (referencedCache == null) {
+//							throw new EntityCacheException("Tabela " +
+//									column.getReferencedTableName() +
+//									" não encontrada na lista de entidades gerenciadas. Verifique o Campo "
+//									+ field.getName() + " da classe " +
+//									entityCache.getEntityClass().getName());
+//						}
+//						if (referencedCache.getDescriptionByColumnName
+//								(column.getReferencedColumnName()) == null) {
+//							throw new EntityCacheException("A coluna " +
+//									column.getReferencedColumnName() + " referenciada no campo "
+//									+ field.getName() + " não foi encontrada na classe " +
+//									referencedCache.getEntityClass().getName());
+//						}
+//					}
+//				}
+
 			}
 		}
 

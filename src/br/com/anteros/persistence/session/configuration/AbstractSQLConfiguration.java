@@ -34,6 +34,7 @@ import org.simpleframework.xml.Transient;
 import org.simpleframework.xml.core.Persister;
 import org.simpleframework.xml.stream.Format;
 
+import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
 import br.com.anteros.persistence.metadata.configuration.ModelConfiguration;
@@ -230,6 +231,10 @@ public abstract class AbstractSQLConfiguration implements SQLConfiguration {
 			this.setSessionFactory(result.getSessionFactoryConfiguration());
 			this.dataSource = null;
 			this.buildDataSource();
+			
+			System.out.println("Teste config: " + LoggerProvider.class.getName());
+			System.out.println("Teste config2: " + LoggerProvider.getInstance());
+			
 			return this;
 		} catch (final Exception e) {
 			throw new AnterosConfigurationException("Impossível realizar a leitura do arquivo de configuração." + e);

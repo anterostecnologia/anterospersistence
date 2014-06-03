@@ -19,9 +19,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.sql.parser.node.BindNode;
 
 public class ParserVisitorToBind implements IVisitor {
+	
+	private static Logger LOG = LoggerProvider.getInstance().getLogger(ParserVisitorToBind.class.getName());
 
 	List<INode> list = null;
 
@@ -69,7 +73,7 @@ public class ParserVisitorToBind implements IVisitor {
 		if (list != null) {
 			for (Iterator<INode> iterator = list.iterator(); iterator.hasNext();) {
 				BindNode bindNode = (BindNode) iterator.next();
-				System.out.println(bindNode.toString());
+				LOG.debug(bindNode.toString());
 			}
 		}
 	}

@@ -77,8 +77,6 @@ public class Employee {
 
 - Fazer Log só para estatisticas de tempo de sql e de parser de objetos no handler
 
-- Criar property para o tamanho do cache
-
 - Fazer Refresh na Session para permitir atualizar o objeto pela chave primária
 
 - Criar eventos para permitir integração com view no caso aplicações desktop
@@ -123,7 +121,7 @@ public class Employee {
               banco de dados.
               
               
-- Implementar validação de campos requeridos em geranças das entidades no modo "single table".
+- Implementar validação de campos requeridos em heranças das entidades no modo "single table".
               
               
               

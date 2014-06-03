@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.sql.parser.exception.NotFoundParentNodeException;
 import br.com.anteros.persistence.sql.parser.exception.ParserException;
 import br.com.anteros.persistence.sql.parser.node.AliasNode;
@@ -33,6 +35,8 @@ import br.com.anteros.persistence.sql.parser.node.StatementNode;
 import br.com.anteros.persistence.sql.parser.node.UpdateStatementNode;
 
 public class Node implements INode {
+	
+	private static Logger LOG = LoggerProvider.getInstance().getLogger(Node.class.getName());
 
 	protected INode parent;
 
@@ -142,7 +146,7 @@ public class Node implements INode {
 	}
 
 	public void dump(String prefix) {
-		System.out.println(toString(prefix));
+		LOG.info(toString(prefix));
 		if (children != null) {
 			for (int i = 0; i < children.size(); ++i) {
 				Node n = (Node) children.get(i);
