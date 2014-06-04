@@ -20,6 +20,8 @@ import br.com.anteros.persistence.log.LoggerProvider;
 
 /**
  * 
+ * Promove a instância de um objeto Logger do tipo Slf4jLogger.
+ * 
  * @author Douglas Junior (nassifrroma@gmail.com)
  * 
  */

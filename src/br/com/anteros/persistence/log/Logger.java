@@ -19,6 +19,9 @@ import java.io.Serializable;
 
 /**
  * 
+ * Implementação abstrata da interface BasicLogger, responsável por implementar
+ * os métodos básicos de Logs disponíveis.
+ * 
  * @author Douglas Junior (nassifrroma@gmail.com)
  * 
  */
@@ -32,6 +35,11 @@ public abstract class Logger implements Serializable, BasicLogger {
 		this.name = name;
 	}
 
+	/**
+	 * Retorna o nome dado ao Logger ao ser instanciado.
+	 * 
+	 * @return String
+	 */
 	public String getName() {
 		return name;
 	}
@@ -121,8 +129,11 @@ public abstract class Logger implements Serializable, BasicLogger {
 		log(level, message, null);
 	}
 
-	@Override
-	public abstract boolean isEnabled(LogLevel level);
-
+	/**
+	 * Recebe a mensagem, o Level e faz a execução do Log.
+	 * @param level LogLevel
+	 * @param message Object
+	 * @param t Throwable
+	 */
 	protected abstract void doLog(LogLevel level, Object message, Throwable t);
 }

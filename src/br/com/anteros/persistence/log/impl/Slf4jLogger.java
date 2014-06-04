@@ -20,6 +20,9 @@ import br.com.anteros.persistence.log.Logger;
 
 /**
  * 
+ * Implementação de Logger responsável por enviar a mensagem de Log a biblioteca
+ * SLF4J (necessita de XML de configuração a parte)
+ * 
  * @author Douglas Junior (nassifrroma@gmail.com)
  * 
  */

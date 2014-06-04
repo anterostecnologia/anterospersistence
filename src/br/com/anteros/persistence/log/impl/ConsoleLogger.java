@@ -22,6 +22,8 @@ import br.com.anteros.persistence.log.Logger;
 
 /**
  * 
+ * Implementação de Logger responsável somente por enviar a mensagem de Log ao console.
+ * 
  * @author Douglas Junior (nassifrroma@gmail.com)
  * 
  */

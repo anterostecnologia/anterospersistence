@@ -17,6 +17,8 @@ package br.com.anteros.persistence.log;
 
 /**
  * 
+ * Enum que representa os níveis de Logs disponíveis.
+ * 
  * @author Douglas Junior (nassifrroma@gmail.com)
  * 
  */
@@ -33,6 +35,10 @@ public enum LogLevel {
 		this.index = index;
 	}
 
+	/**
+	 * Retorna o índice do LogLevel na hierarquia.
+	 * @return int
+	 */
 	public int getIndex() {
 		return index;
 	}

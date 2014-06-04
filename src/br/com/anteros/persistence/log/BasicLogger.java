@@ -17,45 +17,153 @@ package br.com.anteros.persistence.log;
 
 /**
  * 
+ * Interface responsável por assinar os métodos de Logs disponíveis.
+ * 
  * @author Douglas Junior (nassifrroma@gmail.com)
  * 
  */
 public interface BasicLogger {
 
+	/**
+	 * Retorna TRUE caso o LogLevel instanciado seja Verbose ou FALSE caso
+	 * contrário.
+	 * 
+	 * @return boolean
+	 */
 	public boolean isVerboseEnabled();
 
+	/**
+	 * Envia uma mensagem de log com o level Verbose.
+	 * 
+	 * @param message
+	 * @param t
+	 */
 	public void verbose(Object message, Throwable t);
 
+	/**
+	 * Envia uma mensagem de log com o level Verbose.
+	 * 
+	 * @param message
+	 */
 	public void verbose(Object message);
 
+	/**
+	 * Retorna TRUE caso o LogLevel instanciado seja Debug ou FALSE caso
+	 * contrário.
+	 * 
+	 * @return boolean
+	 */
 	public boolean isDebugEnabled();
 
+	/**
+	 * Envia uma mensagem de log com o level Debug.
+	 * 
+	 * @param message
+	 * @param t
+	 */
 	public void debug(Object message, Throwable t);
 
+	/**
+	 * Envia uma mensagem de log com o level Debug.
+	 * 
+	 * @param message
+	 */
 	public void debug(Object message);
 
+	/**
+	 * Retorna TRUE caso o LogLevel instanciado seja Info ou FALSE caso
+	 * contrário.
+	 * 
+	 * @return boolean
+	 */
 	public boolean isInfoEnabled();
 
+	/**
+	 * Envia uma mensagem de log com o level Info.
+	 * 
+	 * @param message
+	 * @param t
+	 */
 	public void info(Object message, Throwable t);
 
+	/**
+	 * Envia uma mensagem de log com o level Info.
+	 * 
+	 * @param message
+	 */
 	public void info(Object message);
 
+	/**
+	 * Retorna TRUE caso o LogLevel instanciado seja Warn ou FALSE caso
+	 * contrário.
+	 * 
+	 * @return boolean
+	 */
 	public boolean isWarnEnabled();
 
+	/**
+	 * Envia uma mensagem de log com o level Warn.
+	 * 
+	 * @param message
+	 * @param t
+	 */
 	public void warn(Object message, Throwable t);
 
+	/**
+	 * Envia uma mensagem de log com o level Warn.
+	 * 
+	 * @param message
+	 */
 	public void warn(Object message);
 
+	/**
+	 * Retorna TRUE caso o LogLevel instanciado seja Error ou FALSE caso
+	 * contrário.
+	 * 
+	 * @return boolean
+	 */
 	public boolean isErrorEnabled();
 
+	/**
+	 * Envia uma mensagem de log com o level Error.
+	 * 
+	 * @param message
+	 * @param t
+	 */
 	public void error(Object message, Throwable t);
 
+	/**
+	 * Envia uma mensagem de log com o level Error.
+	 * 
+	 * @param message
+	 */
 	public void error(Object message);
 
+	/**
+	 * Envia uma mensagem de log com o level informado por parâmetro.
+	 * 
+	 * @param level
+	 * @param message
+	 * @param t
+	 */
 	public void log(LogLevel level, Object message, Throwable t);
 
+	/**
+	 * Envia uma mensagem de log com o level informado por parâmetro.
+	 * 
+	 * @param level
+	 * @param message
+	 */
 	public void log(LogLevel level, Object message);
-	
+
+	/**
+	 * Retorna TRUE caso o LogLevel instanciado seja igual ao parâmetro
+	 * informado ou FALSE caso contrário.
+	 * 
+	 * @param level
+	 *            LogLevel
+	 * @return boolean
+	 */
 	public boolean isEnabled(LogLevel level);
 
 }

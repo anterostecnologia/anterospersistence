@@ -15,17 +15,14 @@
  ******************************************************************************/
 package br.com.anteros.persistence.log.impl;
 
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
-import org.simpleframework.xml.stream.Format;
-
 import br.com.anteros.persistence.log.LogLevel;
 import br.com.anteros.persistence.log.Logger;
 import br.com.anteros.persistence.log.LoggerProvider;
-import br.com.anteros.persistence.session.configuration.AnterosConfiguration;
 import br.com.anteros.persistence.session.configuration.AnterosProperties;
 
 /**
+ * 
+ * Promove a instância de um objeto Logger do tipo ConsoleLogger.
  * 
  * @author Douglas Junior (nassifrroma@gmail.com)
  * 
