@@ -13,6 +13,7 @@ import br.com.anteros.persistence.osql.condition.CodeTemplate;
 import br.com.anteros.persistence.osql.condition.CodeTemplateCondition;
 import br.com.anteros.persistence.osql.condition.CodeTemplates;
 import br.com.anteros.persistence.osql.operation.Operation;
+import br.com.anteros.persistence.util.ResourceUtils;
 
 public final class ToStringVisitor implements Visitor<String,CodeTemplates> {
     
@@ -56,7 +57,7 @@ public final class ToStringVisitor implements Visitor<String,CodeTemplates> {
             }
             return builder.toString();
         } else {
-            return "operação desconhecida com estes argumentos " + o.getArguments();
+            return ResourceUtils.getMessage(ToStringVisitor.class, "operation_unknown", o.getArguments());
         }                  
     }
 

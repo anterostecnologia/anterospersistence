@@ -44,6 +44,7 @@ import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.sql.converter.ConversionHelper;
 import br.com.anteros.persistence.util.ObjectUtils;
 import br.com.anteros.persistence.util.ReflectionUtils;
+import br.com.anteros.persistence.util.ResourceUtils;
 import br.com.anteros.persistence.util.StringUtils;
 
 public class EntityCache {
@@ -267,7 +268,7 @@ public class EntityCache {
 
 	@Override
 	public String toString() {
-		return "Entidade " + getEntityClass();
+		return ResourceUtils.getMessage(EntityCache.class, "entity", getEntityClass());
 	}
 
 	/**

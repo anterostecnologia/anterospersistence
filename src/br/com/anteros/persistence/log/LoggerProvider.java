@@ -22,6 +22,7 @@ import org.simpleframework.xml.stream.Format;
 import br.com.anteros.persistence.log.impl.ConsoleLoggerProvider;
 import br.com.anteros.persistence.session.configuration.AnterosConfiguration;
 import br.com.anteros.persistence.session.configuration.AnterosProperties;
+import br.com.anteros.persistence.util.ResourceUtils;
 
 /**
  * 
@@ -76,7 +77,7 @@ public abstract class LoggerProvider {
 				return new ConsoleLoggerProvider();
 			return (LoggerProvider) Class.forName(providerClassName).newInstance();
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			System.err.println(ResourceUtils.getMessage(LoggerProvider.class, "not_configured", ex.getMessage()));
 			return new ConsoleLoggerProvider();
 		}
 	}

@@ -20,36 +20,41 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import br.com.anteros.persistence.util.ResourceUtils;
+
 public class NamedParameterParserResult {
 
 	private String parsedSql;
-	private Map<String,Object> parsedParams = new LinkedHashMap<String, Object>();
+	private Map<String, Object> parsedParams = new LinkedHashMap<String, Object>();
+
 	public String getParsedSql() {
 		return parsedSql;
 	}
+
 	public void setParsedSql(String parsedSql) {
 		this.parsedSql = parsedSql;
 	}
+
 	public Map<String, Object> getParsedParams() {
 		return parsedParams;
 	}
+
 	public void setParsedParams(Map<String, Object> parsedParams) {
 		this.parsedParams = parsedParams;
 	}
-	
+
 	@Override
 	public String toString() {
-		return "SQL-> "+parsedSql+" Parâmetros: "+parsedParams;
+		return ResourceUtils.getMessage(NamedParameterParserResult.class, "toString", parsedSql, parsedParams);
 	}
-	
-	
-	public List<NamedParameter> getNamedParameters(){
-		List<NamedParameter> result = new ArrayList<NamedParameter>(); 
-		for (String param : parsedParams.keySet()){
-			  Object value = parsedParams.get(param);
-		      result.add(new NamedParameter(param, value));	
+
+	public List<NamedParameter> getNamedParameters() {
+		List<NamedParameter> result = new ArrayList<NamedParameter>();
+		for (String param : parsedParams.keySet()) {
+			Object value = parsedParams.get(param);
+			result.add(new NamedParameter(param, value));
 		}
 		return result;
 	}
-	
+
 }

@@ -23,31 +23,50 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 import br.com.anteros.persistence.log.Logger;
 import br.com.anteros.persistence.log.LoggerProvider;
 
 public class ResourceUtils {
-	
+
 	private static Logger LOG = LoggerProvider.getInstance().getLogger(ResourceUtils.class.getName());
 
-	private static ResourceBundle bundle;
+	private static Map<Locale, ResourceBundle> bundles;
 
-	public static ResourceBundle getBundle() {
-		if (bundle == null)
-			bundle = ResourceBundle.getBundle("res/anteros", Locale.getDefault());
+	private static final String bundleName = "br/com/anteros/persistence/resources/languages/messages";
+
+	public static ResourceBundle getResourceBundle(Locale locale) {
+		if (bundles == null)
+			bundles = new HashMap<Locale, ResourceBundle>();
+
+		ResourceBundle bundle = bundles.get(locale);
+
+		if (bundle != null) {
+			return bundle;
+		}
+
+		ClassLoader loader = Thread.currentThread().getContextClassLoader();
+		bundle = ResourceBundle.getBundle(bundleName, locale, loader);
+		bundles.put(locale, bundle);
+
 		return bundle;
 	}
 
+	public static ResourceBundle getResourceBundle() {
+		return getResourceBundle(Locale.getDefault());
+	}
+
 	public static String getMessage(Class<?> clazz, String tag, Object... arguments) {
-		return MessageFormat.format(getBundle().getString(clazz.getSimpleName() + "." + tag), arguments);
+		return MessageFormat.format(getMessage(clazz, tag), arguments);
 	}
 
 	public static String getMessage(Class<?> clazz, String tag) {
-		return getBundle().getString(clazz.getSimpleName() + "." + tag);
+		return getResourceBundle().getString(clazz.getSimpleName() + "." + tag);
 	}
 
 	public static InputStream getResourceAsStream(String resource) throws FileNotFoundException {
@@ -64,133 +83,137 @@ public class ResourceUtils {
 			stream = new FileInputStream(resource);
 		}
 		return stream;
-	}	 
-	
-	
+	}
+
 	public static URL getResource(String resourceName, Class<?> callingClass) {
-	      URL url = Thread.currentThread().getContextClassLoader().getResource(resourceName);
-	      if (url == null && resourceName.startsWith("/")) {
-	          //certain classloaders need it without the leading /
-	          url = Thread.currentThread().getContextClassLoader()
-	              .getResource(resourceName.substring(1));
-	      }
+		URL url = Thread.currentThread().getContextClassLoader().getResource(resourceName);
+		if (url == null && resourceName.startsWith("/")) {
+			// certain classloaders need it without the leading /
+			url = Thread.currentThread().getContextClassLoader()
+					.getResource(resourceName.substring(1));
+		}
 
-	      ClassLoader cluClassloader = callingClass.getClassLoader();
-	      if (cluClassloader == null) {
-	          cluClassloader = ClassLoader.getSystemClassLoader();
-	      }
-	      if (url == null) {
-	          url = cluClassloader.getResource(resourceName);
-	      }
-	      if (url == null && resourceName.startsWith("/")) {
-	          //certain classloaders need it without the leading /
-	          url = cluClassloader.getResource(resourceName.substring(1));
-	      }
+		ClassLoader cluClassloader = callingClass.getClassLoader();
+		if (cluClassloader == null) {
+			cluClassloader = ClassLoader.getSystemClassLoader();
+		}
+		if (url == null) {
+			url = cluClassloader.getResource(resourceName);
+		}
+		if (url == null && resourceName.startsWith("/")) {
+			// certain classloaders need it without the leading /
+			url = cluClassloader.getResource(resourceName.substring(1));
+		}
 
-	      if (url == null) {
-	          ClassLoader cl = callingClass.getClassLoader();
+		if (url == null) {
+			ClassLoader cl = callingClass.getClassLoader();
 
-	          if (cl != null) {
-	              url = cl.getResource(resourceName);
-	          }
-	      }
+			if (cl != null) {
+				url = cl.getResource(resourceName);
+			}
+		}
 
-	      if (url == null) {
-	          url = callingClass.getResource(resourceName);
-	      }
-	      
-	      if ((url == null) && (resourceName != null) && (resourceName.charAt(0) != '/')) {
-	          return getResource('/' + resourceName, callingClass);
-	      }
+		if (url == null) {
+			url = callingClass.getResource(resourceName);
+		}
 
-	      return url;
-	  }
-	 
-	  /**
-	   * Load a given resources. <p/> This method will try to load the resources
-	   * using the following methods (in order):
-	   * <ul>
-	   * <li>From Thread.currentThread().getContextClassLoader()
-	   * <li>From ClassLoaderUtil.class.getClassLoader()
-	   * <li>callingClass.getClassLoader()
-	   * </ul>
-	   * 
-	   * @param resourceName The name of the resource to load
-	   * @param callingClass The Class object of the calling object
-	   */
-	  public static List<URL> getResources(String resourceName, Class<?> callingClass) {
-	      List<URL> ret = new ArrayList<URL>();
-	      Enumeration<URL> urls = new Enumeration<URL>() {
-	          public boolean hasMoreElements() {
-	              return false;
-	          }
-	          public URL nextElement() {
-	              return null;
-	          }
-	          
-	      };
-	      try {
-	          urls = Thread.currentThread().getContextClassLoader()
-	              .getResources(resourceName);
-	      } catch (IOException e) {
-	          //ignore
-	      }
-	      if (!urls.hasMoreElements() && resourceName.startsWith("/")) {
-	          //certain classloaders need it without the leading /
-	          try {
-	              urls = Thread.currentThread().getContextClassLoader()
-	                  .getResources(resourceName.substring(1));
-	          } catch (IOException e) {
-	              // ignore
-	          }
-	      }
+		if ((url == null) && (resourceName != null) && (resourceName.charAt(0) != '/')) {
+			return getResource('/' + resourceName, callingClass);
+		}
 
-	      ClassLoader cluClassloader = callingClass.getClassLoader();
-	      if (cluClassloader == null) {
-	          cluClassloader = ClassLoader.getSystemClassLoader();
-	      }
-	      if (!urls.hasMoreElements()) {
-	          try {
-	              urls = cluClassloader.getResources(resourceName);
-	          } catch (IOException e) {
-	              // ignore
-	          }
-	      }
-	      if (!urls.hasMoreElements() && resourceName.startsWith("/")) {
-	          //certain classloaders need it without the leading /
-	          try {
-	              urls = cluClassloader.getResources(resourceName.substring(1));
-	          } catch (IOException e) {
-	              // ignore
-	          }
-	      }
+		return url;
+	}
 
-	      if (!urls.hasMoreElements()) {
-	          ClassLoader cl = callingClass.getClassLoader();
+	/**
+	 * Load a given resources.
+	 * <p/>
+	 * This method will try to load the resources using the following methods
+	 * (in order):
+	 * <ul>
+	 * <li>From Thread.currentThread().getContextClassLoader()
+	 * <li>From ClassLoaderUtil.class.getClassLoader()
+	 * <li>callingClass.getClassLoader()
+	 * </ul>
+	 * 
+	 * @param resourceName
+	 *            The name of the resource to load
+	 * @param callingClass
+	 *            The Class object of the calling object
+	 */
+	public static List<URL> getResources(String resourceName, Class<?> callingClass) {
+		List<URL> ret = new ArrayList<URL>();
+		Enumeration<URL> urls = new Enumeration<URL>() {
+			public boolean hasMoreElements() {
+				return false;
+			}
 
-	          if (cl != null) {
-	              try {
-	                  urls = cl.getResources(resourceName);
-	              } catch (IOException e) {
-	                  // ignore
-	              }
-	          }
-	      }
+			public URL nextElement() {
+				return null;
+			}
 
-	      if (!urls.hasMoreElements()) {
-	          URL url = callingClass.getResource(resourceName);
-	          if (url != null) {
-	              ret.add(url);
-	          }
-	      }
-	      while (urls.hasMoreElements()) {
-	          ret.add(urls.nextElement());
-	      }
+		};
+		try {
+			urls = Thread.currentThread().getContextClassLoader()
+					.getResources(resourceName);
+		} catch (IOException e) {
+			// ignore
+		}
+		if (!urls.hasMoreElements() && resourceName.startsWith("/")) {
+			// certain classloaders need it without the leading /
+			try {
+				urls = Thread.currentThread().getContextClassLoader()
+						.getResources(resourceName.substring(1));
+			} catch (IOException e) {
+				// ignore
+			}
+		}
 
-	      
-	      if (ret.isEmpty() && (resourceName != null) && (resourceName.charAt(0) != '/')) {
-	          return getResources('/' + resourceName, callingClass);
-	      }
-	      return ret;
-	  }
+		ClassLoader cluClassloader = callingClass.getClassLoader();
+		if (cluClassloader == null) {
+			cluClassloader = ClassLoader.getSystemClassLoader();
+		}
+		if (!urls.hasMoreElements()) {
+			try {
+				urls = cluClassloader.getResources(resourceName);
+			} catch (IOException e) {
+				// ignore
+			}
+		}
+		if (!urls.hasMoreElements() && resourceName.startsWith("/")) {
+			// certain classloaders need it without the leading /
+			try {
+				urls = cluClassloader.getResources(resourceName.substring(1));
+			} catch (IOException e) {
+				// ignore
+			}
+		}
+
+		if (!urls.hasMoreElements()) {
+			ClassLoader cl = callingClass.getClassLoader();
+
+			if (cl != null) {
+				try {
+					urls = cl.getResources(resourceName);
+				} catch (IOException e) {
+					// ignore
+				}
+			}
+		}
+
+		if (!urls.hasMoreElements()) {
+			URL url = callingClass.getResource(resourceName);
+			if (url != null) {
+				ret.add(url);
+			}
+		}
+		while (urls.hasMoreElements()) {
+			ret.add(urls.nextElement());
+		}
+
+		if (ret.isEmpty() && (resourceName != null) && (resourceName.charAt(0) != '/')) {
+			return getResources('/' + resourceName, callingClass);
+		}
+		return ret;
+	}
+
 }
