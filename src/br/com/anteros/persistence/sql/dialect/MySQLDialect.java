@@ -25,6 +25,7 @@ import br.com.anteros.persistence.log.Logger;
 import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
+import br.com.anteros.persistence.util.ResourceUtils;
 
 public class MySQLDialect extends DatabaseDialect {
 
@@ -80,7 +81,8 @@ public class MySQLDialect extends DatabaseDialect {
 
 	@Override
 	public String getSequenceNextValString(String sequenceName) throws Exception {
-		throw new DatabaseDialectException(getClass().getName() + " does not support sequences");
+		throw new DatabaseDialectException(ResourceUtils.getMessage(MySQLDialect.class, "sequenceException", getClass()
+				.getName()));
 	}
 
 	@Override
@@ -104,8 +106,10 @@ public class MySQLDialect extends DatabaseDialect {
 	}
 
 	@Override
-	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name, Object[] inputParameters,
-			String[] outputParametersName, int[] outputTypes, int queryTimeOut, boolean showSql, String clientId) throws Exception {
+	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name,
+			Object[] inputParameters,
+			String[] outputParametersName, int[] outputTypes, int queryTimeOut, boolean showSql, String clientId)
+			throws Exception {
 		int i;
 		int numberInputParameters = (inputParameters == null ? 0 : inputParameters.length);
 		StringBuffer sql = null;
@@ -384,13 +388,12 @@ public class MySQLDialect extends DatabaseDialect {
 	public String getUniqueKeyDeletionString() {
 		return " DROP INDEX ";
 	}
-	
 
 	@Override
 	public int getIndexTypeOfFunctionMetadata() {
 		return 2;
 	}
-	
+
 	@Override
 	public int getIndexTypeOfProcedureMetadata() {
 		return 0;

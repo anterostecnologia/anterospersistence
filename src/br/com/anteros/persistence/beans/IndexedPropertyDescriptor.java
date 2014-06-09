@@ -18,6 +18,8 @@ package br.com.anteros.persistence.beans;
 import java.lang.ref.Reference;
 import java.lang.reflect.Method;
 
+import br.com.anteros.persistence.util.ResourceUtils;
+
 /**
  * An IndexedPropertyDescriptor describes a property that acts like an
  * array and has an indexed read and/or indexed write method to access
@@ -96,12 +98,12 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
 
 		this.indexedReadMethodName = indexedReadMethodName;
 		if(indexedReadMethodName != null && getIndexedReadMethod() == null){
-			throw new IntrospectionException("Method not found: " + indexedReadMethodName);
+			throw new IntrospectionException(ResourceUtils.getMessage(IndexedPropertyDescriptor.class, "IntrospectionException", indexedReadMethodName));
 		}
 
 		this.indexedWriteMethodName = indexedWriteMethodName;
 		if(indexedWriteMethodName != null && getIndexedWriteMethod() == null){
-			throw new IntrospectionException("Method not found: " + indexedWriteMethodName);
+			throw new IntrospectionException(ResourceUtils.getMessage(IndexedPropertyDescriptor.class, "IntrospectionException", indexedReadMethodName));
 		}
 		// Implemented only for type checking.
 		findIndexedPropertyType(getIndexedReadMethod(), getIndexedWriteMethod());

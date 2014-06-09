@@ -155,12 +155,12 @@ public class FirebirdDialect extends DatabaseDialect {
 
 	@Override
 	public char getCloseQuote() {
-		return "'".charAt(0);
+		return '\'';
 	}
 
 	@Override
 	public char getOpenQuote() {
-		return "'".charAt(0);
+		return '\'';
 	}
 
 	@Override

@@ -29,6 +29,7 @@ import br.com.anteros.persistence.log.Logger;
 import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
+import br.com.anteros.persistence.util.ResourceUtils;
 
 public class H2Dialect extends DatabaseDialect {
 
@@ -131,14 +132,14 @@ public class H2Dialect extends DatabaseDialect {
 		sql.append(") }");
 
 		if (showSql) {
-			log.debug("Sql-> " + sql.toString() + " ##" + clientId);
+			log.debug(ResourceUtils.getMessage(H2Dialect.class, "showSql", sql.toString(), clientId));
 			if (inputParameters != null) {
-				log.debug("      Input parameters->" + " ##" + clientId);
+				log.debug(ResourceUtils.getMessage(H2Dialect.class, "showSql1", clientId));
 				for (Object parameter : inputParameters)
 					log.debug("        " + parameter + " ##" + clientId);
 			}
 			if (outputParametersName != null) {
-				log.debug("      Output parameters->" + " ##" + clientId);
+				log.debug(ResourceUtils.getMessage(H2Dialect.class, "showSql2", clientId));
 				for (String opt : outputParametersName)
 					log.debug("        " + opt + " ##" + clientId);
 			}
@@ -258,7 +259,7 @@ public class H2Dialect extends DatabaseDialect {
 				.executeQuery("SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_NAME = '"
 						+ sequenceName.toUpperCase() + "'");
 
-		if (resultSet.next()){
+		if (resultSet.next()) {
 			return true;
 		}
 
@@ -267,24 +268,26 @@ public class H2Dialect extends DatabaseDialect {
 				.executeQuery("SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_NAME = '"
 						+ sequenceName + "'");
 
-		if (resultSet.next()) {		
+		if (resultSet.next()) {
 			return true;
 		}
 
 		return false;
 	}
-	
+
 	@Override
 	public String[] getColumnNamesFromTable(Connection conn, String tableName) throws SQLException, Exception {
 		List<String> result = new ArrayList<String>();
 		Statement statement = conn.createStatement();
-		ResultSet columns = statement.executeQuery("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME =  '"+tableName+"' ORDER BY ORDINAL_POSITION");
-		
+		ResultSet columns = statement
+				.executeQuery("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME =  '" + tableName
+						+ "' ORDER BY ORDINAL_POSITION");
+
 		while (columns.next()) {
 			result.add(columns.getString("COLUMN_NAME"));
 		}
-		
-		return result.toArray(new String[]{});
+
+		return result.toArray(new String[] {});
 	}
 
 }

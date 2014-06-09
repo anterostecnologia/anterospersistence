@@ -26,6 +26,7 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionSQL;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.impl.SQLQueryRunner;
+import br.com.anteros.persistence.util.ResourceUtils;
 
 public abstract class CommandSQL {
 
@@ -136,7 +137,7 @@ public abstract class CommandSQL {
 
 	@Override
 	public String toString() {
-		return "sql=" + sql + ", parâmetros=" + namedParameters + ", targetTableName=" + targetTableName;
+		return ResourceUtils.getMessage(CommandSQL.class, "toString", sql, namedParameters, targetTableName);
 	}
 
 	public List<NamedParameter> getNamedParameters() {
