@@ -24,6 +24,9 @@ import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import br.com.anteros.persistence.log.Logger;
 import br.com.anteros.persistence.log.LoggerProvider;
@@ -39,6 +42,9 @@ public class OracleDialect extends DatabaseDialect {
 	public final static Object RAW_CONNECTION = new Object();
 	public final static int ORACLE_BLOB = 1;
 	public final static int ORACLE_CLOB = 2;
+
+	private final String SET_CLIENT_INFO_SQL = "{call DBMS_APPLICATION_INFO.SET_CLIENT_INFO(?)}";
+	private final String GET_CLIENT_INFO_SQL = "{call DBMS_APPLICATION_INFO.READ_CLIENT_INFO (?)}";;
 
 	public OracleDialect() {
 		super();
@@ -314,5 +320,28 @@ public class OracleDialect extends DatabaseDialect {
 	@Override
 	public boolean supportsIdentity() {
 		return false;
+	}
+
+	@Override
+	public void setConnectionClientInfo(Connection connection, String clientInfo) throws SQLException {
+		PreparedStatement prep = connection.prepareStatement(SET_CLIENT_INFO_SQL);
+		try {
+			prep.setString(1, clientInfo);
+			prep.execute();
+		} finally {
+			prep.close();
+		}
+	}
+
+	@Override
+	public String getConnectionClientInfo(Connection connection) throws SQLException {
+		CallableStatement stmt = connection.prepareCall(GET_CLIENT_INFO_SQL);
+		try {
+			stmt.registerOutParameter(1, java.sql.Types.VARCHAR);
+			stmt.execute();
+			return stmt.getString(1);
+		} finally {
+			stmt.close();
+		}
 	}
 }

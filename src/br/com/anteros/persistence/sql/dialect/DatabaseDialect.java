@@ -51,6 +51,8 @@ import br.com.anteros.persistence.util.StringUtils;
 
 public abstract class DatabaseDialect {
 
+	protected final String CLIENT_INFO = "ClientInfo";
+
 	private HashMap<Integer, String> jdbcTypes;
 	// protected List<ProcedureMetadata> nativeFunctions;
 	private Map<Class<?>, ColumnDatabaseType> javaTypes = new HashMap<Class<?>, ColumnDatabaseType>();
@@ -1306,6 +1308,27 @@ public abstract class DatabaseDialect {
 		}
 		return result;
 	}
+
+	/**
+	 * Define informações da aplicação cliente na conexão com o banco de dados.
+	 * 
+	 * @param connection
+	 *            Conexão.
+	 * @param clientInfo
+	 *            Informações da aplicação cliente.
+	 * @throws SQLException
+	 */
+	public abstract void setConnectionClientInfo(Connection connection, String clientInfo) throws SQLException;
+
+	/**
+	 * Retorna informações da aplicação cliente na conexão com o banco de dados.
+	 * 
+	 * @param connection
+	 * @param infoKey
+	 * @return
+	 * @throws SQLException
+	 */
+	public abstract String getConnectionClientInfo(Connection connection) throws SQLException;
 
 	// public abstract List<ProcedureMetadata> getNativeFunctions() throws
 	// Exception;

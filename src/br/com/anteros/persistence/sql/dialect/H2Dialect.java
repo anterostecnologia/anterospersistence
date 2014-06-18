@@ -290,4 +290,13 @@ public class H2Dialect extends DatabaseDialect {
 		return result.toArray(new String[] {});
 	}
 
+	@Override
+	public void setConnectionClientInfo(Connection connection, String clientInfo) throws SQLException {
+	}
+
+	@Override
+	public String getConnectionClientInfo(Connection connection) throws SQLException {
+		return "";
+	}
+
 }

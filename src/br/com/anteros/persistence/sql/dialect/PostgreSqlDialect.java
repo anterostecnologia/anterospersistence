@@ -20,11 +20,18 @@ import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.MessageFormat;
 
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 
 public class PostgreSqlDialect extends DatabaseDialect {
+
+	private final String SET_CLIENT_INFO_SQL = "SET application_name = '?'";
+	private final String GET_CLIENT_INFO_SQL = "SHOW application_name";
 
 	protected void initializeTypes() {
 		super.initializeTypes();
@@ -176,5 +183,56 @@ public class PostgreSqlDialect extends DatabaseDialect {
 	public Writer writeColumnSequenceDefaultValue(Writer schemaWriter, String sequenceName) throws Exception {
 		schemaWriter.write(" DEFAULT nextval('"+sequenceName+"') ");
 		return schemaWriter;
+	}
+
+	@Override
+	public void setConnectionClientInfo(Connection connection, String clientInfo) throws SQLException {
+		PreparedStatement stmt = connection.prepareStatement(GET_CLIENT_INFO_SQL);
+		try {
+			ResultSet rs = stmt.executeQuery();
+			try {
+				if (rs.next()) {
+					String applicationName = rs.getString(1);
+     				clientInfo = applicationName + " # " + clientInfo;
+				}
+			} finally {
+				rs.close();
+			}
+		} finally {
+			stmt.close();
+		}
+
+		PreparedStatement prep = connection.prepareStatement(MessageFormat.format(SET_CLIENT_INFO_SQL, clientInfo));
+		try {
+			prep.execute();
+		} finally {
+			prep.close();
+		}
+	}
+ 
+	@Override
+	public  String getConnectionClientInfo(Connection connection) throws SQLException {
+		PreparedStatement stmt = connection.prepareStatement(GET_CLIENT_INFO_SQL);
+		try {
+			ResultSet rs = stmt.executeQuery();
+			try {
+				if (!rs.next())
+					return "";
+
+				String applicationName = rs.getString(1);
+
+				if (applicationName != null) {
+					String[] tokens = applicationName.split("#");
+					if (tokens.length > 1)
+						return tokens[1].trim();
+				}
+				return "";
+
+			} finally {
+				rs.close();
+			}
+		} finally {
+			stmt.close();
+		}
 	}
 }

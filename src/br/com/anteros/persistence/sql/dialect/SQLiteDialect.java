@@ -19,9 +19,8 @@ import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.SQLException;
 
-import br.com.anteros.persistence.log.Logger;
-import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 
@@ -79,7 +78,6 @@ public class SQLiteDialect extends DatabaseDialect {
 	public String getSequenceNextValString(String sequenceName) throws Exception {
 		throw new DatabaseDialectException(getClass().getName() + " não suporta sequence.");
 	}
-
 
 	@Override
 	public String getSelectForUpdateString() {
@@ -201,6 +199,15 @@ public class SQLiteDialect extends DatabaseDialect {
 	
 	@Override
 	public String getSelectForUpdateOfString() {
+		return "";
+	}
+
+	@Override
+	public void setConnectionClientInfo(Connection connection, String clientInfo) throws SQLException {
+	}
+
+	@Override
+	public String getConnectionClientInfo(Connection connection) throws SQLException {
 		return "";
 	}
 }

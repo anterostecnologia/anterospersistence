@@ -21,12 +21,23 @@ import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.SequenceGeneratorSchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 
 public class FirebirdDialect extends DatabaseDialect {
+
+	private final String GET_CLIENT_INFO_SQL = "SELECT "
+			+ "    rdb$get_context('USER_SESSION', ?) session_context "
+			+ "  , rdb$get_context('USER_TRANSACTION', ?) tx_context "
+			+ "FROM rdb$database";
+
+	private final String SET_CLIENT_INFO_SQL = "SELECT rdb$set_context('USER_SESSION', ?, ?) session_context "
+			+ "FROM rdb$database";
 
 	@Override
 	protected void initializeTypes() {
@@ -210,6 +221,76 @@ public class FirebirdDialect extends DatabaseDialect {
 		schemaWriter.write("DROP GENERATOR ");
 		schemaWriter.write(sequenceGeneratorSchema.getName());
 		return schemaWriter;
+	}
+
+	@Override
+	public void setConnectionClientInfo(Connection connection, String clientInfo) throws SQLException {
+
+		PreparedStatement stmt = connection.prepareStatement(SET_CLIENT_INFO_SQL);
+		try {
+
+			setClientInfo(stmt, CLIENT_INFO, clientInfo);
+
+		} finally {
+			stmt.close();
+		}
+	}
+
+	/**
+	 * Executa o SQL que define variáveis da sessão do banco de dados com
+	 * informações do cliente.
+	 * 
+	 * @param stmt
+	 * @param name
+	 * @param value
+	 * @throws SQLException
+	 */
+	private void setClientInfo(PreparedStatement stmt, String name, String value) throws SQLException {
+		stmt.clearParameters();
+		stmt.setString(1, name);
+		stmt.setString(2, value);
+		ResultSet rs = stmt.executeQuery();
+		try {
+			if (!rs.next())
+				throw new SQLException(
+						"Expected result from RDB$SET_CONTEXT call");
+
+			// needed, since the value is set on fetch!!!
+			rs.getInt(1);
+
+		} finally {
+			rs.close();
+		}
+	}
+
+	@Override
+	public String getConnectionClientInfo(Connection connection) throws SQLException {
+		PreparedStatement stmt = connection.prepareStatement(GET_CLIENT_INFO_SQL);
+		try {
+			stmt.setString(1, CLIENT_INFO);
+			stmt.setString(2, CLIENT_INFO);
+
+			ResultSet rs = stmt.executeQuery();
+			try {
+				if (!rs.next())
+					return "";
+
+				String sessionContext = rs.getString(1);
+				String transactionContext = rs.getString(2);
+
+				if (transactionContext != null)
+					return transactionContext;
+				else if (sessionContext != null)
+					return sessionContext;
+				else
+					return "";
+
+			} finally {
+				rs.close();
+			}
+		} finally {
+			stmt.close();
+		}
 	}
 
 }

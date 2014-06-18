@@ -20,6 +20,7 @@ import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.SQLException;
 
 import br.com.anteros.persistence.log.Logger;
 import br.com.anteros.persistence.log.LoggerProvider;
@@ -397,5 +398,14 @@ public class MySQLDialect extends DatabaseDialect {
 	@Override
 	public int getIndexTypeOfProcedureMetadata() {
 		return 0;
+	}
+
+    @Override
+	public void setConnectionClientInfo(Connection connection, String clientInfo) throws SQLException {
+	}
+
+	@Override
+	public String getConnectionClientInfo(Connection connection) throws SQLException {
+		return "";
 	}
 }

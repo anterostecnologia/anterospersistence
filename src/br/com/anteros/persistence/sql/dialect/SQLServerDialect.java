@@ -19,6 +19,7 @@ import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.SQLException;
 
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
@@ -78,8 +79,10 @@ public class SQLServerDialect extends DatabaseDialect {
 	}
 
 	@Override
-	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name, Object[] inputParameters,
-			String[] outputParametersName, int[] outputTypes, int queryTimeOut, boolean showSql, String clientId) throws Exception {
+	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name,
+			Object[] inputParameters,
+			String[] outputParametersName, int[] outputTypes, int queryTimeOut, boolean showSql, String clientId)
+			throws Exception {
 		return null;
 	}
 
@@ -157,15 +160,26 @@ public class SQLServerDialect extends DatabaseDialect {
 	public boolean supportsIdentity() {
 		return true;
 	}
-	
+
 	@Override
-    public char getCloseQuote() {
+	public char getCloseQuote() {
 		return ']';
 	}
 
 	@Override
-    public char getOpenQuote() {
+	public char getOpenQuote() {
 		return '[';
 	}
+
+	@Override
+	public void setConnectionClientInfo(Connection connection, String clientInfo) throws SQLException {
+	}
+
+	@Override
+	public String getConnectionClientInfo(Connection connection) throws SQLException {
+		return "";
+	}
+
+
 
 }

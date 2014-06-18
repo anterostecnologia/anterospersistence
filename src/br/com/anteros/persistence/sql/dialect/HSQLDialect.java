@@ -19,6 +19,7 @@ import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.SQLException;
 
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
@@ -144,6 +145,15 @@ public class HSQLDialect extends DatabaseDialect {
 	@Override
 	public boolean supportsIdentity() {
 		return false;
+	}
+
+	@Override
+	public void setConnectionClientInfo(Connection connection, String clientInfo) throws SQLException {
+	}
+
+	@Override
+	public String getConnectionClientInfo(Connection connection) throws SQLException {
+		return "";
 	}
 
 }
