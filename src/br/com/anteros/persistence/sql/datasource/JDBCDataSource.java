@@ -124,9 +124,8 @@ public class JDBCDataSource implements DataSource {
 		this.url = url;
 	}
 
-	@Override
+
 	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

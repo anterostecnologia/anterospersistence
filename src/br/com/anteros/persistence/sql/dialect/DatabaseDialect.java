@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.ColumnSchema;
 import br.com.anteros.persistence.schema.definition.ForeignKeySchema;
@@ -46,7 +47,7 @@ import br.com.anteros.persistence.schema.definition.TableSchema;
 import br.com.anteros.persistence.schema.definition.UniqueKeySchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 import br.com.anteros.persistence.schema.definition.type.StoredParameterType;
-import br.com.anteros.persistence.session.type.LobType;
+import br.com.anteros.persistence.sql.binder.LobParameterBinding;
 import br.com.anteros.persistence.util.StringUtils;
 
 public abstract class DatabaseDialect {
@@ -209,15 +210,15 @@ public abstract class DatabaseDialect {
 			index = i;
 			if (type == CallableType.FUNCTION)
 				index = i + 1;
-			if (parameter instanceof LobType) {
-				if (((LobType) parameter).getType() == Types.BLOB) {
-					Blob blob = createTemporaryBlob(call.getConnection(), (byte[]) (((LobType) parameter).getValue()));
+			if (parameter instanceof LobParameterBinding) {
+				if (((LobParameterBinding) parameter).getType() == Types.BLOB) {
+					Blob blob = createTemporaryBlob(call.getConnection(), (byte[]) (((LobParameterBinding) parameter).getValue()));
 					if (blob != null)
 						call.setBlob(index + 1, blob);
 					else
 						call.setObject(index + 1, parameter);
-				} else if (((LobType) parameter).getType() == Types.CLOB) {
-					Clob clob = createTemporaryClob(call.getConnection(), (byte[]) (((LobType) parameter).getValue()));
+				} else if (((LobParameterBinding) parameter).getType() == Types.CLOB) {
+					Clob clob = createTemporaryClob(call.getConnection(), (byte[]) (((LobParameterBinding) parameter).getValue()));
 					if (clob != null)
 						call.setClob(index + 1, clob);
 					else

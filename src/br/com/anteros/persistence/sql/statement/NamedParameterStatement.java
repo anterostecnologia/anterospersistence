@@ -15,18 +15,11 @@
  ******************************************************************************/
 package br.com.anteros.persistence.sql.statement;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.sql.Blob;
-import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.sql.Types;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,8 +28,7 @@ import java.util.Map;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.parameter.NamedParameterParserResult;
 import br.com.anteros.persistence.parameter.SubstitutedParameter;
-import br.com.anteros.persistence.session.type.LobType;
-import br.com.anteros.persistence.util.ArrayUtils;
+import br.com.anteros.persistence.sql.binder.ParameterBinding;
 
 /**
  * 
@@ -46,7 +38,7 @@ import br.com.anteros.persistence.util.ArrayUtils;
 public class NamedParameterStatement {
 	private final PreparedStatement statement;
 
-	private final Map<?,?> indexMap;
+	private final Map<?, ?> indexMap;
 
 	public NamedParameterStatement(Connection connection, String query, NamedParameter[] params) throws SQLException {
 
@@ -160,33 +152,9 @@ public class NamedParameterStatement {
 	}
 
 	private void setParameterValueStatement(PreparedStatement stmt, Object parameter, int parameterIndex)
-			throws SQLException, IOException {
-		if (parameter instanceof LobType) {
-			LobType type = (LobType) parameter;
-			if (type.getValue() instanceof Clob) {
-				stmt.setClob(parameterIndex, (Clob) type.getValue());
-			} else if (type.getValue() instanceof Character[]) {
-				String value = new String(ArrayUtils.toPrimitive((Character[]) type.getValue()));
-				stmt.setString(parameterIndex, value);
-			} else if (type.getValue().getClass() == char[].class) {
-				String value = new String((char[]) type.getValue());
-				stmt.setString(parameterIndex, value);
-			} else if (type.getValue() instanceof String) {
-				stmt.setString(parameterIndex, (String) type.getValue());
-			} else if (type.getValue() instanceof Blob) {
-				stmt.setBlob(parameterIndex + 1, (Blob) type.getValue());
-			} else if (type.getValue() instanceof Byte[]) {
-				stmt.setObject(parameterIndex, type.getValue(), Types.BINARY);
-			} else if (type.getValue().getClass() == byte[].class) {
-				stmt.setObject(parameterIndex, type.getValue(), Types.BINARY);
-			} else if (type.getValue() instanceof Serializable) {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				ObjectOutputStream oos = new ObjectOutputStream(baos);
-				oos.writeObject(type.getValue());
-				oos.flush();
-				oos.close();
-				stmt.setObject(parameterIndex, baos.toByteArray(), Types.BINARY);
-			}
+			throws Exception {
+		if (parameter instanceof ParameterBinding) {
+			((ParameterBinding) parameter).bindValue(statement, parameterIndex);
 		} else
 			stmt.setObject(parameterIndex, parameter);
 	}

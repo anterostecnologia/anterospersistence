@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Map;
 
 import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
-import br.com.anteros.persistence.session.type.DateTimeType;
-import br.com.anteros.persistence.session.type.DateType;
+import br.com.anteros.persistence.sql.binder.DateParameterBinding;
+import br.com.anteros.persistence.sql.binder.DateTimeParameterBinding;
 
 /**
  * 
@@ -65,9 +65,9 @@ public class NamedParameter {
 
 	public Object getValue() {
 		if (temporalType != null && temporalType == TemporalType.DATE)
-			return new DateType(value);
+			return new DateParameterBinding(value);
 		else if (temporalType != null && temporalType == TemporalType.DATE_TIME)
-			return new DateTimeType(value);
+			return new DateTimeParameterBinding(value);
 		else
 			return value;
 	}

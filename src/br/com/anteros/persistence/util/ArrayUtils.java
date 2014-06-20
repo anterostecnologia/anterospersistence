@@ -15,6 +15,7 @@
  ******************************************************************************/
 package br.com.anteros.persistence.util;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -419,5 +420,21 @@ public class ArrayUtils {
 		}
 		return result;
 	}
+
+	public static Object[] subarray(Object[] array, int startIndexInclusive, int endIndexExclusive) {
+		int newSize = endIndexExclusive - startIndexInclusive;
+		Class<?> type = array.getClass().getComponentType();
+		if (newSize <= 0) {
+			return (Object[]) Array.newInstance(type, 0);
+		}
+		Object[] subarray = (Object[]) Array.newInstance(type, newSize);
+		System.arraycopy(array, startIndexInclusive, subarray, 0, newSize);
+		return subarray;
+	}
+	
+	public static boolean isEmpty(Object[] array) {
+        return array == null || array.length == 0;
+    }
+
 
 }
