@@ -17,6 +17,7 @@ package br.com.anteros.persistence.session;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -261,7 +262,7 @@ public interface SQLSession {
 
 	public DatabaseDialect getDialect();
 
-	public Connection getConnection() throws Exception;
+	public Connection getConnection() throws SQLException;
 
 	public AbstractSQLRunner getRunner() throws Exception;
 

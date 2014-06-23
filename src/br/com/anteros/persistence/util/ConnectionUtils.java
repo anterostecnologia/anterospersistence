@@ -15,6 +15,8 @@
  ******************************************************************************/
 package br.com.anteros.persistence.util;
 
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -24,25 +26,25 @@ import javax.sql.DataSource;
 
 public class ConnectionUtils {
 
-	private static ThreadLocal<Map<Object, Connection>> localConnection = new ThreadLocal<Map<Object, Connection>>();
+	private static ThreadLocal<Map<Object, Reference<Connection>>> localConnection = new ThreadLocal<Map<Object, Reference<Connection>>>();
 
 	public static Connection getConnection(DataSource dataSource) throws SQLException {
 		if (localConnection.get() == null)
-			localConnection.set(new HashMap<Object, Connection>());
-
-		Connection connection = localConnection.get().get(dataSource);
-		if (connection == null) {
-			connection = dataSource.getConnection();
-			localConnection.get().put(dataSource, connection);
+			localConnection.set(new HashMap<Object, Reference<Connection>>());
+		Reference<Connection> refConnection = localConnection.get().get(dataSource);
+		if (refConnection == null || refConnection.get() == null) {
+			Connection connection = dataSource.getConnection();
+			refConnection = new WeakReference<Connection>(connection);
+			localConnection.get().put(dataSource, refConnection);
 		}
-		return connection;
+		return refConnection.get();
 	}
 
 	public static void releaseConnection(DataSource dataSource) {
 		if (localConnection.get() == null)
-			localConnection.set(new HashMap<Object, Connection>());
-		Connection connection = localConnection.get().get(dataSource);
-		if (connection != null)
+			localConnection.set(new HashMap<Object, Reference<Connection>>());
+		Reference<Connection> refConnection = localConnection.get().get(dataSource);
+		if (refConnection != null)
 			localConnection.get().remove(dataSource);
 	}
 

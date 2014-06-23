@@ -84,9 +84,11 @@ public class AnterosProperties {
 	public static final String LOCK_TIMEOUT = "lock-timeout";
 
 	public static final String LOGGER_PROVIDER = "loggerProviderClassName";
-	
+
 	public static final String CONSOLE_LOG_LEVEL = "consoleLogLevel";
-	
+
 	public static final String LOGCAT_LOG_LEVEL = "logCatLogLevel";
+
+	public static final String CONNECTION_CLIENTINFO = "connectionClientInfo";
 
 }

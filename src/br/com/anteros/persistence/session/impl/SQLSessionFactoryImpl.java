@@ -15,13 +15,18 @@
  ******************************************************************************/
 package br.com.anteros.persistence.session.impl;
 
+import java.io.IOException;
 import java.sql.Connection;
+import java.sql.SQLException;
 
 import javax.sql.DataSource;
+
+import com.google.common.base.Strings;
 
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.session.AbstractSQLSessionFactory;
 import br.com.anteros.persistence.session.SQLSession;
+import br.com.anteros.persistence.session.configuration.AnterosProperties;
 import br.com.anteros.persistence.session.configuration.SessionFactoryConfiguration;
 import br.com.anteros.persistence.util.ConnectionUtils;
 
@@ -31,7 +36,8 @@ import br.com.anteros.persistence.util.ConnectionUtils;
  */
 public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 
-	public SQLSessionFactoryImpl(EntityCacheManager entityCacheManager, DataSource dataSource, SessionFactoryConfiguration configuration)
+	public SQLSessionFactoryImpl(EntityCacheManager entityCacheManager, DataSource dataSource,
+			SessionFactoryConfiguration configuration)
 			throws Exception {
 		super(entityCacheManager, dataSource, configuration);
 	}
@@ -40,10 +46,18 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	public SQLSession getSession() throws Exception {
 		if (localSession.get() == null) {
 			Connection connection = ConnectionUtils.getConnection(this.getDatasource());
-			localSession.set(new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(), this.getDialect(), this
-					.isShowSql(), this.isFormatSql(), this.getQueryTimeout()));
+			setConfigurationClientInfo(connection);
+			localSession.set(new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(),
+					this.getDialect(), this
+							.isShowSql(), this.isFormatSql(), this.getQueryTimeout()));
 		}
 		return localSession.get();
+	}
+
+	private void setConfigurationClientInfo(Connection connection) throws IOException, SQLException {
+		String clientInfo = this.getConfiguration().getProperty(AnterosProperties.CONNECTION_CLIENTINFO);
+		if (clientInfo != null && clientInfo.length() > 0)
+			this.getDialect().setConnectionClientInfo(connection, clientInfo);
 	}
 
 	@Override
@@ -52,17 +66,23 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	}
 
 	@Override
-	public SQLSession getNewSession() throws Exception {
-		return new SQLSessionImpl(this, this.getDatasource().getConnection(), this.getEntityCacheManager(), new SQLQueryRunner(), this.getDialect(),
-				this.isShowSql(), this.isFormatSql(), this.getQueryTimeout());
-	}
-
-	@Override
 	public void beforeGenerateDDL() throws Exception {
 	}
 
 	@Override
-	public void afterGenerateDDL() throws Exception{
+	public void afterGenerateDDL() throws Exception {
+	}
+
+	@Override
+	public Connection validateConnection(Connection conn) throws SQLException {
+		if (conn != null && !conn.isValid(0)) {
+			ConnectionUtils.releaseConnection(this.getDatasource());
+			conn = null;
+		}
+		if (conn == null) {
+			conn = ConnectionUtils.getConnection(this.getDatasource());
+		}
+		return conn;
 	}
 
 }
