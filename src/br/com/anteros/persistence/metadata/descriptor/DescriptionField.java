@@ -63,7 +63,6 @@ public class DescriptionField {
 	private EntityCache targetEntity;
 	private DescriptionMappedBy mappedBy;
 	private List<DescriptionColumn> columns = new ArrayList<DescriptionColumn>();
-	private List<DescriptionColumn> primaryKeys = new ArrayList<DescriptionColumn>();
 	private String tableName;
 	private String schema;
 	private String catalog;
@@ -88,8 +87,6 @@ public class DescriptionField {
 	private ConnectivityType importConnectivityType = ConnectivityType.ALL_CONNECTION;
 	private ConnectivityType exportConnectivityType = ConnectivityType.ALL_CONNECTION;
 	private String[] exportColumns;
-	private static final DateFormatter dateFormat = new DateFormatter(TemporalType.DATE);
-	private static final DateFormatter dateTimeFormat = new DateFormatter(TemporalType.DATE_TIME);
 	private String convert;
 	private String mapKeyConvert;
 
@@ -118,7 +115,11 @@ public class DescriptionField {
 	}
 
 	public boolean hasPrimaryKey() {
-		return primaryKeys.size() > 0;
+		for (DescriptionColumn column : columns){
+			if (column.isPrimaryKey())
+				return true;
+		}
+		return false;
 	}
 
 	public Field getField() {
@@ -447,8 +448,6 @@ public class DescriptionField {
 			}
 		}
 		descriptionColumn.setDescriptionField(this);
-		if (descriptionColumn.getColumnType() == ColumnType.PRIMARY_KEY)
-			this.primaryKeys.add(descriptionColumn);
 		if (descriptionColumn.isMapKeyColumn())
 			this.mapKeyColumn = descriptionColumn;
 		if (descriptionColumn.isElementColumn())
@@ -472,16 +471,13 @@ public class DescriptionField {
 		this.mapKeyColumn = mapKeyColumn;
 	}
 
-	public void addPrimaryKey(DescriptionColumn primaryKey) {
-		this.primaryKeys.add(primaryKey);
-	}
-
 	public List<DescriptionColumn> getPrimaryKeys() {
-		return primaryKeys;
-	}
-
-	public void setPrimaryKeys(List<DescriptionColumn> primaryKeys) {
-		this.primaryKeys = primaryKeys;
+		List<DescriptionColumn> result = new ArrayList<DescriptionColumn>();
+		for (DescriptionColumn column : columns) {
+			if (column.isPrimaryKey())
+				result.add(column);
+		}
+		return result;
 	}
 
 	@Override

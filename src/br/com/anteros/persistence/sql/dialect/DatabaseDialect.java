@@ -679,125 +679,318 @@ public abstract class DatabaseDialect {
 	}
 
 	public boolean checkTableExists(Connection conn, String tableName) throws SQLException, Exception {
-		ResultSet resultSet = conn.getMetaData().getTables(null, null, tableName.toUpperCase(),
+		DatabaseMetaData metaData = conn.getMetaData();
+		ResultSet resultSet = metaData.getTables((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(),
 				new String[] { "TABLE" });
-		if (resultSet.next())
-			return true;
+		try {
+			if (resultSet.next()) {
+				return true;
+			}
+			resultSet.close();
 
-		resultSet = conn.getMetaData().getTables(null, null, tableName.toLowerCase(), new String[] { "TABLE" });
-		if (resultSet.next())
-			return true;
+			resultSet = metaData.getTables((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(),
+					new String[] { "TABLE" });
+			if (resultSet.next()) {
+				return true;
+			}
+		} finally {
+			if (resultSet != null)
+				resultSet.close();
+		}
 
 		return false;
 	}
 
 	public boolean checkSequenceExists(Connection conn, String sequenceName) throws SQLException, Exception {
-		ResultSet resultSet = conn.getMetaData().getTables(null, null, sequenceName.toLowerCase(),
+		DatabaseMetaData metaData = conn.getMetaData();
+		ResultSet resultSet = metaData.getTables((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), sequenceName.toLowerCase(),
 				new String[] { "SEQUENCE" });
-		if (resultSet.next())
-			return true;
+		try {
+			if (resultSet.next()) {
+				return true;
+			}
+			resultSet.close();
 
-		resultSet = conn.getMetaData().getTables(null, null, sequenceName.toUpperCase(), new String[] { "SEQUENCE" });
-		if (resultSet.next())
-			return true;
+			resultSet = metaData.getTables((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), sequenceName.toUpperCase(),
+					new String[] { "SEQUENCE" });
+			if (resultSet.next()) {
+				return true;
+			}
+		} finally {
+			if (resultSet != null)
+				resultSet.close();
+		}
+
 		return false;
 	}
 
 	public boolean checkTableAndColumnExists(Connection conn, String tableName, String columnName) throws SQLException,
 			Exception {
-		ResultSet resultSet = conn.getMetaData().getColumns(null, null, tableName.toLowerCase(),
+		DatabaseMetaData metaData = conn.getMetaData();
+		ResultSet resultSet = metaData.getColumns((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(),
 				columnName.toLowerCase());
-		if (resultSet.next())
-			return true;
-
-		resultSet = conn.getMetaData().getColumns(null, null, tableName.toUpperCase(), columnName.toUpperCase());
-		if (resultSet.next())
-			return true;
-		return false;
-	}
-
-	public boolean checkForeignKeyExists(Connection conn, String tableName, String foreignKeyName) throws Exception {
-		DatabaseMetaData metaData = conn.getMetaData();
-
-		ResultSet resultSet = metaData.getImportedKeys("", "", tableName.toLowerCase());
-		if ((resultSet != null) && (resultSet.next())) {
-			do {
-				if (foreignKeyName.equalsIgnoreCase(resultSet.getString("FK_NAME")))
-					return true;
-			} while (resultSet.next());
+		try {
+			if (resultSet.next()) {
+				return true;
+			}
 			resultSet.close();
-			return false;
-		}
 
-		resultSet = metaData.getImportedKeys("", "", tableName.toUpperCase());
-		if ((resultSet != null) && (resultSet.next())) {
-			do {
-				if (foreignKeyName.equalsIgnoreCase(resultSet.getString("FK_NAME")))
-					return true;
-			} while (resultSet.next());
-			resultSet.close();
+			resultSet = metaData.getColumns((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(),
+					columnName.toUpperCase());
+			if (resultSet.next()) {
+				return true;
+			}
+		} finally {
+			if (resultSet != null)
+				resultSet.close();
 		}
 		return false;
 	}
 
-	public boolean checkIndexExists(Connection conn, String tableName, String indexName) throws Exception {
+	public boolean checkForeignKeyExistsByName(Connection conn, String tableName, String foreignKeyName) throws Exception {
 		DatabaseMetaData metaData = conn.getMetaData();
 
-		ResultSet resultSet = metaData.getIndexInfo("", "", tableName.toLowerCase(), false, false);
-		if ((resultSet != null) && (resultSet.next())) {
-			do {
-				if (indexName.equalsIgnoreCase(resultSet.getString("INDEX_NAME")))
-					return true;
-			} while (resultSet.next());
+		ResultSet resultSet = metaData.getImportedKeys((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase());
+		try {
+			if ((resultSet != null) && (resultSet.next())) {
+				do {
+					if (foreignKeyName.equalsIgnoreCase(resultSet.getString("FK_NAME"))) {
+						return true;
+					}
+				} while (resultSet.next());
+				return false;
+			}
+
 			resultSet.close();
-			return false;
-		}
-		
-		resultSet = metaData.getIndexInfo("", "", tableName.toUpperCase(), false, false);
-		if ((resultSet != null) && (resultSet.next())) {
-			do {
-				if (indexName.equalsIgnoreCase(resultSet.getString("INDEX_NAME")))
-					return true;
-			} while (resultSet.next());
-			resultSet.close();
+
+			resultSet = metaData.getImportedKeys((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase());
+			if ((resultSet != null) && (resultSet.next())) {
+				do {
+					if (foreignKeyName.equalsIgnoreCase(resultSet.getString("FK_NAME"))) {
+						return true;
+					}
+				} while (resultSet.next());
+			}
+
+		} finally {
+			if (resultSet != null)
+				resultSet.close();
 		}
 		return false;
+	}
+
+	public Map<String, ForeignKeyMetadata> getAllForeignKeysByTable(Connection conn, String tableName) throws Exception {
+		DatabaseMetaData metaData = conn.getMetaData();
+		Map<String, ForeignKeyMetadata> fks = new HashMap<String, ForeignKeyMetadata>();
+		ResultSet resultSet = metaData.getImportedKeys((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase());
+		ForeignKeyMetadata fk = null;
+		boolean found = false;
+		while (resultSet.next()) {
+			if (fks.containsKey(resultSet.getString("FK_NAME")))
+				fk = fks.get(resultSet.getString("FK_NAME"));
+			else {
+				fk = new ForeignKeyMetadata(resultSet.getString("FK_NAME"));
+				fks.put(fk.fkName, fk);
+			}
+
+			fk.addColumn(resultSet.getString("FKCOLUMN_NAME"));
+			found = true;
+		}
+		resultSet.close();
+
+		if (!found) {
+			resultSet = metaData.getImportedKeys((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase());
+			while (resultSet.next()) {
+				if (fks.containsKey(resultSet.getString("FK_NAME")))
+					fk = fks.get(resultSet.getString("FK_NAME"));
+				else {
+					fk = new ForeignKeyMetadata(resultSet.getString("FK_NAME"));
+					fks.put(fk.fkName, fk);
+				}
+
+				fk.addColumn(resultSet.getString("FKCOLUMN_NAME"));
+			}
+			resultSet.close();
+		}
+
+		return fks;
+	}
+
+	public boolean checkIndexExistsByName(Connection conn, String tableName, String indexName) throws Exception {
+		DatabaseMetaData metaData = conn.getMetaData();
+
+		ResultSet resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(),
+				false, false);
+		try {
+			if ((resultSet != null) && (resultSet.next())) {
+				do {
+					if (indexName.equalsIgnoreCase(resultSet.getString("INDEX_NAME"))) {
+						return true;
+					}
+				} while (resultSet.next());
+				return false;
+			}
+
+			resultSet.close();
+
+			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(), false,
+					false);
+			if ((resultSet != null) && (resultSet.next())) {
+				do {
+					if (indexName.equalsIgnoreCase(resultSet.getString("INDEX_NAME"))) {
+						return true;
+					}
+				} while (resultSet.next());
+			}
+		} finally {
+			if (resultSet != null)
+				resultSet.close();
+		}
+		return false;
+	}
+
+	public Map<String, IndexMetadata> getAllIndexesByTable(Connection conn, String tableName) throws Exception {
+		Map<String, IndexMetadata> indexes = new HashMap<String, IndexMetadata>();
+		DatabaseMetaData metaData = conn.getMetaData();
+
+		ResultSet resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(),
+				false, false);
+		IndexMetadata index = null;
+		boolean found = false;
+		while (resultSet.next()) {
+			if (resultSet.getString("COLUMN_NAME") != null) {
+				if (indexes.containsKey(resultSet.getString("INDEX_NAME")))
+					index = indexes.get(resultSet.getString("INDEX_NAME"));
+				else {
+					index = new IndexMetadata(resultSet.getString("INDEX_NAME"));
+					indexes.put(index.indexName, index);
+				}
+				index.unique = !resultSet.getBoolean("NON_UNIQUE");
+				index.addColumn(resultSet.getString("COLUMN_NAME"));
+			}
+			found = true;
+		}
+		resultSet.close();
+
+		if (!found) {
+			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(), false,
+					false);
+			while (resultSet.next()) {
+				if (resultSet.getString("COLUMN_NAME") != null) {
+					if (indexes.containsKey(resultSet.getString("INDEX_NAME")))
+						index = indexes.get(resultSet.getString("INDEX_NAME"));
+					else {
+						index = new IndexMetadata(resultSet.getString("INDEX_NAME"));
+						indexes.put(index.indexName, index);
+					}
+					index.unique = !resultSet.getBoolean("NON_UNIQUE");
+					index.addColumn(resultSet.getString("COLUMN_NAME"));
+				}
+			}
+			resultSet.close();
+		}
+		return indexes;
+	}
+
+	public Map<String, IndexMetadata> getAllUniqueIndexesByTable(Connection conn, String tableName) throws Exception {
+		Map<String, IndexMetadata> indexes = new HashMap<String, IndexMetadata>();
+		DatabaseMetaData metaData = conn.getMetaData();
+
+		ResultSet resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(),
+				true, false);
+		IndexMetadata index = null;
+		boolean found = false;
+		while (resultSet.next()) {
+			if ((resultSet.getString("COLUMN_NAME") != null) && (!resultSet.getBoolean("NON_UNIQUE"))) {
+				if (indexes.containsKey(resultSet.getString("INDEX_NAME")))
+					index = indexes.get(resultSet.getString("INDEX_NAME"));
+				else {
+					index = new IndexMetadata(resultSet.getString("INDEX_NAME"));
+					indexes.put(index.indexName, index);
+				}
+				index.unique = !resultSet.getBoolean("NON_UNIQUE");
+				index.addColumn(resultSet.getString("COLUMN_NAME"));
+			}
+			found = true;
+		}
+		resultSet.close();
+
+		if (!found) {
+			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(), true,
+					false);
+			while (resultSet.next()) {
+				if ((resultSet.getString("COLUMN_NAME") != null) && (!resultSet.getBoolean("NON_UNIQUE"))) {
+					System.out.println(resultSet.getString("INDEX_NAME") + " : " + resultSet.getString("COLUMN_NAME"));
+					if (indexes.containsKey(resultSet.getString("INDEX_NAME")))
+						index = indexes.get(resultSet.getString("INDEX_NAME"));
+					else {
+						index = new IndexMetadata(resultSet.getString("INDEX_NAME"));
+						indexes.put(index.indexName, index);
+					}
+					index.unique = !resultSet.getBoolean("NON_UNIQUE");
+					index.addColumn(resultSet.getString("COLUMN_NAME"));
+				}
+			}
+			resultSet.close();
+		}
+		return indexes;
 	}
 
 	public boolean checkUniqueKeyExists(Connection conn, String tableName, String uniqueKeyName) throws Exception {
 		DatabaseMetaData metaData = conn.getMetaData();
 
-		ResultSet resultSet = metaData.getIndexInfo("", "", tableName.toLowerCase(), false, false);
-		if ((resultSet != null) && (resultSet.next())) {
-			do {
-				if (uniqueKeyName.equalsIgnoreCase(resultSet.getString("INDEX_NAME")))
-					return true;
-			} while (resultSet.next());
+		ResultSet resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(),
+				true, false);
+		try {
+			if ((resultSet != null) && (resultSet.next())) {
+				do {
+					if (uniqueKeyName.equalsIgnoreCase(resultSet.getString("INDEX_NAME")))
+						return true;
+
+				} while (resultSet.next());
+				return false;
+			}
 			resultSet.close();
-			return false;
-		}
-		
-		resultSet = metaData.getIndexInfo("", "", tableName.toUpperCase(), false, false);
-		if ((resultSet != null) && (resultSet.next())) {
-			do {
-				if (uniqueKeyName.equalsIgnoreCase(resultSet.getString("INDEX_NAME")))
-					return true;
-			} while (resultSet.next());
-			resultSet.close();
+
+			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(), true,
+					false);
+			if ((resultSet != null) && (resultSet.next())) {
+				do {
+					if (uniqueKeyName.equalsIgnoreCase(resultSet.getString("INDEX_NAME")))
+						return true;
+				} while (resultSet.next());
+			}
+		} finally {
+			if (resultSet != null)
+				resultSet.close();
 		}
 		return false;
 	}
 
 	public String[] getColumnNamesFromTable(Connection conn, String tableName) throws SQLException, Exception {
-		String tableToSearch = tableName.toLowerCase();
-		if (!checkTableExists(conn, tableToSearch)) {
-			tableToSearch = tableName.toUpperCase();
-		}
 		List<String> result = new ArrayList<String>();
-		ResultSet columns = conn.getMetaData().getColumns(null, null, tableToSearch, "%");
-		while (columns.next()) {
-			result.add(columns.getString("COLUMN_NAME"));
+		
+		DatabaseMetaData metaData = conn.getMetaData();
+		ResultSet columns = conn.getMetaData().getColumns((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(), "%");
+		try {
+			if ((columns != null) && (columns.next())) {
+				do {
+					result.add(columns.getString("COLUMN_NAME"));
+				} while (columns.next());
+			} else {
+				columns.close();
+				columns = conn.getMetaData().getColumns((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(), "%");
+				if ((columns != null) && (columns.next())) {
+					do {
+						result.add(columns.getString("COLUMN_NAME"));
+					} while (columns.next());
+				}
+			}
+		} finally {
+			if (columns != null)
+				columns.close();
 		}
+
 		return result.toArray(new String[] {});
 	}
 
@@ -1308,6 +1501,11 @@ public abstract class DatabaseDialect {
 			functionMetaData.close();
 		}
 		return result;
+	}
+	
+
+	public String getSchema(DatabaseMetaData metadata) throws Exception {
+		return null;
 	}
 
 	/**

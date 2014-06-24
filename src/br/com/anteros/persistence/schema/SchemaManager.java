@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import br.com.anteros.persistence.metadata.EntityCache;
@@ -51,6 +52,8 @@ import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 import br.com.anteros.persistence.schema.exception.SchemaGeneratorException;
 import br.com.anteros.persistence.schema.type.TableCreationType;
 import br.com.anteros.persistence.session.SQLSession;
+import br.com.anteros.persistence.sql.dialect.ForeignKeyMetadata;
+import br.com.anteros.persistence.sql.dialect.IndexMetadata;
 import br.com.anteros.persistence.util.StringUtils;
 
 public class SchemaManager implements Comparator<TableSchema> {
@@ -1242,6 +1245,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 		}
 	}
 
+
 	/**
 	 * Extende as tabelas do schema
 	 */
@@ -1260,6 +1264,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 		 */
 		boolean writeCommentCreateTable = true;
 		for (TableSchema tableSchema : tables) {
+			//System.out.println("EXTENDENDO TABELA "+tableSchema.getName());
 			if (!session.getDialect().checkTableExists(session.getConnection(), tableSchema.getName())) {
 				try {
 					/*
@@ -1273,10 +1278,15 @@ public class SchemaManager implements Comparator<TableSchema> {
 					}
 				}
 			} else {
+				//System.out.println("  BUSCANDO INDICES");
+				Map<String, IndexMetadata> allIndexes = session.getDialect().getAllIndexesByTable(session.getConnection(), tableSchema.getName());
+				//System.out.println("  BUSCOU INDICES");
+				
 				/*
 				 * Verifica se a coluna existe na tabela. Se não existir
 				 * adiciona.
 				 */
+				//System.out.println("  BUSCANDO COLUNAS");
 				String[] columnNames = session.getDialect().getColumnNamesFromTable(session.getConnection(),
 						tableSchema.getName());
 				for (ColumnSchema columnSchema : tableSchema.getColumns()) {
@@ -1296,7 +1306,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 							if (isWriteToDatabase())
 								tableSchema.addColumnOnDatabase(session, columnSchema);
 							else {
-								tableSchema.addColumn(session,columnSchema, createSchemaWriter);
+								tableSchema.addColumn(session, columnSchema, createSchemaWriter);
 								writeEndDelimiter(createSchemaWriter);
 							}
 						} catch (Exception ex) {
@@ -1306,13 +1316,14 @@ public class SchemaManager implements Comparator<TableSchema> {
 						}
 					}
 				}
+				//System.out.println("  VERIFICOU COLUNAS");
 
 				/*
 				 * Verifica se existe o índice. Se não existir cria.
 				 */
 				for (IndexSchema indexSchema : tableSchema.getIndexes()) {
-					if (!session.getDialect().checkIndexExists(session.getConnection(), tableSchema.getName(),
-							indexSchema.getName())) {
+					//System.out.println("  CHECANDO INDICE "+indexSchema.getName());
+					if (!checkIndexExists(indexSchema.getName(),indexSchema.getColumnNames(),allIndexes)) {
 						try {
 							if (isWriteToDatabase()) {
 								indexSchema.createOnDatabase(session);
@@ -1330,17 +1341,19 @@ public class SchemaManager implements Comparator<TableSchema> {
 			}
 		}
 
+		//System.out.println("CONCLUÍU EXTEND TABELAS");
 		/*
 		 * Verifica as constraints
 		 */
 		boolean writeCommentUniqueConstraint = true;
 		for (TableSchema tableSchema : tables) {
+			//System.out.println("VERIFICANDO UNIQUE CONSTRAINTS "+tableSchema.getName());
+			Map<String, IndexMetadata> allIndexes = session.getDialect().getAllIndexesByTable(session.getConnection(), tableSchema.getName());			
 			/*
 			 * Verifica se existe a chave única. Se não existir cria.
 			 */
 			for (UniqueKeySchema uniqueKeySchema : tableSchema.getUniqueKeys()) {
-				if (!session.getDialect().checkUniqueKeyExists(session.getConnection(), tableSchema.getName(),
-						uniqueKeySchema.getName())) {
+				if (!checkUniqueKeyExists(uniqueKeySchema.getName(), uniqueKeySchema.getColumnNames(), allIndexes)) {
 					if (!isWriteToDatabase() && writeCommentUniqueConstraint) {
 						createSchemaWriter
 								.write("/******************************************************************************/\n");
@@ -1367,6 +1380,9 @@ public class SchemaManager implements Comparator<TableSchema> {
 
 		boolean writeCommentForeignKey = true;
 		for (TableSchema tableSchema : tables) {
+			//System.out.println("VERIFICANDO FOREIGNKEY CONSTRAINTS "+tableSchema.getName());
+			Map<String, ForeignKeyMetadata> allFks = session.getDialect().getAllForeignKeysByTable(session.getConnection(), tableSchema.getName());
+			
 			/*
 			 * Verifica se existe a chave estrangeira. Se não existir cria.
 			 */
@@ -1380,8 +1396,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 							.write("/******************************************************************************/\n");
 					writeCommentForeignKey = false;
 				}
-				if (!session.getDialect().checkForeignKeyExists(session.getConnection(), tableSchema.getName(),
-						foreignKeySchema.getName())) {
+				if (!checkForeignKeyExists(foreignKeySchema.getName(), foreignKeySchema.getColumnNames(), allFks)) {
 					try {
 						createForeignKeyConstraint(foreignKeySchema);
 					} catch (Exception ex) {
@@ -1398,6 +1413,51 @@ public class SchemaManager implements Comparator<TableSchema> {
 		if (!writeCommentForeignKey)
 			writeLineSeparator(createSchemaWriter);
 
+	}
+	
+	protected boolean checkIndexExists(String indexName, String[] columns, Map<String, IndexMetadata> indexes){
+		if (indexes.containsKey(indexName.toLowerCase()))
+			return true;
+		if (indexes.containsKey(indexName.toUpperCase()))
+			return true;
+
+		IndexMetadata index=null;
+		for (String k : indexes.keySet()) {
+			index = indexes.get(k);
+			if (index.containsAllColumns(columns))
+				return true;
+		}
+		return false;
+	}
+	
+	protected boolean checkUniqueKeyExists(String indexName, String[] columns, Map<String, IndexMetadata> indexes){
+		if (indexes.containsKey(indexName.toLowerCase()))
+			return true;
+		if (indexes.containsKey(indexName.toUpperCase()))
+			return true;
+
+		IndexMetadata index=null;
+		for (String k : indexes.keySet()) {
+			index = indexes.get(k);
+			if (index.containsAllColumns(columns))
+				return true;
+		}
+		return false;
+	}
+	
+	protected boolean checkForeignKeyExists(String indexName, String[] columns, Map<String, ForeignKeyMetadata> fks){
+		if (fks.containsKey(indexName.toLowerCase()))
+			return true;
+		if (fks.containsKey(indexName.toUpperCase()))
+			return true;
+
+		ForeignKeyMetadata fk=null;
+		for (String k : fks.keySet()) {
+			fk = fks.get(k);
+			if (fk.containsAllColumns(columns))
+				return true;
+		}
+		return false;
 	}
 
 	protected boolean writeHeaderCreateTable(boolean writeCommentCreateTable) throws IOException {

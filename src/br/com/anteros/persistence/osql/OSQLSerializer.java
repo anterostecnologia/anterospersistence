@@ -82,8 +82,9 @@ public class OSQLSerializer extends SerializerBase<OSQLSerializer> {
    }
 
     private void appendAsColumnName(Path<?> path) {
-        /*VER AQUI String column = ColumnMetadata.getName(path);
-        append(templates.quoteIdentifier(column));*/
+       //VER AQUI String column = ColumnMetadata.getName(path);
+    	String column = "NOME_GERADO";
+        append(templates.quoteIdentifier(column));
     }
 
     public List<Object> getConstants() {
@@ -101,8 +102,10 @@ public class OSQLSerializer extends SerializerBase<OSQLSerializer> {
      * @return
      */
     @SuppressWarnings("unchecked")
-    /*VER AQUI private List<Expression<?>> getIdentifierColumns(List<JoinExpression> joins, boolean alias) {
-        if (joins.size() == 1) {
+    private List<Expression<?>> getIdentifierColumns(List<JoinExpression> joins, boolean alias) {
+    	return Collections.emptyList();
+    	
+        /*VER AQUI if (joins.size() == 1) {
             JoinExpression join = joins.get(0);
             if (join.getTarget() instanceof RelationalPath) {
                 return ((RelationalPath)join.getTarget()).getColumns();
@@ -136,9 +139,9 @@ public class OSQLSerializer extends SerializerBase<OSQLSerializer> {
                 }
             }
             return rv;
-        }
+        }*/
 
-    }*/
+    }
 
     protected OSQLTemplates getTemplates() {
         return templates;
@@ -148,9 +151,9 @@ public class OSQLSerializer extends SerializerBase<OSQLSerializer> {
         handleTemplate(TemplateFactory.DEFAULT.create(template), Arrays.asList(args));
     }
 
-    /*VER AQUI private void handleJoinTarget(JoinExpression je) {
+    private void handleJoinTarget(JoinExpression je) {
         // type specifier
-        if (je.getTarget() instanceof RelationalPath && templates.isSupportsAlias()) {
+        /*VER AQUI if (je.getTarget() instanceof RelationalPath && templates.isSupportsAlias()) {
             final RelationalPath<?> pe = (RelationalPath<?>) je.getTarget();
             if (pe.getMetadata().getParent() == null) {
                 SchemaAndTable schemaAndTable = getSchemaAndTable(pe);
@@ -161,11 +164,12 @@ public class OSQLSerializer extends SerializerBase<OSQLSerializer> {
                 appendTableName(schemaAndTable.getTable());
                 append(templates.getTableAlias());
             }
-        }
+        }*/
+    	append("PRECISO_VER_AQUI");
         inJoin = true;
         handle(je.getTarget());
         inJoin = false;
-    }*/
+    }
 
     public void serialize(QueryMetadata metadata, boolean forCountRow) {
         templates.serialize(metadata, forCountRow, this);
@@ -250,7 +254,7 @@ public class OSQLSerializer extends SerializerBase<OSQLSerializer> {
             } else {
                 List<? extends Expression<?>> columns=null;
                 if (sqlSelect.isEmpty()) {
-                    //columns = getIdentifierColumns(joins, !templates.isCountDistinctMultipleColumns());
+                    columns = getIdentifierColumns(joins, !templates.isCountDistinctMultipleColumns());
                 } else {
                     columns = sqlSelect;
                 }
@@ -411,7 +415,7 @@ public class OSQLSerializer extends SerializerBase<OSQLSerializer> {
                     if (i > 0) {
                         append(templates.getJoinSymbol(je.getType()));
                     }
-                    //VER AQUI handleJoinTarget(je);
+                    handleJoinTarget(je);
                     if (je.getCondition() != null) {
                         append(templates.getOn()).handle(je.getCondition());
                     }
@@ -421,7 +425,7 @@ public class OSQLSerializer extends SerializerBase<OSQLSerializer> {
                         append(templates.getJoinSymbol(je.getType()));
                     }
                     serialize(JoinFlag.Position.BEFORE_TARGET, je.getFlags());
-                    //VER AQUI handleJoinTarget(je);
+                    handleJoinTarget(je);
                     serialize(JoinFlag.Position.BEFORE_CONDITION, je.getFlags());
                     if (je.getCondition() != null) {
                         append(templates.getOn()).handle(je.getCondition());
@@ -553,13 +557,14 @@ public class OSQLSerializer extends SerializerBase<OSQLSerializer> {
      * @return
      */
     public String asLiteral(Object o) {
+    	return "RETORNAR_LITERAL";
         /*VER AQUI Type type = javaTypeMapping.getType(o.getClass());
         if (type != null) {
             return templates.serialize(type.getLiteral(o), type.getSQLTypes()[0]);
         } else {
             throw new IllegalArgumentException("Unsupported literal type " + o.getClass().getName());
-        }*/
-    	return null;
+        }
+    	return null;*/
     }
 
     @Override

@@ -683,7 +683,7 @@ public class OSQLTemplates extends Templates {
      * @param context
      */
     public void serialize(QueryMetadata metadata, boolean forCountRow, OSQLSerializer context) {
-        //VER AQUI context.serializeForQuery(metadata, forCountRow);
+        context.serializeForQuery(metadata, forCountRow);
 
         if (!metadata.getFlags().isEmpty()) {
             context.serialize(Position.END, metadata.getFlags());

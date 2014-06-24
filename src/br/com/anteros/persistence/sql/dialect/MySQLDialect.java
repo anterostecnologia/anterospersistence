@@ -399,6 +399,11 @@ public class MySQLDialect extends DatabaseDialect {
 	public int getIndexTypeOfProcedureMetadata() {
 		return 0;
 	}
+	
+	@Override
+	public boolean requiresNamedPrimaryKeyConstraints() {
+		return true;
+	}
 
     @Override
 	public void setConnectionClientInfo(Connection connection, String clientInfo) throws SQLException {

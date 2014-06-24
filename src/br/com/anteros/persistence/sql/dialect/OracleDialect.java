@@ -19,21 +19,28 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Writer;
 import java.lang.reflect.Method;
 import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 
 import br.com.anteros.persistence.log.Logger;
 import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
+import br.com.anteros.persistence.schema.definition.ColumnSchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 import br.com.anteros.persistence.util.IOUtils;
 import br.com.anteros.persistence.util.ReflectionUtils;
+import br.com.anteros.persistence.util.StringUtils;
 
 public class OracleDialect extends DatabaseDialect {
 
@@ -269,7 +276,7 @@ public class OracleDialect extends DatabaseDialect {
 
 	@Override
 	public boolean requiresNamedPrimaryKeyConstraints() {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -344,4 +351,223 @@ public class OracleDialect extends DatabaseDialect {
 			stmt.close();
 		}
 	}
+	
+	@Override
+	public Map<String, IndexMetadata> getAllIndexesByTable(Connection conn, String tableName) throws Exception {
+		Map<String, IndexMetadata> indexes = new HashMap<String, IndexMetadata>();
+		Statement statement = conn.createStatement();
+		ResultSet resultSet = statement
+				.executeQuery("SELECT I.INDEX_NAME, IC.COLUMN_POSITION, IC.COLUMN_NAME, I.UNIQUENESS  FROM USER_INDEXES I  JOIN USER_IND_COLUMNS IC    ON I.INDEX_NAME = IC.INDEX_NAME WHERE I.TABLE_NAME = '"
+						+ tableName.toUpperCase() + "' ORDER BY I.INDEX_NAME, IC.COLUMN_POSITION ");
+		try {
+			IndexMetadata index = null;
+			while (resultSet.next()) {
+				if (resultSet.getString("COLUMN_NAME") != null) {
+					if (indexes.containsKey(resultSet.getString("INDEX_NAME")))
+						index = indexes.get(resultSet.getString("INDEX_NAME"));
+					else {
+						index = new IndexMetadata(resultSet.getString("INDEX_NAME"));
+						indexes.put(index.indexName, index);
+					}
+					index.unique = ("UNIQUE".equals(resultSet.getString("UNIQUENESS")));
+					index.addColumn(resultSet.getString("COLUMN_NAME"));
+				}
+			}
+		} finally {
+			if (resultSet != null)
+				resultSet.close();
+		}
+		return indexes;
+	}
+
+	@Override
+	public Map<String, IndexMetadata> getAllUniqueIndexesByTable(Connection conn, String tableName) throws Exception {
+		Map<String, IndexMetadata> indexes = new HashMap<String, IndexMetadata>();
+		Statement statement = conn.createStatement();
+		ResultSet resultSet = statement
+				.executeQuery("SELECT I.INDEX_NAME, IC.COLUMN_POSITION, IC.COLUMN_NAME, I.UNIQUENESS  FROM USER_INDEXES I  JOIN USER_IND_COLUMNS IC    ON I.INDEX_NAME = IC.INDEX_NAME WHERE I.TABLE_NAME = '"
+						+ tableName.toUpperCase()
+						+ "' AND I.UNIQUENESS = 'UNIQUE' ORDER BY I.INDEX_NAME, IC.COLUMN_POSITION ");
+		try {
+			IndexMetadata index = null;
+			while (resultSet.next()) {
+				if (resultSet.getString("COLUMN_NAME") != null) {
+					if (indexes.containsKey(resultSet.getString("INDEX_NAME")))
+						index = indexes.get(resultSet.getString("INDEX_NAME"));
+					else {
+						index = new IndexMetadata(resultSet.getString("INDEX_NAME"));
+						indexes.put(index.indexName, index);
+					}
+					index.unique = ("UNIQUE".equals(resultSet.getString("UNIQUENESS")));
+					index.addColumn(resultSet.getString("COLUMN_NAME"));
+				}
+			}
+		} finally {
+			if (resultSet != null)
+				resultSet.close();
+		}
+		return indexes;
+	}
+
+	@Override
+	public boolean checkUniqueKeyExists(Connection conn, String tableName, String uniqueKeyName) throws Exception {
+		Statement statement = conn.createStatement();
+		ResultSet resultSet = statement.executeQuery("SELECT I.INDEX_NAME FROM USER_INDEXES I  WHERE I.INDEX_NAME = '"
+				+ uniqueKeyName.toUpperCase() + "' AND I.UNIQUENESS = 'UNIQUE' ");
+		try {
+			if (resultSet.next()) {
+				return true;
+			}
+		} finally {
+			if (resultSet != null)
+				resultSet.close();
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean checkIndexExistsByName(Connection conn, String tableName, String indexName) throws Exception {
+		Statement statement = conn.createStatement();
+		ResultSet resultSet = statement.executeQuery("SELECT I.INDEX_NAME FROM USER_INDEXES I  WHERE I.INDEX_NAME = '"
+				+ indexName.toUpperCase() + "' ");
+		try {
+			if (resultSet.next()) {
+				return true;
+			}
+		} finally {
+			if (resultSet != null)
+				resultSet.close();
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean checkForeignKeyExistsByName(Connection conn, String tableName, String foreignKeyName)
+			throws Exception {
+		Statement statement = conn.createStatement();
+		ResultSet resultSet = statement
+				.executeQuery("SELECT UC.CONSTRAINT_NAME  FROM USER_CONSTRAINTS UC WHERE UC.TABLE_NAME = '"
+						+ tableName.toUpperCase() + "' AND   UC.CONSTRAINT_NAME = '" + foreignKeyName.toUpperCase()
+						+ "' AND  UC.CONSTRAINT_TYPE = 'R'");
+		try {
+			if (resultSet.next()) {
+				return true;
+			}
+		} finally {
+			if (resultSet != null)
+				resultSet.close();
+		}
+		return false;
+	}
+
+	@Override
+	public Map<String, ForeignKeyMetadata> getAllForeignKeysByTable(Connection conn, String tableName) throws Exception {
+
+		Map<String, ForeignKeyMetadata> fks = new HashMap<String, ForeignKeyMetadata>();
+		Statement statement = conn.createStatement();
+		ResultSet resultSet = statement
+				.executeQuery("SELECT A.CONSTRAINT_NAME, A.TABLE_NAME, A.COLUMN_NAME FROM USER_CONS_COLUMNS A  JOIN USER_CONSTRAINTS C ON A.OWNER = C.OWNER  AND A.CONSTRAINT_NAME = C.CONSTRAINT_NAME WHERE C.CONSTRAINT_TYPE = 'R' AND C.TABLE_NAME = '"
+						+ tableName.toUpperCase() + "'");
+		try {
+			ForeignKeyMetadata fk = null;
+			while (resultSet.next()) {
+				if (fks.containsKey(resultSet.getString("CONSTRAINT_NAME")))
+					fk = fks.get(resultSet.getString("CONSTRAINT_NAME"));
+				else {
+					fk = new ForeignKeyMetadata(resultSet.getString("CONSTRAINT_NAME"));
+					fks.put(fk.fkName, fk);
+				}
+
+				fk.addColumn(resultSet.getString("COLUMN_NAME"));
+			}
+		} finally {
+			if (resultSet != null)
+				resultSet.close();
+		}
+
+		return fks;
+	}
+	
+
+	@Override
+	public String getSchema(DatabaseMetaData metadata) throws Exception {
+		return metadata.getUserName();
+	}
+	
+	@Override
+	public Writer writeColumnDDLStatement(ColumnSchema columnSchema, Writer schemaWriter) throws Exception {
+		/*
+		 * Nome da coluna
+		 */
+		schemaWriter.write(getQuoted(columnSchema.getName()));
+		schemaWriter.write(" ");
+
+		if (!StringUtils.isEmpty(columnSchema.getColumnDefinition())) {
+			/*
+			 * Tipo definido pelo usuário
+			 */
+			schemaWriter.write(columnSchema.getColumnDefinition());
+		} else {
+
+			if (columnSchema.isAutoIncrement() && supportsIdentity() && !useColumnDefinitionForIdentity()
+					&& !columnSchema.hasSequenceName()) {
+				writeColumnIdentityClauseDDLStatement(schemaWriter);
+			} else {
+				/*
+				 * Tipo SQL
+				 */
+				schemaWriter.write(columnSchema.getTypeSql());
+				/*
+				 * Tamanho ou Precisão/Escala
+				 */
+				if (columnSchema.getSize() > 0) {
+					schemaWriter.write("(" + columnSchema.getSize());
+					if (columnSchema.getSubSize() > 0)
+						schemaWriter.write("," + columnSchema.getSubSize());
+					schemaWriter.write(")");
+				}
+				
+
+				/*
+				 * Se suporta sequence como default value
+				 */
+				if (supportsSequenceAsADefaultValue() && columnSchema.hasSequenceName()) {
+					writeColumnSequenceDefaultValue(schemaWriter, columnSchema.getSequenceName());
+				}
+
+				/*
+				 * Comentário da coluna
+				 */
+				// FALTA VER COMO FAZER
+
+				/*
+				 * Se a coluna possuí um valor default
+				 */
+				if ((columnSchema.getDefaultValue() != null) && (!"".equals(columnSchema.getDefaultValue())))
+					schemaWriter.write(" DEFAULT " + columnSchema.getDefaultValue());
+
+				/*
+				 * Se a coluna for not null
+				 */
+				if (columnSchema.getNullable())
+					writeColumnNullClauseDDLStatement(schemaWriter);
+				else
+					writeColumnNotNullClauseDDLStatement(schemaWriter);
+
+				/*
+				 * Se a coluna for de Identidade (auto incremento)
+				 */
+				if (columnSchema.isAutoIncrement() && supportsIdentity() && !columnSchema.hasSequenceName()) {
+					writeColumnIdentityClauseDDLStatement(schemaWriter);
+				}
+
+			}
+		}
+		return schemaWriter;
+	}
+
+
+
 }

@@ -113,7 +113,7 @@ public class PostgreSqlDialect extends DatabaseDialect {
 
 	@Override
 	public boolean requiresNamedPrimaryKeyConstraints() {
-		return false;
+		return true;
 	}
 
 	@Override

@@ -112,5 +112,13 @@ public class ForeignKeySchema extends ConstraintSchema {
 		
 		return result;
 	}
+	
+	public String[] getColumnNames(){
+		List<String> result = new ArrayList<String>();
+		for (ColumnSchema columnSchema : columns){
+			result.add(columnSchema.name);
+		}
+		return result.toArray(new String[]{});
+	}
 
 }

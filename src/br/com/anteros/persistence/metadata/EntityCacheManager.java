@@ -42,9 +42,7 @@ import br.com.anteros.persistence.metadata.annotation.CompositeId;
 import br.com.anteros.persistence.metadata.annotation.Convert;
 import br.com.anteros.persistence.metadata.annotation.Converter;
 import br.com.anteros.persistence.metadata.annotation.Converters;
-import br.com.anteros.persistence.metadata.annotation.DiscriminatorColumn;
 import br.com.anteros.persistence.metadata.annotation.DiscriminatorValue;
-import br.com.anteros.persistence.metadata.annotation.Entity;
 import br.com.anteros.persistence.metadata.annotation.EnumValues;
 import br.com.anteros.persistence.metadata.annotation.Enumerated;
 import br.com.anteros.persistence.metadata.annotation.Fetch;
@@ -60,7 +58,6 @@ import br.com.anteros.persistence.metadata.annotation.MapKeyColumn;
 import br.com.anteros.persistence.metadata.annotation.MapKeyConvert;
 import br.com.anteros.persistence.metadata.annotation.MapKeyEnumerated;
 import br.com.anteros.persistence.metadata.annotation.MapKeyTemporal;
-import br.com.anteros.persistence.metadata.annotation.MappedSuperclass;
 import br.com.anteros.persistence.metadata.annotation.NamedQueries;
 import br.com.anteros.persistence.metadata.annotation.NamedQuery;
 import br.com.anteros.persistence.metadata.annotation.ObjectTypeConverter;
@@ -144,8 +141,7 @@ public class EntityCacheManager {
 	public void load(List<Class<? extends Serializable>> clazzes, boolean validate) throws Exception {
 		if (!isLoaded()) {
 			Collections.sort(clazzes, new DependencyComparator());
-			
-			
+
 			ModelConfiguration modelConfiguration = new ModelConfiguration();
 			for (Class<? extends Serializable> sourceClazz : clazzes) {
 				modelConfiguration.loadAnnotationsByClass(sourceClazz);
@@ -209,6 +205,21 @@ public class EntityCacheManager {
 
 			for (DescriptionField descriptionField : entityCache.getDescriptionFields()) {
 				/*
+				 * Valida se o campo simples foi marcado como requerido mas está numa
+				 * classe que é uma herança
+				 */
+				if (descriptionField.isSimple() && descriptionField.getSimpleColumn().isRequired()) {
+					if ((descriptionField.getEntityCache() == entityCache) && (entityCache.isInheritance()) && !descriptionField.getSimpleColumn().hasDefaultValue() && !(descriptionField.hasPrimaryKey() && descriptionField.isRelationShip())) {
+						throw new EntityCacheException(
+								"O campo "
+										+ descriptionField.getName()
+										+ " da classe "
+										+ entityCache.getEntityClass().getName()
+										+ " está configurado como requerido porém está numa classe herança. Informe um valor default para o campo ou altere o atributo required para false na anotação @Column.");
+					}
+				}
+
+				/*
 				 * Valida se os parâmetros usados nas configurações
 				 * 
 				 * SQLInsert,SQLUpdate,SQLDelete,SQLDeleteAll do campo existem
@@ -235,26 +246,27 @@ public class EntityCacheManager {
 					}
 				}
 
-//				for (DescriptionColumn column : field.getDescriptionColumns()) {
-//					if (column.isForeignKey() &&
-//							(column.getReferencedTableName() != null)) {
-//						EntityCache referencedCache = field.getTargetEntity();
-//						if (referencedCache == null) {
-//							throw new EntityCacheException("Tabela " +
-//									column.getReferencedTableName() +
-//									" não encontrada na lista de entidades gerenciadas. Verifique o Campo "
-//									+ field.getName() + " da classe " +
-//									entityCache.getEntityClass().getName());
-//						}
-//						if (referencedCache.getDescriptionByColumnName
-//								(column.getReferencedColumnName()) == null) {
-//							throw new EntityCacheException("A coluna " +
-//									column.getReferencedColumnName() + " referenciada no campo "
-//									+ field.getName() + " não foi encontrada na classe " +
-//									referencedCache.getEntityClass().getName());
-//						}
-//					}
-//				}
+				// for (DescriptionColumn column :
+				// field.getDescriptionColumns()) {
+				// if (column.isForeignKey() &&
+				// (column.getReferencedTableName() != null)) {
+				// EntityCache referencedCache = field.getTargetEntity();
+				// if (referencedCache == null) {
+				// throw new EntityCacheException("Tabela " +
+				// column.getReferencedTableName() +
+				// " não encontrada na lista de entidades gerenciadas. Verifique o Campo "
+				// + field.getName() + " da classe " +
+				// entityCache.getEntityClass().getName());
+				// }
+				// if (referencedCache.getDescriptionByColumnName
+				// (column.getReferencedColumnName()) == null) {
+				// throw new EntityCacheException("A coluna " +
+				// column.getReferencedColumnName() + " referenciada no campo "
+				// + field.getName() + " não foi encontrada na classe " +
+				// referencedCache.getEntityClass().getName());
+				// }
+				// }
+				// }
 
 			}
 		}
@@ -275,13 +287,15 @@ public class EntityCacheManager {
 		 */
 		EntityConfiguration entityConfigurationSuper = modelConfiguration.getEntities()
 				.get(sourceClazz.getSuperclass());
-		if ((sourceClazz.getSuperclass() != Object.class && (entityConfigurationSuper == null || !entityConfigurationSuper
-				.isAnnotationPresent(Inheritance.class)))) {
+		if ((sourceClazz.getSuperclass() != Object.class && (entityConfigurationSuper == null || (!entityConfigurationSuper
+				.isAnnotationPresent(Inheritance.class) && !entityConfigurationSuper
+				.isAnnotationPresent(DiscriminatorValue.class))))) {
 			throw new EntityCacheException("A classe " + sourceClazz + " é uma subclasse de "
 					+ sourceClazz.getSuperclass()
 					+ ", que não possui Inheritance definida ou não foi adicionada nas configurações.");
 		} else if ((entityConfigurationSuper != null)
-				&& (entityConfigurationSuper.isAnnotationPresent(Inheritance.class))) {
+				&& ((entityConfigurationSuper.isAnnotationPresent(Inheritance.class)) || (entityConfigurationSuper
+						.isAnnotationPresent(DiscriminatorValue.class)))) {
 			/*
 			 * Recupera annotações da superclass e inclui na subclasse.
 			 */
@@ -1197,8 +1211,9 @@ public class EntityCacheManager {
 	protected void validateBasicConfiguration(Class<? extends Serializable> sourceClazz,
 			EntityConfiguration entityConfiguration) throws EntityCacheException {
 		if (validate) {
-			String[] errors = EntityCacheAnnotationValidation.validateEntityConfiguration(sourceClazz, entityConfiguration);
-			if (errors.length>0)
+			String[] errors = EntityCacheAnnotationValidation.validateEntityConfiguration(sourceClazz,
+					entityConfiguration);
+			if (errors.length > 0)
 				throw new EntityCacheException(errors[0]);
 		}
 	}
@@ -1277,7 +1292,7 @@ public class EntityCacheManager {
 
 	private void readConfigurationSQL(Class<?> sourceClazz, EntityCache cache, Class<?>[] annotationClazz,
 			FieldConfiguration fieldConfiguration) throws EntityCacheException {
-		for (Class fieldClazz : annotationClazz) {
+		for (Class<?> fieldClazz : annotationClazz) {
 			if (fieldConfiguration.isAnnotationPresent(fieldClazz)) {
 				if (!((ReflectionUtils.isImplementsInterface(fieldConfiguration.getType(), Collection.class)
 						|| ReflectionUtils.isImplementsInterface(fieldConfiguration.getType(), Set.class) || ReflectionUtils
@@ -2047,7 +2062,7 @@ public class EntityCacheManager {
 				throw new EntityCacheException("Campo " + fieldConfiguration.getName() + "("
 						+ descriptionColumn.getReferencedColumnName() + ") não encontrado na classe "
 						+ fieldConfiguration.getType() + " ou a classe não foi adicionada nas configurações.");
-			
+
 			if (fieldConfiguration.isAnnotationPresent(Column.class)) {
 				ColumnConfiguration simpleColumn = fieldConfiguration.getSimpleColumn();
 				descriptionColumn.setColumnName(simpleColumn.getName());
@@ -2060,7 +2075,7 @@ public class EntityCacheManager {
 						.getName() : simpleColumn.getInversedColumn());
 			} else {
 				if (foreingKeyField.isAnnotationPresent(Column.class)) {
-					
+
 				}
 			}
 			if (fieldConfiguration.isAnnotationPresent(Id.class)) {

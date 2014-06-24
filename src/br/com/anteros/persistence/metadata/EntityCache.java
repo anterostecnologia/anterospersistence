@@ -818,4 +818,10 @@ public class EntityCache {
 		this.converters = converters;
 	}
 
+	public boolean isInheritance() {
+		if (discriminatorValue==null)
+			return false;
+		return (!"".equals(discriminatorValue));
+	}
+
 }

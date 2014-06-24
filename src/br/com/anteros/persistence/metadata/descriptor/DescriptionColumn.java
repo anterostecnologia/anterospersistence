@@ -659,4 +659,10 @@ public class DescriptionColumn {
 		this.discriminatorType = discriminatorType;
 	}
 
+	public boolean hasDefaultValue() {
+		if (defaultValue==null)
+			return false;
+		return (!"".equals(defaultValue));
+	}
+
 }

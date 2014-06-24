@@ -16,6 +16,8 @@
 package br.com.anteros.persistence.schema.definition;
 
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 
 import br.com.anteros.persistence.schema.exception.SchemaGeneratorException;
 import br.com.anteros.persistence.session.SQLSession;
@@ -61,5 +63,13 @@ public class IndexSchema extends ConstraintSchema {
 		}
 		
 		return result;
+	}
+	
+	public String[] getColumnNames(){
+		List<String> result = new ArrayList<String>();
+		for (ColumnSchema columnSchema : getColumns()){
+			result.add(columnSchema.name);
+		}
+		return result.toArray(new String[]{});
 	}
 }
