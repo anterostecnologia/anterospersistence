@@ -75,7 +75,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 
 	@Override
 	public Connection validateConnection(Connection conn) throws SQLException {
-		if (conn != null && !conn.isValid(0)) {
+		if (conn != null && conn.isClosed()) {
 			ConnectionUtils.releaseConnection(this.getDatasource());
 			conn = null;
 		}
