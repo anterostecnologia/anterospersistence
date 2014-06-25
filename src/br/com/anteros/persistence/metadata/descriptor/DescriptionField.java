@@ -268,9 +268,9 @@ public class DescriptionField {
 			} else if ((value == null) || (value.getClass() == field.getType())) {
 				field.set(object, value);
 			} else if ("".equals(value)
-					&& (ReflectionUtils.isExtendsClass(Number.class, field.getType()) 
+					&& (ReflectionUtils.isExtendsClass(Number.class, field.getType())
 							|| (field.getType() == SQLiteDate.class) || (field.getType() == java.sql.Date.class) || (field
-							.getType() == java.util.Date.class))) {
+							.getType() == Date.class))) {
 				field.set(object, null);
 			} else if ((field.getType() == Date.class) && (value instanceof String)) {
 				setStringValueToDate(object, String.valueOf(value));
@@ -289,7 +289,6 @@ public class DescriptionField {
 				field.set(object, ObjectUtils.convert(value, field.getType()));
 			}
 		} catch (Exception ex) {
-			ex.printStackTrace();
 			throw new EntityCacheException("Erro convertendo o valor do campo " + this.getName() + " valor=" + value
 					+ " para " + field.getType(), ex);
 		}
@@ -472,7 +471,7 @@ public class DescriptionField {
 		this.mapKeyColumn = mapKeyColumn;
 	}
 
-	public List<DescriptionColumn> getPrimaryKeys() { 
+	public List<DescriptionColumn> getPrimaryKeys() {
 		List<DescriptionColumn> result = new ArrayList<DescriptionColumn>();
 		for (DescriptionColumn column : columns) {
 			if (column.isPrimaryKey())

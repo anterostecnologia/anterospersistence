@@ -102,7 +102,8 @@ public class TableSchema extends ObjectSchema {
 		getColumns().add(column);
 	}
 
-	public void addForeignKey(String name, ColumnSchema sourceColumn, ColumnSchema referencedColumn, TableSchema referencedTable) {
+	public void addForeignKey(String name, ColumnSchema sourceColumn, ColumnSchema referencedColumn,
+			TableSchema referencedTable) {
 		ForeignKeySchema foreignKey = new ForeignKeySchema(this, name, sourceColumn, referencedColumn, referencedTable);
 		addForeignKey(foreignKey);
 	}
@@ -158,14 +159,14 @@ public class TableSchema extends ObjectSchema {
 		}
 		primaryKey.addColumn(column);
 	}
-	
-	
+
 	public List<UniqueKeySchema> getUniqueKeys() {
 		return uniqueKeys;
 	}
 
 	@Override
-	public Writer generateDDLCreateObject(SQLSession session, Writer schemaWriter) throws SchemaGeneratorException, Exception {
+	public Writer generateDDLCreateObject(SQLSession session, Writer schemaWriter) throws SchemaGeneratorException,
+			Exception {
 		session.getDialect().writeCreateTableDDLStatement(this, schemaWriter);
 		return schemaWriter;
 	}
@@ -208,18 +209,16 @@ public class TableSchema extends ObjectSchema {
 		String ddl = session.getDialect().writerAddColumnDDLStatement(columnSchema, new StringWriter()).toString();
 		session.executeDDL(ddl);
 	}
-	
+
 	public void addColumn(SQLSession session, ColumnSchema columnSchema, Writer createSchemaWriter) throws Exception {
 		String ddl = session.getDialect().writerAddColumnDDLStatement(columnSchema, new StringWriter()).toString();
 		createSchemaWriter.write(ddl);
 	}
 
-
 	@Override
 	public TableSchema setName(String name) {
 		return (TableSchema) super.setName(name);
 	}
-
 
 	public String getCreateTableSuffix() {
 		return createTableSuffix;
@@ -253,6 +252,22 @@ public class TableSchema extends ObjectSchema {
 		return false;
 	}
 
+	public boolean existsIndex(String[] columns) {
+		boolean found = false;
+		for (IndexSchema idx : indexes) {
+			found = false;
+			for (String column : columns) {
+				if (idx.getColumns().contains(column)) {
+					found = true;
+				} else
+					break;
+			}
+			if (found)
+				break;
+		}
+		return found;
+	}
+
 	public boolean existsUniqueKey(UniqueKeySchema uniqueKeySchema) {
 		for (UniqueKeySchema idx : uniqueKeys) {
 			if (idx.getColumnsToString().equals(uniqueKeySchema.getColumnsToString()))
@@ -260,16 +275,16 @@ public class TableSchema extends ObjectSchema {
 		}
 		return false;
 	}
-	
-	public boolean depends(TableSchema tableSchema){
-		for (ForeignKeySchema foreignKeySchema : getForeignKeys()){
-			if (foreignKeySchema.referencedTable.getName().equalsIgnoreCase(tableSchema.getName())){
+
+	public boolean depends(TableSchema tableSchema) {
+		for (ForeignKeySchema foreignKeySchema : getForeignKeys()) {
+			if (foreignKeySchema.referencedTable.getName().equalsIgnoreCase(tableSchema.getName())) {
 				return true;
 			}
 		}
 		return false;
 	}
-	
+
 	@Override
 	public String toString() {
 		return name;
@@ -278,6 +293,5 @@ public class TableSchema extends ObjectSchema {
 	public boolean existsForeignKeyByName(String foreignKeyName) {
 		return false;
 	}
-	
-	
+
 }

@@ -170,7 +170,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 							foreignKeySchema.setTable(table);
 							if (StringUtils.isEmpty(foreignKeySchema.getName())) {
 								try {
-									foreignKeySchema.setName(generateForeignKeyConstraintName(table,table.getName(),
+									foreignKeySchema.setName(generateForeignKeyConstraintName(table, table.getName(),
 											descriptionField.getColumnsToString()));
 								} catch (Exception e) {
 									throw new SchemaGeneratorException(
@@ -179,6 +179,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 													+ descriptionField.getEntityCache().getEntityClass().getName());
 								}
 							}
+
 							/*
 							 * Adiciona as colunas na mesma da tabela
 							 * relacionada pois alguns bancos validam a ordem
@@ -258,7 +259,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 						for (DescriptionField descriptionField : pkFields) {
 							for (DescriptionColumn descriptionColumn : descriptionField.getDescriptionColumns()) {
 								table.addPrimaryKey(descriptionColumn.getColumnName(), descriptionField.getFieldClass());
-								if (table.getPrimaryKey()!=null){
+								if (table.getPrimaryKey() != null) {
 									table.getPrimaryKey().setName(generatePrimaryKeyConstraintName(tableName));
 								}
 							}
@@ -308,8 +309,22 @@ public class SchemaManager implements Comparator<TableSchema> {
 			}
 
 			Set<TableSchema> newList = new LinkedHashSet<TableSchema>();
-			for (TableSchema tableSchema : tables)
+			for (TableSchema tableSchema : tables) {
 				buildDependencies(tables, tableSchema, newList);
+				/*
+				 * Verifica se todas as chaves estrangeiras possuem um indice
+				 * para as colunas, se não encontrar adiciona.
+				 */
+				for (ForeignKeySchema fk : tableSchema.getForeignKeys()) {
+					if (!tableSchema.existsIndex(fk.getColumnNames())) {
+						IndexSchema index = new IndexSchema();
+						index.addColumns(fk.getColumns());
+						index.setTable(tableSchema);
+						index.setName(generationIndexName(tableSchema.getName(), fk.getColumnNames()[0], null));
+						tableSchema.addIndex(index);
+					}
+				}
+			}
 
 			tables = newList;
 		}
@@ -400,8 +415,8 @@ public class SchemaManager implements Comparator<TableSchema> {
 								.getTargetEntity().getTableName()));
 
 						if (StringUtils.isEmpty(foreignKeySchema.getName()))
-							foreignKeySchema.setName(generateForeignKeyConstraintName(table,table.getName(), descriptionField
-									.getColumnsToString()));
+							foreignKeySchema.setName(generateForeignKeyConstraintName(table, table.getName(),
+									descriptionField.getColumnsToString()));
 
 						/*
 						 * Colunas e chave primária
@@ -438,7 +453,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 							foreignKeySchema.setReferencedTable(new TableSchema().setName(entityCache.getTableName()));
 
 							if (StringUtils.isEmpty(foreignKeySchema.getName()))
-								foreignKeySchema.setName(generateForeignKeyConstraintName(table,table.getName(),
+								foreignKeySchema.setName(generateForeignKeyConstraintName(table, table.getName(),
 										descriptionField.getLastJoinColumn().getColumnName()));
 						} catch (Exception e) {
 							throw new SchemaGeneratorException(
@@ -453,7 +468,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 									.getTargetEntity().getTableName()));
 
 							if (StringUtils.isEmpty(foreignKeySchemaTarget.getName()))
-								foreignKeySchemaTarget.setName(generateForeignKeyConstraintName(table,table.getName(),
+								foreignKeySchemaTarget.setName(generateForeignKeyConstraintName(table, table.getName(),
 										descriptionField.getLastInversedColumn().getColumnName()));
 						} catch (Exception e) {
 							throw new SchemaGeneratorException(
@@ -576,7 +591,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 			} else {
 				dbType = session.getDialect().convertJavaToDatabaseType(descriptionColumn.getFieldType());
 			}
-		else if (descriptionColumn.isLob()  && descriptionColumn.getFieldType() == String.class)
+		else if (descriptionColumn.isLob() && descriptionColumn.getFieldType() == String.class)
 			dbType = session.getDialect().convertJavaToDatabaseType(byte[].class);
 		else
 			dbType = session.getDialect().convertJavaToDatabaseType(descriptionColumn.getFieldType());
@@ -788,10 +803,9 @@ public class SchemaManager implements Comparator<TableSchema> {
 			createUniqueKeyConstraint(uniqueKey);
 		}
 	}
-	
-	
+
 	/**
-	 * Cria as constraints PrimaryKey  da tabela
+	 * Cria as constraints PrimaryKey da tabela
 	 * 
 	 * @param tableSchema
 	 *            Tabela
@@ -808,7 +822,6 @@ public class SchemaManager implements Comparator<TableSchema> {
 			writeEndDelimiter(createSchemaWriter);
 		}
 	}
-	
 
 	/**
 	 * Cria a constraint única
@@ -962,8 +975,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 		}
 		if (!writeCommentPrimaryKey)
 			writeLineSeparator(createSchemaWriter);
-		
-		
+
 		/*
 		 * Cria as constraints únicas
 		 */
@@ -1244,7 +1256,6 @@ public class SchemaManager implements Comparator<TableSchema> {
 			}
 		}
 	}
-
 
 	/**
 	 * Extende as tabelas do schema
@@ -1653,7 +1664,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 		String adjustedTableName = adjustTableName(tableName);
 		String adjustedColumnName = adjustColumnName(columnName);
 		String foreignKeyName = startDelimiter + "FK_" + adjustedTableName + "_" + adjustedColumnName + endDelimiter;
-		if (foreignKeyName.length() > maximumNameLength){
+		if (foreignKeyName.length() > maximumNameLength) {
 			foreignKeyName = startDelimiter + adjustedTableName + "_" + adjustedColumnName + endDelimiter;
 			if (foreignKeyName.length() > maximumNameLength) {
 				foreignKeyName = startDelimiter
@@ -1721,7 +1732,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 		}
 		return uniqueKeyName;
 	}
-	
+
 	/**
 	 * Gera um nome para a chave primária
 	 * 

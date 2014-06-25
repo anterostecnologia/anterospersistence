@@ -30,6 +30,11 @@ public abstract class ConstraintSchema extends ObjectSchema {
     public void addColumn(ColumnSchema column) {
         columns.add(column);
     }
+    
+
+    public void addColumns(List<ColumnSchema> columns) {
+        this.columns.addAll(columns);
+    }
 
 	
 	public List<ColumnSchema> getColumns() {
