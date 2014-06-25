@@ -472,7 +472,7 @@ public class DescriptionField {
 		this.mapKeyColumn = mapKeyColumn;
 	}
 
-	public List<DescriptionColumn> getPrimaryKeys() {
+	public List<DescriptionColumn> getPrimaryKeys() { 
 		List<DescriptionColumn> result = new ArrayList<DescriptionColumn>();
 		for (DescriptionColumn column : columns) {
 			if (column.isPrimaryKey())

@@ -167,21 +167,21 @@ public class PostgreSqlDialect extends DatabaseDialect {
 	public boolean supportsIdentity() {
 		return true;
 	}
-
+	
 	@Override
 	public Writer writeColumnIdentityClauseDDLStatement(Writer schemaWriter) throws Exception {
 		schemaWriter.write(" SERIAL");
 		return schemaWriter;
 	}
-
+	
 	public boolean useColumnDefinitionForIdentity() {
 		return false;
 	}
-
+	
 	public boolean supportsSequenceAsADefaultValue() {
 		return true;
 	}
-
+	
 	public Writer writeColumnSequenceDefaultValue(Writer schemaWriter, String sequenceName) throws Exception {
 		schemaWriter.write(" DEFAULT nextval('" + sequenceName + "') ");
 		return schemaWriter;
@@ -214,7 +214,7 @@ public class PostgreSqlDialect extends DatabaseDialect {
 			prep.close();
 		}
 	}
-
+ 
 	@Override
 	public String getConnectionClientInfo(Connection connection) throws SQLException {
 		PreparedStatement stmt = connection.prepareStatement(GET_CLIENT_INFO_SQL);
