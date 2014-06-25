@@ -30,7 +30,7 @@ import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 
 public class PostgreSqlDialect extends DatabaseDialect {
 
-	private final String SET_CLIENT_INFO_SQL = "SET application_name = '?'";
+	private final String SET_CLIENT_INFO_SQL = "SET application_name = ''{0}''";
 	private final String GET_CLIENT_INFO_SQL = "SHOW application_name";
 
 	protected void initializeTypes() {
@@ -81,8 +81,10 @@ public class PostgreSqlDialect extends DatabaseDialect {
 	}
 
 	@Override
-	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name, Object[] inputParameters,
-			String[] outputParametersName, int[] outputTypes, int queryTimeOut, boolean showSql, String clientId) throws Exception {
+	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name,
+			Object[] inputParameters,
+			String[] outputParametersName, int[] outputTypes, int queryTimeOut, boolean showSql, String clientId)
+			throws Exception {
 		return null;
 	}
 
@@ -165,23 +167,23 @@ public class PostgreSqlDialect extends DatabaseDialect {
 	public boolean supportsIdentity() {
 		return true;
 	}
-	
+
 	@Override
 	public Writer writeColumnIdentityClauseDDLStatement(Writer schemaWriter) throws Exception {
 		schemaWriter.write(" SERIAL");
 		return schemaWriter;
 	}
-	
+
 	public boolean useColumnDefinitionForIdentity() {
 		return false;
 	}
-	
-	public boolean supportsSequenceAsADefaultValue(){
+
+	public boolean supportsSequenceAsADefaultValue() {
 		return true;
 	}
-	
+
 	public Writer writeColumnSequenceDefaultValue(Writer schemaWriter, String sequenceName) throws Exception {
-		schemaWriter.write(" DEFAULT nextval('"+sequenceName+"') ");
+		schemaWriter.write(" DEFAULT nextval('" + sequenceName + "') ");
 		return schemaWriter;
 	}
 
@@ -193,7 +195,10 @@ public class PostgreSqlDialect extends DatabaseDialect {
 			try {
 				if (rs.next()) {
 					String applicationName = rs.getString(1);
-     				clientInfo = applicationName + " # " + clientInfo;
+					if (applicationName.contains("#")) {
+						applicationName = applicationName.split("#")[0].trim();
+					}
+					clientInfo = applicationName + " # " + clientInfo;
 				}
 			} finally {
 				rs.close();
@@ -209,9 +214,9 @@ public class PostgreSqlDialect extends DatabaseDialect {
 			prep.close();
 		}
 	}
- 
+
 	@Override
-	public  String getConnectionClientInfo(Connection connection) throws SQLException {
+	public String getConnectionClientInfo(Connection connection) throws SQLException {
 		PreparedStatement stmt = connection.prepareStatement(GET_CLIENT_INFO_SQL);
 		try {
 			ResultSet rs = stmt.executeQuery();

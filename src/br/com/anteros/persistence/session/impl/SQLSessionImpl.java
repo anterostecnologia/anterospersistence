@@ -17,6 +17,7 @@ package br.com.anteros.persistence.session.impl;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -60,7 +61,7 @@ public class SQLSessionImpl implements SQLSession {
 	private AbstractSQLRunner queryRunner;
 	private boolean showSql;
 	private boolean formatSql;
-	private int queryTimeout=0;
+	private int queryTimeout = 0;
 	private SQLPersistenceContext persistenceContext;
 	private List<CommandSQL> commandQueue = new ArrayList<CommandSQL>();
 	private SQLSessionFactory sessionFactory;
@@ -129,7 +130,8 @@ public class SQLSessionImpl implements SQLSession {
 	@Override
 	public <T> T selectOne(String sql, Object[] parameter, Class<T> resultClass) throws Exception {
 		SQLQuery<T> query = createSQLQuery(sql);
-		return query.setParameters(parameter).resultClass(resultClass).showSql(showSql).formatSql(formatSql).timeOut(queryTimeout)
+		return query.setParameters(parameter).resultClass(resultClass).showSql(showSql).formatSql(formatSql)
+				.timeOut(queryTimeout)
 				.selectOne();
 	}
 
@@ -425,16 +427,15 @@ public class SQLSessionImpl implements SQLSession {
 		return dialect;
 	}
 
-	public Connection getConnection() throws Exception {
-		if (connection == null)
-			return sessionFactory.getCurrentConnection();
-		else
-			return connection;
+	@Override
+	public Connection getConnection() throws SQLException  {
+		connection = sessionFactory.validateConnection(connection);
+		return connection;
 	}
 
 	public AbstractSQLRunner getRunner() throws Exception {
 		return queryRunner;
-	}
+	} 
 
 	public void setDialect(DatabaseDialect dialect) {
 		this.dialect = dialect;
@@ -499,7 +500,7 @@ public class SQLSessionImpl implements SQLSession {
 		synchronized (commandQueue) {
 			commandQueue.clear();
 		}
-    	connection.close();
+		getConnection().close();
 	}
 
 	@Override
@@ -693,7 +694,7 @@ public class SQLSessionImpl implements SQLSession {
 
 	@Override
 	public void executeDDL(String ddl) throws Exception {
-		getRunner().executeDDL(connection, ddl, showSql, formatSql, "");
+		getRunner().executeDDL(getConnection(), ddl, showSql, formatSql, "");
 	}
 
 	@Override
