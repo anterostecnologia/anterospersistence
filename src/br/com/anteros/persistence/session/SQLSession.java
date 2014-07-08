@@ -331,4 +331,8 @@ public interface SQLSession {
 	public void evictAll();
 	
 	public boolean isClosed() throws Exception;
+	
+	public void setClientInfo(String clientInfo) throws SQLException;
+	
+    public String getClientInfo() throws SQLException;
 }

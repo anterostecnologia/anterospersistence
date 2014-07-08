@@ -35,6 +35,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	protected DataSource dataSource;
 	protected SessionFactoryConfiguration configuration;
 	protected ThreadLocal<SQLSession> localSession = new ThreadLocal<SQLSession>();
+	
 	private boolean showSql = false;
 	private boolean formatSql = false;
 	private int queryTimeout = 0;
@@ -176,8 +177,6 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
 	public abstract SQLSession getSession() throws Exception;
 
-	public abstract Connection getCurrentConnection() throws Exception;
-
 	public DatabaseDialect getDialect() {
 		return dialect;
 	}
@@ -208,14 +207,6 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
 	public void setShowSql(boolean showSql) {
 		this.showSql = showSql;
-	}
-
-	public ThreadLocal<SQLSession> getLocalSession() {
-		return localSession;
-	}
-
-	public void setLocalSession(ThreadLocal<SQLSession> localSession) {
-		this.localSession = localSession;
 	}
 
 	public boolean isFormatSql() {

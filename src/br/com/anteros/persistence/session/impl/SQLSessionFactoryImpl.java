@@ -46,6 +46,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	public SQLSession getSession() throws Exception {
 		if (localSession.get() == null) {
 			Connection connection = ConnectionUtils.getConnection(this.getDatasource());
+			connection = validateConnection(connection);
 			setConfigurationClientInfo(connection);
 			localSession.set(new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(),
 					this.getDialect(), this
@@ -58,11 +59,6 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 		String clientInfo = this.getConfiguration().getProperty(AnterosProperties.CONNECTION_CLIENTINFO);
 		if (clientInfo != null && clientInfo.length() > 0)
 			this.getDialect().setConnectionClientInfo(connection, clientInfo);
-	}
-
-	@Override
-	public Connection getCurrentConnection() throws Exception {
-		return ConnectionUtils.getConnection(this.getDatasource());
 	}
 
 	@Override

@@ -24,28 +24,35 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
+
 public class ConnectionUtils {
 
-	private static ThreadLocal<Map<Object, Reference<Connection>>> localConnection = new ThreadLocal<Map<Object, Reference<Connection>>>();
+	private static ThreadLocal<Map<DataSource, Reference<Connection>>> localConnection = new ThreadLocal<Map<DataSource, Reference<Connection>>>();
+	private static Logger log = LoggerProvider.getInstance().getLogger(ConnectionUtils.class.getName());
 
 	public static Connection getConnection(DataSource dataSource) throws SQLException {
 		if (localConnection.get() == null)
-			localConnection.set(new HashMap<Object, Reference<Connection>>());
+			localConnection.set(new HashMap<DataSource, Reference<Connection>>());
 		Reference<Connection> refConnection = localConnection.get().get(dataSource);
 		if (refConnection == null || refConnection.get() == null) {
 			Connection connection = dataSource.getConnection();
 			refConnection = new WeakReference<Connection>(connection);
 			localConnection.get().put(dataSource, refConnection);
+			System.out.println("############## Criou conexão: " + refConnection.get());
 		}
 		return refConnection.get();
 	}
 
 	public static void releaseConnection(DataSource dataSource) {
 		if (localConnection.get() == null)
-			localConnection.set(new HashMap<Object, Reference<Connection>>());
+			localConnection.set(new HashMap<DataSource, Reference<Connection>>());
 		Reference<Connection> refConnection = localConnection.get().get(dataSource);
-		if (refConnection != null)
+		if (refConnection != null) {
 			localConnection.get().remove(dataSource);
+			System.out.println("$$$$$$$$$$$$$$$ Matou conexão: " + refConnection.get());
+		}
 	}
 
 }

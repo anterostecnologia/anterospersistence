@@ -29,8 +29,6 @@ public interface SQLSessionFactory {
 	 */
 	public SQLSession getSession() throws Exception;
 
-	public Connection getCurrentConnection() throws Exception;
-
 	/**
 	 * Valida a conexão com o banco de dados, e se necessário obtem uma nova
 	 * conexão.

@@ -500,7 +500,7 @@ public class SQLSessionImpl implements SQLSession {
 		synchronized (commandQueue) {
 			commandQueue.clear();
 		}
-		getConnection().close();
+		connection.close();
 	}
 
 	@Override
@@ -896,6 +896,16 @@ public class SQLSessionImpl implements SQLSession {
 	@Override
 	public boolean isClosed() throws Exception {
 		return getConnection() == null || getConnection().isClosed();
+	}
+
+	@Override
+	public void setClientInfo(String clientInfo) throws SQLException {
+		getDialect().setConnectionClientInfo(getConnection(), clientInfo);
+	}
+
+	@Override
+	public String getClientInfo() throws SQLException {
+		return getDialect().getConnectionClientInfo(getConnection());
 	}
 
 }
