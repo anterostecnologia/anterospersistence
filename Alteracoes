@@ -123,7 +123,9 @@ public class Employee {
               
 - Implementar validação de campos requeridos em heranças das entidades no modo "single table".
               
-- Não permitir 2 entidades com mesmo nome de tabela              
+- Não permitir 2 entidades com mesmo nome de tabela         
+
+     
               
               
               

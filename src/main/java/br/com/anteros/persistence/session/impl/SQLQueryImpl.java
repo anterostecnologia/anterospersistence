@@ -164,7 +164,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 		for (NamedParameter parameter : parameters) {
 			for (Integer index : namedParameters.keySet()) {
 				NamedParameter np = namedParameters.get(index);
-				if (np.equals(parameter)) {
+				if (np.getName().equals(parameter.getName())) {
 					namedParameters.put(index, parameter);
 					break;
 				}
