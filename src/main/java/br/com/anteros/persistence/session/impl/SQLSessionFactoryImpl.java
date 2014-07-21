@@ -40,54 +40,29 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 		super(entityCacheManager, dataSource, configuration);
 	}
 
-	
+	@Override
 	public SQLSession getSession() throws Exception {
 		SQLSession session = existingSession(this);
 		if (session == null) {
-			Connection connection = getConnection(this.getDatasource());
-			connection = validateConnection(connection);
-			setConfigurationClientInfo(connection);
-			session = new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(),
-					this.getDialect(), this.isShowSql(), this.isFormatSql(), this.getQueryTimeout());
+			session = openSession();
 			doBind(session, this);
 		}
 		return session;
 	}
 
-	private void setConfigurationClientInfo(Connection connection) throws IOException, SQLException {
-		String clientInfo = this.getConfiguration().getProperty(AnterosProperties.CONNECTION_CLIENTINFO);
-		if (clientInfo != null && clientInfo.length() > 0)
-			this.getDialect().setConnectionClientInfo(connection, clientInfo);
-	}
 
-	
+
 	public void beforeGenerateDDL() throws Exception {
 	}
 
-	
 	public void afterGenerateDDL() throws Exception {
 	}
 
-	
-	public Connection validateConnection(Connection conn) throws SQLException {
-		if (conn != null) {
-			// primeiro tenta usar o método isValid, porém nem todos os JDBC implementam este método
-			try {
-				if (!conn.isValid(0)) {
-					releaseConnection(this.getDatasource());
-					conn = null;
-				}
-			} catch (AbstractMethodError ex) {
-				// se der alguma exceção no isValid usa o isClosed
-				if (conn.isClosed()) {
-					releaseConnection(this.getDatasource());
-					conn = null;
-				}
-			}
-		}
-		if (conn == null) {
-			conn = getConnection(this.getDatasource());
-		}
-		return conn;
+	public SQLSession openSession() throws Exception {
+		Connection connection = this.getDatasource().getConnection();
+		setConfigurationClientInfo(connection);
+		return new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(),
+				this.getDialect(), this.isShowSql(), this.isFormatSql(), this.getQueryTimeout());
 	}
+
 }

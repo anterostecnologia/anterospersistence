@@ -28,16 +28,11 @@ public interface SQLSessionFactory {
 	 * Retorna a SQLSession da thread corrente
 	 */
 	public SQLSession getSession() throws Exception;
-
+	
 	/**
-	 * Valida a conexão com o banco de dados, e se necessário obtem uma nova
-	 * conexão.
-	 * 
-	 * @param conn
-	 * @return Retorna a mesma Connection, ou uma nova caso a mesma esteja
-	 *         inválida.
-	 * @throws SQLException
+	 * Retorna uma nova SQLSession a cada vez que é executado
 	 */
-	public Connection validateConnection(Connection conn) throws SQLException;
+	public SQLSession openSession() throws Exception;
+
 
 }

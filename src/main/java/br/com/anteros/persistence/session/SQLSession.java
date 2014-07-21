@@ -262,7 +262,7 @@ public interface SQLSession {
 
 	public DatabaseDialect getDialect();
 
-	public Connection getConnection() throws SQLException;
+	public Connection getConnection();
 
 	public AbstractSQLRunner getRunner() throws Exception;
 

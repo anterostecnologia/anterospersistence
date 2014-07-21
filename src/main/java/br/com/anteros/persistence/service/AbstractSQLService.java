@@ -1,9 +1,7 @@
 package br.com.anteros.persistence.service;
 
-import java.lang.reflect.ParameterizedType;
 import java.util.List;
 
-import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.dao.SQLDao;
 
 /**
@@ -18,16 +16,6 @@ public abstract class AbstractSQLService<T> {
 
 	protected SQLDao<T> dao;
 
-	public AbstractSQLService(SQLSessionFactory sqlSessionFactory) {
-		try {
-			dao = new SQLDao<T>(sqlSessionFactory.getSession(),
-					// descobre automaticamente qual a classe do tipo T
-					(Class<T>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
 	public T selectOne(String sql, Object[] parameter) throws Exception {
 		return (T) dao.selectOne(sql, parameter);
 	}

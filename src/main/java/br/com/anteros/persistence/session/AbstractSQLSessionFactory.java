@@ -15,6 +15,7 @@
  ******************************************************************************/
 package br.com.anteros.persistence.session;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -38,7 +39,6 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	protected DataSource dataSource;
 	protected SessionFactoryConfiguration configuration;
 	private static final ThreadLocal<Map<SQLSessionFactory, SQLSession>> sessionContext = new ThreadLocal<Map<SQLSessionFactory, SQLSession>>();
-	private static final ThreadLocal<Map<DataSource, Connection>> connectionContext = new ThreadLocal<Map<DataSource, Connection>>();
 
 	private boolean showSql = false;
 	private boolean formatSql = false;
@@ -296,29 +296,11 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		}
 		return (SQLSession) sessionMap.get(factory);
 	}
-
-	protected static Connection getConnection(DataSource dataSource) throws SQLException {
-		if (connectionContext.get() == null)
-			connectionContext.set(new HashMap<DataSource, Connection>());
-
-		Connection connection = connectionContext.get().get(dataSource);
-		if (connection == null) {
-			connection = dataSource.getConnection();
-			connectionContext.get().put(dataSource, connection);
-			System.err.println("############## Adiciou conexão: " + connection);
-		}
-		return connection;
-	}
-
-	protected static void releaseConnection(DataSource dataSource) {
-		if (connectionContext.get() == null)
-			connectionContext.set(new HashMap<DataSource, Connection>());
-
-		Connection connection = connectionContext.get().get(dataSource);
-		if (connection != null) {
-			connectionContext.get().remove(dataSource);
-			System.err.println("$$$$$$$$$$$$$$$ Removeu conexão: " + connection);
-		}
+	
+	protected void setConfigurationClientInfo(Connection connection) throws IOException, SQLException {
+		String clientInfo = this.getConfiguration().getProperty(AnterosProperties.CONNECTION_CLIENTINFO);
+		if (clientInfo != null && clientInfo.length() > 0)
+			this.getDialect().setConnectionClientInfo(connection, clientInfo);
 	}
 
 }
