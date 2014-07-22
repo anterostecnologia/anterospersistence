@@ -138,15 +138,15 @@ public class EntityHandler implements ResultSetHandler {
 		for (String expression : expressions.keySet()) {
 			String columnName = expressions.get(expression);
 
-			Object value = resultSet.getObject(columnName);
 
 			try {
+				Object value = resultSet.getObject(columnName);
 				processExpression(mainObject, targetClass, expression, value,
 						resultSet);
 			} catch (SQLException ex) {
 				throw new EntityHandlerException("Erro processando expressão "
 						+ expression + " na classe " + targetClass.getName()
-						+ " coluna " + columnName);
+						+ " coluna " + columnName+". "+ex.getMessage());
 			}
 
 		}
