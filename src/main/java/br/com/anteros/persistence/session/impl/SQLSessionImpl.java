@@ -38,13 +38,13 @@ import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.proxy.LazyLoadProxyFactory;
 import br.com.anteros.persistence.proxy.LazyLoadProxyFactoryImpl;
 import br.com.anteros.persistence.session.ProcedureResult;
-import br.com.anteros.persistence.session.SQLPersistenceContext;
 import br.com.anteros.persistence.session.SQLPersister;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.SQLSessionListener;
 import br.com.anteros.persistence.session.SQLSessionResult;
 import br.com.anteros.persistence.session.cache.Cache;
+import br.com.anteros.persistence.session.context.SQLPersistenceContext;
 import br.com.anteros.persistence.session.lock.type.LockModeType;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
 import br.com.anteros.persistence.session.query.SQLQuery;
@@ -445,7 +445,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void onAfterExecuteCommit(Connection connection) throws Exception {
-		this.
+		
 	}
 
 	public void onAfterExecuteRollback(Connection connection) throws Exception {
@@ -763,11 +763,16 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public Transaction getTransaction() {
+	public Transaction getTransaction() throws Exception {
 		if (transaction == null) {
 			transaction = transactionFactory.createTransaction(getConnection(), getPersistenceContext());
 		}
 		return transaction;
+	}
+
+	@Override
+	public SQLSessionFactory getSQLSessionFactory() {
+		return sessionFactory;
 	}
 
 }

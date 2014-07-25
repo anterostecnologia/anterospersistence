@@ -34,6 +34,7 @@ import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.cache.Cache;
+import br.com.anteros.persistence.session.context.SQLPersistenceContext;
 import br.com.anteros.persistence.session.lock.type.LockModeType;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
 import br.com.anteros.persistence.session.query.SQLQuery;
@@ -330,5 +331,7 @@ public interface SQLSession {
 	
     public String getClientInfo() throws SQLException;
     
-    public Transaction getTransaction();
+    public Transaction getTransaction() throws Exception;
+    
+    public SQLSessionFactory getSQLSessionFactory();
 }

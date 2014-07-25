@@ -1,0 +1,97 @@
+package br.com.anteros.persistence.session.context;
+
+import java.util.Hashtable;
+import java.util.Map;
+
+import javax.transaction.Status;
+import javax.transaction.Transaction;
+import javax.transaction.TransactionManager;
+import javax.transaction.Synchronization;
+
+import br.com.anteros.persistence.log.Logger;
+import br.com.anteros.persistence.log.LoggerProvider;
+import br.com.anteros.persistence.session.SQLSession;
+import br.com.anteros.persistence.session.SQLSessionFactory;
+import br.com.anteros.persistence.session.exception.SQLSessionException;
+
+public class JTASQLSessionContext implements CurrentSQLSessionContext {
+
+	private static final long serialVersionUID = 1L;
+
+	private static Logger log = LoggerProvider.getInstance().getLogger(JTASQLSessionContext.class.getName());
+
+	protected final SQLSessionFactory factory;
+
+	private transient Map<Transaction, SQLSession> currentSessionMap = new Hashtable<Transaction, SQLSession>();
+
+	public JTASQLSessionContext(SQLSessionFactory factory) {
+		this.factory = factory;
+	}
+
+	public SQLSession currentSession() throws Exception {
+		TransactionManager transactionManager = factory.getTransactionManager();
+		if (transactionManager == null) {
+			throw new SQLSessionException("No TransactionManagerLookup specified");
+		}
+
+		Transaction txn;
+		try {
+			txn = transactionManager.getTransaction();
+			if (txn == null) {
+				throw new SQLSessionException("Unable to locate current JTA transaction");
+			}
+			if (!isInProgress(txn.getStatus())) {
+				throw new SQLSessionException("Current transaction is not in progress");
+			}
+		} catch (SQLSessionException e) {
+			throw e;
+		} catch (Throwable t) {
+			throw new SQLSessionException("Problem locating/validating JTA transaction", t);
+		}
+
+		final Transaction txnIdentifier = factory.getTransactionManagerLookup() == null ? txn : factory
+				.getTransactionManagerLookup().getTransactionIdentifier(txn);
+
+		SQLSession currentSession = currentSessionMap.get(txnIdentifier);
+
+		if (currentSession == null) {
+			currentSession = factory.openSession();
+
+			try {
+				txn.registerSynchronization(new CleaningSession(txnIdentifier, this));
+			} catch (Throwable t) {
+				try {
+					currentSession.close();
+				} catch (Throwable ignore) {
+					log.debug("Unable to release generated current-session on failed synch registration", ignore);
+				}
+				throw new SQLSessionException("Unable to register cleanup Synchronization with TransactionManager");
+			}
+
+			currentSessionMap.put(txnIdentifier, currentSession);
+		}
+
+		return currentSession;
+	}
+
+	private boolean isInProgress(int status) {
+		return status == Status.STATUS_ACTIVE || status == Status.STATUS_MARKED_ROLLBACK;
+	}
+
+	protected static class CleaningSession implements Synchronization {
+		private Object transactionIdentifier;
+		private JTASQLSessionContext context;
+
+		public CleaningSession(Object transactionIdentifier, JTASQLSessionContext context) {
+			this.transactionIdentifier = transactionIdentifier;
+			this.context = context;
+		}
+
+		public void beforeCompletion() {
+		}
+
+		public void afterCompletion(int i) {
+			context.currentSessionMap.remove(transactionIdentifier);
+		}
+	}
+}

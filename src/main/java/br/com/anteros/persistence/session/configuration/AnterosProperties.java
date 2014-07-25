@@ -90,5 +90,9 @@ public class AnterosProperties {
 	public static final String LOGCAT_LOG_LEVEL = "logCatLogLevel";
 
 	public static final String CONNECTION_CLIENTINFO = "connectionClientInfo";
+	
+	public static final String CURRENT_SESSION_CONTEXT = "current-session-context";
+	
+	public static final String TRANSACTION_MANAGER_LOOKUP = "transaction-manager-lookup";
 
 }

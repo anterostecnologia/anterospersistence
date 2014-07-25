@@ -3,14 +3,18 @@ package br.com.anteros.persistence.transaction.impl;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import javax.transaction.Status;
+import javax.transaction.Synchronization;
+
 import br.com.anteros.persistence.log.Logger;
 import br.com.anteros.persistence.log.LoggerProvider;
-import br.com.anteros.persistence.session.SQLPersistenceContext;
+import br.com.anteros.persistence.session.context.SQLPersistenceContext;
 import br.com.anteros.persistence.transaction.Transaction;
 
 public class JDBCTransaction implements Transaction {
 
 	private static Logger log = LoggerProvider.getInstance().getLogger(JDBCTransaction.class.getName());
+	private final SynchronizationRegistry synchronizationRegistry = new SynchronizationRegistry();
 
 	private Connection connection;
 	private SQLPersistenceContext context;
@@ -63,19 +67,31 @@ public class JDBCTransaction implements Transaction {
 
 		log.debug("commit");
 
+		notifySynchronizationsBeforeTransactionCompletion();
 		try {
 			getPersistenceContext().onBeforeExecuteCommit(getConnection());
 			commitAndResetAutoCommit();
 			log.debug("committed JDBC Connection");
 			committed = true;
 			getPersistenceContext().onAfterExecuteCommit(getConnection());
+			notifySynchronizationsAfterTransactionCompletion( Status.STATUS_COMMITTED );
 		} catch (SQLException e) {
 			log.error("JDBC commit failed", e);
 			commitFailed = true;
+			notifySynchronizationsAfterTransactionCompletion( Status.STATUS_UNKNOWN );
 			throw new TransactionException("JDBC commit failed", e);
 		} finally {
 			begun = false;
 		}
+	}
+	
+	private void notifySynchronizationsBeforeTransactionCompletion() {
+		synchronizationRegistry.notifySynchronizationsBeforeTransactionCompletion();
+	}
+
+	private void notifySynchronizationsAfterTransactionCompletion(int status) {
+		begun = false;
+		synchronizationRegistry.notifySynchronizationsAfterTransactionCompletion( status );
 	}
 
 	private void commitAndResetAutoCommit() throws SQLException {
@@ -89,6 +105,7 @@ public class JDBCTransaction implements Transaction {
 	private void rollbackAndResetAutoCommit() throws SQLException {
 		try {
 			getConnection().rollback();
+			notifySynchronizationsAfterTransactionCompletion(Status.STATUS_ROLLEDBACK);
 		} finally {
 			toggleAutoCommit();
 		}
@@ -128,8 +145,10 @@ public class JDBCTransaction implements Transaction {
 				log.debug("rolled back JDBC Connection");
 				rolledBack = true;
 				getPersistenceContext().onAfterExecuteRollback(getConnection());
+				notifySynchronizationsAfterTransactionCompletion(Status.STATUS_ROLLEDBACK);
 			} catch (SQLException e) {
 				log.error("JDBC rollback failed", e);
+				notifySynchronizationsAfterTransactionCompletion(Status.STATUS_UNKNOWN);
 				throw new TransactionException("JDBC rollback failed", e);
 			} finally {
 				begun = false;
@@ -140,6 +159,11 @@ public class JDBCTransaction implements Transaction {
 	@Override
 	public boolean isActive() throws Exception {
 		return begun && !(rolledBack || committed | commitFailed);
+	}
+
+	@Override
+	public void registerSynchronization(Synchronization synchronization) throws Exception {
+		synchronizationRegistry.registerSynchronization(synchronization);
 	}
 
 }

@@ -31,7 +31,6 @@ import br.com.anteros.persistence.session.configuration.SessionFactoryConfigurat
 import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.transaction.TransactionFactory;
-import br.com.anteros.persistence.transaction.impl.JDBCTransactionFactory;
 import br.com.anteros.persistence.util.ReflectionUtils;
 
 public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
@@ -307,7 +306,5 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		if (clientInfo != null && clientInfo.length() > 0)
 			this.getDialect().setConnectionClientInfo(connection, clientInfo);
 	}
-
-
-
+	
 }

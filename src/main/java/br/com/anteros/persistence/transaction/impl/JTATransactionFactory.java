@@ -8,7 +8,7 @@ import javax.transaction.UserTransaction;
 
 import br.com.anteros.persistence.log.Logger;
 import br.com.anteros.persistence.log.LoggerProvider;
-import br.com.anteros.persistence.session.SQLPersistenceContext;
+import br.com.anteros.persistence.session.context.SQLPersistenceContext;
 import br.com.anteros.persistence.transaction.Transaction;
 import br.com.anteros.persistence.transaction.TransactionFactory;
 

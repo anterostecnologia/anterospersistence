@@ -29,10 +29,10 @@ import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.EntityManaged;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.metadata.type.EntityStatus;
-import br.com.anteros.persistence.session.SQLPersistenceContext;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
 import br.com.anteros.persistence.session.cache.SQLCache;
+import br.com.anteros.persistence.session.context.SQLPersistenceContext;
 
 public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 

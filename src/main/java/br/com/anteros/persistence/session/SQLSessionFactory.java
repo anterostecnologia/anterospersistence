@@ -15,10 +15,10 @@
  ******************************************************************************/
 package br.com.anteros.persistence.session;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import javax.transaction.TransactionManager;
 
-import br.com.anteros.persistence.transaction.TransactionFactory;
+import br.com.anteros.persistence.transaction.TransactionManagerLookup;
+import br.com.anteros.persistence.transaction.impl.TransactionException;
 
 /**
  * SessionFactory - Responsável por fornecedor instâncias de SQLSession.
@@ -35,5 +35,17 @@ public interface SQLSessionFactory {
 	 * Retorna uma nova SQLSession a cada vez que é executado
 	 */
 	public SQLSession openSession() throws Exception;
+
+	/**
+	 * Retorna a estratégia para fazer lookup (obter) transaction manager para JTA.
+	 * @return
+	 * @throws TransactionException
+	 */
+	public TransactionManagerLookup getTransactionManagerLookup() throws Exception;
+	
+	/**
+	 * Gerenciador de transações JTA.
+	 */
+	public TransactionManager getTransactionManager() throws Exception;
 
 }

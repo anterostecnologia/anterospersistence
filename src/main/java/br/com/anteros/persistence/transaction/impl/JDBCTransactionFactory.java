@@ -2,7 +2,7 @@ package br.com.anteros.persistence.transaction.impl;
 
 import java.sql.Connection;
 
-import br.com.anteros.persistence.session.SQLPersistenceContext;
+import br.com.anteros.persistence.session.context.SQLPersistenceContext;
 import br.com.anteros.persistence.transaction.Transaction;
 import br.com.anteros.persistence.transaction.TransactionFactory;
 

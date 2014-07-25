@@ -15,9 +15,13 @@
  ******************************************************************************/
 package br.com.anteros.persistence.session.exception;
 
-public class SQLSessionException extends Exception {
+public class SQLSessionException extends RuntimeException {
 
 	public SQLSessionException(String message) {
 		super(message);
+	}
+
+	public SQLSessionException(String message, Throwable t) {
+		super(message,t);
 	}
 }
