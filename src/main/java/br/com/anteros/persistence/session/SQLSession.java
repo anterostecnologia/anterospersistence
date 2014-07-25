@@ -40,6 +40,7 @@ import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyzer;
 import br.com.anteros.persistence.sql.command.CommandSQL;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
+import br.com.anteros.persistence.transaction.Transaction;
 
 public interface SQLSession {
 
@@ -145,7 +146,6 @@ public interface SQLSession {
 	public <T> List<T> selectListNamedQuery(String name, NamedParameter[] namedParameter, Class<T> resultClass, int timeOut)
 			throws Exception;
 
-
 	public Object loadData(EntityCache entityCacheTarget, Object owner, DescriptionField descriptionFieldOwner, Map<String, Object> columnKeyTarget,
 			Cache transactionCache) throws IllegalAccessException, Exception;
 
@@ -238,12 +238,6 @@ public interface SQLSession {
 
 	public long update(String sql, NamedParameter[] params) throws Exception;
 
-	public void beginTransaction() throws Exception;
-
-	public void commit() throws Exception;
-
-	public void rollback() throws Exception;
-
 	public void flush() throws Exception;
 
 	public void forceFlush(Set<String> tableNames) throws Exception;
@@ -335,4 +329,6 @@ public interface SQLSession {
 	public void setClientInfo(String clientInfo) throws SQLException;
 	
     public String getClientInfo() throws SQLException;
+    
+    public Transaction getTransaction();
 }

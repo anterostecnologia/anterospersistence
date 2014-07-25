@@ -122,15 +122,15 @@ public class SQLDao<T> {
 	}
 
 	public void beginTransaction() throws Exception {
-		session.beginTransaction();
+		session.getTransaction().begin();
 	}
 
 	public void commit() throws Exception {
-		session.commit();
+		session.getTransaction().commit();
 	}
 
 	public void rollback() throws Exception {
-		session.rollback();
+		session.getTransaction().rollback();
 	}
 
 	public SQLSession getSession() {

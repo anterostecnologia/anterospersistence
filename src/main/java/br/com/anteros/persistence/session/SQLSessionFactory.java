@@ -18,6 +18,8 @@ package br.com.anteros.persistence.session;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import br.com.anteros.persistence.transaction.TransactionFactory;
+
 /**
  * SessionFactory - Responsável por fornecedor instâncias de SQLSession.
  * 
@@ -27,12 +29,11 @@ public interface SQLSessionFactory {
 	/**
 	 * Retorna a SQLSession da thread corrente
 	 */
-	public SQLSession getSession() throws Exception;
-	
+	public SQLSession getCurrentSession() throws Exception;
+
 	/**
 	 * Retorna uma nova SQLSession a cada vez que é executado
 	 */
 	public SQLSession openSession() throws Exception;
-
 
 }

@@ -51,6 +51,8 @@ import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyzer;
 import br.com.anteros.persistence.sql.command.CommandSQL;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
+import br.com.anteros.persistence.transaction.Transaction;
+import br.com.anteros.persistence.transaction.TransactionFactory;
 
 public class SQLSessionImpl implements SQLSession {
 
@@ -70,13 +72,16 @@ public class SQLSessionImpl implements SQLSession {
 	private SQLPersister persister;
 	private LazyLoadProxyFactory proxyFactory = new LazyLoadProxyFactoryImpl();
 	private SQLQueryAnalyzer sqlQueryAnalyzer;
+	private TransactionFactory transactionFactory;
+	private Transaction transaction;
 
 	public final int DEFAULT_CACHE_SIZE = 1000;
 	private String clientId;
 
 	public SQLSessionImpl(SQLSessionFactory sessionFactory, Connection connection,
 			EntityCacheManager entityCacheManager, AbstractSQLRunner queryRunner, DatabaseDialect dialect,
-			boolean showSql, boolean formatSql, int queryTimeout) throws Exception {
+			boolean showSql, boolean formatSql, int queryTimeout, TransactionFactory transactionFactory)
+			throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.connection = connection;
 		if (connection != null)
@@ -90,6 +95,7 @@ public class SQLSessionImpl implements SQLSession {
 		this.queryRunner = queryRunner;
 		this.sqlQueryAnalyzer = new SQLQueryAnalyzer(this);
 		this.queryTimeout = queryTimeout;
+		this.transactionFactory = transactionFactory;
 	}
 
 	public <T> T selectOne(String sql, Class<T> resultClass, int timeOut) throws Exception {
@@ -351,26 +357,6 @@ public class SQLSessionImpl implements SQLSession {
 		persister.remove(this, object);
 	}
 
-	public void commit() throws Exception {
-		if (getConnection() != null) {
-			if (!getConnection().getAutoCommit()) {
-				getPersistenceContext().onBeforeExecuteCommit(getConnection());
-				getConnection().commit();
-				getPersistenceContext().onAfterExecuteCommit(getConnection());
-			}
-		}
-	}
-
-	public void rollback() throws Exception {
-		if (getConnection() != null) {
-			if (!getConnection().getAutoCommit()) {
-				getPersistenceContext().onBeforeExecuteRollback(getConnection());
-				getConnection().rollback();
-				getPersistenceContext().onAfterExecuteRollback(getConnection());
-			}
-		}
-	}
-
 	public DatabaseDialect getDialect() {
 		return dialect;
 	}
@@ -447,8 +433,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void onBeforeExecuteCommit(Connection connection) throws Exception {
-		if (this.getConnection() == connection)
-			flush();
+		flush();
 	}
 
 	public void onBeforeExecuteRollback(Connection connection) throws Exception {
@@ -460,7 +445,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void onAfterExecuteCommit(Connection connection) throws Exception {
-
+		this.
 	}
 
 	public void onAfterExecuteRollback(Connection connection) throws Exception {
@@ -585,10 +570,6 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void removeAll(Class<?> clazz) throws Exception {
-		throw new Exception("Método não suportado.");
-	}
-
-	public void beginTransaction() throws Exception {
 		throw new Exception("Método não suportado.");
 	}
 
@@ -779,6 +760,14 @@ public class SQLSessionImpl implements SQLSession {
 
 	public String getClientInfo() throws SQLException {
 		return getDialect().getConnectionClientInfo(getConnection());
+	}
+
+	@Override
+	public Transaction getTransaction() {
+		if (transaction == null) {
+			transaction = transactionFactory.createTransaction(getConnection(), getPersistenceContext());
+		}
+		return transaction;
 	}
 
 }

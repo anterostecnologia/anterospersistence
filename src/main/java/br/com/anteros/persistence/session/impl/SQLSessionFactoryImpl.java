@@ -26,6 +26,8 @@ import br.com.anteros.persistence.session.AbstractSQLSessionFactory;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.configuration.AnterosProperties;
 import br.com.anteros.persistence.session.configuration.SessionFactoryConfiguration;
+import br.com.anteros.persistence.transaction.TransactionFactory;
+import br.com.anteros.persistence.transaction.impl.JDBCTransactionFactory;
 import br.com.anteros.persistence.util.ConnectionUtils;
 
 /**
@@ -34,6 +36,8 @@ import br.com.anteros.persistence.util.ConnectionUtils;
  */
 public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 
+	private TransactionFactory transactionFactory;
+	
 	public SQLSessionFactoryImpl(EntityCacheManager entityCacheManager, DataSource dataSource,
 			SessionFactoryConfiguration configuration)
 			throws Exception {
@@ -41,7 +45,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	}
 
 	@Override
-	public SQLSession getSession() throws Exception {
+	public SQLSession getCurrentSession() throws Exception {
 		SQLSession session = existingSession(this);
 		if (session == null) {
 			session = openSession();
@@ -62,7 +66,17 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 		Connection connection = this.getDatasource().getConnection();
 		setConfigurationClientInfo(connection);
 		return new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(),
-				this.getDialect(), this.isShowSql(), this.isFormatSql(), this.getQueryTimeout());
+				this.getDialect(), this.isShowSql(), this.isFormatSql(), this.getQueryTimeout(), this.getTransactionFactory());
 	}
+
+	@Override
+	protected TransactionFactory getTransactionFactory() {
+		if (transactionFactory == null) {
+			transactionFactory = new JDBCTransactionFactory();
+		}
+		return transactionFactory;
+	}
+
+
 
 }

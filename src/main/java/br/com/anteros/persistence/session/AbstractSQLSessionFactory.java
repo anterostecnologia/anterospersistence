@@ -30,6 +30,8 @@ import br.com.anteros.persistence.session.configuration.AnterosProperties;
 import br.com.anteros.persistence.session.configuration.SessionFactoryConfiguration;
 import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
+import br.com.anteros.persistence.transaction.TransactionFactory;
+import br.com.anteros.persistence.transaction.impl.JDBCTransactionFactory;
 import br.com.anteros.persistence.util.ReflectionUtils;
 
 public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
@@ -74,7 +76,10 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
 		if (configuration.getProperty(AnterosProperties.QUERY_TIMEOUT) != null)
 			this.queryTimeout = new Integer(configuration.getProperty(AnterosProperties.QUERY_TIMEOUT)).intValue();
+
 	}
+	
+	protected abstract TransactionFactory getTransactionFactory();
 
 	public void generateDDL() throws Exception {
 
@@ -149,7 +154,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 				return;
 			}
 
-			SchemaManager schemaManager = new SchemaManager(this.getSession(), entityCacheManager,
+			SchemaManager schemaManager = new SchemaManager(this.getCurrentSession(), entityCacheManager,
 					createReferentialIntegrity);
 
 			beforeGenerateDDL();
@@ -186,7 +191,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
 	public abstract void afterGenerateDDL() throws Exception;
 
-	public abstract SQLSession getSession() throws Exception;
+	public abstract SQLSession getCurrentSession() throws Exception;
 
 	public DatabaseDialect getDialect() {
 		return dialect;
@@ -296,11 +301,13 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		}
 		return (SQLSession) sessionMap.get(factory);
 	}
-	
+
 	protected void setConfigurationClientInfo(Connection connection) throws IOException, SQLException {
 		String clientInfo = this.getConfiguration().getProperty(AnterosProperties.CONNECTION_CLIENTINFO);
 		if (clientInfo != null && clientInfo.length() > 0)
 			this.getDialect().setConnectionClientInfo(connection, clientInfo);
 	}
+
+
 
 }
