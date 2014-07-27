@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.sql.DataSource;
+import javax.transaction.TransactionManager;
 
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.schema.SchemaManager;
@@ -31,6 +32,8 @@ import br.com.anteros.persistence.session.configuration.SessionFactoryConfigurat
 import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.transaction.TransactionFactory;
+import br.com.anteros.persistence.transaction.TransactionManagerLookup;
+import br.com.anteros.persistence.transaction.impl.TransactionException;
 import br.com.anteros.persistence.util.ReflectionUtils;
 
 public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
@@ -306,5 +309,18 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		if (clientInfo != null && clientInfo.length() > 0)
 			this.getDialect().setConnectionClientInfo(connection, clientInfo);
 	}
+	
+	/**
+	 * Retorna a estratégia para fazer lookup (obter) transaction manager para JTA.
+	 * @return
+	 * @throws TransactionException
+	 */
+	public abstract TransactionManagerLookup getTransactionManagerLookup() throws Exception;
+	
+	/**
+	 * Gerenciador de transações JTA.
+	 */
+	public abstract TransactionManager getTransactionManager() throws Exception;
+
 	
 }

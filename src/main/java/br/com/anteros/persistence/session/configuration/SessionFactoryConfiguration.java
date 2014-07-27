@@ -96,6 +96,10 @@ public class SessionFactoryConfiguration {
 		}
 		return result;
 	}
+	
+	public void addProperty(String name, String value){
+		this.properties.getProperties().add(new PropertyConfiguration(name, value));
+	}
 
 	public String getProperty(String name) throws IOException {
 		for (PropertyConfiguration prop : getProperties().getProperties()) {

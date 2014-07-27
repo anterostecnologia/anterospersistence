@@ -775,4 +775,14 @@ public class SQLSessionImpl implements SQLSession {
 		return sessionFactory;
 	}
 
+	@Override
+	public void clear() throws Exception {
+		internalClear();		
+	}
+
+	private void internalClear() {
+		persistenceContext.evictAll();
+		persistenceContext.clearCache();
+	}
+
 }

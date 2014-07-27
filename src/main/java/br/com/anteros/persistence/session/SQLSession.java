@@ -334,4 +334,6 @@ public interface SQLSession {
     public Transaction getTransaction() throws Exception;
     
     public SQLSessionFactory getSQLSessionFactory();
+    
+    public void clear() throws Exception;
 }

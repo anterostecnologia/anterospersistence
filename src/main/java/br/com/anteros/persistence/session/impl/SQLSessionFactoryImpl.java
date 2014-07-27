@@ -73,11 +73,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	}
 
 	public SQLSession openSession() throws Exception {
-		Connection connection = this.getDatasource().getConnection();
-		setConfigurationClientInfo(connection);
-		return new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(),
-				this.getDialect(), this.isShowSql(), this.isFormatSql(), this.getQueryTimeout(),
-				this.getTransactionFactory());
+		return openSession(this.getDatasource().getConnection());
 	}
 
 	@Override
@@ -143,6 +139,14 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 		else {
 			return new ThreadLocalSQLSessionContext( this );
 		}
+	}
+
+	@Override
+	public SQLSession openSession(Connection connection) throws Exception {
+		setConfigurationClientInfo(connection);
+		return new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(),
+				this.getDialect(), this.isShowSql(), this.isFormatSql(), this.getQueryTimeout(),
+				this.getTransactionFactory());
 	}
 
 }

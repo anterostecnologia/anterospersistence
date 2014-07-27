@@ -4,15 +4,17 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import javax.transaction.Status;
+import javax.transaction.Synchronization;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
-import javax.transaction.Synchronization;
 
 import br.com.anteros.persistence.log.Logger;
 import br.com.anteros.persistence.log.LoggerProvider;
+import br.com.anteros.persistence.session.AbstractSQLSessionFactory;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.exception.SQLSessionException;
+import br.com.anteros.persistence.transaction.TransactionManagerLookup;
 
 public class JTASQLSessionContext implements CurrentSQLSessionContext {
 
@@ -29,7 +31,9 @@ public class JTASQLSessionContext implements CurrentSQLSessionContext {
 	}
 
 	public SQLSession currentSession() throws Exception {
-		TransactionManager transactionManager = factory.getTransactionManager();
+		TransactionManager transactionManager = null;
+		if (factory instanceof AbstractSQLSessionFactory)
+			transactionManager = ((AbstractSQLSessionFactory) factory).getTransactionManager();
 		if (transactionManager == null) {
 			throw new SQLSessionException("No TransactionManagerLookup specified");
 		}
@@ -48,9 +52,12 @@ public class JTASQLSessionContext implements CurrentSQLSessionContext {
 		} catch (Throwable t) {
 			throw new SQLSessionException("Problem locating/validating JTA transaction", t);
 		}
+		
+		TransactionManagerLookup lookup = null;
+		if (factory instanceof AbstractSQLSessionFactory)
+			lookup = ((AbstractSQLSessionFactory)factory).getTransactionManagerLookup();
 
-		final Transaction txnIdentifier = factory.getTransactionManagerLookup() == null ? txn : factory
-				.getTransactionManagerLookup().getTransactionIdentifier(txn);
+		final Transaction txnIdentifier = lookup == null ? txn : lookup.getTransactionIdentifier(txn);
 
 		SQLSession currentSession = currentSessionMap.get(txnIdentifier);
 
