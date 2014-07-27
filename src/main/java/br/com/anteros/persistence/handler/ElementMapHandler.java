@@ -19,11 +19,11 @@ import java.sql.ResultSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import br.com.anteros.core.utils.ObjectUtils;
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCacheException;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
-import br.com.anteros.persistence.util.ObjectUtils;
-import br.com.anteros.persistence.util.ReflectionUtils;
 
 public class ElementMapHandler implements ResultSetHandler {
 

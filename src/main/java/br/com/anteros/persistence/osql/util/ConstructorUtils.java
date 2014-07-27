@@ -14,7 +14,14 @@
 package br.com.anteros.persistence.osql.util;
 
 import static com.google.common.collect.Iterables.filter;
-import static br.com.anteros.persistence.util.ArrayUtils.isEmpty;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Set;
+
+import br.com.anteros.core.utils.ArrayUtils;
 import br.com.anteros.persistence.osql.types.ExpressionException;
 
 import com.google.common.base.Function;
@@ -25,12 +32,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Primitives;
-
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Set;
 
 
 
@@ -89,8 +90,8 @@ public class ConstructorUtils {
             Iterator<Class<?>> parameterIterator = Arrays
                     .asList(parameters)
                     .iterator();
-            if (!isEmpty(givenTypes)
-                    && !isEmpty(parameters)) {
+            if (!ArrayUtils.isEmpty(givenTypes)
+                    && !ArrayUtils.isEmpty(parameters)) {
                 Class<?> parameter = null;
                 for (Class<?> argument : givenTypes) {
 
@@ -111,8 +112,8 @@ public class ConstructorUtils {
                 if (matches == parameters.length) {
                     return parameters;
                 }
-            } else if (isEmpty(givenTypes)
-                    && isEmpty(parameters)) {
+            } else if (ArrayUtils.isEmpty(givenTypes)
+                    && ArrayUtils.isEmpty(parameters)) {
                 return NO_ARGS;
             }
         }
@@ -196,7 +197,7 @@ public class ConstructorUtils {
 
         
         public Object[] apply(Object[] args) {
-            if (isEmpty(args)) {
+            if (ArrayUtils.isEmpty(args)) {
                 return args;
             }
             int current = 0;
@@ -248,7 +249,7 @@ public class ConstructorUtils {
 
         
         public Object[] apply(Object[] args) {
-            if (isEmpty(args)) {
+            if (ArrayUtils.isEmpty(args)) {
                 return args;
             }
             for (Integer location : primitiveLocations) {
@@ -279,7 +280,7 @@ public class ConstructorUtils {
 
         
         public Object[] apply(Object[] args) {
-            if (isEmpty(args)) {
+            if (ArrayUtils.isEmpty(args)) {
                 return args;
             }
             for (int i = paramTypes.length - 1; i < args.length; i++) {

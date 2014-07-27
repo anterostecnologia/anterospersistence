@@ -16,7 +16,6 @@
 package br.com.anteros.persistence.session.impl;
 
 import java.io.InputStream;
-import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
@@ -31,10 +30,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import br.com.anteros.core.utils.ReflectionUtils;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.handler.BeanHandler;
 import br.com.anteros.persistence.handler.ElementCollectionHandler;
 import br.com.anteros.persistence.handler.ElementMapHandler;
-import br.com.anteros.persistence.handler.EntityHandler;
 import br.com.anteros.persistence.handler.ResultSetHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityManaged;
@@ -61,9 +61,7 @@ import br.com.anteros.persistence.session.query.SQLQueryAnalyzer;
 import br.com.anteros.persistence.session.query.SQLQueryException;
 import br.com.anteros.persistence.sql.command.Select;
 import br.com.anteros.persistence.sql.statement.NamedParameterStatement;
-import br.com.anteros.persistence.util.ReflectionUtils;
 import br.com.anteros.persistence.util.SQLParserUtil;
-import br.com.anteros.persistence.util.StringUtils;
 
 @SuppressWarnings("all")
 public class SQLQueryImpl<T> implements SQLQuery<T> {

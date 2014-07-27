@@ -19,8 +19,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import br.com.anteros.persistence.log.Logger;
-import br.com.anteros.persistence.log.LoggerProvider;
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.persistence.sql.parser.exception.NotFoundParentNodeException;
 import br.com.anteros.persistence.sql.parser.exception.ParserException;
 import br.com.anteros.persistence.sql.parser.node.AliasNode;

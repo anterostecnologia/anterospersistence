@@ -17,8 +17,10 @@ package br.com.anteros.persistence.sql.command;
 
 import java.util.List;
 
-import br.com.anteros.persistence.log.Logger;
-import br.com.anteros.persistence.log.LoggerProvider;
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
+import br.com.anteros.core.utils.ReflectionUtils;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
@@ -32,8 +34,6 @@ import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.ProcedureResult;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.exception.SQLSessionException;
-import br.com.anteros.persistence.util.ReflectionUtils;
-import br.com.anteros.persistence.util.StringUtils;
 
 public class InsertCommandSQL extends CommandSQL {
 

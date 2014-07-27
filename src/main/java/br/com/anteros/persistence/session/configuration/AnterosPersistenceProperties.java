@@ -17,9 +17,7 @@ package br.com.anteros.persistence.session.configuration;
 
 import java.io.File;
 
-public class AnterosProperties {
-
-	public static final String XML_CONFIGURATION = "META-INF/anteros-config.xml";
+public class AnterosPersistenceProperties {
 
 	public static final String JDBC_DRIVER = "driverClassName";
 
@@ -86,8 +84,6 @@ public class AnterosProperties {
 	public static final String LOGGER_PROVIDER = "loggerProviderClassName";
 
 	public static final String CONSOLE_LOG_LEVEL = "consoleLogLevel";
-
-	public static final String LOGCAT_LOG_LEVEL = "logCatLogLevel";
 
 	public static final String CONNECTION_CLIENTINFO = "connectionClientInfo";
 	

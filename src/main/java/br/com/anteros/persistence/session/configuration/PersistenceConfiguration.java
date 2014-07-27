@@ -13,17 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package br.com.anteros.persistence.util;
+package br.com.anteros.persistence.session.configuration;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
+import br.com.anteros.core.configuration.BasicConfiguration;
+import br.com.anteros.persistence.session.SQLSessionFactory;
 
-import javax.sql.DataSource;
+public interface PersistenceConfiguration extends BasicConfiguration {
 
-public class ConnectionUtils {
-
-
+	public SQLSessionFactory buildSessionFactory() throws Exception;
 
 }

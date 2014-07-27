@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import br.com.anteros.core.utils.ReflectionUtils;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
@@ -40,8 +42,6 @@ import br.com.anteros.persistence.sql.parser.node.OperatorNode;
 import br.com.anteros.persistence.sql.parser.node.SelectNode;
 import br.com.anteros.persistence.sql.parser.node.SelectStatementNode;
 import br.com.anteros.persistence.sql.parser.node.TableNode;
-import br.com.anteros.persistence.util.ReflectionUtils;
-import br.com.anteros.persistence.util.StringUtils;
 
 public class SQLQueryAnalyzer {
 

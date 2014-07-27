@@ -24,17 +24,17 @@ import java.util.Map;
 import javax.sql.DataSource;
 import javax.transaction.TransactionManager;
 
+import br.com.anteros.core.configuration.SessionFactoryConfiguration;
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.schema.SchemaManager;
 import br.com.anteros.persistence.schema.type.TableCreationType;
-import br.com.anteros.persistence.session.configuration.AnterosProperties;
-import br.com.anteros.persistence.session.configuration.SessionFactoryConfiguration;
+import br.com.anteros.persistence.session.configuration.AnterosPersistenceProperties;
 import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.transaction.TransactionFactory;
 import br.com.anteros.persistence.transaction.TransactionManagerLookup;
 import br.com.anteros.persistence.transaction.impl.TransactionException;
-import br.com.anteros.persistence.util.ReflectionUtils;
 
 public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
@@ -55,11 +55,11 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		this.dataSource = dataSource;
 		this.configuration = configuration;
 
-		if (configuration.getProperty(AnterosProperties.DIALECT) == null) {
+		if (configuration.getProperty(AnterosPersistenceProperties.DIALECT) == null) {
 			throw new SQLSessionException("Dialeto não definido. Não foi possível instanciar SQLSessionFactory.");
 		}
 
-		String dialectProperty = configuration.getProperty(AnterosProperties.DIALECT);
+		String dialectProperty = configuration.getProperty(AnterosPersistenceProperties.DIALECT);
 		Class<?> dialectClass = Class.forName(dialectProperty);
 
 		if (!ReflectionUtils.isExtendsClass(DatabaseDialect.class, dialectClass))
@@ -67,17 +67,17 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 					+ DatabaseDialect.class.getName() + ".");
 
 		this.dialect = (DatabaseDialect) dialectClass.newInstance();
-		this.dialect.setDefaultCatalog(configuration.getProperty(AnterosProperties.JDBC_CATALOG));
-		this.dialect.setDefaultSchema(configuration.getProperty(AnterosProperties.JDBC_SCHEMA));
+		this.dialect.setDefaultCatalog(configuration.getProperty(AnterosPersistenceProperties.JDBC_CATALOG));
+		this.dialect.setDefaultSchema(configuration.getProperty(AnterosPersistenceProperties.JDBC_SCHEMA));
 
-		if (configuration.getProperty(AnterosProperties.SHOW_SQL) != null)
-			this.showSql = new Boolean(configuration.getProperty(AnterosProperties.SHOW_SQL));
+		if (configuration.getProperty(AnterosPersistenceProperties.SHOW_SQL) != null)
+			this.showSql = new Boolean(configuration.getProperty(AnterosPersistenceProperties.SHOW_SQL));
 
-		if (configuration.getProperty(AnterosProperties.FORMAT_SQL) != null)
-			this.showSql = new Boolean(configuration.getProperty(AnterosProperties.FORMAT_SQL));
+		if (configuration.getProperty(AnterosPersistenceProperties.FORMAT_SQL) != null)
+			this.showSql = new Boolean(configuration.getProperty(AnterosPersistenceProperties.FORMAT_SQL));
 
-		if (configuration.getProperty(AnterosProperties.QUERY_TIMEOUT) != null)
-			this.queryTimeout = new Integer(configuration.getProperty(AnterosProperties.QUERY_TIMEOUT)).intValue();
+		if (configuration.getProperty(AnterosPersistenceProperties.QUERY_TIMEOUT) != null)
+			this.queryTimeout = new Integer(configuration.getProperty(AnterosPersistenceProperties.QUERY_TIMEOUT)).intValue();
 
 	}
 	
@@ -90,21 +90,21 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		/*
 		 * Verifica se é para gerar o schema no banco de dados
 		 */
-		String databaseDDLGeneration = configuration.getPropertyDef(AnterosProperties.DATABASE_DDL_GENERATION,
-				AnterosProperties.NONE);
+		String databaseDDLGeneration = configuration.getPropertyDef(AnterosPersistenceProperties.DATABASE_DDL_GENERATION,
+				AnterosPersistenceProperties.NONE);
 		databaseDDLGeneration = databaseDDLGeneration.toLowerCase();
 		/*
 		 * Verifica se é para gerar o schema em script sql
 		 */
-		String scriptDDLGeneration = configuration.getPropertyDef(AnterosProperties.SCRIPT_DDL_GENERATION,
-				AnterosProperties.NONE);
+		String scriptDDLGeneration = configuration.getPropertyDef(AnterosPersistenceProperties.SCRIPT_DDL_GENERATION,
+				AnterosPersistenceProperties.NONE);
 		scriptDDLGeneration = scriptDDLGeneration.toLowerCase();
 
 		/*
 		 * Se não foi configurado para gerar nenhum schema retorna
 		 */
-		if ((databaseDDLGeneration.equals(AnterosProperties.NONE))
-				&& (scriptDDLGeneration.equals(AnterosProperties.NONE))) {
+		if ((databaseDDLGeneration.equals(AnterosPersistenceProperties.NONE))
+				&& (scriptDDLGeneration.equals(AnterosPersistenceProperties.NONE))) {
 			return;
 		}
 
@@ -112,27 +112,27 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		 * Verifica se é para criar integridade referencial
 		 */
 		Boolean createReferentialIntegrity = Boolean.parseBoolean(configuration.getPropertyDef(
-				AnterosProperties.CREATE_REFERENCIAL_INTEGRITY, "true"));
+				AnterosPersistenceProperties.CREATE_REFERENCIAL_INTEGRITY, "true"));
 
 		/*
 		 * Verifica a forma de geração do schema no banco de dados
 		 */
-		if (databaseDDLGeneration.equals(AnterosProperties.CREATE_ONLY)) {
+		if (databaseDDLGeneration.equals(AnterosPersistenceProperties.CREATE_ONLY)) {
 			databaseDDLType = TableCreationType.CREATE;
-		} else if (databaseDDLGeneration.equals(AnterosProperties.DROP_AND_CREATE)) {
+		} else if (databaseDDLGeneration.equals(AnterosPersistenceProperties.DROP_AND_CREATE)) {
 			databaseDDLType = TableCreationType.DROP;
-		} else if (databaseDDLGeneration.equals(AnterosProperties.CREATE_OR_EXTEND)) {
+		} else if (databaseDDLGeneration.equals(AnterosPersistenceProperties.CREATE_OR_EXTEND)) {
 			databaseDDLType = TableCreationType.EXTEND;
 		}
 
 		/*
 		 * Verifica a forma de geração do schema no script sql
 		 */
-		if (scriptDDLGeneration.equals(AnterosProperties.CREATE_ONLY)) {
+		if (scriptDDLGeneration.equals(AnterosPersistenceProperties.CREATE_ONLY)) {
 			scriptDDLType = TableCreationType.CREATE;
-		} else if (scriptDDLGeneration.equals(AnterosProperties.DROP_AND_CREATE)) {
+		} else if (scriptDDLGeneration.equals(AnterosPersistenceProperties.DROP_AND_CREATE)) {
 			scriptDDLType = TableCreationType.DROP;
-		} else if (scriptDDLGeneration.equals(AnterosProperties.CREATE_OR_EXTEND)) {
+		} else if (scriptDDLGeneration.equals(AnterosPersistenceProperties.CREATE_OR_EXTEND)) {
 			scriptDDLType = TableCreationType.EXTEND;
 		}
 
@@ -150,9 +150,9 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 			 * Verifica se foi definida a forma de saída: BANCO DE DADOS, SCRIPT
 			 * SQL, AMBOS
 			 */
-			String ddlGenerationMode = configuration.getPropertyDef(AnterosProperties.DDL_OUTPUT_MODE,
-					AnterosProperties.DEFAULT_DDL_GENERATION_MODE);
-			if (ddlGenerationMode.equals(AnterosProperties.NONE)) {
+			String ddlGenerationMode = configuration.getPropertyDef(AnterosPersistenceProperties.DDL_OUTPUT_MODE,
+					AnterosPersistenceProperties.DEFAULT_DDL_GENERATION_MODE);
+			if (ddlGenerationMode.equals(AnterosPersistenceProperties.NONE)) {
 				return;
 			}
 
@@ -164,22 +164,22 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 			/*
 			 * Gera o schema no script sql
 			 */
-			if (ddlGenerationMode.equals(AnterosProperties.DDL_SQL_SCRIPT_OUTPUT)
-					|| ddlGenerationMode.equals(AnterosProperties.DDL_BOTH_OUTPUT)) {
-				String appLocation = configuration.getPropertyDef(AnterosProperties.APPLICATION_LOCATION,
-						AnterosProperties.DEFAULT_APPLICATION_LOCATION);
-				String createDDLJdbc = configuration.getPropertyDef(AnterosProperties.CREATE_TABLES_FILENAME,
-						AnterosProperties.DEFAULT_CREATE_TABLES_FILENAME);
-				String dropDDLJdbc = configuration.getPropertyDef(AnterosProperties.DROP_TABLES_FILENAME,
-						AnterosProperties.DEFAULT_DROP_TABLES_FILENAME);
+			if (ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_SQL_SCRIPT_OUTPUT)
+					|| ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_BOTH_OUTPUT)) {
+				String appLocation = configuration.getPropertyDef(AnterosPersistenceProperties.APPLICATION_LOCATION,
+						AnterosPersistenceProperties.DEFAULT_APPLICATION_LOCATION);
+				String createDDLJdbc = configuration.getPropertyDef(AnterosPersistenceProperties.CREATE_TABLES_FILENAME,
+						AnterosPersistenceProperties.DEFAULT_CREATE_TABLES_FILENAME);
+				String dropDDLJdbc = configuration.getPropertyDef(AnterosPersistenceProperties.DROP_TABLES_FILENAME,
+						AnterosPersistenceProperties.DEFAULT_DROP_TABLES_FILENAME);
 				schemaManager.writeDDLsToFiles(scriptDDLType, appLocation, createDDLJdbc, dropDDLJdbc);
 			}
 
 			/*
 			 * Gera o schema no banco de dados
 			 */
-			if (ddlGenerationMode.equals(AnterosProperties.DDL_DATABASE_OUTPUT)
-					|| ddlGenerationMode.equals(AnterosProperties.DDL_BOTH_OUTPUT)) {
+			if (ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_DATABASE_OUTPUT)
+					|| ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_BOTH_OUTPUT)) {
 				schemaManager.writeDDLToDatabase(databaseDDLType);
 			}
 
@@ -305,7 +305,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	}
 
 	protected void setConfigurationClientInfo(Connection connection) throws IOException, SQLException {
-		String clientInfo = this.getConfiguration().getProperty(AnterosProperties.CONNECTION_CLIENTINFO);
+		String clientInfo = this.getConfiguration().getProperty(AnterosPersistenceProperties.CONNECTION_CLIENTINFO);
 		if (clientInfo != null && clientInfo.length() > 0)
 			this.getDialect().setConnectionClientInfo(connection, clientInfo);
 	}

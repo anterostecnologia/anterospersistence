@@ -33,14 +33,14 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
-import br.com.anteros.persistence.log.Logger;
-import br.com.anteros.persistence.log.LoggerProvider;
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
+import br.com.anteros.core.utils.IOUtils;
+import br.com.anteros.core.utils.ReflectionUtils;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.ColumnSchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
-import br.com.anteros.persistence.util.IOUtils;
-import br.com.anteros.persistence.util.ReflectionUtils;
-import br.com.anteros.persistence.util.StringUtils;
 
 public class OracleDialect extends DatabaseDialect {
 

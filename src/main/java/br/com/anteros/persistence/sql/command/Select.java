@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
-import br.com.anteros.persistence.util.StringUtils;
 
 public class Select {
 

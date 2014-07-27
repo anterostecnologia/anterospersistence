@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityManaged;
 import br.com.anteros.persistence.metadata.FieldEntityValue;
@@ -51,7 +52,6 @@ import br.com.anteros.persistence.sql.command.InsertCommandSQL;
 import br.com.anteros.persistence.sql.command.Select;
 import br.com.anteros.persistence.sql.command.Update;
 import br.com.anteros.persistence.sql.command.UpdateCommandSQL;
-import br.com.anteros.persistence.util.ReflectionUtils;
 import br.com.anteros.persistence.validation.version.Versioning;
 
 public class SQLPersisterImpl implements SQLPersister {

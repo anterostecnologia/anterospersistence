@@ -17,7 +17,7 @@ package br.com.anteros.persistence.sql.datasource;
 
 import javax.sql.DataSource;
 
-import br.com.anteros.persistence.util.ReflectionUtils;
+import br.com.anteros.core.utils.ReflectionUtils;
 
 public class JNDIDataSourceFactory {
 

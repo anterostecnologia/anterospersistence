@@ -15,8 +15,8 @@ package br.com.anteros.persistence.osql.group;
 
 import java.math.BigDecimal;
 
+import br.com.anteros.core.utils.MathUtils;
 import br.com.anteros.persistence.osql.types.Expression;
-import br.com.anteros.persistence.util.MathUtils;
 
 /**
  * @author tiwe

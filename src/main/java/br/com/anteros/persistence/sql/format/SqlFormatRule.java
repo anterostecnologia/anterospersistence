@@ -17,9 +17,9 @@ package br.com.anteros.persistence.sql.format;
 
 import java.util.Arrays;
 
+import br.com.anteros.core.utils.ArrayUtils;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.sql.format.tokenizer.TokenUtil;
-import br.com.anteros.persistence.util.ArrayUtils;
-import br.com.anteros.persistence.util.StringUtils;
 
 public class SqlFormatRule
   implements ISqlFormatRule

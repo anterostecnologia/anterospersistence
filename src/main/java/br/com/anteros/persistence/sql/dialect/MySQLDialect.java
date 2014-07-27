@@ -22,11 +22,11 @@ import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import br.com.anteros.persistence.log.Logger;
-import br.com.anteros.persistence.log.LoggerProvider;
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
+import br.com.anteros.core.utils.ResourceUtils;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
-import br.com.anteros.persistence.util.ResourceUtils;
 
 public class MySQLDialect extends DatabaseDialect {
 

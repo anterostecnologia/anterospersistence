@@ -8,8 +8,8 @@ import javax.transaction.Synchronization;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 
-import br.com.anteros.persistence.log.Logger;
-import br.com.anteros.persistence.log.LoggerProvider;
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.persistence.session.AbstractSQLSessionFactory;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionFactory;

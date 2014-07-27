@@ -34,17 +34,21 @@ import org.simpleframework.xml.Transient;
 import org.simpleframework.xml.core.Persister;
 import org.simpleframework.xml.stream.Format;
 
-import br.com.anteros.persistence.log.LoggerProvider;
+import br.com.anteros.core.configuration.AnterosBasicConfiguration;
+import br.com.anteros.core.configuration.AnterosCoreProperties;
+import br.com.anteros.core.configuration.DataSourceConfiguration;
+import br.com.anteros.core.configuration.PropertyConfiguration;
+import br.com.anteros.core.configuration.SessionFactoryConfiguration;
+import br.com.anteros.core.configuration.exception.AnterosConfigurationException;
+import br.com.anteros.core.utils.ResourceUtils;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
 import br.com.anteros.persistence.metadata.configuration.ModelConfiguration;
 import br.com.anteros.persistence.session.SQLSessionFactory;
-import br.com.anteros.persistence.session.configuration.exception.AnterosConfigurationException;
 import br.com.anteros.persistence.session.impl.SQLSessionFactoryImpl;
-import br.com.anteros.persistence.util.ResourceUtils;
 
 @Root(name = "anteros-configuration")
-public abstract class AbstractSQLConfiguration implements SQLConfiguration {
+public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfiguration implements PersistenceConfiguration {
 
 	@Element(name = "session-factory")
 	protected SessionFactoryConfiguration sessionFactory;
@@ -55,21 +59,21 @@ public abstract class AbstractSQLConfiguration implements SQLConfiguration {
 	@Transient
 	protected ModelConfiguration modelConfiguration;
 
-	public AbstractSQLConfiguration() {
+	public AbstractPersistenceConfiguration() {
 		entityCacheManager = new EntityCacheManager();
 	}
 
-	public AbstractSQLConfiguration(DataSource dataSource) {
+	public AbstractPersistenceConfiguration(DataSource dataSource) {
 		this();
 		this.dataSource = dataSource;		
 	}
 
-	public AbstractSQLConfiguration(ModelConfiguration modelConfiguration) {
+	public AbstractPersistenceConfiguration(ModelConfiguration modelConfiguration) {
 		this();
 		this.modelConfiguration = modelConfiguration;
 	}
 
-	public AbstractSQLConfiguration(DataSource dataSource, ModelConfiguration modelConfiguration) {
+	public AbstractPersistenceConfiguration(DataSource dataSource, ModelConfiguration modelConfiguration) {
 		super();
 		this.dataSource = dataSource;
 		this.modelConfiguration = modelConfiguration;
@@ -85,31 +89,31 @@ public abstract class AbstractSQLConfiguration implements SQLConfiguration {
 		this.sessionFactory = value;
 	}
 
-	public AbstractSQLConfiguration addAnnotatedClass(Class<?> clazz) {
+	public AbstractPersistenceConfiguration addAnnotatedClass(Class<?> clazz) {
 		getSessionFactoryConfiguration().getAnnotatedClasses().getClazz().add(clazz.getName());
 		return this;
 	}
 
-	public AbstractSQLConfiguration addAnnotatedClass(String clazz) {
+	public AbstractPersistenceConfiguration addAnnotatedClass(String clazz) {
 		getSessionFactoryConfiguration().getAnnotatedClasses().getClazz().add(clazz);
 		return this;
 	}
 
-	public AbstractSQLConfiguration setLocationPlaceHolder(String location) {
+	public AbstractPersistenceConfiguration setLocationPlaceHolder(String location) {
 		getSessionFactoryConfiguration().getPlaceholder().setLocation(location);
 		return this;
 	}
 
-	public AbstractSQLConfiguration addDataSource(DataSourceConfiguration dataSource) {
+	public AbstractPersistenceConfiguration addDataSource(DataSourceConfiguration dataSource) {
 		getSessionFactoryConfiguration().getDataSources().getDataSources().add(dataSource);
 		return this;
 	}
 
-	public AbstractSQLConfiguration addDataSource(String id, Class<?> clazz, PropertyConfiguration[] properties) {
+	public AbstractPersistenceConfiguration addDataSource(String id, Class<?> clazz, PropertyConfiguration[] properties) {
 		return addDataSource(id, clazz.getName(), properties);
 	}
 
-	public AbstractSQLConfiguration addDataSource(String id, String clazz, PropertyConfiguration[] properties) {
+	public AbstractPersistenceConfiguration addDataSource(String id, String clazz, PropertyConfiguration[] properties) {
 		DataSourceConfiguration dataSource = new DataSourceConfiguration();
 		dataSource.setId(id);
 		dataSource.setClazz(clazz);
@@ -120,11 +124,11 @@ public abstract class AbstractSQLConfiguration implements SQLConfiguration {
 		return this;
 	}
 
-	public AbstractSQLConfiguration addDataSource(String id, Class<?> clazz, Map<String, String> properties) {
+	public AbstractPersistenceConfiguration addDataSource(String id, Class<?> clazz, Map<String, String> properties) {
 		return addDataSource(id, clazz.getName(), properties);
 	}
 
-	public AbstractSQLConfiguration addDataSource(String id, String clazz, Map<String, String> properties) {
+	public AbstractPersistenceConfiguration addDataSource(String id, String clazz, Map<String, String> properties) {
 		List<PropertyConfiguration> props = new ArrayList<PropertyConfiguration>();
 		for (String property : properties.keySet()) {
 			props.add(new PropertyConfiguration().setName(property).setValue(properties.get(property)));
@@ -132,11 +136,11 @@ public abstract class AbstractSQLConfiguration implements SQLConfiguration {
 		return addDataSource(id, clazz, props.toArray(new PropertyConfiguration[] {}));
 	}
 
-	public AbstractSQLConfiguration addDataSource(String id, Class<?> clazz, Properties properties) {
+	public AbstractPersistenceConfiguration addDataSource(String id, Class<?> clazz, Properties properties) {
 		return addDataSource(id, clazz.getName(), properties);
 	}
 
-	public AbstractSQLConfiguration addDataSource(String id, String clazz, Properties properties) {
+	public AbstractPersistenceConfiguration addDataSource(String id, String clazz, Properties properties) {
 		List<PropertyConfiguration> props = new ArrayList<PropertyConfiguration>();
 		for (Object property : properties.keySet()) {
 			props.add(new PropertyConfiguration().setName((String) property).setValue((String) properties.get(property)));
@@ -144,26 +148,26 @@ public abstract class AbstractSQLConfiguration implements SQLConfiguration {
 		return addDataSource(id, clazz, props.toArray(new PropertyConfiguration[] {}));
 	}
 
-	public AbstractSQLConfiguration addProperty(PropertyConfiguration property) {
+	public AbstractPersistenceConfiguration addProperty(PropertyConfiguration property) {
 		getSessionFactoryConfiguration().getProperties().getProperties().add(property);
 		return this;
 	}
 
-	public AbstractSQLConfiguration addProperties(Properties properties) {
+	public AbstractPersistenceConfiguration addProperties(Properties properties) {
 		for (Object property : properties.keySet()) {
 			addProperty(new PropertyConfiguration().setName((String) property).setValue((String) properties.get(property)));
 		}
 		return this;
 	}
 
-	public AbstractSQLConfiguration addProperties(PropertyConfiguration[] properties) {
+	public AbstractPersistenceConfiguration addProperties(PropertyConfiguration[] properties) {
 		for (PropertyConfiguration property : properties) {
 			addProperty(property);
 		}
 		return this;
 	}
 
-	public AbstractSQLConfiguration addProperty(String name, String value) {
+	public AbstractPersistenceConfiguration addProperty(String name, String value) {
 		addProperty(new PropertyConfiguration().setName(name).setValue(value));
 		return this;
 	}
@@ -189,11 +193,13 @@ public abstract class AbstractSQLConfiguration implements SQLConfiguration {
 		return this.entityCacheManager;
 	}
 
-	public SQLConfiguration configure() throws AnterosConfigurationException {
-		return configure(AnterosProperties.XML_CONFIGURATION);
+	@Override
+	public AbstractPersistenceConfiguration configure() throws AnterosConfigurationException {
+		return configure(AnterosCoreProperties.XML_CONFIGURATION);
 	}
 
-	public SQLConfiguration configure(String xmlFile) throws AnterosConfigurationException {
+	@Override
+	public AbstractPersistenceConfiguration configure(String xmlFile) throws AnterosConfigurationException {
 		InputStream is;
 		try {
 			final List<URL> resources = ResourceUtils.getResources(xmlFile, getClass());
@@ -210,10 +216,11 @@ public abstract class AbstractSQLConfiguration implements SQLConfiguration {
 		throw new AnterosConfigurationException("Arquivo de configuração " + xmlFile + " não encontrado.");
 	}
 
-	public SQLConfiguration configure(InputStream xmlConfiguration) throws AnterosConfigurationException {
+	@Override
+	public AbstractPersistenceConfiguration configure(InputStream xmlConfiguration) throws AnterosConfigurationException {
 		try {
 			Serializer serializer = new Persister(new Format("<?xml version=\"1.0\" encoding= \"UTF-8\" ?>"));
-			final AnterosConfiguration result = serializer.read(AnterosConfiguration.class, xmlConfiguration);
+			final AbstractPersistenceConfiguration result = serializer.read(this.getClass(), xmlConfiguration);
 			this.setSessionFactory(result.getSessionFactoryConfiguration());
 			this.dataSource = null;
 			this.buildDataSource();
@@ -223,17 +230,15 @@ public abstract class AbstractSQLConfiguration implements SQLConfiguration {
 		}
 	}
 
-	public SQLConfiguration configure(InputStream xmlConfiguration, InputStream placeHolder) throws AnterosConfigurationException {
+	@Override
+	public AbstractPersistenceConfiguration configure(InputStream xmlConfiguration, InputStream placeHolder) throws AnterosConfigurationException {
 		try {
 			Serializer serializer = new Persister(new Format("<?xml version=\"1.0\" encoding= \"UTF-8\" ?>"));
-			final AnterosConfiguration result = serializer.read(AnterosConfiguration.class, xmlConfiguration);
+			final AbstractPersistenceConfiguration result = serializer.read(this.getClass(), xmlConfiguration);
 			result.setPlaceHolder(placeHolder);
 			this.setSessionFactory(result.getSessionFactoryConfiguration());
 			this.dataSource = null;
 			this.buildDataSource();
-			
-			System.out.println("Teste config: " + LoggerProvider.class.getName());
-			System.out.println("Teste config2: " + LoggerProvider.getInstance());
 			
 			return this;
 		} catch (final Exception e) {
@@ -247,12 +252,12 @@ public abstract class AbstractSQLConfiguration implements SQLConfiguration {
 		return dataSource;
 	}
 
-	public AbstractSQLConfiguration dataSource(DataSource dataSource) {
+	public AbstractPersistenceConfiguration dataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
 		return this;
 	}
 
-	public AbstractSQLConfiguration modelConfiguration(ModelConfiguration modelConfiguration) {
+	public AbstractPersistenceConfiguration modelConfiguration(ModelConfiguration modelConfiguration) {
 		this.modelConfiguration = modelConfiguration;
 		return this;
 	}
@@ -265,7 +270,7 @@ public abstract class AbstractSQLConfiguration implements SQLConfiguration {
 		return getSessionFactoryConfiguration().getProperties().getProperty(name);
 	}
 	
-	public AbstractSQLConfiguration setPlaceHolder(InputStream placeHolder) throws IOException {
+	public AbstractPersistenceConfiguration setPlaceHolder(InputStream placeHolder) throws IOException {
 		if (placeHolder!=null){
 			Properties props = new Properties();
 			props.load(placeHolder);
@@ -274,7 +279,7 @@ public abstract class AbstractSQLConfiguration implements SQLConfiguration {
 		return this;
 	}
 	
-	public AbstractSQLConfiguration setProperties(Properties props){
+	public AbstractPersistenceConfiguration setProperties(Properties props){
 		getSessionFactoryConfiguration().getProperties().setProperties(props);	
 		return this;
 	}

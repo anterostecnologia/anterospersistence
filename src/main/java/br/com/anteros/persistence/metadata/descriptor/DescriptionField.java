@@ -28,6 +28,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import br.com.anteros.core.utils.ObjectUtils;
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheException;
 import br.com.anteros.persistence.metadata.EntityManaged;
@@ -38,7 +40,6 @@ import br.com.anteros.persistence.metadata.annotation.type.FetchMode;
 import br.com.anteros.persistence.metadata.annotation.type.FetchType;
 import br.com.anteros.persistence.metadata.annotation.type.ReturnType;
 import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
-import br.com.anteros.persistence.metadata.descriptor.type.ColumnType;
 import br.com.anteros.persistence.metadata.descriptor.type.ConnectivityType;
 import br.com.anteros.persistence.metadata.descriptor.type.FieldType;
 import br.com.anteros.persistence.metadata.descriptor.type.SQLStatementType;
@@ -48,10 +49,7 @@ import br.com.anteros.persistence.sql.binder.DateParameterBinding;
 import br.com.anteros.persistence.sql.binder.DateTimeParameterBinding;
 import br.com.anteros.persistence.sql.binder.LobParameterBinding;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
-import br.com.anteros.persistence.sql.dialect.type.DateFormatter;
 import br.com.anteros.persistence.sql.dialect.type.SQLiteDate;
-import br.com.anteros.persistence.util.ObjectUtils;
-import br.com.anteros.persistence.util.ReflectionUtils;
 
 public class DescriptionField {
 	private Field field;

@@ -21,36 +21,38 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import br.com.anteros.core.configuration.DataSourceConfiguration;
+import br.com.anteros.core.configuration.PropertyConfiguration;
+import br.com.anteros.core.configuration.exception.AnterosConfigurationException;
+import br.com.anteros.core.utils.ReflectionUtils;
+import br.com.anteros.core.utils.ResourceUtils;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.configuration.ModelConfiguration;
-import br.com.anteros.persistence.session.configuration.exception.AnterosConfigurationException;
 import br.com.anteros.persistence.sql.datasource.JDBCDataSource;
 import br.com.anteros.persistence.sql.datasource.JNDIDataSourceFactory;
-import br.com.anteros.persistence.util.ReflectionUtils;
-import br.com.anteros.persistence.util.ResourceUtils;
-import br.com.anteros.persistence.util.StringUtils;
 
-public class AnterosConfiguration extends AbstractSQLConfiguration {
+public class AnterosPersistenceConfiguration extends AbstractPersistenceConfiguration {
 
-	public AnterosConfiguration() {
+	public AnterosPersistenceConfiguration() {
 		super();
 	}
 
-	public AnterosConfiguration(DataSource dataSource) {
+	public AnterosPersistenceConfiguration(DataSource dataSource) {
 		super(dataSource);
 	}
 
-	public AnterosConfiguration(ModelConfiguration modelConfiguration) {
+	public AnterosPersistenceConfiguration(ModelConfiguration modelConfiguration) {
 		super(modelConfiguration);
 	}
 
-	public AnterosConfiguration(DataSource dataSource, ModelConfiguration modelConfiguration) {
+	public AnterosPersistenceConfiguration(DataSource dataSource, ModelConfiguration modelConfiguration) {
 		super(dataSource, modelConfiguration);
 	}
 
 	@Override
 	protected void buildDataSource() throws Exception {
 		if (dataSource == null) {
-			String dataSourceId = getProperty(AnterosProperties.DATASOURCE);
+			String dataSourceId = getProperty(AnterosPersistenceProperties.DATASOURCE);
 			if (dataSourceId != null) {
 				DataSourceConfiguration dataSourceConfiguration = getSessionFactoryConfiguration().getDataSourceById(
 						dataSourceId);
@@ -63,7 +65,7 @@ public class AnterosConfiguration extends AbstractSQLConfiguration {
 
 				if (datasourceClass == JNDIDataSourceFactory.class) {
 					String jndiName = getSessionFactoryConfiguration().ConvertPlaceHolder(
-							dataSourceConfiguration.getProperty(AnterosProperties.JNDI_DATASOURCE));
+							dataSourceConfiguration.getProperty(AnterosPersistenceProperties.JNDI_DATASOURCE));
 					if ((jndiName == null) || (jndiName == ""))
 						throw new AnterosConfigurationException("não foi possível criar o DataSource " + dataSourceId
 								+ ", não foi configurado o nome do JNDI.");
@@ -92,9 +94,9 @@ public class AnterosConfiguration extends AbstractSQLConfiguration {
 	}
 	
 	public static InputStream getDefaultXmlInputStream() throws Exception {	
-		List<URL> resources = ResourceUtils.getResources("/anteros-config.xml", AnterosConfiguration.class);
+		List<URL> resources = ResourceUtils.getResources("/anteros-config.xml", AnterosPersistenceConfiguration.class);
 		if ((resources == null) || (resources.isEmpty())) {
-			resources = ResourceUtils.getResources("/assets/anteros-config.xml", AnterosConfiguration.class);
+			resources = ResourceUtils.getResources("/assets/anteros-config.xml", AnterosPersistenceConfiguration.class);
 			if ((resources != null) && (!resources.isEmpty())) {
 				final URL url = resources.get(0);
 				return url.openStream();

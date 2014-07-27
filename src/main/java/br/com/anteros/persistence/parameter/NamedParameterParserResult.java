@@ -20,7 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import br.com.anteros.persistence.util.ResourceUtils;
+import br.com.anteros.core.utils.ResourceUtils;
 
 public class NamedParameterParserResult {
 

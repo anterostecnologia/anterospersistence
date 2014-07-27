@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.annotation.type.BooleanType;
@@ -54,7 +55,6 @@ import br.com.anteros.persistence.schema.type.TableCreationType;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.sql.dialect.ForeignKeyMetadata;
 import br.com.anteros.persistence.sql.dialect.IndexMetadata;
-import br.com.anteros.persistence.util.StringUtils;
 
 public class SchemaManager implements Comparator<TableSchema> {
 

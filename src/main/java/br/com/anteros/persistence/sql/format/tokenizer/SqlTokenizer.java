@@ -17,8 +17,8 @@ package br.com.anteros.persistence.sql.format.tokenizer;
 
 import java.util.Iterator;
 
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.sql.format.SqlFormatRule;
-import br.com.anteros.persistence.util.StringUtils;
 
 public class SqlTokenizer implements Iterator<Token> {
 	protected SqlScanner scanner;

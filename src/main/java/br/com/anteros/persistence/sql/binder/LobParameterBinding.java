@@ -23,7 +23,7 @@ import java.sql.Clob;
 import java.sql.PreparedStatement;
 import java.sql.Types;
 
-import br.com.anteros.persistence.util.ArrayUtils;
+import br.com.anteros.core.utils.ArrayUtils;
 
 public class LobParameterBinding implements ParameterBinding {
 

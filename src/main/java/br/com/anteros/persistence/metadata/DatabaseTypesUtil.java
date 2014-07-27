@@ -17,13 +17,13 @@ package br.com.anteros.persistence.metadata;
 
 import java.lang.reflect.Field;
 
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.annotation.Column;
 import br.com.anteros.persistence.metadata.annotation.Columns;
 import br.com.anteros.persistence.metadata.annotation.CompositeId;
 import br.com.anteros.persistence.metadata.annotation.ForeignKey;
 import br.com.anteros.persistence.metadata.annotation.Id;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
-import br.com.anteros.persistence.util.ReflectionUtils;
 
 public class DatabaseTypesUtil {
 	private DatabaseTypesUtil() {

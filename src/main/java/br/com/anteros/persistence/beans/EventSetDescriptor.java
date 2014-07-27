@@ -18,7 +18,7 @@ package br.com.anteros.persistence.beans;
 import java.lang.ref.Reference;
 import java.lang.reflect.Method;
 
-import br.com.anteros.persistence.util.ResourceUtils;
+import br.com.anteros.core.utils.ResourceUtils;
 
 /**
  * An EventSetDescriptor describes a group of events that a given Java bean

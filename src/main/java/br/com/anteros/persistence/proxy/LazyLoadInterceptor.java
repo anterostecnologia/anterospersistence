@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 import javassist.util.proxy.MethodHandler;
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityManaged;
 import br.com.anteros.persistence.metadata.FieldEntityValue;
@@ -27,7 +28,6 @@ import br.com.anteros.persistence.metadata.annotation.type.ScopeType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
-import br.com.anteros.persistence.util.ReflectionUtils;
 
 public class LazyLoadInterceptor implements MethodHandler {
 

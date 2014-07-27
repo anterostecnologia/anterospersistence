@@ -16,11 +16,11 @@ package br.com.anteros.persistence.osql.support;
 import java.util.List;
 import java.util.Map;
 
+import br.com.anteros.core.utils.MathUtils;
 import br.com.anteros.persistence.osql.types.Expression;
 import br.com.anteros.persistence.osql.types.ExpressionBase;
 import br.com.anteros.persistence.osql.types.FactoryExpression;
 import br.com.anteros.persistence.osql.types.Visitor;
-import br.com.anteros.persistence.util.MathUtils;
 
 import com.google.common.collect.Maps;
 

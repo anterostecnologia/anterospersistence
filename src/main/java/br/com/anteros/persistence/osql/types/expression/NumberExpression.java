@@ -18,6 +18,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.com.anteros.core.utils.MathUtils;
 import br.com.anteros.persistence.osql.types.CollectionExpression;
 import br.com.anteros.persistence.osql.types.ConstantImpl;
 import br.com.anteros.persistence.osql.types.Expression;
@@ -26,7 +27,6 @@ import br.com.anteros.persistence.osql.types.Ops;
 import br.com.anteros.persistence.osql.types.Ops.MathOps;
 import br.com.anteros.persistence.osql.types.Path;
 import br.com.anteros.persistence.osql.types.PathImpl;
-import br.com.anteros.persistence.util.MathUtils;
 
 /**
  * NumberExpression represents a numeric expression

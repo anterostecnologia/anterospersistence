@@ -15,7 +15,6 @@
  ******************************************************************************/
 package br.com.anteros.persistence.session.query;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
@@ -32,12 +31,13 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.beans.IntrospectionException;
 import br.com.anteros.persistence.beans.Introspector;
 import br.com.anteros.persistence.beans.PropertyDescriptor;
 import br.com.anteros.persistence.handler.ResultSetHandler;
-import br.com.anteros.persistence.log.Logger;
-import br.com.anteros.persistence.log.LoggerProvider;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
 import br.com.anteros.persistence.parameter.NamedParameter;
@@ -49,7 +49,6 @@ import br.com.anteros.persistence.session.impl.SQLQueryRunner;
 import br.com.anteros.persistence.sql.binder.ParameterBinding;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.sql.statement.NamedParameterStatement;
-import br.com.anteros.persistence.util.StringUtils;
 
 public abstract class AbstractSQLRunner {
 

@@ -16,6 +16,12 @@
 			<artifactId>javassist</artifactId>
 			<version>3.12.1.GA</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>br.com.anteros</groupId>
+			<artifactId>Anteros-Core</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 
 		<dependency>
 			<groupId>c3p0</groupId>

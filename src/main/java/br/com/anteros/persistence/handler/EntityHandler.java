@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import br.com.anteros.core.utils.ObjectUtils;
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.EntityManaged;
@@ -24,8 +26,6 @@ import br.com.anteros.persistence.proxy.collection.SQLArrayList;
 import br.com.anteros.persistence.proxy.collection.SQLHashSet;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
-import br.com.anteros.persistence.util.ObjectUtils;
-import br.com.anteros.persistence.util.ReflectionUtils;
 
 /**
  * Handler para criação de Objeto baseado em SELECT com Expressões.

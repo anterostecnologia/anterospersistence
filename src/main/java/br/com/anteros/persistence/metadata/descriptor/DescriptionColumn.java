@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import br.com.anteros.core.utils.ObjectUtils;
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.FieldEntityValue;
 import br.com.anteros.persistence.metadata.annotation.type.BooleanType;
@@ -30,8 +32,6 @@ import br.com.anteros.persistence.metadata.annotation.type.GeneratedType;
 import br.com.anteros.persistence.metadata.annotation.type.ReturnType;
 import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
 import br.com.anteros.persistence.metadata.descriptor.type.ColumnType;
-import br.com.anteros.persistence.util.ObjectUtils;
-import br.com.anteros.persistence.util.ReflectionUtils;
 
 /**
  * Classe responsável pela descrição da Coluna de uma entidade.

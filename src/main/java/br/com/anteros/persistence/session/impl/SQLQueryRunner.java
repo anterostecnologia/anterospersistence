@@ -15,7 +15,6 @@
  ******************************************************************************/
 package br.com.anteros.persistence.session.impl;
 
-import java.io.Serializable;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -28,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import br.com.anteros.core.utils.SQLFormatter;
 import br.com.anteros.persistence.handler.ResultSetHandler;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
@@ -40,7 +40,6 @@ import br.com.anteros.persistence.session.SQLSessionResult;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.sql.statement.NamedParameterStatement;
-import br.com.anteros.persistence.util.SQLFormatter;
 
 /**
  * Classe responsável pela execução de SQL via JDBC no Banco de Dados

@@ -20,13 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import br.com.anteros.core.utils.ResourceUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityManaged;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionSQL;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.impl.SQLQueryRunner;
-import br.com.anteros.persistence.util.ResourceUtils;
 
 public abstract class CommandSQL {
 

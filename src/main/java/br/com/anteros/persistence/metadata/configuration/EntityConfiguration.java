@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.annotation.Comment;
 import br.com.anteros.persistence.metadata.annotation.Converter;
 import br.com.anteros.persistence.metadata.annotation.Converters;
@@ -48,7 +49,6 @@ import br.com.anteros.persistence.metadata.annotation.type.DiscriminatorType;
 import br.com.anteros.persistence.metadata.annotation.type.InheritanceType;
 import br.com.anteros.persistence.metadata.annotation.type.ScopeType;
 import br.com.anteros.persistence.metadata.descriptor.type.ConnectivityType;
-import br.com.anteros.persistence.util.ReflectionUtils;
 import br.com.anteros.synchronism.annotation.Remote;
 
 public class EntityConfiguration {

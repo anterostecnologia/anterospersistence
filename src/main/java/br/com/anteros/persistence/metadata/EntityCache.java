@@ -27,6 +27,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import br.com.anteros.core.converter.ConversionHelper;
+import br.com.anteros.core.utils.ObjectUtils;
+import br.com.anteros.core.utils.ReflectionUtils;
+import br.com.anteros.core.utils.ResourceUtils;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.annotation.type.ScopeType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionConverter;
@@ -41,11 +46,6 @@ import br.com.anteros.persistence.metadata.descriptor.type.ConnectivityType;
 import br.com.anteros.persistence.metadata.descriptor.type.SQLStatementType;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPath;
 import br.com.anteros.persistence.session.SQLSession;
-import br.com.anteros.persistence.sql.converter.ConversionHelper;
-import br.com.anteros.persistence.util.ObjectUtils;
-import br.com.anteros.persistence.util.ReflectionUtils;
-import br.com.anteros.persistence.util.ResourceUtils;
-import br.com.anteros.persistence.util.StringUtils;
 
 public class EntityCache {
 	private Set<DescriptionColumn> columns = new LinkedHashSet<DescriptionColumn>();

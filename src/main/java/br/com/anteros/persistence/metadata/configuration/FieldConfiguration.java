@@ -23,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.annotation.BooleanValue;
 import br.com.anteros.persistence.metadata.annotation.Cascade;
 import br.com.anteros.persistence.metadata.annotation.CollectionTable;
@@ -67,7 +68,6 @@ import br.com.anteros.persistence.metadata.annotation.type.GeneratedType;
 import br.com.anteros.persistence.metadata.annotation.type.ReturnType;
 import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
 import br.com.anteros.persistence.metadata.descriptor.type.ConnectivityType;
-import br.com.anteros.persistence.util.ReflectionUtils;
 import br.com.anteros.synchronism.annotation.IdSynchronism;
 import br.com.anteros.synchronism.annotation.Remote;
 

@@ -22,7 +22,6 @@ import java.util.List;
 
 import br.com.anteros.persistence.schema.exception.SchemaGeneratorException;
 import br.com.anteros.persistence.session.SQLSession;
-import br.com.anteros.persistence.util.StringUtils;
 
 public class TableSchema extends ObjectSchema {
 

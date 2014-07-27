@@ -15,7 +15,8 @@
  ******************************************************************************/
 package br.com.anteros.persistence.session;
 
-import br.com.anteros.persistence.session.configuration.AnterosConfiguration;
+import br.com.anteros.persistence.session.configuration.AnterosPersistenceConfiguration;
+
 
 
 public abstract class SQLSessionFactoryHelper {
@@ -24,19 +25,19 @@ public abstract class SQLSessionFactoryHelper {
 
 	public static SQLSessionFactory getSessionFactory() throws Exception {
 		if (sessionFactory == null) {
-			sessionFactory = new AnterosConfiguration().configure().buildSessionFactory();
+			sessionFactory = new AnterosPersistenceConfiguration().configure().buildSessionFactory();
 		}
 		return sessionFactory;
 	}
 
 	public static SQLSessionFactory getSessionFactory(String configurationFile) throws Exception {
 		if (sessionFactory == null) {
-			sessionFactory = new AnterosConfiguration().configure(configurationFile).buildSessionFactory();
+			sessionFactory = new AnterosPersistenceConfiguration().configure(configurationFile).buildSessionFactory();
 		}
 		return sessionFactory;
 	}
 
 	public static SQLSessionFactory getNewSessionFactory(String configurationFile) throws Exception {
-		return new AnterosConfiguration().configure(configurationFile).buildSessionFactory();
+		return new AnterosPersistenceConfiguration().configure(configurationFile).buildSessionFactory();
 	}
 }

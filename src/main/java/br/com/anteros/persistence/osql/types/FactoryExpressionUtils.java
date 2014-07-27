@@ -16,7 +16,7 @@ package br.com.anteros.persistence.osql.types;
 import java.util.ArrayList;
 import java.util.List;
 
-import br.com.anteros.persistence.util.ArrayUtils;
+import br.com.anteros.core.utils.ArrayUtils;
 
 /**
  * Utility class to expand FactoryExpression constructor arguments and compress

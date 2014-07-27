@@ -20,16 +20,17 @@ import java.sql.Connection;
 import javax.sql.DataSource;
 import javax.transaction.TransactionManager;
 
-import br.com.anteros.persistence.log.Logger;
-import br.com.anteros.persistence.log.LoggerProvider;
+import br.com.anteros.core.configuration.SessionFactoryConfiguration;
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.session.AbstractSQLSessionFactory;
 import br.com.anteros.persistence.session.SQLSession;
-import br.com.anteros.persistence.session.configuration.AnterosProperties;
-import br.com.anteros.persistence.session.configuration.SessionFactoryConfiguration;
+import br.com.anteros.persistence.session.configuration.AnterosPersistenceProperties;
+import br.com.anteros.persistence.session.context.CurrentSQLSessionContext;
 import br.com.anteros.persistence.session.context.JTASQLSessionContext;
 import br.com.anteros.persistence.session.context.ManagedSQLSessionContext;
-import br.com.anteros.persistence.session.context.CurrentSQLSessionContext;
 import br.com.anteros.persistence.session.context.ThreadLocalSQLSessionContext;
 import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.transaction.TransactionFactory;
@@ -37,7 +38,6 @@ import br.com.anteros.persistence.transaction.TransactionManagerLookup;
 import br.com.anteros.persistence.transaction.impl.JDBCTransactionFactory;
 import br.com.anteros.persistence.transaction.impl.JNDITransactionManagerLookup;
 import br.com.anteros.persistence.transaction.impl.TransactionException;
-import br.com.anteros.persistence.util.ReflectionUtils;
 
 /**
  * Implementação de SessionFactory. Factory fornecedora de SQLSessions.
@@ -87,7 +87,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	@Override
 	public TransactionManagerLookup getTransactionManagerLookup() throws Exception {
 		if (transactionManagerLookup == null) {
-			String tmLookupClass = configuration.getProperty(AnterosProperties.TRANSACTION_MANAGER_LOOKUP);
+			String tmLookupClass = configuration.getProperty(AnterosPersistenceProperties.TRANSACTION_MANAGER_LOOKUP);
 			if (tmLookupClass == null) {
 				tmLookupClass = JNDITransactionManagerLookup.class.getName();
 			}
@@ -119,7 +119,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	}
 	
 	private CurrentSQLSessionContext buildCurrentSessionContext() throws Exception {
-		String impl = configuration.getProperty( AnterosProperties.CURRENT_SESSION_CONTEXT );
+		String impl = configuration.getProperty( AnterosPersistenceProperties.CURRENT_SESSION_CONTEXT );
 		if ( impl == null && transactionManager != null ) {
 			impl = "jta";
 		}

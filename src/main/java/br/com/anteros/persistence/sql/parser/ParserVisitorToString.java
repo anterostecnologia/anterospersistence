@@ -15,8 +15,8 @@
  ******************************************************************************/
 package br.com.anteros.persistence.sql.parser;
 
-import br.com.anteros.persistence.log.Logger;
-import br.com.anteros.persistence.log.LoggerProvider;
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.persistence.sql.parser.node.AliasNode;
 import br.com.anteros.persistence.sql.parser.node.CaseCauseNode;
 import br.com.anteros.persistence.sql.parser.node.ExpressionNode;

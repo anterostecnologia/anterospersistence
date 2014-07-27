@@ -20,13 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.sql.command.Select;
-import br.com.anteros.persistence.util.ReflectionUtils;
 
 public class Identifier<T> {
 

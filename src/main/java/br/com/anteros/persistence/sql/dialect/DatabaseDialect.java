@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.ColumnSchema;
 import br.com.anteros.persistence.schema.definition.ForeignKeySchema;
@@ -48,7 +49,6 @@ import br.com.anteros.persistence.schema.definition.UniqueKeySchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 import br.com.anteros.persistence.schema.definition.type.StoredParameterType;
 import br.com.anteros.persistence.sql.binder.LobParameterBinding;
-import br.com.anteros.persistence.util.StringUtils;
 
 public abstract class DatabaseDialect {
 

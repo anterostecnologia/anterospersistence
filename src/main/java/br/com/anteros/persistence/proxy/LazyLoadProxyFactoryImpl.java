@@ -24,13 +24,13 @@ import javassist.util.proxy.MethodFilter;
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 import javassist.util.proxy.ProxyObject;
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.proxy.collection.SQLArrayList;
 import br.com.anteros.persistence.proxy.collection.SQLHashSet;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
-import br.com.anteros.persistence.util.ReflectionUtils;
 
 public class LazyLoadProxyFactoryImpl implements LazyLoadProxyFactory {
 

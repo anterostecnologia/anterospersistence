@@ -20,10 +20,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.sql.format.tokenizer.SqlTokenizer;
 import br.com.anteros.persistence.sql.format.tokenizer.Token;
 import br.com.anteros.persistence.sql.format.tokenizer.TokenUtil;
-import br.com.anteros.persistence.util.StringUtils;
 
 public class SqlFormat implements ISqlFormat {
 	private SqlFormatRule rule;

@@ -18,10 +18,10 @@ package br.com.anteros.persistence.handler;
 import java.sql.ResultSet;
 import java.util.Collection;
 
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.session.query.SQLQueryException;
-import br.com.anteros.persistence.util.ReflectionUtils;
 
 public class ElementCollectionHandler implements ResultSetHandler {
 

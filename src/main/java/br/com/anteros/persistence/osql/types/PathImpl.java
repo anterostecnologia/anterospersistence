@@ -15,7 +15,7 @@ package br.com.anteros.persistence.osql.types;
 
 import java.lang.reflect.AnnotatedElement;
 
-import br.com.anteros.persistence.util.ReflectionUtils;
+import br.com.anteros.core.utils.ReflectionUtils;
 
 /**
  * PathImpl defines a default implementation of the {@link Path} interface
