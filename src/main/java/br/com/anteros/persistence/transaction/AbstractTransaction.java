@@ -83,11 +83,11 @@ public abstract class AbstractTransaction implements Transaction {
 		synchronizationRegistry.notifySynchronizationsAfterTransactionCompletion(status);
 	}
 
-	private SQLPersistenceContext getPersistenceContext() {
+	protected SQLPersistenceContext getPersistenceContext() {
 		return context;
 	}
 
-	private Connection getConnection() {
+	protected Connection getConnection() {
 		return connection;
 	}
 

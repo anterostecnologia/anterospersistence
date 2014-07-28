@@ -50,7 +50,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	protected DataSource dataSource;
 	protected SessionFactoryConfiguration configuration;
 	private static final ThreadLocal<Map<SQLSessionFactory, SQLSession>> sessionContext = new ThreadLocal<Map<SQLSessionFactory, SQLSession>>();
-	private CurrentSQLSessionContext currentSessionContext;
+	protected CurrentSQLSessionContext currentSessionContext;
 	private TransactionManager transactionManager;
 
 	private boolean showSql = false;

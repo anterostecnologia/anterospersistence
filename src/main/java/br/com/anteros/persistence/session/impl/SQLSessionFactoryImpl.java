@@ -49,13 +49,10 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	private static Logger log = LoggerProvider.getInstance().getLogger(SQLSessionFactoryImpl.class.getName());
 	private TransactionManagerLookup transactionManagerLookup;
 	private TransactionManager transactionManager;
-	private CurrentSQLSessionContext currentSessionContext;
 
 	public SQLSessionFactoryImpl(EntityCacheManager entityCacheManager, DataSource dataSource,
 			SessionFactoryConfiguration configuration) throws Exception {
 		super(entityCacheManager, dataSource, configuration);
-
-		this.currentSessionContext = buildCurrentSessionContext();
 	}
 
 	@Override

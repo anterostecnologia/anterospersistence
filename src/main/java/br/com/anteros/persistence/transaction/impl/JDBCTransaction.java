@@ -16,15 +16,8 @@ public class JDBCTransaction extends AbstractTransaction {
 	private static Logger log = LoggerProvider.getInstance().getLogger(JDBCTransaction.class.getName());
 	private final SynchronizationRegistry synchronizationRegistry = new SynchronizationRegistry();
 
-	private Connection connection;
-	private SQLPersistenceContext context;
-	private boolean begun;
-	private boolean commitFailed;
 	private boolean toggleAutoCommit;
 
-	private boolean committed;
-
-	private boolean rolledBack;
 
 	public JDBCTransaction(Connection connection, SQLPersistenceContext context) {
 		super(connection, context);
@@ -60,7 +53,6 @@ public class JDBCTransaction extends AbstractTransaction {
 	}
 
 	private void notifySynchronizationsAfterTransactionCompletion(int status) {
-		begun = false;
 		synchronizationRegistry.notifySynchronizationsAfterTransactionCompletion(status);
 	}
 
@@ -90,19 +82,6 @@ public class JDBCTransaction extends AbstractTransaction {
 		} catch (Exception sqle) {
 			log.error("Could not toggle autocommit", sqle);
 		}
-	}
-
-	private SQLPersistenceContext getPersistenceContext() {
-		return context;
-	}
-
-	private Connection getConnection() {
-		return connection;
-	}
-
-	@Override
-	public boolean isActive() throws Exception {
-		return begun && !(rolledBack || committed | commitFailed);
 	}
 
 	@Override
