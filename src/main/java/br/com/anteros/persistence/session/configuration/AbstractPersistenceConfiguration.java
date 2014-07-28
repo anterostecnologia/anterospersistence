@@ -50,8 +50,6 @@ import br.com.anteros.persistence.session.impl.SQLSessionFactoryImpl;
 @Root(name = "anteros-configuration")
 public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfiguration implements PersistenceConfiguration {
 
-	@Element(name = "session-factory")
-	protected SessionFactoryConfiguration sessionFactory;
 	@Transient
 	protected EntityCacheManager entityCacheManager;
 	@Transient

@@ -10,9 +10,11 @@ import javax.transaction.TransactionManager;
 import br.com.anteros.persistence.transaction.TransactionManagerLookup;
 
 
-public abstract class JNDITransactionManagerLookup implements TransactionManagerLookup {
+public class JNDITransactionManagerLookup implements TransactionManagerLookup {
 
-	protected abstract String getName();
+	protected String getName(){
+		return "java:comp/UserTransaction";
+	}
 
 	public TransactionManager getTransactionManager(Properties props) throws TransactionException {
 		try {
@@ -25,6 +27,21 @@ public abstract class JNDITransactionManagerLookup implements TransactionManager
 
 	public Transaction getTransactionIdentifier(Transaction transaction) {
 		return transaction;
+	}
+
+	@Override
+	public TransactionManager getTransactionManager() throws TransactionException {
+		try {
+			return (TransactionManager) new InitialContext().lookup( getName() );
+		}
+		catch (NamingException ne) {
+			throw new TransactionException( "Could not locate TransactionManager", ne );
+		}
+	}
+
+	@Override
+	public String getUserTransactionName() {
+		return "java:comp/UserTransaction";
 	}
 }
 

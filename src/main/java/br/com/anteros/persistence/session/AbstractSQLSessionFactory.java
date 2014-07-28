@@ -18,18 +18,23 @@ package br.com.anteros.persistence.session;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.sql.DataSource;
 import javax.transaction.TransactionManager;
 
 import br.com.anteros.core.configuration.SessionFactoryConfiguration;
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.schema.SchemaManager;
 import br.com.anteros.persistence.schema.type.TableCreationType;
 import br.com.anteros.persistence.session.configuration.AnterosPersistenceProperties;
+import br.com.anteros.persistence.session.context.CurrentSQLSessionContext;
+import br.com.anteros.persistence.session.context.JTASQLSessionContext;
+import br.com.anteros.persistence.session.context.ManagedSQLSessionContext;
+import br.com.anteros.persistence.session.context.ThreadLocalSQLSessionContext;
 import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.transaction.TransactionFactory;
@@ -38,11 +43,15 @@ import br.com.anteros.persistence.transaction.impl.TransactionException;
 
 public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
+	private static Logger log = LoggerProvider.getInstance().getLogger(AbstractSQLSessionFactory.class.getName());
+
 	protected DatabaseDialect dialect;
 	protected EntityCacheManager entityCacheManager;
 	protected DataSource dataSource;
 	protected SessionFactoryConfiguration configuration;
 	private static final ThreadLocal<Map<SQLSessionFactory, SQLSession>> sessionContext = new ThreadLocal<Map<SQLSessionFactory, SQLSession>>();
+	private CurrentSQLSessionContext currentSessionContext;
+	private TransactionManager transactionManager;
 
 	private boolean showSql = false;
 	private boolean formatSql = false;
@@ -77,10 +86,36 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 			this.showSql = new Boolean(configuration.getProperty(AnterosPersistenceProperties.FORMAT_SQL));
 
 		if (configuration.getProperty(AnterosPersistenceProperties.QUERY_TIMEOUT) != null)
-			this.queryTimeout = new Integer(configuration.getProperty(AnterosPersistenceProperties.QUERY_TIMEOUT)).intValue();
+			this.queryTimeout = new Integer(configuration.getProperty(AnterosPersistenceProperties.QUERY_TIMEOUT))
+					.intValue();
 
+		this.currentSessionContext = buildCurrentSessionContext();
 	}
-	
+
+	@Override
+	public SQLSession getCurrentSession() throws Exception {
+		if (currentSessionContext == null) {
+			throw new SQLSessionException("No CurrentSessionContext configured!");
+		}
+		return currentSessionContext.currentSession();
+	}
+
+	private CurrentSQLSessionContext buildCurrentSessionContext() throws Exception {
+		String impl = configuration.getProperty(AnterosPersistenceProperties.CURRENT_SESSION_CONTEXT);
+		if ((impl == null && transactionManager != null) || "jta".equals(impl)) {
+			return new JTASQLSessionContext(this);
+		}
+		else if ("thread".equals(impl)) {
+			return new ThreadLocalSQLSessionContext(this);
+		}
+		else if ("managed".equals(impl)) {
+			return new ManagedSQLSessionContext(this);
+		}
+		else {
+			return new ThreadLocalSQLSessionContext(this);
+		}
+	}
+
 	protected abstract TransactionFactory getTransactionFactory();
 
 	public void generateDDL() throws Exception {
@@ -90,7 +125,8 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		/*
 		 * Verifica se é para gerar o schema no banco de dados
 		 */
-		String databaseDDLGeneration = configuration.getPropertyDef(AnterosPersistenceProperties.DATABASE_DDL_GENERATION,
+		String databaseDDLGeneration = configuration.getPropertyDef(
+				AnterosPersistenceProperties.DATABASE_DDL_GENERATION,
 				AnterosPersistenceProperties.NONE);
 		databaseDDLGeneration = databaseDDLGeneration.toLowerCase();
 		/*
@@ -168,7 +204,8 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 					|| ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_BOTH_OUTPUT)) {
 				String appLocation = configuration.getPropertyDef(AnterosPersistenceProperties.APPLICATION_LOCATION,
 						AnterosPersistenceProperties.DEFAULT_APPLICATION_LOCATION);
-				String createDDLJdbc = configuration.getPropertyDef(AnterosPersistenceProperties.CREATE_TABLES_FILENAME,
+				String createDDLJdbc = configuration.getPropertyDef(
+						AnterosPersistenceProperties.CREATE_TABLES_FILENAME,
 						AnterosPersistenceProperties.DEFAULT_CREATE_TABLES_FILENAME);
 				String dropDDLJdbc = configuration.getPropertyDef(AnterosPersistenceProperties.DROP_TABLES_FILENAME,
 						AnterosPersistenceProperties.DEFAULT_DROP_TABLES_FILENAME);
@@ -192,8 +229,6 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	public abstract void beforeGenerateDDL() throws Exception;
 
 	public abstract void afterGenerateDDL() throws Exception;
-
-	public abstract SQLSession getCurrentSession() throws Exception;
 
 	public DatabaseDialect getDialect() {
 		return dialect;
@@ -236,25 +271,25 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	}
 
 	public void onBeforeExecuteCommit(Connection connection) throws Exception {
-		SQLSession session = existingSession(this);
+		SQLSession session = getCurrentSession();
 		if (session != null)
 			session.getPersistenceContext().onBeforeExecuteCommit(connection);
 	}
 
 	public void onBeforeExecuteRollback(Connection connection) throws Exception {
-		SQLSession session = existingSession(this);
+		SQLSession session = getCurrentSession();
 		if (session != null)
 			session.getPersistenceContext().onBeforeExecuteRollback(connection);
 	}
 
 	public void onAfterExecuteCommit(Connection connection) throws Exception {
-		SQLSession session = existingSession(this);
+		SQLSession session = getCurrentSession();
 		if (session != null)
 			session.getPersistenceContext().onAfterExecuteCommit(connection);
 	}
 
 	public void onAfterExecuteRollback(Connection connection) throws Exception {
-		SQLSession session = existingSession(this);
+		SQLSession session = getCurrentSession();
 		if (session != null)
 			session.getPersistenceContext().onAfterExecuteRollback(connection);
 	}
@@ -283,44 +318,29 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		this.queryTimeout = queryTimeout;
 	}
 
-	protected static void doBind(SQLSession session, SQLSessionFactory factory) {
-		Map sessionMap = sessionMap();
-		if (sessionMap == null) {
-			sessionMap = new HashMap();
-			sessionContext.set(sessionMap);
-		}
-		sessionMap.put(factory, session);
-	}
-
-	protected static Map sessionMap() {
-		return sessionContext.get();
-	}
-
-	protected static SQLSession existingSession(SQLSessionFactory factory) {
-		Map sessionMap = sessionMap();
-		if (sessionMap == null) {
-			return null;
-		}
-		return (SQLSession) sessionMap.get(factory);
-	}
-
 	protected void setConfigurationClientInfo(Connection connection) throws IOException, SQLException {
 		String clientInfo = this.getConfiguration().getProperty(AnterosPersistenceProperties.CONNECTION_CLIENTINFO);
 		if (clientInfo != null && clientInfo.length() > 0)
 			this.getDialect().setConnectionClientInfo(connection, clientInfo);
 	}
-	
+
 	/**
-	 * Retorna a estratégia para fazer lookup (obter) transaction manager para JTA.
+	 * Retorna a estratégia para fazer lookup (obter) transaction manager para
+	 * JTA.
+	 * 
 	 * @return
 	 * @throws TransactionException
 	 */
 	public abstract TransactionManagerLookup getTransactionManagerLookup() throws Exception;
-	
+
 	/**
 	 * Gerenciador de transações JTA.
 	 */
-	public abstract TransactionManager getTransactionManager() throws Exception;
+	public TransactionManager getTransactionManager() throws Exception {
+		log.info("obtaining TransactionManager");
+		if (transactionManager == null)
+			transactionManager = getTransactionManagerLookup().getTransactionManager();
+		return transactionManager;
+	}
 
-	
 }
