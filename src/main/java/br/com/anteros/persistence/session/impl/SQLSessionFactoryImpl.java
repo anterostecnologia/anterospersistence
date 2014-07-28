@@ -54,14 +54,14 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	public SQLSessionFactoryImpl(EntityCacheManager entityCacheManager, DataSource dataSource,
 			SessionFactoryConfiguration configuration) throws Exception {
 		super(entityCacheManager, dataSource, configuration);
-		
+
 		this.currentSessionContext = buildCurrentSessionContext();
 	}
 
 	@Override
 	public SQLSession getCurrentSession() throws Exception {
-		if ( currentSessionContext == null ) {
-			throw new SQLSessionException( "No CurrentSessionContext configured!" );
+		if (currentSessionContext == null) {
+			throw new SQLSessionException("No CurrentSessionContext configured!");
 		}
 		return currentSessionContext.currentSession();
 	}
@@ -79,7 +79,29 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	@Override
 	protected TransactionFactory getTransactionFactory() {
 		if (transactionFactory == null) {
-			transactionFactory = new JDBCTransactionFactory();
+			try {
+				transactionFactory = buildTransactionFactory();
+			} catch (Exception e) {
+				throw new TransactionException("Não foi possível criar a fábrica de transações.",e);
+			}
+		}
+		return transactionFactory;
+	}
+
+	protected TransactionFactory buildTransactionFactory() throws Exception {
+		if (transactionFactory == null) {
+			String tfLookupClass = configuration.getProperty(AnterosPersistenceProperties.TRANSACTION_FACTORY);
+			if (tfLookupClass == null) {
+				tfLookupClass = JDBCTransactionFactory.class.getName();
+			}
+			log.info("instantiating TransactionFactory: " + tfLookupClass);
+			try {
+				transactionFactory = (TransactionFactory) ReflectionUtils.classForName(tfLookupClass).newInstance();
+				log.info("instantiated TransactionFactory");
+			} catch (Exception e) {
+				log.error("Could not instantiate TransactionManagerLookup", e);
+				throw new TransactionException("Could not instantiate TransactionManagerLookup '" + tfLookupClass + "'");
+			}
 		}
 		return transactionFactory;
 	}
@@ -117,27 +139,23 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 			transactionManager = getTransactionManagerLookup().getTransactionManager();
 		return transactionManager;
 	}
-	
+
 	private CurrentSQLSessionContext buildCurrentSessionContext() throws Exception {
-		String impl = configuration.getProperty( AnterosPersistenceProperties.CURRENT_SESSION_CONTEXT );
-		if ( impl == null && transactionManager != null ) {
+		String impl = configuration.getProperty(AnterosPersistenceProperties.CURRENT_SESSION_CONTEXT);
+		if (impl == null && transactionManager != null) {
 			impl = "jta";
 		}
 
-		if ( impl == null ) {
+		if (impl == null) {
 			return null;
-		}
-		else if ( "jta".equals( impl ) ) {
-			return new JTASQLSessionContext( this );
-		}
-		else if ( "thread".equals( impl ) ) {
-			return new ThreadLocalSQLSessionContext( this );
-		}
-		else if ( "managed".equals( impl ) ) {
-			return new ManagedSQLSessionContext( this );
-		}
-		else {
-			return new ThreadLocalSQLSessionContext( this );
+		} else if ("jta".equals(impl)) {
+			return new JTASQLSessionContext(this);
+		} else if ("thread".equals(impl)) {
+			return new ThreadLocalSQLSessionContext(this);
+		} else if ("managed".equals(impl)) {
+			return new ManagedSQLSessionContext(this);
+		} else {
+			return new ThreadLocalSQLSessionContext(this);
 		}
 	}
 

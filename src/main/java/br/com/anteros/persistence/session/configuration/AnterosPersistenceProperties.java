@@ -90,5 +90,7 @@ public class AnterosPersistenceProperties {
 	public static final String CURRENT_SESSION_CONTEXT = "current-session-context";
 	
 	public static final String TRANSACTION_MANAGER_LOOKUP = "transaction-manager-lookup";
+	
+	public static final String TRANSACTION_FACTORY = "transaction-factory";
 
 }
