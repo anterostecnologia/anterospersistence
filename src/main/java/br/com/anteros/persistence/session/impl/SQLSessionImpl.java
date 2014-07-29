@@ -45,6 +45,7 @@ import br.com.anteros.persistence.session.SQLSessionListener;
 import br.com.anteros.persistence.session.SQLSessionResult;
 import br.com.anteros.persistence.session.cache.Cache;
 import br.com.anteros.persistence.session.context.SQLPersistenceContext;
+import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.session.lock.type.LockModeType;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
 import br.com.anteros.persistence.session.query.SQLQuery;
@@ -99,11 +100,15 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public <T> T selectOne(String sql, Class<T> resultClass, int timeOut) throws Exception {
+		errorIfClosed();
+
 		SQLQuery<T> query = createSQLQuery(sql);
-		return query.resultClass(resultClass).showSql(showSql).formatSql(formatSql).timeOut(timeOut).selectOne();
+		T t = query.resultClass(resultClass).showSql(showSql).formatSql(formatSql).timeOut(timeOut).selectOne();
+		return t;
 	}
 
 	public <T> T selectOne(String sql, Object[] parameter, Class<T> resultClass, int timeOut) throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery(sql);
 		return query.setParameters(parameter).resultClass(resultClass).showSql(showSql).formatSql(formatSql)
 				.timeOut(timeOut).selectOne();
@@ -111,6 +116,7 @@ public class SQLSessionImpl implements SQLSession {
 
 	public <T> T selectOne(String sql, Map<String, Object> namedParameter, Class<T> resultClass, int timeOut)
 			throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery(sql);
 		return query.setParameters(namedParameter).resultClass(resultClass).showSql(showSql).formatSql(formatSql)
 				.timeOut(timeOut).selectOne();
@@ -118,17 +124,20 @@ public class SQLSessionImpl implements SQLSession {
 
 	public <T> T selectOne(String sql, NamedParameter[] namedParameter, Class<T> resultClass, int timeOut)
 			throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery(sql);
 		return query.setParameters(namedParameter).resultClass(resultClass).showSql(showSql).formatSql(formatSql)
 				.timeOut(timeOut).selectOne();
 	}
 
 	public <T> T selectOne(String sql, Class<T> resultClass) throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery(sql);
 		return query.resultClass(resultClass).showSql(showSql).formatSql(formatSql).timeOut(0).selectOne();
 	}
 
 	public <T> T selectOne(String sql, Object[] parameter, Class<T> resultClass) throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery(sql);
 		return query.setParameters(parameter).resultClass(resultClass).showSql(showSql).formatSql(formatSql)
 				.timeOut(queryTimeout)
@@ -136,22 +145,26 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public <T> T selectOne(String sql, Map<String, Object> namedParameter, Class<T> resultClass) throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery(sql);
 		return query.setParameters(namedParameter).resultClass(resultClass).showSql(showSql).formatSql(formatSql)
 				.timeOut(0).selectOne();
 	}
 
 	public <T> T selectOne(String sql, NamedParameter[] namedParameter, Class<T> resultClass) throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery(sql);
 		return query.setParameters(namedParameter).resultClass(resultClass).showSql(showSql).formatSql(formatSql)
 				.timeOut(0).selectOne();
 	}
 
 	public <T> T selectOneNamedQuery(String name, Class<T> resultClass) throws Exception {
+		errorIfClosed();
 		return selectOneNamedQuery(name, resultClass, queryTimeout);
 	}
 
 	public <T> T selectOneNamedQuery(String name, Class<T> resultClass, int timeOut) throws Exception {
+		errorIfClosed();
 		flush();
 		List<T> result = selectListNamedQuery(name, resultClass, timeOut);
 		if ((result != null) && (result.size() > 0))
@@ -161,11 +174,13 @@ public class SQLSessionImpl implements SQLSession {
 
 	public <T> T selectOneProcedure(CallableType type, String name, Object[] inputParameters,
 			String[] outputParametersName, Class<T> resultClass) throws Exception {
+		errorIfClosed();
 		return selectOneProcedure(type, name, inputParameters, outputParametersName, resultClass, queryTimeout);
 	}
 
 	public <T> T selectOneProcedure(CallableType type, String name, Object[] inputParameters,
 			String[] outputParametersName, Class<T> resultClass, int timeOut) throws Exception {
+		errorIfClosed();
 		flush();
 		List<T> result = selectListProcedure(type, name, inputParameters, outputParametersName, resultClass, timeOut);
 		if ((result != null) && (result.size() > 0))
@@ -174,11 +189,13 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public <T> List<T> selectList(String sql, Class<T> resultClass, int timeOut) throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery(sql);
 		return query.resultClass(resultClass).showSql(showSql).formatSql(formatSql).timeOut(timeOut).selectList();
 	}
 
 	public <T> List<T> selectList(String sql, Object[] parameter, Class<T> resultClass, int timeOut) throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery(sql);
 		return query.setParameters(parameter).resultClass(resultClass).showSql(showSql).formatSql(formatSql)
 				.timeOut(timeOut).selectList();
@@ -186,6 +203,7 @@ public class SQLSessionImpl implements SQLSession {
 
 	public <T> List<T> selectList(String sql, Map<String, Object> namedParameter, Class<T> resultClass, int timeOut)
 			throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery(sql);
 		return query.setParameters(namedParameter).resultClass(resultClass).showSql(showSql).formatSql(formatSql)
 				.timeOut(timeOut).selectList();
@@ -193,74 +211,89 @@ public class SQLSessionImpl implements SQLSession {
 
 	public <T> List<T> selectList(String sql, NamedParameter[] namedParameter, Class<T> resultClass, int timeOut)
 			throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery(sql);
 		return query.setParameters(namedParameter).resultClass(resultClass).showSql(showSql).formatSql(formatSql)
 				.timeOut(timeOut).selectList();
 	}
 
 	public <T> List<T> selectList(String sql, Class<T> resultClass) throws Exception {
+		errorIfClosed();
 		return selectList(sql, resultClass, queryTimeout);
 	}
 
 	public <T> List<T> selectList(String sql, Object[] parameter, Class<T> resultClass) throws Exception {
+		errorIfClosed();
 		return selectList(sql, parameter, resultClass, queryTimeout);
 	}
 
 	public <T> List<T> selectList(String sql, Map<String, Object> namedParameter, Class<T> resultClass)
 			throws Exception {
+		errorIfClosed();
 		return selectList(sql, namedParameter, resultClass, queryTimeout);
 	}
 
 	public <T> List<T> selectList(String sql, NamedParameter[] namedParameter, Class<T> resultClass) throws Exception {
+		errorIfClosed();
 		return selectList(sql, namedParameter, resultClass, queryTimeout);
 	}
 
 	public Object loadData(EntityCache entityCacheTarget, Object owner, final DescriptionField descriptionFieldOwner,
 			Map<String, Object> columnKeyTarget, Cache transactionCache) throws IllegalAccessException, Exception {
+		errorIfClosed();
 		return createSQLQuery("").loadData(entityCacheTarget, owner, descriptionFieldOwner, columnKeyTarget,
 				transactionCache);
 	}
 
 	public Object select(String sql, ResultSetHandler handler, int timeOut) throws Exception {
+		errorIfClosed();
 		return createSQLQuery(sql).resultSetHandler(handler).showSql(showSql).formatSql(formatSql).timeOut(timeOut)
 				.select();
 	}
 
 	public Object select(String sql, Object[] parameter, ResultSetHandler handler, int timeOut) throws Exception {
+		errorIfClosed();
 		return createSQLQuery(sql).setParameters(parameter).resultSetHandler(handler).showSql(showSql)
 				.formatSql(formatSql).timeOut(timeOut).select();
 	}
 
 	public Object select(String sql, Map<String, Object> namedParameter, ResultSetHandler handler, int timeOut)
 			throws Exception {
+		errorIfClosed();
 		return createSQLQuery(sql).setParameters(namedParameter).resultSetHandler(handler).showSql(showSql)
 				.formatSql(formatSql).timeOut(timeOut).select();
 	}
 
 	public Object select(String sql, NamedParameter[] namedParameter, ResultSetHandler handler, int timeOut)
 			throws Exception {
+		errorIfClosed();
 		return createSQLQuery(sql).setParameters(namedParameter).resultSetHandler(handler).showSql(showSql)
 				.formatSql(formatSql).timeOut(timeOut).select();
 	}
 
 	public Object select(String sql, ResultSetHandler handler) throws Exception {
+		errorIfClosed();
 		return select(sql, handler, queryTimeout);
 	}
 
 	public Object select(String sql, Object[] parameter, ResultSetHandler handler) throws Exception {
+		errorIfClosed();
 		return select(sql, parameter, handler, queryTimeout);
 	}
 
 	public Object select(String sql, Map<String, Object> namedParameter, ResultSetHandler handler) throws Exception {
+		errorIfClosed();
 		return select(sql, namedParameter, handler, queryTimeout);
 	}
 
 	public Object select(String sql, NamedParameter[] namedParameter, ResultSetHandler handler) throws Exception {
+		errorIfClosed();
 		return select(sql, namedParameter, handler, queryTimeout);
 	}
 
 	public <T> List<T> selectProcedure(CallableType type, String name, Object[] inputParameters,
 			String[] outputParametersName, ResultSetHandler handler) throws Exception {
+		errorIfClosed();
 		flush();
 		return selectProcedure(type, name, inputParameters, outputParametersName, handler, queryTimeout);
 	}
@@ -268,6 +301,7 @@ public class SQLSessionImpl implements SQLSession {
 	@SuppressWarnings("unchecked")
 	public <T> List<T> selectProcedure(CallableType type, String name, Object[] inputParameters,
 			String[] outputParametersName, ResultSetHandler handler, int timeOut) throws Exception {
+		errorIfClosed();
 		flush();
 		List<T> result = (List<T>) queryRunner.queryProcedure(this, dialect, type, name, handler, inputParameters,
 				outputParametersName, showSql, timeOut, clientId);
@@ -275,85 +309,104 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public <T> T selectId(Identifier<T> id) throws Exception {
+		errorIfClosed();
 		return selectId(id, queryTimeout);
 	}
 
 	public <T> T selectId(Identifier<T> id, int timeOut) throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = this.createSQLQuery("");
 		return query.identifier(id).selectId();
 	}
 
 	public ResultSet executeQuery(String sql, int timeOut) throws Exception {
+		errorIfClosed();
 		return createSQLQuery(sql).showSql(showSql).formatSql(formatSql).timeOut(timeOut).executeQuery();
 	}
 
 	public ResultSet executeQuery(String sql, Object[] parameter, int timeOut) throws Exception {
+		errorIfClosed();
 		return createSQLQuery(sql).setParameters(parameter).showSql(showSql).formatSql(formatSql).timeOut(timeOut)
 				.executeQuery();
 	}
 
 	public ResultSet executeQuery(String sql, Map<String, Object> parameter, int timeOut) throws Exception {
+		errorIfClosed();
 		return createSQLQuery(sql).setParameters(parameter).showSql(showSql).formatSql(formatSql).timeOut(timeOut)
 				.executeQuery();
 	}
 
 	public ResultSet executeQuery(String sql, NamedParameter[] parameter, int timeOut) throws Exception {
+		errorIfClosed();
 		return createSQLQuery(sql).setParameters(parameter).showSql(showSql).formatSql(formatSql).timeOut(timeOut)
 				.executeQuery();
 	}
 
 	public ResultSet executeQuery(String sql) throws Exception {
+		errorIfClosed();
 		return executeQuery(sql, queryTimeout);
 	}
 
 	public ResultSet executeQuery(String sql, Object[] parameter) throws Exception {
+		errorIfClosed();
 		return executeQuery(sql, parameter, queryTimeout);
 	}
 
 	public ResultSet executeQuery(String sql, Map<String, Object> parameter) throws Exception {
+		errorIfClosed();
 		return executeQuery(sql, parameter, queryTimeout);
 	}
 
 	public ResultSet executeQuery(String sql, NamedParameter[] parameter) throws Exception {
+		errorIfClosed();
 		return executeQuery(sql, parameter, queryTimeout);
 	}
 
 	public ProcedureResult executeProcedure(CallableType type, String name, Object[] inputParameters,
 			String[] outputParametersName) throws Exception {
+		errorIfClosed();
 		return executeProcedure(type, name, inputParameters, outputParametersName, queryTimeout);
 	}
 
 	public ProcedureResult executeProcedure(CallableType type, String name, Object[] inputParameters,
 			String[] outputParametersName, int timeOut) throws Exception {
+		errorIfClosed();
 		return queryRunner.executeProcedure(this, dialect, type, name, inputParameters, outputParametersName, showSql,
 				timeOut, clientId);
 	}
 
 	public long update(String sql) throws Exception {
+		errorIfClosed();
 		return queryRunner.update(this.getConnection(), sql, listeners);
 	}
 
 	public long update(String sql, Object[] params) throws Exception {
+		errorIfClosed();
 		return queryRunner.update(this.getConnection(), sql, params, listeners);
 	}
 
 	public long update(String sql, NamedParameter[] params) throws Exception {
+		errorIfClosed();
 		return queryRunner.update(this.getConnection(), sql, params, listeners);
 	}
 
 	public Object save(Object object) throws Exception {
+		errorIfClosed();
 		return persister.save(this, object);
 	}
 
 	public void save(Object[] object) throws Exception {
+		errorIfClosed();
 		persister.save(this, object);
 	}
 
 	public void remove(Object object) throws Exception {
+		errorIfClosed();
 		persister.remove(this, object);
 	}
 
 	public void remove(Object[] object) throws Exception {
+		errorIfClosed();
 		persister.remove(this, object);
 	}
 
@@ -402,6 +455,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void flush() throws Exception {
+		errorIfClosed();
 		synchronized (commandQueue) {
 			for (CommandSQL command : commandQueue)
 				command.execute();
@@ -410,6 +464,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void forceFlush(Set<String> tableNames) throws Exception {
+		errorIfClosed();
 		if (tableNames != null) {
 			synchronized (commandQueue) {
 				List<CommandSQL> commandsToRemove = new ArrayList<CommandSQL>();
@@ -426,6 +481,8 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void close() throws Exception {
+		for (SQLSessionListener listener : listeners)
+			listener.onClose(this);
 		synchronized (commandQueue) {
 			commandQueue.clear();
 		}
@@ -445,7 +502,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void onAfterExecuteCommit(Connection connection) throws Exception {
-		
+
 	}
 
 	public void onAfterExecuteRollback(Connection connection) throws Exception {
@@ -453,33 +510,40 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public AbstractSQLRunner getQueryRunner() {
+		errorIfClosed();
 		return queryRunner;
 	}
 
 	public void setQueryRunner(AbstractSQLRunner queryRunner) {
+		errorIfClosed();
 		this.queryRunner = queryRunner;
 	}
 
 	public <T> List<T> selectListNamedQuery(String name, Object[] parameters, Class<T> resultClass) throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery("");
 		return query.namedQuery(name).setParameters(parameters).resultClass(resultClass).selectListNamedQuery();
 	}
 
 	public <T> List<T> selectListNamedQuery(String name, Object[] parameters, Class<T> resultClass, int timeOut)
 			throws Exception {
+		errorIfClosed();
 		return selectListNamedQuery(name, parameters, resultClass, timeOut);
 	}
 
 	public <T> List<T> selectListNamedQuery(String name, Class<T> resultClass) throws Exception {
+		errorIfClosed();
 		return selectListNamedQuery(name, new Object[] {}, resultClass, queryTimeout);
 	}
 
 	public <T> List<T> selectListNamedQuery(String name, Class<T> resultClass, int timeOut) throws Exception {
+		errorIfClosed();
 		return selectListNamedQuery(name, new Object[] {}, resultClass, timeOut);
 	}
 
 	public <T> List<T> selectListNamedQuery(String name, Map<String, Object> namedParameter, Class<T> resultClass,
 			int timeOut) throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery("");
 		return query.namedQuery(name).setParameters(namedParameter).resultClass(resultClass).timeOut(timeOut)
 				.selectListNamedQuery();
@@ -487,16 +551,19 @@ public class SQLSessionImpl implements SQLSession {
 
 	public <T> List<T> selectListNamedQuery(String name, Map<String, Object> namedParameter, Class<T> resultClass)
 			throws Exception {
+		errorIfClosed();
 		return selectListNamedQuery(name, namedParameter, resultClass);
 	}
 
 	public <T> List<T> selectListNamedQuery(String name, NamedParameter[] namedParameter, Class<T> resultClass)
 			throws Exception {
+		errorIfClosed();
 		return selectListNamedQuery(name, namedParameter, resultClass, queryTimeout);
 	}
 
 	public <T> List<T> selectListNamedQuery(String name, NamedParameter[] namedParameter, Class<T> resultClass,
 			int timeOut) throws Exception {
+		errorIfClosed();
 		SQLQuery<T> query = createSQLQuery("");
 		return query.namedQuery(name).setParameters(namedParameter).resultClass(resultClass).timeOut(timeOut)
 				.selectListNamedQuery();
@@ -504,27 +571,32 @@ public class SQLSessionImpl implements SQLSession {
 
 	public <T> List<T> selectListProcedure(CallableType type, String name, Object[] inputParameters,
 			String[] outputParametersName, Class<T> resultClass) throws Exception {
+		errorIfClosed();
 		return selectListProcedure(type, name, inputParameters, outputParametersName, resultClass, queryTimeout);
 	}
 
 	public <T> List<T> selectListProcedure(CallableType type, String name, Object[] inputParameters,
 			String[] outputParametersName, Class<T> resultClass, int timeOut) throws Exception {
 		SQLQuery<T> query = createSQLQuery("");
+		errorIfClosed();
 		return query.callableType(type).procedureOrFunctionName(name).setParameters(inputParameters)
 				.outputParametersName(outputParametersName).resultClass(resultClass).timeOut(timeOut)
 				.selectListProcedure();
 	}
 
 	public <T> Identifier<T> getIdentifier(T owner) throws Exception {
+		errorIfClosed();
 		return Identifier.create(this, owner);
 	}
 
 	public <T> Identifier<T> createIdentifier(Class<T> clazz) throws Exception {
+		errorIfClosed();
 		return Identifier.create(this, clazz);
 	}
 
 	public <T> SQLSessionResult selectListAndResultSet(String sql, NamedParameter[] namedParameter,
 			Class<T> resultClass, int timeOut) throws Exception {
+		errorIfClosed();
 		return createSQLQuery(sql).setParameters(namedParameter).resultClass(resultClass).timeOut(timeOut)
 				.selectListAndResultSet();
 	}
@@ -544,6 +616,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public <T> SQLQuery<T> createSQLQuery(String sql) {
+		errorIfClosed();
 		SQLQuery<T> query = new SQLQueryImpl<T>(this);
 		query.sql(sql);
 		return query;
@@ -566,155 +639,180 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void save(Class<?> clazz, String[] columns, String[] values) throws Exception {
+		errorIfClosed();
 		throw new Exception("Método não suportado.");
 	}
 
 	public void removeAll(Class<?> clazz) throws Exception {
+		errorIfClosed();
 		throw new Exception("Método não suportado.");
 	}
 
 	public void removeTable(String tableName) throws Exception {
+		errorIfClosed();
 		throw new Exception("Método não suportado.");
 	}
 
 	public void enableLockMode() throws Exception {
+		errorIfClosed();
 		throw new Exception("Método não implementado.");
 
 	}
 
 	public void disableLockMode() throws Exception {
+		errorIfClosed();
 		throw new Exception("Método não implementado.");
 	}
 
 	public void executeDDL(String ddl) throws Exception {
+		errorIfClosed();
 		getRunner().executeDDL(getConnection(), ddl, showSql, formatSql, "");
 	}
 
 	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String, String> expressions,
 			Cache transactionCache) throws Exception {
+		errorIfClosed();
 		return new EntityHandler(proxyFactory, resultClass, getEntityCacheManager(), expressions, this,
 				transactionCache);
 	}
 
 	public <T> T selectOne(String sql, Class<T> resultClass, LockModeType lockMode) throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> T selectOne(String sql, Object[] parameter, Class<T> resultClass, LockModeType lockMode)
 			throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> T selectOne(String sql, Map<String, Object> namedParameter, Class<T> resultClass, LockModeType lockMode)
 			throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> T selectOne(String sql, NamedParameter[] namedParameter, Class<T> resultClass, LockModeType lockMode)
 			throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> T selectOne(String sql, Class<T> resultClass, int timeOut, LockModeType lockMode) throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> T selectOne(String sql, Object[] parameter, Class<T> resultClass, int timeOut, LockModeType lockMode)
 			throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> T selectOne(String sql, Map<String, Object> namedParameter, Class<T> resultClass, int timeOut,
 			LockModeType lockMode) throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> T selectId(Identifier<T> id, LockModeType lockMode) throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> T selectId(Identifier<T> id, int timeOut, LockModeType lockMode) throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> T selectOne(String sql, NamedParameter[] namedParameter, Class<T> resultClass, int timeOut,
 			LockModeType lockMode) throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> List<T> selectList(String sql, Class<T> resultClass, LockModeType lockMode) throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> List<T> selectList(String sql, Object[] parameter, Class<T> resultClass, LockModeType lockMode)
 			throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> List<T> selectList(String sql, Map<String, Object> namedParameter, Class<T> resultClass,
 			LockModeType lockMode) throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> List<T> selectList(String sql, NamedParameter[] namedParameter, Class<T> resultClass,
 			LockModeType lockMode) throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> List<T> selectList(String sql, Class<T> resultClass, int timeOut, LockModeType lockMode)
 			throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> List<T> selectList(String sql, Object[] parameter, Class<T> resultClass, int timeOut,
 			LockModeType lockMode) throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> List<T> selectList(String sql, Map<String, Object> namedParameter, Class<T> resultClass, int timeOut,
 			LockModeType lockMode) throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public <T> List<T> selectList(String sql, NamedParameter[] namedParameter, Class<T> resultClass, int timeOut,
 			LockModeType lockMode) throws Exception {
+		errorIfClosed();
 		return null;
 	}
 
 	public void lock(Object entity, LockModeType mode) {
-
+		errorIfClosed();
 	}
 
 	public void lock(Object entity, LockModeType mode, int timeout) {
-
+		errorIfClosed();
 	}
 
 	public void lock(Object entity) {
-
+		errorIfClosed();
 	}
 
 	public void lockAll(Collection<?> entities, LockModeType mode) {
-
+		errorIfClosed();
 	}
 
 	public void lockAll(Collection<?> entities, LockModeType mode, int timeout) {
-
+		errorIfClosed();
 	}
 
 	public void lockAll(Collection<?> entities) {
-
+		errorIfClosed();
 	}
 
 	public void lockAll(Object[] entities, LockModeType mode) {
-
+		errorIfClosed();
 	}
 
 	public void lockAll(Object[] entities, LockModeType mode, int timeout) {
-
+		errorIfClosed();
 	}
 
 	public void lockAll(Object... entities) {
-
+		errorIfClosed();
 	}
 
 	public boolean isProxyObject(Object object) throws Exception {
@@ -726,10 +824,12 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void savePoint(String savepoint) throws Exception {
+		errorIfClosed();
 		throw new Exception("Método não implementado.");
 	}
 
 	public void rollbackToSavePoint(String savepoint) throws Exception {
+		errorIfClosed();
 		throw new Exception("Método não implementado.");
 	}
 
@@ -739,10 +839,12 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void evict(Class object) {
+		errorIfClosed();
 		persistenceContext.evict(object);
 	}
 
 	public void evictAll() {
+		errorIfClosed();
 		persistenceContext.evictAll();
 	}
 
@@ -755,10 +857,12 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void setClientInfo(String clientInfo) throws SQLException {
+		errorIfClosed();
 		getDialect().setConnectionClientInfo(getConnection(), clientInfo);
 	}
 
 	public String getClientInfo() throws SQLException {
+		errorIfClosed();
 		return getDialect().getConnectionClientInfo(getConnection());
 	}
 
@@ -777,12 +881,22 @@ public class SQLSessionImpl implements SQLSession {
 
 	@Override
 	public void clear() throws Exception {
-		internalClear();		
+		internalClear();
 	}
 
 	private void internalClear() {
 		persistenceContext.evictAll();
 		persistenceContext.clearCache();
+	}
+
+	protected void errorIfClosed() {
+		try {
+			if (isClosed()) {
+				throw new SQLSessionException("Sessão está fechada!");
+			}
+		} catch (Exception ex) {
+			throw new SQLSessionException("Sessão está fechada!", ex);
+		}
 	}
 
 }

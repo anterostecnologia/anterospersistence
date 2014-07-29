@@ -14,7 +14,6 @@ import br.com.anteros.persistence.transaction.AbstractTransaction;
 public class JDBCTransaction extends AbstractTransaction {
 
 	private static Logger log = LoggerProvider.getInstance().getLogger(JDBCTransaction.class.getName());
-	private final SynchronizationRegistry synchronizationRegistry = new SynchronizationRegistry();
 
 	private boolean toggleAutoCommit;
 
@@ -48,14 +47,6 @@ public class JDBCTransaction extends AbstractTransaction {
 		}
 	}
 
-	private void notifySynchronizationsBeforeTransactionCompletion() {
-		synchronizationRegistry.notifySynchronizationsBeforeTransactionCompletion();
-	}
-
-	private void notifySynchronizationsAfterTransactionCompletion(int status) {
-		synchronizationRegistry.notifySynchronizationsAfterTransactionCompletion(status);
-	}
-
 	private void commitAndResetAutoCommit() throws SQLException {
 		try {
 			getConnection().commit();
@@ -67,7 +58,6 @@ public class JDBCTransaction extends AbstractTransaction {
 	private void rollbackAndResetAutoCommit() throws SQLException {
 		try {
 			getConnection().rollback();
-			notifySynchronizationsAfterTransactionCompletion(Status.STATUS_ROLLEDBACK);
 		} finally {
 			toggleAutoCommit();
 		}
@@ -82,11 +72,6 @@ public class JDBCTransaction extends AbstractTransaction {
 		} catch (Exception sqle) {
 			log.error("Could not toggle autocommit", sqle);
 		}
-	}
-
-	@Override
-	public void registerSynchronization(Synchronization synchronization) throws Exception {
-		synchronizationRegistry.registerSynchronization(synchronization);
 	}
 
 	@Override
