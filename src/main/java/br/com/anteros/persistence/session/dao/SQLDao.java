@@ -138,4 +138,7 @@ public class SQLDao<T> {
 		this.clazz = clazz;
 	}
 
+	public SQLSession getSQLSession(){
+		return session;
+	}
 }
