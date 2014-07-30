@@ -3,7 +3,6 @@ package br.com.anteros.persistence.sql.parser;
 import java.util.HashMap;
 import java.util.Map;
 
-import zigen.sql.parser.ast.ASTExpression;
 import br.com.anteros.persistence.sql.format.SqlFormatRule;
 import br.com.anteros.persistence.sql.format.tokenizer.SqlTokenizer;
 import br.com.anteros.persistence.sql.format.tokenizer.Token;
