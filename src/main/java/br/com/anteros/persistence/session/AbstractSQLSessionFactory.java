@@ -100,7 +100,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		return currentSessionContext.currentSession();
 	}
 
-	private CurrentSQLSessionContext buildCurrentSessionContext() throws Exception {
+	protected CurrentSQLSessionContext buildCurrentSessionContext() throws Exception {
 		String impl = configuration.getProperty(AnterosPersistenceProperties.CURRENT_SESSION_CONTEXT);
 		if ((impl == null && transactionManager != null) || "jta".equals(impl)) {
 			return new JTASQLSessionContext(this);
@@ -115,7 +115,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 			return new ThreadLocalSQLSessionContext(this);
 		}
 	}
-
+	
 	protected abstract TransactionFactory getTransactionFactory();
 
 	public void generateDDL() throws Exception {

@@ -233,23 +233,6 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 		}
 	}
 
-	@Override
-	public AbstractPersistenceConfiguration configure(InputStream xmlConfiguration, InputStream placeHolder)
-			throws AnterosConfigurationException {
-		try {
-			Serializer serializer = new Persister(new Format("<?xml version=\"1.0\" encoding= \"UTF-8\" ?>"));
-			final AbstractPersistenceConfiguration result = serializer.read(this.getClass(), xmlConfiguration);
-			result.setPlaceHolder(placeHolder);
-			this.setSessionFactory(result.getSessionFactoryConfiguration());
-			this.dataSource = null;
-			this.buildDataSource();
-
-			return this;
-		} catch (final Exception e) {
-			throw new AnterosConfigurationException("Impossível realizar a leitura do arquivo de configuração." + e);
-		}
-	}
-
 	protected abstract void buildDataSource() throws Exception;
 
 	public DataSource getDataSource() {
@@ -286,6 +269,24 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 	public AbstractPersistenceConfiguration setProperties(Properties props) {
 		getSessionFactoryConfiguration().getProperties().setProperties(props);
 		return this;
+	}
+
+	@Override
+	public AbstractPersistenceConfiguration configure(InputStream xmlConfiguration, InputStream placeHolder)
+			throws AnterosConfigurationException {
+		try {
+			Serializer serializer = new Persister(new Format("<?xml version=\"1.0\" encoding= \"UTF-8\" ?>"));
+			final AbstractPersistenceConfiguration result = serializer.read(this.getClass(), xmlConfiguration);
+			result.setPlaceHolder(placeHolder);
+			this.setSessionFactory(result.getSessionFactoryConfiguration());
+			this.dataSource = null;
+			this.buildDataSource();
+
+			return this;
+		} catch (final Exception e) {
+			e.printStackTrace();
+			throw new AnterosConfigurationException("Impossível realizar a leitura do arquivo de configuração." + e);
+		}
 	}
 
 }

@@ -21,6 +21,10 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.simpleframework.xml.Serializer;
+import org.simpleframework.xml.core.Persister;
+import org.simpleframework.xml.stream.Format;
+
 import br.com.anteros.core.configuration.DataSourceConfiguration;
 import br.com.anteros.core.configuration.PropertyConfiguration;
 import br.com.anteros.core.configuration.exception.AnterosConfigurationException;
@@ -104,5 +108,7 @@ public class AnterosPersistenceConfiguration extends AbstractPersistenceConfigur
 		}
 		return null;
 	}
+	
+
 
 }

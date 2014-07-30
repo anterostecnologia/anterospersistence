@@ -3,7 +3,6 @@ package br.com.anteros.persistence.transaction.impl;
 import java.sql.Connection;
 
 import javax.transaction.Status;
-import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
@@ -47,11 +46,6 @@ public class JTATransaction extends AbstractTransaction {
 	protected void doRollback() throws Exception {
 		userTransaction.rollback();
 		log.debug("Rolled back JTA UserTransaction");
-	}
-
-	@Override
-	public void registerSynchronization(Synchronization synchronization) throws Exception {
-
 	}
 
 	@Override

@@ -137,25 +137,6 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 		return transactionManager;
 	}
 
-	private CurrentSQLSessionContext buildCurrentSessionContext() throws Exception {
-		String impl = configuration.getProperty(AnterosPersistenceProperties.CURRENT_SESSION_CONTEXT);
-		if (impl == null && transactionManager != null) {
-			impl = "jta";
-		}
-
-		if (impl == null) {
-			return null;
-		} else if ("jta".equals(impl)) {
-			return new JTASQLSessionContext(this);
-		} else if ("thread".equals(impl)) {
-			return new ThreadLocalSQLSessionContext(this);
-		} else if ("managed".equals(impl)) {
-			return new ManagedSQLSessionContext(this);
-		} else {
-			return new ThreadLocalSQLSessionContext(this);
-		}
-	}
-
 	@Override
 	public SQLSession openSession(Connection connection) throws Exception {
 		setConfigurationClientInfo(connection);

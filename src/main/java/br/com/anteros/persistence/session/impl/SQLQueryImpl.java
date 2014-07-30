@@ -86,16 +86,6 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 	private LockModeType lockMode;
 
 	public SQLQueryImpl(SQLSession session) {
-		try {
-			if (!session.getTransaction().isActive()) {
-				throw new TransactionException(
-						"A transação não foi iniciada, execute begin() para iniciar uma transação!");
-			}
-		} catch (TransactionException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new TransactionException("Não foi possível verificar se existe uma transação iniciada.", e);
-		}
 		this.session = session;
 	}
 

@@ -3,9 +3,6 @@ package br.com.anteros.persistence.transaction.impl;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import javax.transaction.Status;
-import javax.transaction.Synchronization;
-
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.persistence.session.context.SQLPersistenceContext;
@@ -16,7 +13,6 @@ public class JDBCTransaction extends AbstractTransaction {
 	private static Logger log = LoggerProvider.getInstance().getLogger(JDBCTransaction.class.getName());
 
 	private boolean toggleAutoCommit;
-
 
 	public JDBCTransaction(Connection connection, SQLPersistenceContext context) {
 		super(connection, context);

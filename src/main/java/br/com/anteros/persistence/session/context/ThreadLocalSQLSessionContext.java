@@ -12,6 +12,7 @@ import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.SQLSessionListener;
+import br.com.anteros.persistence.transaction.AnterosSynchronization;
 
 public class ThreadLocalSQLSessionContext implements CurrentSQLSessionContext {
 
@@ -138,7 +139,7 @@ public class ThreadLocalSQLSessionContext implements CurrentSQLSessionContext {
 		return session;
 	}
 
-	protected static class CleaningSession implements Synchronization, Serializable {
+	protected static class CleaningSession implements AnterosSynchronization, Synchronization, Serializable {
 		private static final long serialVersionUID = 1L;
 		protected final SQLSessionFactory factory;
 

@@ -3,7 +3,6 @@ package br.com.anteros.persistence.transaction;
 import java.sql.Connection;
 
 import javax.transaction.Status;
-import javax.transaction.Synchronization;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
@@ -21,10 +20,6 @@ public abstract class AbstractTransaction implements Transaction {
 	private SQLPersistenceContext context;
 
 	protected TransactionSatus status = TransactionSatus.NOT_ACTIVE;
-
-	private boolean toggleAutoCommit;
-
-	private boolean rolledBack;
 
 	public AbstractTransaction(Connection connection, SQLPersistenceContext context) {
 		this.connection = connection;
@@ -101,6 +96,7 @@ public abstract class AbstractTransaction implements Transaction {
 
 		if (status != TransactionSatus.FAILED_COMMIT) {
 			try {
+				getPersistenceContext().onBeforeExecuteCommit(getConnection());
 				doRollback();
 				status = TransactionSatus.ROLLED_BACK;
 				getPersistenceContext().onAfterExecuteRollback(getConnection());
@@ -123,8 +119,7 @@ public abstract class AbstractTransaction implements Transaction {
 		return true;
 	}
 
-	@Override
-	public void registerSynchronization(Synchronization synchronization) throws Exception {
+	public void registerSynchronization(AnterosSynchronization synchronization) throws Exception {
 		synchronizationRegistry.registerSynchronization(synchronization);
 	}
 

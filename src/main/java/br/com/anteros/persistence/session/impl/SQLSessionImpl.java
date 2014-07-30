@@ -54,6 +54,7 @@ import br.com.anteros.persistence.sql.command.CommandSQL;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.transaction.Transaction;
 import br.com.anteros.persistence.transaction.TransactionFactory;
+import br.com.anteros.persistence.transaction.impl.TransactionException;
 
 public class SQLSessionImpl implements SQLSession {
 
@@ -617,6 +618,16 @@ public class SQLSessionImpl implements SQLSession {
 
 	public <T> SQLQuery<T> createSQLQuery(String sql) {
 		errorIfClosed();
+		try {
+			if (!getTransaction().isActive()) {
+				throw new TransactionException(
+						"A transação não foi iniciada, execute begin() para iniciar uma transação!");
+			}
+		} catch (TransactionException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new TransactionException("Não foi possível verificar se existe uma transação iniciada.", e);
+		}
 		SQLQuery<T> query = new SQLQueryImpl<T>(this);
 		query.sql(sql);
 		return query;

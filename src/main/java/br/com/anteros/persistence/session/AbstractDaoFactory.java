@@ -21,8 +21,8 @@ import br.com.anteros.persistence.session.dao.SQLDao;
 public abstract class AbstractDaoFactory {
 	protected SQLSession session;
 
-	public AbstractDaoFactory(SQLSession manager) {
-		this.session = manager;
+	public AbstractDaoFactory(SQLSession session) {
+		this.session = session;
 	}
 
 	public SQLSession getSession() {
