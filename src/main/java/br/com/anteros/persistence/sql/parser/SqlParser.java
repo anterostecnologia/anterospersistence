@@ -3,6 +3,7 @@ package br.com.anteros.persistence.sql.parser;
 import java.util.HashMap;
 import java.util.Map;
 
+import zigen.sql.parser.ast.ASTExpression;
 import br.com.anteros.persistence.sql.format.SqlFormatRule;
 import br.com.anteros.persistence.sql.format.tokenizer.SqlTokenizer;
 import br.com.anteros.persistence.sql.format.tokenizer.Token;
@@ -940,7 +941,7 @@ public class SqlParser implements ISqlParser {
 				} else {
 					tokenizer.pushBack();
 					boolean _exit = false;
-					while(!_exit) {
+					while (!_exit) {
 						switch (nextToken()) {
 						case TokenUtil.TYPE_END_SQL:
 							_exit = true;
@@ -1473,8 +1474,16 @@ public class SqlParser implements ISqlParser {
 					}
 					return;
 				} else if (",".equals(getToken())) {
-					node.getParent().addChild(new CommaNode(offset, length, scope));
-					parse(node.getParent());
+					if (node.getScope() == SCOPE_FROM) {
+						ExpressionNode exp1 = node.getExpression();
+						if (exp1 != null) {
+							tokenizer.pushBack();
+							parse(exp1.getParent());
+						}
+					} else {
+						node.getParent().addChild(new CommaNode(offset, length, scope));
+						parse(node.getParent());
+					}
 					return;
 				} else {
 					parseOuterJoinForOracle(node);

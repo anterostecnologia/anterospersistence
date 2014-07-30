@@ -76,7 +76,6 @@ public class EntityCache {
 	private ConnectivityType exportConnectivityType = ConnectivityType.ALL_CONNECTION;
 	private List<DescriptionConverter> converters = new ArrayList<DescriptionConverter>();
 
-
 	public String generateAndGetAliasTableName() {
 		generateAliasTableName();
 		return this.aliasTableName;
@@ -232,7 +231,8 @@ public class EntityCache {
 	public DescriptionColumn[] getDescriptionColumns(String fieldName) {
 		ArrayList<DescriptionColumn> result = new ArrayList<DescriptionColumn>();
 		for (DescriptionColumn descriptionColumn : columns) {
-			if ((descriptionColumn.getField() != null) && (fieldName.equalsIgnoreCase(descriptionColumn.getField().getName()))) {
+			if ((descriptionColumn.getField() != null)
+					&& (fieldName.equalsIgnoreCase(descriptionColumn.getField().getName()))) {
 				result.add(descriptionColumn);
 			}
 		}
@@ -434,7 +434,8 @@ public class EntityCache {
 				lastFieldValue = getLastFieldEntityValue(session, object, field.getField().getName());
 				newFieldValue = field.getFieldEntityValue(session, object);
 				if ((lastFieldValue != null) || (newFieldValue != null)) {
-					if (((lastFieldValue == null) && (newFieldValue != null)) || ((lastFieldValue != null) && (newFieldValue == null))
+					if (((lastFieldValue == null) && (newFieldValue != null))
+							|| ((lastFieldValue != null) && (newFieldValue == null))
 							|| (newFieldValue.compareTo(lastFieldValue) != 0))
 						result.add(field);
 				}
@@ -443,7 +444,8 @@ public class EntityCache {
 		return result;
 	}
 
-	public FieldEntityValue getOriginalFieldEntityValue(SQLSession session, Object object, String fieldName) throws Exception {
+	public FieldEntityValue getOriginalFieldEntityValue(SQLSession session, Object object, String fieldName)
+			throws Exception {
 		EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(object);
 		if (entityManaged != null) {
 			for (FieldEntityValue field : entityManaged.getOriginalValues()) {
@@ -454,11 +456,14 @@ public class EntityCache {
 		return null;
 	}
 
-	public Object getOriginalValueByColumn(SQLSession session, Object object, DescriptionColumn column) throws Exception {
-		return getValueByColumn(object, column, getOriginalFieldEntityValue(session, object, column.getField().getName()));
+	public Object getOriginalValueByColumn(SQLSession session, Object object, DescriptionColumn column)
+			throws Exception {
+		return getValueByColumn(object, column,
+				getOriginalFieldEntityValue(session, object, column.getField().getName()));
 	}
 
-	public FieldEntityValue getLastFieldEntityValue(SQLSession session, Object object, String fieldName) throws Exception {
+	public FieldEntityValue getLastFieldEntityValue(SQLSession session, Object object, String fieldName)
+			throws Exception {
 		EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(object);
 		if (entityManaged != null) {
 			for (FieldEntityValue field : entityManaged.getLastValues()) {
@@ -488,7 +493,8 @@ public class EntityCache {
 		return false;
 	}
 
-	private Object getValueByColumn(Object object, DescriptionColumn column, FieldEntityValue fieldEntityValue) throws Exception {
+	private Object getValueByColumn(Object object, DescriptionColumn column, FieldEntityValue fieldEntityValue)
+			throws Exception {
 		Object result = null;
 		if ((fieldEntityValue != null) && (fieldEntityValue.getValue() != null)) {
 			if (column.isDiscriminatorColumn())
@@ -649,9 +655,10 @@ public class EntityCache {
 	public DescriptionField getDescriptionFieldUsesColumns(Class<?> sourceClass, List<String> columNames) {
 		for (DescriptionField descriptionField : getDescriptionFields()) {
 			if (descriptionField.isRelationShip()) {
-				if ((descriptionField.isContainsColumns(columNames))
-						&& ((descriptionField.getFieldClass() == sourceClass) || (ReflectionUtils.isExtendsClass(descriptionField.getFieldClass(),
-								sourceClass))))
+				boolean containsColumns = descriptionField.isContainsColumns(columNames);
+				Class<?> fc = descriptionField.getFieldClass();
+				boolean isInheritance = ReflectionUtils.isExtendsClass(sourceClass, descriptionField.getFieldClass());
+				if ((containsColumns) && ((fc == sourceClass) || (isInheritance)))
 					return descriptionField;
 			} else if (descriptionField.isCollectionEntity()) {
 				if (descriptionField.getFieldClass() == sourceClass)
@@ -819,7 +826,7 @@ public class EntityCache {
 	}
 
 	public boolean isInheritance() {
-		if (discriminatorValue==null)
+		if (discriminatorValue == null)
 			return false;
 		return (!"".equals(discriminatorValue));
 	}

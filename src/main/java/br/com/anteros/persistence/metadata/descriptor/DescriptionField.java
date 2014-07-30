@@ -773,7 +773,7 @@ public class DescriptionField {
 		boolean found = false;
 		for (String colum : columNames) {
 			for (DescriptionColumn descriptionColumn : getDescriptionColumns()) {
-				if (descriptionColumn.getReferencedColumnName().equalsIgnoreCase(colum)) {
+				if (descriptionColumn.getColumnName().equalsIgnoreCase(colum)) {
 					found = true;
 					break;
 				}
