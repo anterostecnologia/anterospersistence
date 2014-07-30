@@ -8,8 +8,10 @@ import javax.transaction.Synchronization;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
+import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionFactory;
+import br.com.anteros.persistence.session.SQLSessionListener;
 
 public class ThreadLocalSQLSessionContext implements CurrentSQLSessionContext {
 
@@ -30,9 +32,43 @@ public class ThreadLocalSQLSessionContext implements CurrentSQLSessionContext {
 		if (current == null) {
 			current = factory.openSession();
 			current.getTransaction().registerSynchronization(new CleaningSession(factory));
+			registerSQLTSessionListener(current);
 			doBind(current, factory);
 		}
 		return current;
+	}
+
+	private void registerSQLTSessionListener(SQLSession session) {
+		session.addListener(new SQLSessionListener() {
+			@Override
+			public void onExecuteUpdateSQL(String sql, Object[] parameters) {
+			}
+
+			@Override
+			public void onExecuteUpdateSQL(String sql, Map<String, Object> parameters) {
+			}
+
+			@Override
+			public void onExecuteUpdateSQL(String sql, NamedParameter[] parameters) {
+			}
+
+			@Override
+			public void onExecuteSQL(String sql, Object[] parameters) {
+			}
+
+			@Override
+			public void onExecuteSQL(String sql, Map<String, Object> parameters) {
+			}
+
+			@Override
+			public void onExecuteSQL(String sql, NamedParameter[] parameters) {
+			}
+
+			@Override
+			public void onClose(SQLSession session) {
+				unbind(session.getSQLSessionFactory());
+			}
+		});
 	}
 
 	protected SQLSessionFactory getSQLSessionFactory() {

@@ -45,7 +45,7 @@ public class JDBCDataSource implements DataSource {
 		this.password = password;
 		this.url = url;
 		//Thread.currentThread().getContextClassLoader().loadClass(driverClassName);
-        Class.forName(driverClassName); 
+        Class.forName(driverClassName);
 	}
 
 	
@@ -96,7 +96,8 @@ public class JDBCDataSource implements DataSource {
 		return driverClassName;
 	}
 
-	public void setDriverClassName(String driverClassName) {
+	public void setDriverClassName(String driverClassName) throws ClassNotFoundException {
+		Class.forName(driverClassName);
 		this.driverClassName = driverClassName;
 	}
 

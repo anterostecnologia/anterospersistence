@@ -22,11 +22,16 @@ import br.com.anteros.persistence.parameter.NamedParameter;
 public interface SQLSessionListener {
 
 	public void onExecuteSQL(String sql, NamedParameter[] parameters);
-	public void onExecuteSQL(String sql, Map<String,Object> parameters);
+
+	public void onExecuteSQL(String sql, Map<String, Object> parameters);
+
 	public void onExecuteSQL(String sql, Object[] parameters);
-	
+
 	public void onExecuteUpdateSQL(String sql, NamedParameter[] parameters);
-	public void onExecuteUpdateSQL(String sql, Map<String,Object> parameters);
+
+	public void onExecuteUpdateSQL(String sql, Map<String, Object> parameters);
+
 	public void onExecuteUpdateSQL(String sql, Object[] parameters);
+
+	public void onClose(SQLSession session);
 }
-	
