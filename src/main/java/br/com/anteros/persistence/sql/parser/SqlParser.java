@@ -370,7 +370,7 @@ public class SqlParser implements ISqlParser {
 						outfile.setFilePath(getToken());
 
 					} else if (node instanceof FromNode) {
-						if (lastNode instanceof OnNode) {
+						if ((lastNode instanceof OnNode) || ("AND".equalsIgnoreCase(lastNode.getName())) || ("OR".equalsIgnoreCase(lastNode.getName())))  {
 							node.addChild(new ColumnNode(getToken(), offset, length, scope));
 						} else {
 							node.addChild(new TableNode(getToken(), offset, length, scope));

@@ -104,5 +104,12 @@ public class SQLQueryAnalyserOwner {
 
 		return result;
 	}
+	
+	
+	public String getAliasPath(){
+		if (owner ==null)
+			return "";
+		return owner.getAliasPath();
+	}
 
 }

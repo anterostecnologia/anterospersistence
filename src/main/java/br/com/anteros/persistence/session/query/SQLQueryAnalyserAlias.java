@@ -42,6 +42,15 @@ public class SQLQueryAnalyserAlias {
 		String path = owner.getPath();
 		return path;
 	}
+	
+	public String getAliasPath() {
+		if (owner == null)
+			return "";
+		String result = owner.getAliasPath();
+		if (result!="")
+			result += ".";
+		return result+alias;
+	}
 
 	public EntityCache getEntity() {
 		return entity;
@@ -83,5 +92,4 @@ public class SQLQueryAnalyserAlias {
 			return false;
 		return true;
 	}
-
 }

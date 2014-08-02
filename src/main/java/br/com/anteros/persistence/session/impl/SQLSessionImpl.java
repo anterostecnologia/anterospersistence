@@ -49,6 +49,7 @@ import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.session.lock.type.LockModeType;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
 import br.com.anteros.persistence.session.query.SQLQuery;
+import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyzer;
 import br.com.anteros.persistence.sql.command.CommandSQL;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
@@ -680,10 +681,10 @@ public class SQLSessionImpl implements SQLSession {
 		getRunner().executeDDL(getConnection(), ddl, showSql, formatSql, "");
 	}
 
-	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String, String> expressions,
+	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String, String> expressions, Map<SQLQueryAnalyserAlias,Map<String,String>> columnAliases,
 			Cache transactionCache) throws Exception {
 		errorIfClosed();
-		return new EntityHandler(proxyFactory, resultClass, getEntityCacheManager(), expressions, this,
+		return new EntityHandler(proxyFactory, resultClass, getEntityCacheManager(), expressions, columnAliases, this,
 				transactionCache);
 	}
 

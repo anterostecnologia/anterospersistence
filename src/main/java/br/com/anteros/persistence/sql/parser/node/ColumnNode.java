@@ -29,9 +29,12 @@ public class ColumnNode extends AliasNode {
 	private boolean isConcating;
 
 	private boolean isOuterJoin; // for Oracle
+	
+	private String originalColumnName;
 
 	public ColumnNode(String columnName, int offset, int length, int scope) {
 		super(columnName, offset, length, scope);
+		originalColumnName = columnName;
 		parse(columnName);
 	}
 
@@ -105,8 +108,6 @@ public class ColumnNode extends AliasNode {
 		return sb.toString();
 	}
 
-
-
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(getName());
@@ -161,6 +162,10 @@ public class ColumnNode extends AliasNode {
 
 	public boolean isOuterJoin() {
 		return isOuterJoin;
+	}
+
+	public String getOriginalColumnName() {
+		return originalColumnName;
 	}
 
 }

@@ -380,7 +380,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 							+ resultClass.getName()
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 				}
-				handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(), transactionCache);
+				handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(), analyzer.getColumnAliases(), transactionCache);
 			}
 
 			if (this.parameters.size() > 0)
@@ -923,7 +923,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 			}
 			SQLQueryAnalyzer analyzer = session.getSQLQueryAnalyzer();
 			analyzer.analyze(sql, resultClass);
-			handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(), transactionCache);
+			handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(), analyzer.getColumnAliases(), transactionCache);
 		}
 
 		List result = (List) session.getRunner().query(session.getConnection(), sql, handler, namedParameter, showSql,
@@ -953,7 +953,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 				}
 				SQLQueryAnalyzer analyzer = session.getSQLQueryAnalyzer();
 				analyzer.analyze(sql, resultClass);
-				handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(), transactionCache);
+				handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(), analyzer.getColumnAliases(), transactionCache);
 			}
 
 			result = (List) session.getRunner().query(session.getConnection(), sql, handler, parameter, showSql,
@@ -1168,7 +1168,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta. SQL-> "
 							+ sql);
 				}
-				handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(), transactionCache);
+				handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(), analyzer.getColumnAliases(), transactionCache);
 			}
 
 			if (this.parameters.size() > 0)
