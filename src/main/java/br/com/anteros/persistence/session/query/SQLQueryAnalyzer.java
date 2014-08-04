@@ -281,7 +281,7 @@ public class SQLQueryAnalyzer {
 			if (column.getParent() instanceof SelectNode) {
 				String tn = ((ColumnNode) column).getTableName();
 				String cn = ((ColumnNode) column).getColumnName();
-				if ((tn == null) || (tn.equals("")))
+				if (((tn == null) || (tn.equals(""))) && (!"*".equals(cn)))
 					throw new SQLQueryAnalyzerException(
 							"Foi encontrado a coluna "
 									+ cn
