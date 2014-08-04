@@ -62,21 +62,21 @@ public class SQLQueryAnalyzer {
 	public void analyze(String sql, Class<?> resultClass) throws SQLQueryAnalyzerException {
 		this.sql = sql;
 		this.resultClass = resultClass;
-		Map<String, Object> result = cacheResultAnalyze.get(sql);
-		if (result == null) {
+//		Map<String, Object> result = cacheResultAnalyze.get(sql);
+//		if (result == null) {
 			loadAliases();
-			result = new HashMap<String, Object>();
-			result.put("columnAliases", columnAliases);
-			result.put("aliases", aliases);
-			result.put("expressions", expressions);
-			result.put("sql", this.sql);
-			cacheResultAnalyze.put(sql, result);
-		} else {
-			columnAliases = (Map<SQLQueryAnalyserAlias, Map<String, String>>) result.get("columnAliases");
-			aliases = (LinkedHashSet<SQLQueryAnalyserAlias>) result.get("aliases");
-			expressions = (Map<String, String>) result.get("expressions");
-			this.sql = (String) result.get("sql");
-		}
+//			result = new HashMap<String, Object>();
+//			result.put("columnAliases", columnAliases);
+//			result.put("aliases", aliases);
+//			result.put("expressions", expressions);
+//			result.put("sql", this.sql);
+//			cacheResultAnalyze.put(sql, result);
+//		} else {
+//			columnAliases = (Map<SQLQueryAnalyserAlias, Map<String, String>>) result.get("columnAliases");
+//			aliases = (LinkedHashSet<SQLQueryAnalyserAlias>) result.get("aliases");
+//			expressions = (Map<String, String>) result.get("expressions");
+//			this.sql = (String) result.get("sql");
+//		}
 	}
 
 	protected void loadAliases() throws SQLQueryAnalyzerException {
