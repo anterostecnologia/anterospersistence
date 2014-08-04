@@ -66,11 +66,13 @@ public class SQLQueryAnalyzer {
 		if (result == null) {
 			loadAliases();
 			result = new HashMap<String, Object>();
+			result.put("columnAliases", columnAliases);
 			result.put("aliases", aliases);
 			result.put("expressions", expressions);
 			result.put("sql", this.sql);
 			cacheResultAnalyze.put(sql, result);
 		} else {
+			columnAliases = (Map<SQLQueryAnalyserAlias, Map<String, String>>) result.get("columnAliases");
 			aliases = (LinkedHashSet<SQLQueryAnalyserAlias>) result.get("aliases");
 			expressions = (Map<String, String>) result.get("expressions");
 			this.sql = (String) result.get("sql");
