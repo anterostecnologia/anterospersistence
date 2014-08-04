@@ -421,8 +421,8 @@ public class EntityHandler implements ResultSetHandler {
 					String column = it.next();
 					if (column.equalsIgnoreCase(columnName)) {
 						alias = columnAliases.get(queryAnalyserAlias).get(column);
-						break; 
-						
+						break;
+
 					}
 				}
 				if (alias != null) {
@@ -440,10 +440,21 @@ public class EntityHandler implements ResultSetHandler {
 		System.out.println(columnName);
 		for (SQLQueryAnalyserAlias queryAnalyserAlias : columnAliases.keySet()) {
 			if (queryAnalyserAlias.getAlias().equals(sourceAlias)) {
-				String alias = columnAliases.get(queryAnalyserAlias).get(columnName);
-				String[] splitAlias = alias.split("\\.");
-				if (splitAlias.length > 1)
-					alias = splitAlias[1];
+				String alias = null;
+				Iterator<String> it = columnAliases.get(queryAnalyserAlias).keySet().iterator();
+				while (it.hasNext()) {
+					String column = it.next();
+					if (column.equalsIgnoreCase(columnName)) {
+						alias = columnAliases.get(queryAnalyserAlias).get(column);
+						break;
+
+					}
+				}
+				if (alias != null) {
+					String[] splitAlias = alias.split("\\.");
+					if (splitAlias.length > 1)
+						alias = splitAlias[1];
+				}
 				return (alias == null ? columnName : alias);
 			}
 		}
