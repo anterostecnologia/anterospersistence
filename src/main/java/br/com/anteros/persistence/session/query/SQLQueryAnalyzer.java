@@ -43,6 +43,7 @@ import br.com.anteros.persistence.sql.parser.node.OperatorNode;
 import br.com.anteros.persistence.sql.parser.node.SelectNode;
 import br.com.anteros.persistence.sql.parser.node.SelectStatementNode;
 import br.com.anteros.persistence.sql.parser.node.TableNode;
+import br.com.anteros.persistence.sql.parser.node.WhereNode;
 
 public class SQLQueryAnalyzer {
 
@@ -109,9 +110,9 @@ public class SQLQueryAnalyzer {
 		for (SelectStatementNode selectStatement : selectStatements) {
 
 			/*
-			 * Valida se existem colunas sem alias da tabela
+			 * Valida se existem colunas sem alias da tabela ou condition do where sem o alias
 			 */
-			validateColumns(selectStatement);
+			validateColumnsAndWhereCondition(selectStatement);
 
 			aliasesTemporary = getAliasesFromNode(selectStatement);
 			/*
@@ -275,7 +276,7 @@ public class SQLQueryAnalyzer {
 
 	}
 
-	private void validateColumns(SelectStatementNode selectStatement) throws SQLQueryAnalyzerException {
+	private void validateColumnsAndWhereCondition(SelectStatementNode selectStatement) throws SQLQueryAnalyzerException {
 		
 		INode[] columns = ParserUtil.findChildren(selectStatement, ColumnNode.class.getSimpleName());
 		for (INode column : columns) {
@@ -288,6 +289,24 @@ public class SQLQueryAnalyzer {
 									+ cn
 									+ " sem um o alias da tabela de origem. É necessário que seja informado o alias da tabela para que seja possível realizar o mapeamento correto do objeto da classe de resultado "
 									+ resultClass.getName());
+			}
+		}
+		
+		
+		for (INode itemNode : selectStatement.getChildren()) {
+			if (itemNode instanceof WhereNode) {
+				columns = ParserUtil.findChildren((WhereNode)itemNode, ColumnNode.class.getSimpleName());
+				for (INode column : columns){
+					String tn = ((ColumnNode) column).getTableName();
+					String cn = ((ColumnNode) column).getColumnName();
+					if ((tn==null) || ("".equals(tn))){
+						throw new SQLQueryAnalyzerException(
+								"Foi encontrado a coluna "+cn
+										+ " sem o alias da tabela de origem na condição WHERE. É necessário que seja informado o alias da tabela para que seja possível realizar o mapeamento correto do objeto da classe de resultado "
+										+ resultClass.getName());
+					}
+				}
+				
 			}
 		}
 	}

@@ -49,7 +49,7 @@ public class ColumnNode extends AliasNode {
 	    this.isConcating = true;
 	}
 
-	// for Oracale "(+)"
+	// for Oracle "(+)"
 	public void addOuterJoin(String token, int _offset, int _length){
 		StringBuffer sb = new StringBuffer(columnName).append(token);
 		parse(sb.toString());
