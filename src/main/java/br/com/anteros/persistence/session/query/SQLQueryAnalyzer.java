@@ -107,6 +107,12 @@ public class SQLQueryAnalyzer {
 		SelectStatementNode[] selectStatements = getAllSelectStatement(node);
 
 		for (SelectStatementNode selectStatement : selectStatements) {
+
+			/*
+			 * Valida se existem colunas sem alias da tabela
+			 */
+			validateColumns(selectStatement);
+
 			aliasesTemporary = getAliasesFromNode(selectStatement);
 			/*
 			 * Substituiu * pelos nomes das colunas
@@ -210,7 +216,7 @@ public class SQLQueryAnalyzer {
 
 				if (sbDiscriminatorColumn.length() > 0) {
 					partsToInject.add(new InjectSQLPart("", sbDiscriminatorColumn.toString() + ", ", selectStatement
-							.getOffset() + selectStatement.getLength()+1));
+							.getOffset() + selectStatement.getLength() + 1));
 				}
 			}
 		}
@@ -220,7 +226,7 @@ public class SQLQueryAnalyzer {
 			sql = part.process(sql);
 			reload = true;
 		}
-		
+
 		if (reload) {
 			parser = new SqlParser(sql, new SqlFormatRule());
 			node = new Node("root");
@@ -253,18 +259,36 @@ public class SQLQueryAnalyzer {
 				throw new SQLQueryAnalyzerException("A classe de resultado para criação do(s) objeto(s) "
 						+ resultClass.getName() + " não foi encontrada na instrução SQL. ");
 			}
-			
+
 			columnAliases.clear();
 
 			buildExpressionsAndColumnAliases(firstSelectStatement);
 
-			
-			/*  Iterator<String> iterator = expressions.keySet().iterator();
-			  while (iterator.hasNext()) { String k = iterator.next(); String v
-			  = expressions.get(k); System.out.println(k + " = " + v); }
-			*/ 
+			Iterator<String> iterator = expressions.keySet().iterator();
+			while (iterator.hasNext()) {
+				String k = iterator.next();
+				String v = expressions.get(k);
+				System.out.println(k + " = " + v);
+			}
+
 		}
 
+	}
+
+	private void validateColumns(SelectStatementNode selectStatement) throws SQLQueryAnalyzerException {
+		INode[] columns = ParserUtil.findChildren(selectStatement, ColumnNode.class.getSimpleName());
+		for (INode column : columns) {
+			if (column.getParent() instanceof SelectNode) {
+				String tn = ((ColumnNode) column).getTableName();
+				String cn = ((ColumnNode) column).getColumnName();
+				if ((tn == null) || (tn.equals("")))
+					throw new SQLQueryAnalyzerException(
+							"Foi encontrado a coluna "
+									+ cn
+									+ " sem um o alias da tabela de origem. É necessário que seja informado o alias da tabela para que seja possível realizar o mapeamento correto do objeto da classe de resultado "
+									+ resultClass.getName());
+			}
+		}
 	}
 
 	private SelectStatementNode getFirstSelectStatement(INode node) {
@@ -376,14 +400,15 @@ public class SQLQueryAnalyzer {
 			if (column.getParent() instanceof SelectNode) {
 				String tn = ((ColumnNode) column).getTableName();
 				String cn = ((ColumnNode) column).getColumnName();
-				if ((cn.equalsIgnoreCase(columnName) || cn.equalsIgnoreCase("*")) && tn.equalsIgnoreCase(alias))
+				if ((columnName.equalsIgnoreCase(cn) || cn.equalsIgnoreCase("*")) && alias.equalsIgnoreCase(tn))
 					return true;
 			}
 		}
 		return false;
 	}
 
-	protected void buildExpressionsAndColumnAliases(SelectStatementNode selectStatement) throws SQLQueryAnalyzerException {
+	protected void buildExpressionsAndColumnAliases(SelectStatementNode selectStatement)
+			throws SQLQueryAnalyzerException {
 		INode[] columns = ParserUtil.findChildren(selectStatement, ColumnNode.class.getSimpleName());
 		expressions = new LinkedHashMap<String, String>();
 		for (INode column : columns) {
@@ -406,12 +431,12 @@ public class SQLQueryAnalyzer {
 						DescriptionColumn descriptionColumn = cache.getDescriptionColumnByName(columnName);
 						if (descriptionColumn == null)
 							continue;
-						
+
 						if (!columnAliases.containsKey(alias)) {
 							columnAliases.put(alias, new HashMap<String, String>());
 						}
 
-						columnAliases.get(alias).put(descriptionColumn.getColumnName(),alias.getAlias() + "." + aliasName);
+						columnAliases.get(alias).put(columnName, alias.getAlias() + "." + aliasName);
 
 						if (descriptionColumn.hasDescriptionField()) {
 							if (descriptionColumn.getDescriptionField().isCollection()
@@ -442,7 +467,7 @@ public class SQLQueryAnalyzer {
 
 	protected SQLQueryAnalyserAlias getAlias(String alias) {
 		for (SQLQueryAnalyserAlias a : aliases) {
-			if (a.getAlias().equals(alias))
+			if (a.getAlias().equalsIgnoreCase(alias))
 				return a;
 		}
 		return null;

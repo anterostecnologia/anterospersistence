@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -414,10 +415,20 @@ public class EntityHandler implements ResultSetHandler {
 	private String getAliasColumnName(EntityCache sourceEntityCache, String columnName) {
 		for (SQLQueryAnalyserAlias queryAnalyserAlias : columnAliases.keySet()) {
 			if (queryAnalyserAlias.getEntity().equals(sourceEntityCache)) {
-				String alias = columnAliases.get(queryAnalyserAlias).get(columnName);
-				String[] splitAlias = alias.split("\\.");
-				if (splitAlias.length > 0)
-					alias = splitAlias[splitAlias.length - 1];
+				String alias = null;
+				Iterator<String> it = columnAliases.get(queryAnalyserAlias).keySet().iterator();
+				while (it.hasNext()) {
+					String column = it.next();
+					if (column.equalsIgnoreCase(columnName)) {
+						alias = columnAliases.get(queryAnalyserAlias).get(column);
+						break;
+					}
+				}
+				if (alias != null) {
+					String[] splitAlias = alias.split("\\.");
+					if (splitAlias.length > 0)
+						alias = splitAlias[splitAlias.length - 1];
+				}
 				return (alias == null ? columnName : alias);
 			}
 		}
@@ -425,6 +436,7 @@ public class EntityHandler implements ResultSetHandler {
 	}
 
 	private String getAliasColumnName(String sourceAlias, String columnName) {
+		System.out.println(columnName);
 		for (SQLQueryAnalyserAlias queryAnalyserAlias : columnAliases.keySet()) {
 			if (queryAnalyserAlias.getAlias().equals(sourceAlias)) {
 				String alias = columnAliases.get(queryAnalyserAlias).get(columnName);
