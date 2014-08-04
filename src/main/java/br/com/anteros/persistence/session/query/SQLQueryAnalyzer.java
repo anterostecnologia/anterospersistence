@@ -276,6 +276,7 @@ public class SQLQueryAnalyzer {
 	}
 
 	private void validateColumns(SelectStatementNode selectStatement) throws SQLQueryAnalyzerException {
+		
 		INode[] columns = ParserUtil.findChildren(selectStatement, ColumnNode.class.getSimpleName());
 		for (INode column : columns) {
 			if (column.getParent() instanceof SelectNode) {

@@ -421,7 +421,8 @@ public class EntityHandler implements ResultSetHandler {
 					String column = it.next();
 					if (column.equalsIgnoreCase(columnName)) {
 						alias = columnAliases.get(queryAnalyserAlias).get(column);
-						break;
+						break; 
+						
 					}
 				}
 				if (alias != null) {
