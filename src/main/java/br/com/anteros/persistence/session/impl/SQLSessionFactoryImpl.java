@@ -28,10 +28,6 @@ import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.session.AbstractSQLSessionFactory;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.configuration.AnterosPersistenceProperties;
-import br.com.anteros.persistence.session.context.CurrentSQLSessionContext;
-import br.com.anteros.persistence.session.context.JTASQLSessionContext;
-import br.com.anteros.persistence.session.context.ManagedSQLSessionContext;
-import br.com.anteros.persistence.session.context.ThreadLocalSQLSessionContext;
 import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.transaction.TransactionFactory;
 import br.com.anteros.persistence.transaction.TransactionManagerLookup;
@@ -53,6 +49,22 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	public SQLSessionFactoryImpl(EntityCacheManager entityCacheManager, DataSource dataSource,
 			SessionFactoryConfiguration configuration) throws Exception {
 		super(entityCacheManager, dataSource, configuration);
+
+		String tmLookupClass = configuration.getProperty(AnterosPersistenceProperties.TRANSACTION_MANAGER_LOOKUP);
+		if (tmLookupClass == null) {
+			log.info("No TransactionManagerLookup configured (in JTA environment, use of read-write or transactional second-level cache is not recommended)");
+		} else {
+			log.info("instantiating TransactionManagerLookup: " + tmLookupClass);
+			try {
+				transactionManagerLookup = (TransactionManagerLookup) ReflectionUtils.classForName(tmLookupClass)
+						.newInstance();
+				log.info("instantiated TransactionManagerLookup");
+				transactionManager = transactionManagerLookup.getTransactionManager();
+			} catch (Exception e) {
+				log.error("Could not instantiate TransactionManagerLookup", e);
+				throw new TransactionException("Could not instantiate TransactionManagerLookup '" + tmLookupClass + "'");
+			}
+		}
 	}
 
 	@Override
@@ -79,7 +91,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 			try {
 				transactionFactory = buildTransactionFactory();
 			} catch (Exception e) {
-				throw new TransactionException("Não foi possível criar a fábrica de transações.",e);
+				throw new TransactionException("Não foi possível criar a fábrica de transações.", e);
 			}
 		}
 		return transactionFactory;
@@ -105,35 +117,11 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 
 	@Override
 	public TransactionManagerLookup getTransactionManagerLookup() throws Exception {
-		if (transactionManagerLookup == null) {
-			String tmLookupClass = configuration.getProperty(AnterosPersistenceProperties.TRANSACTION_MANAGER_LOOKUP);
-			if (tmLookupClass == null) {
-				tmLookupClass = JNDITransactionManagerLookup.class.getName();
-			}
-			if (tmLookupClass == null) {
-				log.info("No TransactionManagerLookup configured (in JTA environment, use of read-write or transactional second-level cache is not recommended)");
-				return null;
-			} else {
-				log.info("instantiating TransactionManagerLookup: " + tmLookupClass);
-				try {
-					transactionManagerLookup = (TransactionManagerLookup) ReflectionUtils.classForName(tmLookupClass)
-							.newInstance();
-					log.info("instantiated TransactionManagerLookup");
-				} catch (Exception e) {
-					log.error("Could not instantiate TransactionManagerLookup", e);
-					throw new TransactionException("Could not instantiate TransactionManagerLookup '" + tmLookupClass
-							+ "'");
-				}
-			}
-		}
 		return transactionManagerLookup;
 	}
 
 	@Override
 	public TransactionManager getTransactionManager() throws Exception {
-		log.info("obtaining TransactionManager");
-		if (transactionManager == null)
-			transactionManager = getTransactionManagerLookup().getTransactionManager();
 		return transactionManager;
 	}
 
