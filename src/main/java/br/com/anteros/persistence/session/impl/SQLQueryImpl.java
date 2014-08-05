@@ -881,7 +881,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 		 * Monta o SQL
 		 */
 		Select select = new Select(session.getDialect());
-		select.addTableName(mappedByEntityCache.getTableName());
+		select.addTableName(mappedByEntityCache.getTableName(), "TAB");
 
 		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
 		boolean appendOperator = false;
@@ -889,7 +889,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 			for (DescriptionColumn descriptionColumn : mappedByDescriptionColumn) {
 				if (appendOperator)
 					select.and();
-				select.addCondition(descriptionColumn.getColumnName(), "=", ":P" + descriptionColumn.getColumnName());
+				select.addCondition("TAB." + descriptionColumn.getColumnName(), "=", ":P" + descriptionColumn.getColumnName());
 				params.add(new NamedParameter("P" + descriptionColumn.getColumnName(), columnKeyTarget
 						.get(descriptionColumn
 								.getReferencedColumnName())));
@@ -924,6 +924,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 			SQLQueryAnalyzer analyzer = session.getSQLQueryAnalyzer();
 			analyzer.analyze(sql, resultClass);
 			handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(), analyzer.getColumnAliases(), transactionCache);
+			sql = analyzer.getParsedSQL();
 		}
 
 		List result = (List) session.getRunner().query(session.getConnection(), sql, handler, namedParameter, showSql,

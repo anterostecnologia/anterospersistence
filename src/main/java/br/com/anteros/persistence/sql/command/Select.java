@@ -182,7 +182,7 @@ public class Select {
 			boolean appendComma = false;
 			while (iter.hasNext()) {
 				String table = iter.next();
-				String tableAlias = (String) aliases.get(table);
+				String tableAlias = (String) tableAliases.get(table);
 				if (appendComma)
 					buf.append(", ");
 				buf.append(table);

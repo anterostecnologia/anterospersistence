@@ -211,6 +211,7 @@ public class ThreadLocalSQLSessionContext implements CurrentSQLSessionContext {
 				else if ( !realSession.getTransaction().isActive() ) {
 					if ( "beginTransaction".equals( method.getName() )
 					     || "getTransaction".equals( method.getName() )
+					     || "addListener".equals( method.getName() )
 					     || "setFlushMode".equals( method.getName() )
 					     || "getSQLSessionFactory".equals( method.getName() ) ) {
 						log.debug( "allowing method [" + method.getName() + "] in non-transacted context" );

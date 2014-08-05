@@ -66,6 +66,7 @@ public class SQLQueryAnalyzer {
 //		Map<String, Object> result = cacheResultAnalyze.get(sql);
 //		if (result == null) {
 			loadAliases();
+			System.out.println(this.sql);
 //			result = new HashMap<String, Object>();
 //			result.put("columnAliases", columnAliases);
 //			result.put("aliases", aliases);
