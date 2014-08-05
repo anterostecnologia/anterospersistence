@@ -66,7 +66,6 @@ public class SQLQueryAnalyzer {
 //		Map<String, Object> result = cacheResultAnalyze.get(sql);
 //		if (result == null) {
 			loadAliases();
-			System.out.println(this.sql);
 //			result = new HashMap<String, Object>();
 //			result.put("columnAliases", columnAliases);
 //			result.put("aliases", aliases);
@@ -266,12 +265,12 @@ public class SQLQueryAnalyzer {
 
 			buildExpressionsAndColumnAliases(firstSelectStatement);
 
-			Iterator<String> iterator = expressions.keySet().iterator();
-			while (iterator.hasNext()) {
-				String k = iterator.next();
-				String v = expressions.get(k);
-				System.out.println(k + " = " + v);
-			}
+//			Iterator<String> iterator = expressions.keySet().iterator();
+//			while (iterator.hasNext()) {
+//				String k = iterator.next();
+//				String v = expressions.get(k);
+//				System.out.println(k + " = " + v);
+//			}
 
 		}
 

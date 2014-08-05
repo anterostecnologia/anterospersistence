@@ -437,7 +437,6 @@ public class EntityHandler implements ResultSetHandler {
 	}
 
 	private String getAliasColumnName(String sourceAlias, String columnName) {
-		System.out.println(columnName);
 		for (SQLQueryAnalyserAlias queryAnalyserAlias : columnAliases.keySet()) {
 			if (queryAnalyserAlias.getAlias().equals(sourceAlias)) {
 				String alias = null;
