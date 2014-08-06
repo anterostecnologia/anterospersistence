@@ -88,12 +88,12 @@ public class MySQLDialect extends DatabaseDialect {
 
 	@Override
 	public char getCloseQuote() {
-		return '`';
+		return 0;
 	}
 
 	@Override
 	public char getOpenQuote() {
-		return '`';
+		return 0;
 	}
 
 	@Override
@@ -377,7 +377,7 @@ public class MySQLDialect extends DatabaseDialect {
 
 	@Override
 	public String getIdentifierQuoteCharacter() {
-		return "`";
+		return "";
 	}
 
 	@Override

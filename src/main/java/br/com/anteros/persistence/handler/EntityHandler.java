@@ -99,6 +99,12 @@ public class EntityHandler implements ResultSetHandler {
 								.getDiscriminatorColumn().getColumnName()));
 						entityCache = entityCacheManager.getEntityCache(resultClass, dsValue);
 						targetResultClass = entityCache.getEntityClass();
+					} else if (entityCache.hasDiscriminatorColumn()) {
+						String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache
+								.getDiscriminatorColumn().getColumnName()));
+						if (!entityCache.getDiscriminatorValue().equals(dsValue)){
+							continue;
+						}
 					}
 				} catch (Exception e) {
 					throw new EntityHandlerException(
@@ -414,7 +420,9 @@ public class EntityHandler implements ResultSetHandler {
 
 	private String getAliasColumnName(EntityCache sourceEntityCache, String columnName) {
 		for (SQLQueryAnalyserAlias queryAnalyserAlias : columnAliases.keySet()) {
-			if (queryAnalyserAlias.getEntity().equals(sourceEntityCache)) {
+			if (queryAnalyserAlias.getEntity().equals(sourceEntityCache)
+					|| (ReflectionUtils.isExtendsClass(queryAnalyserAlias.getEntity().getEntityClass(),
+							sourceEntityCache.getEntityClass()))) {
 				String alias = null;
 				Iterator<String> it = columnAliases.get(queryAnalyserAlias).keySet().iterator();
 				while (it.hasNext()) {

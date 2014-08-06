@@ -375,7 +375,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 			if (entityCache == null)
 				handler = new BeanHandler(resultClass);
 			else {
-				if (sql.toLowerCase().indexOf(" " + entityCache.getTableName().toLowerCase()) < 0) {
+				if (sql.toLowerCase().indexOf(entityCache.getTableName().toLowerCase()) < 0) {
 					throw new SQLException("A tabela " + entityCache.getTableName() + " da classe "
 							+ resultClass.getName()
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta.");

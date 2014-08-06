@@ -668,6 +668,7 @@ public class SQLSessionImpl implements SQLSession {
 
 	public void executeDDL(String ddl) throws Exception {
 		errorIfClosed();
+		System.out.println(ddl);
 		getRunner().executeDDL(getConnection(), ddl, showSql, formatSql, "");
 	}
 

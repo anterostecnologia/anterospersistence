@@ -58,8 +58,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	private int queryTimeout = 0;
 
 	public AbstractSQLSessionFactory(EntityCacheManager entityCacheManager, DataSource dataSource,
-			SessionFactoryConfiguration configuration)
-			throws Exception {
+			SessionFactoryConfiguration configuration) throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.dataSource = dataSource;
 		this.configuration = configuration;
@@ -104,18 +103,15 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		String impl = configuration.getProperty(AnterosPersistenceProperties.CURRENT_SESSION_CONTEXT);
 		if ((impl == null && transactionManager != null) || "jta".equals(impl)) {
 			return new JTASQLSessionContext(this);
-		}
-		else if ("thread".equals(impl)) {
+		} else if ("thread".equals(impl)) {
 			return new ThreadLocalSQLSessionContext(this);
-		}
-		else if ("managed".equals(impl)) {
+		} else if ("managed".equals(impl)) {
 			return new ManagedSQLSessionContext(this);
-		}
-		else {
+		} else {
 			return new ThreadLocalSQLSessionContext(this);
 		}
 	}
-	
+
 	protected abstract TransactionFactory getTransactionFactory();
 
 	public void generateDDL() throws Exception {
@@ -126,8 +122,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		 * Verifica se é para gerar o schema no banco de dados
 		 */
 		String databaseDDLGeneration = configuration.getPropertyDef(
-				AnterosPersistenceProperties.DATABASE_DDL_GENERATION,
-				AnterosPersistenceProperties.NONE);
+				AnterosPersistenceProperties.DATABASE_DDL_GENERATION, AnterosPersistenceProperties.NONE);
 		databaseDDLGeneration = databaseDDLGeneration.toLowerCase();
 		/*
 		 * Verifica se é para gerar o schema em script sql
@@ -192,32 +187,40 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 				return;
 			}
 
-			SchemaManager schemaManager = new SchemaManager(this.getCurrentSession(), entityCacheManager,
-					createReferentialIntegrity);
+			SQLSession sessionForDDL = this.openSession();
 
-			beforeGenerateDDL();
+			try {
+				SchemaManager schemaManager = new SchemaManager(sessionForDDL, entityCacheManager,
+						createReferentialIntegrity);
 
-			/*
-			 * Gera o schema no script sql
-			 */
-			if (ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_SQL_SCRIPT_OUTPUT)
-					|| ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_BOTH_OUTPUT)) {
-				String appLocation = configuration.getPropertyDef(AnterosPersistenceProperties.APPLICATION_LOCATION,
-						AnterosPersistenceProperties.DEFAULT_APPLICATION_LOCATION);
-				String createDDLJdbc = configuration.getPropertyDef(
-						AnterosPersistenceProperties.CREATE_TABLES_FILENAME,
-						AnterosPersistenceProperties.DEFAULT_CREATE_TABLES_FILENAME);
-				String dropDDLJdbc = configuration.getPropertyDef(AnterosPersistenceProperties.DROP_TABLES_FILENAME,
-						AnterosPersistenceProperties.DEFAULT_DROP_TABLES_FILENAME);
-				schemaManager.writeDDLsToFiles(scriptDDLType, appLocation, createDDLJdbc, dropDDLJdbc);
-			}
+				beforeGenerateDDL();
 
-			/*
-			 * Gera o schema no banco de dados
-			 */
-			if (ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_DATABASE_OUTPUT)
-					|| ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_BOTH_OUTPUT)) {
-				schemaManager.writeDDLToDatabase(databaseDDLType);
+				/*
+				 * Gera o schema no script sql
+				 */
+				if (ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_SQL_SCRIPT_OUTPUT)
+						|| ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_BOTH_OUTPUT)) {
+					String appLocation = configuration.getPropertyDef(
+							AnterosPersistenceProperties.APPLICATION_LOCATION,
+							AnterosPersistenceProperties.DEFAULT_APPLICATION_LOCATION);
+					String createDDLJdbc = configuration.getPropertyDef(
+							AnterosPersistenceProperties.CREATE_TABLES_FILENAME,
+							AnterosPersistenceProperties.DEFAULT_CREATE_TABLES_FILENAME);
+					String dropDDLJdbc = configuration.getPropertyDef(
+							AnterosPersistenceProperties.DROP_TABLES_FILENAME,
+							AnterosPersistenceProperties.DEFAULT_DROP_TABLES_FILENAME);
+					schemaManager.writeDDLsToFiles(scriptDDLType, appLocation, createDDLJdbc, dropDDLJdbc);
+				}
+
+				/*
+				 * Gera o schema no banco de dados
+				 */
+				if (ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_DATABASE_OUTPUT)
+						|| ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_BOTH_OUTPUT)) {
+					schemaManager.writeDDLToDatabase(databaseDDLType);
+				}
+			} finally {
+				sessionForDDL.close();
 			}
 
 			afterGenerateDDL();

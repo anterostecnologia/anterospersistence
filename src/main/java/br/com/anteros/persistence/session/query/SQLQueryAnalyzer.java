@@ -63,21 +63,23 @@ public class SQLQueryAnalyzer {
 	public void analyze(String sql, Class<?> resultClass) throws SQLQueryAnalyzerException {
 		this.sql = sql;
 		this.resultClass = resultClass;
-//		Map<String, Object> result = cacheResultAnalyze.get(sql);
-//		if (result == null) {
-			loadAliases();
-//			result = new HashMap<String, Object>();
-//			result.put("columnAliases", columnAliases);
-//			result.put("aliases", aliases);
-//			result.put("expressions", expressions);
-//			result.put("sql", this.sql);
-//			cacheResultAnalyze.put(sql, result);
-//		} else {
-//			columnAliases = (Map<SQLQueryAnalyserAlias, Map<String, String>>) result.get("columnAliases");
-//			aliases = (LinkedHashSet<SQLQueryAnalyserAlias>) result.get("aliases");
-//			expressions = (Map<String, String>) result.get("expressions");
-//			this.sql = (String) result.get("sql");
-//		}
+		// Map<String, Object> result = cacheResultAnalyze.get(sql);
+		// if (result == null) {
+		loadAliases();
+		// result = new HashMap<String, Object>();
+		// result.put("columnAliases", columnAliases);
+		// result.put("aliases", aliases);
+		// result.put("expressions", expressions);
+		// result.put("sql", this.sql);
+		// cacheResultAnalyze.put(sql, result);
+		// } else {
+		// columnAliases = (Map<SQLQueryAnalyserAlias, Map<String, String>>)
+		// result.get("columnAliases");
+		// aliases = (LinkedHashSet<SQLQueryAnalyserAlias>)
+		// result.get("aliases");
+		// expressions = (Map<String, String>) result.get("expressions");
+		// this.sql = (String) result.get("sql");
+		// }
 	}
 
 	protected void loadAliases() throws SQLQueryAnalyzerException {
@@ -96,6 +98,14 @@ public class SQLQueryAnalyzer {
 				found = true;
 				break;
 			}
+			if (a.getEntity().hasDiscriminatorColumn()) {
+				Class<?> superClass = a.getEntity().getEntityClass();
+				Class<?> childClass = resultClass;
+				if (ReflectionUtils.isExtendsClass(superClass, childClass)) {
+					found = true;
+					break;
+				}
+			}
 		}
 		if (!found) {
 			throw new SQLQueryAnalyzerException("A classe de resultado para criação do(s) objeto(s) "
@@ -110,7 +120,8 @@ public class SQLQueryAnalyzer {
 		for (SelectStatementNode selectStatement : selectStatements) {
 
 			/*
-			 * Valida se existem colunas sem alias da tabela ou condition do where sem o alias
+			 * Valida se existem colunas sem alias da tabela ou condition do
+			 * where sem o alias
 			 */
 			validateColumnsAndWhereCondition(selectStatement);
 
@@ -246,7 +257,10 @@ public class SQLQueryAnalyzer {
 			 * resultClass
 			 */
 			for (SQLQueryAnalyserAlias a : aliases) {
-				if ((a.getOwner() == null) && (!a.getEntity().getEntityClass().equals(resultClass))) {
+				Class<?> superClass = a.getEntity().getEntityClass();
+				Class<?> childClass = resultClass;
+				if ((a.getOwner() == null) && ((!a.getEntity().getEntityClass().equals(resultClass)))
+						&& (!ReflectionUtils.isExtendsClass(superClass, childClass))) {
 					throw new SQLQueryAnalyzerException(
 							"Foi encontrado alias "
 									+ a.getAlias()
@@ -265,19 +279,19 @@ public class SQLQueryAnalyzer {
 
 			buildExpressionsAndColumnAliases(firstSelectStatement);
 
-//			Iterator<String> iterator = expressions.keySet().iterator();
-//			while (iterator.hasNext()) {
-//				String k = iterator.next();
-//				String v = expressions.get(k);
-//				System.out.println(k + " = " + v);
-//			}
+			// Iterator<String> iterator = expressions.keySet().iterator();
+			// while (iterator.hasNext()) {
+			// String k = iterator.next();
+			// String v = expressions.get(k);
+			// System.out.println(k + " = " + v);
+			// }
 
 		}
 
 	}
 
 	private void validateColumnsAndWhereCondition(SelectStatementNode selectStatement) throws SQLQueryAnalyzerException {
-		
+
 		INode[] columns = ParserUtil.findChildren(selectStatement, ColumnNode.class.getSimpleName());
 		for (INode column : columns) {
 			if (column.getParent() instanceof SelectNode) {
@@ -291,22 +305,22 @@ public class SQLQueryAnalyzer {
 									+ resultClass.getName());
 			}
 		}
-		
-		
+
 		for (INode itemNode : selectStatement.getChildren()) {
 			if (itemNode instanceof WhereNode) {
-				columns = ParserUtil.findChildren((WhereNode)itemNode, ColumnNode.class.getSimpleName());
-				for (INode column : columns){
+				columns = ParserUtil.findChildren((WhereNode) itemNode, ColumnNode.class.getSimpleName());
+				for (INode column : columns) {
 					String tn = ((ColumnNode) column).getTableName();
 					String cn = ((ColumnNode) column).getColumnName();
-					if ((tn==null) || ("".equals(tn))){
+					if ((tn == null) || ("".equals(tn))) {
 						throw new SQLQueryAnalyzerException(
-								"Foi encontrado a coluna "+cn
+								"Foi encontrado a coluna "
+										+ cn
 										+ " sem o alias da tabela de origem na condição WHERE. É necessário que seja informado o alias da tabela para que seja possível realizar o mapeamento correto do objeto da classe de resultado "
 										+ resultClass.getName());
 					}
 				}
-				
+
 			}
 		}
 	}

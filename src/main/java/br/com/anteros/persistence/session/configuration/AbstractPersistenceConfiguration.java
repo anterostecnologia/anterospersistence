@@ -268,7 +268,6 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 
 	public AbstractPersistenceConfiguration setProperties(Properties props) {
 		getSessionFactoryConfiguration().getProperties().setProperties(props);
-		getSessionFactoryConfiguration().getPlaceholder().setProperties(props);
 		return this;
 	}
 
