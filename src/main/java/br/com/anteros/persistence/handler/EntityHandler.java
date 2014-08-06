@@ -102,7 +102,7 @@ public class EntityHandler implements ResultSetHandler {
 					} else if (entityCache.hasDiscriminatorColumn()) {
 						String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache
 								.getDiscriminatorColumn().getColumnName()));
-						if (!entityCache.getDiscriminatorValue().equals(dsValue)){
+						if (!entityCache.getDiscriminatorValue().equals(dsValue)) {
 							continue;
 						}
 					}
@@ -560,8 +560,16 @@ public class EntityHandler implements ResultSetHandler {
 			 * método processExpression
 			 */
 			if (descriptionField.isCollection() || descriptionField.isJoinTable() || descriptionField.isRelationShip()) {
-				if (descriptionField.isNull(targetObject)
-						&& !existsExpressionForProcessing(entityCache, descriptionField.getField().getName())) {
+				boolean process = true;
+				Object value = descriptionField.getObjectValue(targetObject);
+				if (value != null) {
+					if (descriptionField.isCollection()) {
+						if ((value instanceof SQLArrayList) || (value instanceof SQLHashSet)) {
+							process = false;
+						}
+					}
+				}
+				if (process && !existsExpressionForProcessing(entityCache, descriptionField.getField().getName())) {
 					/*
 					 * Busca a EntityCache da classe destino do field
 					 */
