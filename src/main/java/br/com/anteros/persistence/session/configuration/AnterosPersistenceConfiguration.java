@@ -25,6 +25,7 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 import org.simpleframework.xml.stream.Format;
 
+import br.com.anteros.core.configuration.AnterosCoreProperties;
 import br.com.anteros.core.configuration.DataSourceConfiguration;
 import br.com.anteros.core.configuration.PropertyConfiguration;
 import br.com.anteros.core.configuration.exception.AnterosConfigurationException;
@@ -95,18 +96,6 @@ public class AnterosPersistenceConfiguration extends AbstractPersistenceConfigur
 					throw new AnterosConfigurationException("Nenhum DataSource foi configurado.");
 			}
 		}
-	}
-	
-	public static InputStream getDefaultXmlInputStream() throws Exception {	
-		List<URL> resources = ResourceUtils.getResources("/anteros-config.xml", AnterosPersistenceConfiguration.class);
-		if ((resources == null) || (resources.isEmpty())) {
-			resources = ResourceUtils.getResources("/assets/anteros-config.xml", AnterosPersistenceConfiguration.class);
-			if ((resources != null) && (!resources.isEmpty())) {
-				final URL url = resources.get(0);
-				return url.openStream();
-			}
-		}
-		return null;
 	}
 	
 

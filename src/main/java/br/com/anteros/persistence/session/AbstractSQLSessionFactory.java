@@ -83,7 +83,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 			this.showSql = new Boolean(configuration.getProperty(AnterosPersistenceProperties.SHOW_SQL));
 
 		if (configuration.getProperty(AnterosPersistenceProperties.FORMAT_SQL) != null)
-			this.showSql = new Boolean(configuration.getProperty(AnterosPersistenceProperties.FORMAT_SQL));
+			this.formatSql = new Boolean(configuration.getProperty(AnterosPersistenceProperties.FORMAT_SQL));
 
 		if (configuration.getProperty(AnterosPersistenceProperties.QUERY_TIMEOUT) != null)
 			this.queryTimeout = new Integer(configuration.getProperty(AnterosPersistenceProperties.QUERY_TIMEOUT))
