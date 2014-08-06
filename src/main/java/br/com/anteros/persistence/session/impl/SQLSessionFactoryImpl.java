@@ -75,10 +75,10 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 		return currentSessionContext.currentSession();
 	}
 
-	public void beforeGenerateDDL() throws Exception {
+	public void beforeGenerateDDL(SQLSession session) throws Exception {
 	}
 
-	public void afterGenerateDDL() throws Exception {
+	public void afterGenerateDDL(SQLSession session) throws Exception {
 	}
 
 	public SQLSession openSession() throws Exception {

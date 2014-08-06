@@ -193,7 +193,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 				SchemaManager schemaManager = new SchemaManager(sessionForDDL, entityCacheManager,
 						createReferentialIntegrity);
 
-				beforeGenerateDDL();
+				beforeGenerateDDL(sessionForDDL);
 
 				/*
 				 * Gera o schema no script sql
@@ -219,19 +219,18 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 						|| ddlGenerationMode.equals(AnterosPersistenceProperties.DDL_BOTH_OUTPUT)) {
 					schemaManager.writeDDLToDatabase(databaseDDLType);
 				}
+				afterGenerateDDL(sessionForDDL);
 			} finally {
 				sessionForDDL.close();
-			}
-
-			afterGenerateDDL();
+			}	
 
 		}
 
 	}
 
-	public abstract void beforeGenerateDDL() throws Exception;
+	public abstract void beforeGenerateDDL(SQLSession session) throws Exception;
 
-	public abstract void afterGenerateDDL() throws Exception;
+	public abstract void afterGenerateDDL(SQLSession session) throws Exception;
 
 	public DatabaseDialect getDialect() {
 		return dialect;
