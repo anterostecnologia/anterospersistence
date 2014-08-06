@@ -306,23 +306,6 @@ public class SQLQueryAnalyzer {
 			}
 		}
 
-		for (INode itemNode : selectStatement.getChildren()) {
-			if (itemNode instanceof WhereNode) {
-				columns = ParserUtil.findChildren((WhereNode) itemNode, ColumnNode.class.getSimpleName());
-				for (INode column : columns) {
-					String tn = ((ColumnNode) column).getTableName();
-					String cn = ((ColumnNode) column).getColumnName();
-					if ((tn == null) || ("".equals(tn))) {
-						throw new SQLQueryAnalyzerException(
-								"Foi encontrado a coluna "
-										+ cn
-										+ " sem o alias da tabela de origem na condição WHERE. É necessário que seja informado o alias da tabela para que seja possível realizar o mapeamento correto do objeto da classe de resultado "
-										+ resultClass.getName());
-					}
-				}
-
-			}
-		}
 	}
 
 	private SelectStatementNode getFirstSelectStatement(INode node) {
@@ -507,7 +490,7 @@ public class SQLQueryAnalyzer {
 		return null;
 	}
 
-	protected void findOwnerByAlias(INode node, SQLQueryAnalyserAlias aliasSideA) {
+	protected void findOwnerByAlias(INode node, SQLQueryAnalyserAlias aliasSideA) throws SQLQueryAnalyzerException {
 		EntityCache entityCache = aliasSideA.getEntity();
 		/*
 		 * Se for a mesma classe ou herança de resultClass não precisa path
@@ -543,7 +526,7 @@ public class SQLQueryAnalyzer {
 	}
 
 	private List<String> getColumnNameEqualsAliases(INode node, SQLQueryAnalyserAlias sourceAlias,
-			SQLQueryAnalyserAlias targetAlias) {
+			SQLQueryAnalyserAlias targetAlias) throws SQLQueryAnalyzerException {
 		List<String> result = new ArrayList<String>();
 		INode[] expressions = ParserUtil.findChildren(node, ExpressionNode.class.getSimpleName());
 		for (INode expression : expressions) {
@@ -553,6 +536,28 @@ public class SQLQueryAnalyzer {
 					if (!((operator.getChild(0) instanceof BindNode) || (operator.getChild(1) instanceof BindNode))) {
 						ColumnNode columnLeft = (ColumnNode) operator.getChild(0);
 						ColumnNode columnRight = (ColumnNode) operator.getChild(1);
+						
+						String tn = columnLeft.getTableName();
+						String cn = columnLeft.getColumnName();
+						if ((tn == null) || ("".equals(tn))) {
+							throw new SQLQueryAnalyzerException(
+									"Foi encontrado a coluna "
+											+ cn
+											+ " sem o alias da tabela de origem na condição WHERE. É necessário que seja informado o alias da tabela para que seja possível realizar o mapeamento correto do objeto da classe de resultado "
+											+ resultClass.getName());
+						}
+						
+						tn = columnRight.getTableName();
+						cn = columnRight.getColumnName();
+						if ((tn == null) || ("".equals(tn))) {
+							throw new SQLQueryAnalyzerException(
+									"Foi encontrado a coluna "
+											+ cn
+											+ " sem o alias da tabela de origem na condição WHERE. É necessário que seja informado o alias da tabela para que seja possível realizar o mapeamento correto do objeto da classe de resultado "
+											+ resultClass.getName());
+						}
+						
+						
 						if ((columnRight.getTableName() != null) && (columnLeft.getTableName() != null)) {
 							if ((columnLeft.getTableName().equalsIgnoreCase(sourceAlias.getAlias()) && (columnRight
 									.getTableName().equalsIgnoreCase(targetAlias.getAlias()))))
