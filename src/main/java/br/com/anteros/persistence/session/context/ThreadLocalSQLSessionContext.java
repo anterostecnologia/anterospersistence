@@ -201,6 +201,8 @@ public class ThreadLocalSQLSessionContext implements CurrentSQLSessionContext {
 				else if ( "toString".equals( method.getName() )
 					     || "equals".equals( method.getName() )
 					     || "hashCode".equals( method.getName() )
+					     || "addListener".equals( method.getName() )
+					     || "setClientId".equals( method.getName() )
 				         || "getStatistics".equals( method.getName() )
 					     || "isOpen".equals( method.getName() )
 						 || "getListeners".equals( method.getName() ) //useful for HSearch in particular
@@ -211,7 +213,6 @@ public class ThreadLocalSQLSessionContext implements CurrentSQLSessionContext {
 				else if ( !realSession.getTransaction().isActive() ) {
 					if ( "beginTransaction".equals( method.getName() )
 					     || "getTransaction".equals( method.getName() )
-					     || "addListener".equals( method.getName() )
 					     || "setFlushMode".equals( method.getName() )
 					     || "getSQLSessionFactory".equals( method.getName() ) ) {
 						log.debug( "allowing method [" + method.getName() + "] in non-transacted context" );
