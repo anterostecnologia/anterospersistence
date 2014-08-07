@@ -75,7 +75,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 	private ResultSetHandler handler;
 	private Map<Integer, NamedParameter> namedParameters = new TreeMap<Integer, NamedParameter>();
 	private Map<Integer, Object> parameters = new TreeMap<Integer, Object>();
-	public final int DEFAULT_CACHE_SIZE = 1000;
+	public final int DEFAULT_CACHE_SIZE = 100000;
 	private String sql;
 	public static int FIRST_RECORD = 0;
 	private int timeOut = 0;
@@ -805,7 +805,6 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 		/*
 		 * Seleciona os dados
 		 */
-		System.out.println(targetEntityCache + " 3");
 		result = selectOneToLazyLoad(select.toStatementString(), params.toArray(new NamedParameter[] {}),
 				descriptionFieldOwner.getTargetEntity()
 						.getEntityClass(), transactionCache);
@@ -836,7 +835,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 		 * verifica se existe um objeto da classe + ID no entityCache
 		 */
 		if (ReflectionUtils.isAbstractClass(targetEntityCache.getEntityClass())) {
-			EntityCache[] entitiesCache = session.getEntityCacheManager().getEntitiesBySuperClass(targetEntityCache);
+			EntityCache[] entitiesCache = session.getEntityCacheManager().getEntitiesBySuperClassIncluding(targetEntityCache);
 			for (EntityCache entityCache : entitiesCache) {
 				result = transactionCache.get(entityCache.getEntityClass().getName() + "_" + uniqueId);
 				if (result != null)

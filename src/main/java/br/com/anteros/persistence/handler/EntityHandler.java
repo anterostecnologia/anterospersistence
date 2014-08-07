@@ -97,13 +97,11 @@ public class EntityHandler implements ResultSetHandler {
 							&& ReflectionUtils.isAbstractClass(entityCache.getEntityClass())) {
 						String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache
 								.getDiscriminatorColumn().getColumnName()));
-						System.out.println(dsValue + " 1");
 						entityCache = entityCacheManager.getEntityCache(resultClass, dsValue);
 						targetResultClass = entityCache.getEntityClass();
 					} else if (entityCache.hasDiscriminatorColumn()) {
 						String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache
 								.getDiscriminatorColumn().getColumnName()));
-						System.out.println(dsValue + " 2");
 						if (!entityCache.getDiscriminatorValue().equals(dsValue)) {
 							continue;
 						}
@@ -285,7 +283,6 @@ public class EntityHandler implements ResultSetHandler {
 								descriptionField.getTargetClass(), discriminator);
 
 						String uniqueId = getUniqueId(resultSet, tempEntityCache, alias);
-						System.out.println(discriminator + " id " + uniqueId);
 
 						if (uniqueId == null)
 							return new EntityHandlerResult(targetObject);
@@ -349,7 +346,6 @@ public class EntityHandler implements ResultSetHandler {
 							if (uniqueId == null)
 								return new EntityHandlerResult(targetObject);
 							
-							System.out.println(discriminator + " ID " + uniqueId);
 
 							newObject = getObjectFromCache(concreteEntityCache, uniqueId, transactionCache);
 							if (newObject == null) {
@@ -623,6 +619,7 @@ public class EntityHandler implements ResultSetHandler {
 					 * Se a estratégia for EAGER busca os dados do field
 					 */
 					if (descriptionField.getFetchType() == FetchType.EAGER) {
+						
 						Object result = session.loadData(targetEntityCache, targetObject, descriptionField,
 								columnKeyValue, transactionCache);
 						descriptionField.getField().set(targetObject, result);
