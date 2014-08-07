@@ -231,8 +231,8 @@ public class SQLQueryAnalyzer {
 				}
 
 				if (sbDiscriminatorColumn.length() > 0) {
-					partsToInject.add(new InjectSQLPart("", sbDiscriminatorColumn.toString() + ", ", selectStatement
-							.getOffset() + selectStatement.getLength() + 1));
+					ColumnNode columnNode = getFirstColumnNode(selectStatement);
+					partsToInject.add(new InjectSQLPart("", sbDiscriminatorColumn.toString() + ", ", columnNode.getOffset()));
 				}
 			}
 		}
@@ -247,7 +247,6 @@ public class SQLQueryAnalyzer {
 			parser = new SqlParser(sql, new SqlFormatRule());
 			node = new Node("root");
 			parser.parse(node);
-
 		}
 
 		SelectStatementNode firstSelectStatement = getFirstSelectStatement(node);
@@ -299,6 +298,13 @@ public class SQLQueryAnalyzer {
 
 		}
 
+	}
+
+	private ColumnNode getFirstColumnNode(SelectStatementNode selectStatement) {
+		INode[] columns = ParserUtil.findChildren(selectStatement, ColumnNode.class.getSimpleName());
+		if (columns.length>0)
+			return (ColumnNode)columns[0];
+		return null;
 	}
 
 	private void validateColumnsAndWhereCondition(SelectStatementNode selectStatement) throws SQLQueryAnalyzerException {
