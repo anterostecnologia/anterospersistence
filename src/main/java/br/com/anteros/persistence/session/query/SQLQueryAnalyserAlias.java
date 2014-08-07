@@ -92,4 +92,5 @@ public class SQLQueryAnalyserAlias {
 			return false;
 		return true;
 	}
+
 }
