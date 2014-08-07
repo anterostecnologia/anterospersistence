@@ -232,7 +232,8 @@ public class SQLQueryAnalyzer {
 
 				if (sbDiscriminatorColumn.length() > 0) {
 					ColumnNode columnNode = getFirstColumnNode(selectStatement);
-					partsToInject.add(new InjectSQLPart("", sbDiscriminatorColumn.toString() + ", ", columnNode.getOffset()));
+					partsToInject.add(new InjectSQLPart("", sbDiscriminatorColumn.toString() + ", ", columnNode
+							.getOffset()));
 				}
 			}
 		}
@@ -260,23 +261,25 @@ public class SQLQueryAnalyzer {
 			 * resultClass e que estejam no select
 			 */
 			for (SQLQueryAnalyserAlias a : aliases) {
-				Class<?> superClass = a.getEntity().getEntityClass();
-				Class<?> childClass = resultClass;
-				if ((a.getOwner() == null) && ((!a.getEntity().getEntityClass().equals(resultClass)))
-						&& (!ReflectionUtils.isExtendsClass(superClass, childClass))) {
-					boolean containsColumns = false;
-					if (columnAliases.containsKey(a)) {
-						containsColumns = (columnAliases.get(a).size() > 0);
-					}
+				if (a.getEntity() != null) {
+					Class<?> superClass = a.getEntity().getEntityClass();
+					Class<?> childClass = resultClass;
+					if ((a.getOwner() == null) && ((!a.getEntity().getEntityClass().equals(resultClass)))
+							&& (!ReflectionUtils.isExtendsClass(superClass, childClass))) {
+						boolean containsColumns = false;
+						if (columnAliases.containsKey(a)) {
+							containsColumns = (columnAliases.get(a).size() > 0);
+						}
 
-					if (containsColumns) {
-						throw new SQLQueryAnalyzerException(
-								"Foi encontrado alias "
-										+ a.getAlias()
-										+ "->"
-										+ a.getEntity().getEntityClass().getName()
-										+ " no sql sem junção com nenhum outro alias ou as colunas usadas não está mapeadas na classe. Somente pode ficar sem junção o alias da classe de resultado "
-										+ resultClass.getName());
+						if (containsColumns) {
+							throw new SQLQueryAnalyzerException(
+									"Foi encontrado alias "
+											+ a.getAlias()
+											+ "->"
+											+ a.getEntity().getEntityClass().getName()
+											+ " no sql sem junção com nenhum outro alias ou as colunas usadas não está mapeadas na classe. Somente pode ficar sem junção o alias da classe de resultado "
+											+ resultClass.getName());
+						}
 					}
 				}
 			}
@@ -302,8 +305,8 @@ public class SQLQueryAnalyzer {
 
 	private ColumnNode getFirstColumnNode(SelectStatementNode selectStatement) {
 		INode[] columns = ParserUtil.findChildren(selectStatement, ColumnNode.class.getSimpleName());
-		if (columns.length>0)
-			return (ColumnNode)columns[0];
+		if (columns.length > 0)
+			return (ColumnNode) columns[0];
 		return null;
 	}
 

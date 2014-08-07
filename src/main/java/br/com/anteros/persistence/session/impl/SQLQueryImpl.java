@@ -805,6 +805,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 		/*
 		 * Seleciona os dados
 		 */
+		System.out.println(targetEntityCache + " 3");
 		result = selectOneToLazyLoad(select.toStatementString(), params.toArray(new NamedParameter[] {}),
 				descriptionFieldOwner.getTargetEntity()
 						.getEntityClass(), transactionCache);
@@ -926,7 +927,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 			handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(), analyzer.getColumnAliases(), transactionCache);
 			sql = analyzer.getParsedSQL();
 		}
-
+	
 		List result = (List) session.getRunner().query(session.getConnection(), sql, handler, namedParameter, showSql,
 				formatSql, 0,
 				session.getListeners(), session.clientId());
