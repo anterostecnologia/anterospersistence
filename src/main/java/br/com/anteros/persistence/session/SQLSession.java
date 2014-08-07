@@ -308,8 +308,6 @@ public interface SQLSession {
 	public void savePoint(String savepoint) throws Exception;
 
 	public void rollbackToSavePoint(String savepoint) throws Exception;
-	
-	public SQLQueryAnalyzer getSQLQueryAnalyzer();
 
 	public <T> T cloneEntityManaged(Object object) throws Exception;
 

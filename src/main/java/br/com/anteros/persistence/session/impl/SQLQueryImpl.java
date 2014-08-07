@@ -366,7 +366,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 		EntityCache entityCache = session.getEntityCacheManager().getEntityCache(resultClass);
 		ResultSetHandler handler;
 
-		SQLQueryAnalyzer analyzer = session.getSQLQueryAnalyzer();
+		SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer(session);
 		analyzer.analyze(sql, resultClass);
 
 		SQLCache transactionCache = new SQLCache(DEFAULT_CACHE_SIZE);
@@ -921,7 +921,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 				throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + resultClass.getName()
 						+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 			}
-			SQLQueryAnalyzer analyzer = session.getSQLQueryAnalyzer();
+			SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer(session);
 			analyzer.analyze(sql, resultClass);
 			handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(), analyzer.getColumnAliases(), transactionCache);
 			sql = analyzer.getParsedSQL();
@@ -952,7 +952,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 							+ resultClass.getName()
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 				}
-				SQLQueryAnalyzer analyzer = session.getSQLQueryAnalyzer();
+				SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer(session);
 				analyzer.analyze(sql, resultClass);
 				handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(), analyzer.getColumnAliases(), transactionCache);
 			}
@@ -1154,7 +1154,7 @@ public class SQLQueryImpl<T> implements SQLQuery<T> {
 		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
 		EntityCache entityCache = session.getEntityCacheManager().getEntityCache(resultClass);
 		ResultSetHandler handler;
-		SQLQueryAnalyzer analyzer = session.getSQLQueryAnalyzer();
+		SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer(session);
 		analyzer.analyze(sql, resultClass);
 
 		SQLCache transactionCache = new SQLCache(DEFAULT_CACHE_SIZE);

@@ -595,7 +595,7 @@ public class EntityHandler implements ResultSetHandler {
 							for (DescriptionColumn descriptionColumn : descriptionField.getDescriptionColumns()) {
 								if (descriptionColumn.isForeignKey() && !descriptionColumn.isInversedJoinColumn())
 									columnKeyValue.put(descriptionColumn.getReferencedColumnName(),
-											restultSet.getObject(descriptionColumn.getColumnName()));
+											restultSet.getObject(getAliasColumnName(entityCache, descriptionColumn.getColumnName())));
 							}
 						} else
 							/*

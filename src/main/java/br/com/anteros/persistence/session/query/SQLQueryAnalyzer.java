@@ -43,6 +43,7 @@ import br.com.anteros.persistence.sql.parser.node.OperatorNode;
 import br.com.anteros.persistence.sql.parser.node.SelectNode;
 import br.com.anteros.persistence.sql.parser.node.SelectStatementNode;
 import br.com.anteros.persistence.sql.parser.node.TableNode;
+import br.com.anteros.persistence.sql.parser.node.ValueNode;
 import br.com.anteros.persistence.sql.parser.node.WhereNode;
 
 public class SQLQueryAnalyzer {
@@ -117,6 +118,8 @@ public class SQLQueryAnalyzer {
 
 		SelectStatementNode[] selectStatements = getAllSelectStatement(node);
 
+		int numberOfColumn = 0;
+		
 		for (SelectStatementNode selectStatement : selectStatements) {
 
 			/*
@@ -156,7 +159,6 @@ public class SQLQueryAnalyzer {
 											alias.getEntity());
 
 								Map<String, String> cols = new LinkedHashMap<String, String>();
-								int numberOfColumn = 0;
 								for (EntityCache cache : caches) {
 									for (DescriptionField descriptionField : cache.getDescriptionFields()) {
 										if (!descriptionField.isCollection() && !descriptionField.isJoinTable()) {
@@ -218,8 +220,11 @@ public class SQLQueryAnalyzer {
 									descriptionColumn.getColumnName())) {
 								if (appendDelimiter)
 									sbDiscriminatorColumn.append(", ");
-								sbDiscriminatorColumn.append(alias.getAlias()).append(".")
-										.append(descriptionColumn.getColumnName());
+								numberOfColumn++;
+								String aliasColumnName = alias.getAlias() + "."
+										+ descriptionColumn.getColumnName() + " AS " + alias.getAlias()
+										+ "_COL_" + String.valueOf(numberOfColumn);
+								sbDiscriminatorColumn.append(aliasColumnName);
 								appendDelimiter = true;
 							}
 						}
@@ -532,11 +537,12 @@ public class SQLQueryAnalyzer {
 		for (INode expression : expressions) {
 			OperatorNode operator = (OperatorNode) expression.getChild(0);
 			if ("=".equals(operator.getName())) {
-				if ((operator.getChild(0) instanceof ColumnNode) && (operator.getChild(1) instanceof ColumnNode)) {
+				if ((operator.getChild(0) instanceof ColumnNode) && (operator.getChild(1) instanceof ColumnNode)
+						&& !(operator.getChild(0) instanceof ValueNode) && !(operator.getChild(1) instanceof ValueNode)) {
 					if (!((operator.getChild(0) instanceof BindNode) || (operator.getChild(1) instanceof BindNode))) {
 						ColumnNode columnLeft = (ColumnNode) operator.getChild(0);
 						ColumnNode columnRight = (ColumnNode) operator.getChild(1);
-						
+
 						String tn = columnLeft.getTableName();
 						String cn = columnLeft.getColumnName();
 						if ((tn == null) || ("".equals(tn))) {
@@ -546,7 +552,7 @@ public class SQLQueryAnalyzer {
 											+ " sem o alias da tabela de origem na condição WHERE. É necessário que seja informado o alias da tabela para que seja possível realizar o mapeamento correto do objeto da classe de resultado "
 											+ resultClass.getName());
 						}
-						
+
 						tn = columnRight.getTableName();
 						cn = columnRight.getColumnName();
 						if ((tn == null) || ("".equals(tn))) {
@@ -556,8 +562,7 @@ public class SQLQueryAnalyzer {
 											+ " sem o alias da tabela de origem na condição WHERE. É necessário que seja informado o alias da tabela para que seja possível realizar o mapeamento correto do objeto da classe de resultado "
 											+ resultClass.getName());
 						}
-						
-						
+
 						if ((columnRight.getTableName() != null) && (columnLeft.getTableName() != null)) {
 							if ((columnLeft.getTableName().equalsIgnoreCase(sourceAlias.getAlias()) && (columnRight
 									.getTableName().equalsIgnoreCase(targetAlias.getAlias()))))

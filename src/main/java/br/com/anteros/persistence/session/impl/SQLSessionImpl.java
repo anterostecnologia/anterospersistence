@@ -74,7 +74,6 @@ public class SQLSessionImpl implements SQLSession {
 	private Map<Object, Map<DescriptionColumn, IdentifierPostInsert>> cacheIdentifier = new LinkedHashMap<Object, Map<DescriptionColumn, IdentifierPostInsert>>();
 	private SQLPersister persister;
 	private LazyLoadProxyFactory proxyFactory = new LazyLoadProxyFactoryImpl();
-	private SQLQueryAnalyzer sqlQueryAnalyzer;
 	private TransactionFactory transactionFactory;
 	private Transaction transaction;
 
@@ -96,7 +95,6 @@ public class SQLSessionImpl implements SQLSession {
 		this.persistenceContext = new SQLPersistenceContextImpl(this, entityCacheManager, DEFAULT_CACHE_SIZE);
 		this.persister = new SQLPersisterImpl();
 		this.queryRunner = queryRunner;
-		this.sqlQueryAnalyzer = new SQLQueryAnalyzer(this);
 		this.queryTimeout = queryTimeout;
 		this.transactionFactory = transactionFactory;
 	}
@@ -849,10 +847,6 @@ public class SQLSessionImpl implements SQLSession {
 	public void evictAll() {
 		errorIfClosed();
 		persistenceContext.evictAll();
-	}
-
-	public SQLQueryAnalyzer getSQLQueryAnalyzer() {
-		return this.sqlQueryAnalyzer;
 	}
 
 	public boolean isClosed() throws Exception {

@@ -42,14 +42,14 @@ public class SQLQueryAnalyserAlias {
 		String path = owner.getPath();
 		return path;
 	}
-	
+
 	public String getAliasPath() {
 		if (owner == null)
 			return "";
 		String result = owner.getAliasPath();
-		if (result!="")
+		if (result != "")
 			result += ".";
-		return result+alias;
+		return result + alias;
 	}
 
 	public EntityCache getEntity() {
