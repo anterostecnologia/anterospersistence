@@ -22,24 +22,20 @@ import br.com.anteros.persistence.handler.ResultSetHandler;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.SQLSession;
-import br.com.anteros.persistence.session.SQLSessionFactory;
 
-public class SQLDao<T> {
-	private SQLSessionFactory factory;
+public abstract class SQLDao<T> {
+
 	private Class<T> clazz;
 	private boolean importTable = true;
 
-	public SQLDao(SQLSessionFactory factory, Class<T> clazz) {
+	public SQLDao(Class<T> clazz) {
 		this.clazz = clazz;
-		this.factory = factory;
-	}
-	
-	public SQLSession getCurrentSession() throws Exception{
-		return factory.getCurrentSession();
 	}
 
+	public abstract SQLSession getSession() throws Exception;
+
 	public String getTableName() throws Exception {
-		return getCurrentSession().getEntityCacheManager().getEntityCache(clazz).getTableName();
+		return getSession().getEntityCacheManager().getEntityCache(clazz).getTableName();
 	}
 
 	public boolean isImportTable() {
@@ -51,98 +47,91 @@ public class SQLDao<T> {
 	}
 
 	public T selectOne(String sql) throws Exception {
-		return (T) getCurrentSession().selectOne(sql, clazz);
+		return (T) getSession().selectOne(sql, clazz);
 	}
 
 	public Object selectOne(String sql, Object[] parameter) throws Exception {
-		return getCurrentSession().selectOne(sql, parameter, clazz);
+		return getSession().selectOne(sql, parameter, clazz);
 	}
 
 	public Object selectOne(String sql, Map<String, Object> namedParameter) throws Exception {
-		return getCurrentSession().selectOne(sql, namedParameter, clazz);
+		return getSession().selectOne(sql, namedParameter, clazz);
 	}
 
 	public Object selectOne(String sql, NamedParameter[] namedParameter) throws Exception {
-		return getCurrentSession().selectOne(sql, namedParameter, clazz);
+		return getSession().selectOne(sql, namedParameter, clazz);
 	}
 
 	public List<T> selectList(String sql) throws Exception {
-		return (List<T>) getCurrentSession().selectList(sql, clazz);
+		return (List<T>) getSession().selectList(sql, clazz);
 	}
 
 	public List<T> selectList(String sql, Object[] parameter) throws Exception {
-		return (List<T>) getCurrentSession().selectList(sql, parameter, clazz);
+		return (List<T>) getSession().selectList(sql, parameter, clazz);
 	}
 
 	public List<T> selectList(String sql, Map<String, Object> namedParameter) throws Exception {
-		return (List<T>) getCurrentSession().selectList(sql, namedParameter, clazz);
+		return (List<T>) getSession().selectList(sql, namedParameter, clazz);
 	}
 
 	public List<T> selectList(String sql, NamedParameter[] namedParameter) throws Exception {
-		return (List<T>) getCurrentSession().selectList(sql, namedParameter, clazz);
+		return (List<T>) getSession().selectList(sql, namedParameter, clazz);
 	}
 
 	public Object select(String sql, ResultSetHandler handler) throws Exception {
-		return getCurrentSession().select(sql, handler);
+		return getSession().select(sql, handler);
 	}
 
 	public Object select(String sql, Object[] parameter, ResultSetHandler handler) throws Exception {
-		return getCurrentSession().select(sql, parameter, handler);
+		return getSession().select(sql, parameter, handler);
 	}
 
 	public Object select(String sql, Map<String, Object> namedParameter, ResultSetHandler handler) throws Exception {
-		return getCurrentSession().select(sql, namedParameter, handler);
+		return getSession().select(sql, namedParameter, handler);
 	}
 
 	public Object select(String sql, NamedParameter[] namedParameter, ResultSetHandler handler) throws Exception {
-		return getCurrentSession().select(sql, namedParameter, handler);
+		return getSession().select(sql, namedParameter, handler);
 	}
 
 	public T selectId(Identifier<T> id) throws Exception {
-		return getCurrentSession().selectId(id);
+		return getSession().selectId(id);
 	}
 
 	public Object save(Object object) throws Exception {
-		return getCurrentSession().save(object);
+		return getSession().save(object);
 	}
 
 	public void save(Object[] object) throws Exception {
-		getCurrentSession().save(object);
+		getSession().save(object);
 	}
 
 	public void save(String[] columns, String[] values) throws Exception {
-		getCurrentSession().save(clazz, columns, values);
+		getSession().save(clazz, columns, values);
 	}
 
 	public void remove(Object object) throws Exception {
-		getCurrentSession().remove(object);
+		getSession().remove(object);
 	}
 
 	public void remove(Object[] object) throws Exception {
-		getCurrentSession().remove(object);
+		getSession().remove(object);
 	}
 
 	public void removeAll() throws Exception {
-		getCurrentSession().removeAll(clazz);
+		getSession().removeAll(clazz);
 	}
 
 	public void beginTransaction() throws Exception {
-		getCurrentSession().getTransaction().begin();
+		getSession().getTransaction().begin();
 	}
 
 	public void commit() throws Exception {
-		getCurrentSession().getTransaction().commit();
+		getSession().getTransaction().commit();
 	}
 
 	public void rollback() throws Exception {
-		getCurrentSession().getTransaction().rollback();
+		getSession().getTransaction().rollback();
 	}
 
-	public void setClazz(Class<T> clazz) {
-		this.clazz = clazz;
-	}
-
-	public SQLSessionFactory getSQLSessionFactory(){
-		return factory;
-	}
 }
