@@ -169,8 +169,8 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 	public void evict(Class class0) {
 		List<EntityManaged> keys = new ArrayList<EntityManaged>(entities.keySet());
 		for (EntityManaged entityManaged : keys) {
-			Object obj = entities.get(entityManaged);
-			if (obj.getClass().equals(class0)) {
+			Reference obj = entities.get(entityManaged);
+			if (obj.get().getClass().equals(class0)) {
 				entities.remove(entityManaged);
 			}
 		}
@@ -184,6 +184,19 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 	
 	public void clearCache() {
 		cache.clear();
+	}
+
+
+	@Override
+	public void detach(Object entity) {
+		List<EntityManaged> keys = new ArrayList<EntityManaged>(entities.keySet());
+		for (EntityManaged entityManaged : keys) {
+			Reference obj = entities.get(entityManaged);			
+			if (obj.get().equals(entity)) {
+				entities.remove(entityManaged);
+				break;
+			}
+		}		
 	}
 
 }

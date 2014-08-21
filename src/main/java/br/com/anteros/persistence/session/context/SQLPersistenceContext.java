@@ -57,6 +57,8 @@ public interface SQLPersistenceContext {
 	 * Limpa o cache de entidades gerenciadas da sessão
 	 */
 	public void evictAll();
+	
+	public void detach(Object entity);
 
 	public void clearCache();
 	

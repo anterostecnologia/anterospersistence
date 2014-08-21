@@ -2326,6 +2326,16 @@ public class EntityCacheManager {
 		}
 		return null;
 	}
+	
+	public EntityCache getEntityCacheByName(String name) {
+		if ((name != null) && (!"".equals(name))) {
+			for (EntityCache entityCache : entities.values()) {
+				if ((name.equalsIgnoreCase(entityCache.getEntityClass().getName())) && (!entityCache.hasDiscriminatorValue()))
+					return entityCache;
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * Retorna EntityCache da Tabela

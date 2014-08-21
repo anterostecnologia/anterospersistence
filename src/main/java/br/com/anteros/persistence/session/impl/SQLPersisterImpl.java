@@ -145,7 +145,7 @@ public class SQLPersisterImpl implements SQLPersister {
 			appendOperator = true;
 		}
 
-		ResultSet rs = session.executeQuery(select.toStatementString(), params.toArray(new NamedParameter[] {}));
+		ResultSet rs = session.createQuery(select.toStatementString(), params.toArray(new NamedParameter[] {})).executeQuery();
 		if (rs.next()) {
 			boolean result = rs.getInt("numRows") > 0;
 			rs.close();

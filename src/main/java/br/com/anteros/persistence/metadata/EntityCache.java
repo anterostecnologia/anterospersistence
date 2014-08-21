@@ -191,8 +191,8 @@ public class EntityCache {
 
 	public List<DescriptionColumn> getPrimaryKeyColumns() {
 		List<DescriptionColumn> result = new ArrayList<DescriptionColumn>();
-		for (DescriptionColumn column : columns){
-			if (column.isPrimaryKey()){
+		for (DescriptionColumn column : columns) {
+			if (column.isPrimaryKey()) {
 				result.add(column);
 			}
 		}
@@ -213,7 +213,7 @@ public class EntityCache {
 
 	public DescriptionField getDescriptionField(String name) {
 		for (DescriptionField f : fields) {
-			if (name.equals(f.getField().getName())) {
+			if (name.equalsIgnoreCase(f.getField().getName())) {
 				return f;
 			}
 		}
@@ -837,5 +837,18 @@ public class EntityCache {
 		return (!"".equals(discriminatorValue));
 	}
 
+	public void setObjectValues(Object target, Map<String, Object> values) throws Exception {
+		if ((values == null) || (target == null))
+			return;
+		for (String fieldName : values.keySet()) {
+			DescriptionField descriptionField = getDescriptionField(fieldName);
+			if (descriptionField == null) {
+				throw new EntityCacheException("Não foi possível atribuir o mapa de valores ao objeto pois o campo "
+						+ fieldName + " não encontrado na classe " + this.getEntityClass().getName());
+			}
+			descriptionField.setObjectValue(fieldName, values.get(fieldName));
+		}
+	}
+	
 
 }

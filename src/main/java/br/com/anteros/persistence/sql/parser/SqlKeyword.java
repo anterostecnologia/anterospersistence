@@ -25,7 +25,7 @@ public class SqlKeyword {
 
 	public static final String[] Keywords = { "add", "all", "alter", "and", "as", "asc", "between", "by", "cascade", "column", "comment", "commit",
 			"constraint", "create", "date", "default", "delete", "desc", "distinct", "drop", "escape", "exists", "foreign", "from", "function",
-			"group", "having", "in", "index", "inner", "insert", "into", "is", "join", "key", "left", "like", "match", "minus", "not", "null", "on",
+			"group", "having", "in", "index", "inner", "insert", "into", "is", "join", "key", "left", "like", "limit", "match", "minus", "not", "null", "on",
 			"option", "or", "order", "outer", "package", "primary", "procedure", "right", "rollback", "rows", "schema", "select", "set", "show",
 			"table", "temporary", "time", "timestamp", "trigger", "truncate", "type", "union", "unique", "update", "values", "view", "where", "with" };
 

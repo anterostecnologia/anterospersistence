@@ -43,11 +43,14 @@ public class EntityHandler implements ResultSetHandler {
 	protected Map<String, String> expressions;
 	protected Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases;
 	protected Object mainObject;
+	protected Object objectToRefresh;
 	protected LazyLoadProxyFactory proxyFactory;
+	protected boolean allowDuplicateObjects = false;
 
 	public EntityHandler(LazyLoadProxyFactory proxyFactory, Class<?> targetClass,
 			EntityCacheManager entityCacheManager, Map<String, String> expressions,
-			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, SQLSession session, Cache transactionCache) {
+			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, SQLSession session, Cache transactionCache,
+			boolean allowDuplicateObjects) {
 		this.resultClass = targetClass;
 		this.session = session;
 		this.expressions = expressions;
@@ -55,24 +58,28 @@ public class EntityHandler implements ResultSetHandler {
 		this.transactionCache = transactionCache;
 		this.proxyFactory = proxyFactory;
 		this.columnAliases = columnAliases;
+		this.allowDuplicateObjects = allowDuplicateObjects;
 	}
 
 	public EntityHandler(LazyLoadProxyFactory proxyFactory, Class<?> targetClazz,
-			EntityCacheManager entityCacheManager, SQLSession session, Cache transactionCache) {
+			EntityCacheManager entityCacheManager, SQLSession session, Cache transactionCache,
+			boolean allowDuplicateObjects) {
 		this(proxyFactory, targetClazz, entityCacheManager, new LinkedHashMap<String, String>(),
-				new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String>>(), session, transactionCache);
+				new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String>>(), session, transactionCache,
+				allowDuplicateObjects);
 	}
 
 	public Object handle(ResultSet resultSet) throws Exception {
 
 		Set<String> columns = new HashSet<String>();
 		for (int i = 1; i <= resultSet.getMetaData().getColumnCount(); i++) {
-			if (columns.contains(resultSet.getMetaData().getColumnName(i).toUpperCase())) {
+			String columnName = resultSet.getMetaData().getColumnLabel(i);
+			if (columns.contains(columnName)) {
 				throw new EntityHandlerException(
 						"Não é possível instanciar objetos a partir de um ResultSet que contenha nomes de colunas duplicadas. Classe "
 								+ resultClass.getName() + " coluna " + resultSet.getMetaData().getColumnName(i));
 			}
-			columns.add(resultSet.getMetaData().getColumnName(i).toUpperCase());
+			columns.add(resultSet.getMetaData().getColumnLabel(i).toUpperCase());
 		}
 
 		List<Object> result = null;
@@ -138,12 +145,21 @@ public class EntityHandler implements ResultSetHandler {
 		EntityCache entityCache = entityCacheManager.getEntityCache(targetClass);
 
 		String uniqueId = getUniqueId(resultSet, entityCacheManager.getEntityCache(resultClass), null);
-
-		mainObject = getObjectFromCache(entityCache, uniqueId, transactionCache);
-		if (mainObject == null) {
-			mainObject = targetClass.newInstance();
+		if (objectToRefresh != null) {
+			mainObject = objectToRefresh;
 			result.add(mainObject);
+			objectToRefresh = null;
+		} else {
+			mainObject = getObjectFromCache(entityCache, uniqueId, transactionCache);
+			if (mainObject == null) {
+				mainObject = targetClass.newInstance();
+				result.add(mainObject);
+			} else {
+				if (allowDuplicateObjects)
+					result.add(mainObject);
+			}
 		}
+
 		entityManaged = session.getPersistenceContext().addEntityManaged(mainObject, false, false);
 
 		/*
@@ -278,7 +294,7 @@ public class EntityHandler implements ResultSetHandler {
 					try {
 						String discriminator = resultSet.getString(getAliasColumnName(tempEntityCache, tempEntityCache
 								.getDiscriminatorColumn().getColumnName()));
-						
+
 						EntityCache concreteEntityCache = entityCacheManager.getEntityCache(
 								descriptionField.getTargetClass(), discriminator);
 
@@ -336,7 +352,7 @@ public class EntityHandler implements ResultSetHandler {
 						try {
 							String discriminator = resultSet.getString(getAliasColumnName(alias, tempEntityCache
 									.getDiscriminatorColumn().getColumnName()));
-							
+
 							if (discriminator == null)
 								return new EntityHandlerResult(targetObject);
 
@@ -345,7 +361,6 @@ public class EntityHandler implements ResultSetHandler {
 							String uniqueId = getUniqueId(resultSet, tempEntityCache, alias);
 							if (uniqueId == null)
 								return new EntityHandlerResult(targetObject);
-							
 
 							newObject = getObjectFromCache(concreteEntityCache, uniqueId, transactionCache);
 							if (newObject == null) {
@@ -597,8 +612,10 @@ public class EntityHandler implements ResultSetHandler {
 						if (descriptionField.hasDescriptionColumn()) {
 							for (DescriptionColumn descriptionColumn : descriptionField.getDescriptionColumns()) {
 								if (descriptionColumn.isForeignKey() && !descriptionColumn.isInversedJoinColumn())
-									columnKeyValue.put(descriptionColumn.getReferencedColumnName(),
-											restultSet.getObject(getAliasColumnName(entityCache, descriptionColumn.getColumnName())));
+									columnKeyValue.put(
+											descriptionColumn.getReferencedColumnName(),
+											restultSet.getObject(getAliasColumnName(entityCache,
+													descriptionColumn.getColumnName())));
 							}
 						} else
 							/*
@@ -619,9 +636,9 @@ public class EntityHandler implements ResultSetHandler {
 					 * Se a estratégia for EAGER busca os dados do field
 					 */
 					if (descriptionField.getFetchType() == FetchType.EAGER) {
-						
-						Object result = session.loadData(targetEntityCache, targetObject, descriptionField,
-								columnKeyValue, transactionCache);
+
+						Object result = session.createQuery("").loadData(targetEntityCache, targetObject,
+								descriptionField, columnKeyValue, transactionCache);
 						descriptionField.getField().set(targetObject, result);
 						FieldEntityValue fieldEntityValue = descriptionField.getFieldEntityValue(session, targetObject);
 						entityManaged.addOriginalValue(fieldEntityValue);
@@ -663,6 +680,17 @@ public class EntityHandler implements ResultSetHandler {
 			this.value = value;
 			this.modified = modified;
 		}
+	}
+
+	public void setObjectToRefresh(Object objectToRefresh) throws EntityHandlerException {
+		if (objectToRefresh==null)
+			return;
+		
+		if (!(objectToRefresh.getClass().equals(resultClass))) {
+			throw new EntityHandlerException("Classe do objeto para refresh " + objectToRefresh.getClass()
+					+ " difere da classe de resultado " + resultClass);
+		}
+		this.objectToRefresh = objectToRefresh;
 	}
 
 }

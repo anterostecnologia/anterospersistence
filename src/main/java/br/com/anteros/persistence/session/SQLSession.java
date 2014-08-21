@@ -16,7 +16,6 @@
 package br.com.anteros.persistence.session;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -24,12 +23,8 @@ import java.util.Map;
 import java.util.Set;
 
 import br.com.anteros.persistence.handler.EntityHandler;
-import br.com.anteros.persistence.handler.ResultSetHandler;
-import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
-import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
-import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
 import br.com.anteros.persistence.parameter.NamedParameter;
@@ -39,188 +34,132 @@ import br.com.anteros.persistence.session.lock.type.LockModeType;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
 import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
-import br.com.anteros.persistence.session.query.SQLQueryAnalyzer;
+import br.com.anteros.persistence.session.query.StoredProcedureSQLQuery;
+import br.com.anteros.persistence.session.query.TypedSQLQuery;
 import br.com.anteros.persistence.sql.command.CommandSQL;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.transaction.Transaction;
 
 public interface SQLSession {
 
-	public <T> T selectOne(String sql, Class<T> resultClass) throws Exception;
+	/*
+	 * Localiza um objeto pela sua chave
+	 */
+	public <T> T find(Class<T> entityClass, Object primaryKey) throws Exception;
 
-	public <T> T selectOne(String sql, Object[] parameter, Class<T> resultClass) throws Exception;
+	public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties) throws Exception;
 
-	public <T> T selectOne(String sql, Map<String, Object> namedParameter, Class<T> resultClass) throws Exception;
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode) throws Exception;
 
-	public <T> T selectOne(String sql, NamedParameter[] namedParameter, Class<T> resultClass) throws Exception;
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties) throws Exception;
 
-	public <T> T selectOne(String sql, Class<T> resultClass, int timeOut) throws Exception;
+	public <T> T find(Identifier<T> id) throws Exception;
 
-	public <T> T selectOne(String sql, Object[] parameter, Class<T> resultClass, int timeOut) throws Exception;
+	public <T> T find(Identifier<T> id, LockModeType lockMode) throws Exception;
 
-	public <T> T selectOne(String sql, Map<String, Object> namedParameter, Class<T> resultClass, int timeOut) throws Exception;
-	
-	public <T> T selectOne(String sql, NamedParameter[] namedParameter, Class<T> resultClass, int timeOut) throws Exception;
-	
-	public <T> T selectOne(String sql, Class<T> resultClass, LockModeType lockMode) throws Exception;
+	public <T> T find(Identifier<T> id, Map<String, Object> properties) throws Exception;
 
-	public <T> T selectOne(String sql, Object[] parameter, Class<T> resultClass, LockModeType lockMode) throws Exception;
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode) throws Exception;
 
-	public <T> T selectOne(String sql, Map<String, Object> namedParameter, Class<T> resultClass, LockModeType lockMode) throws Exception;
+	/*
+	 * Atualiza o objeto com dados do banco descartando alterações na transação
+	 * atual
+	 */
+	public void refresh(Object entity) throws Exception ;
 
-	public <T> T selectOne(String sql, NamedParameter[] namedParameter, Class<T> resultClass, LockModeType lockMode) throws Exception;
+	public void refresh(Object entity, Map<String, Object> properties) throws Exception ;
 
-	public <T> T selectOne(String sql, Class<T> resultClass, int timeOut, LockModeType lockMode) throws Exception;
+	public void refresh(Object entity, LockModeType lockMode) throws Exception ;
 
-	public <T> T selectOne(String sql, Object[] parameter, Class<T> resultClass, int timeOut, LockModeType lockMode) throws Exception;
+	public void refresh(Object entity, LockModeType lockMode, Map<String, Object> properties) throws Exception ;
 
-	public <T> T selectOne(String sql, Map<String, Object> namedParameter, Class<T> resultClass, int timeOut, LockModeType lockMode) throws Exception;
-	
-	public <T> T selectOne(String sql, NamedParameter[] namedParameter, Class<T> resultClass, int timeOut, LockModeType lockMode) throws Exception;
-
-	public <T> T selectOneNamedQuery(String name, Class<T> resultClass) throws Exception;
-
-	public <T> T selectOneNamedQuery(String name, Class<T> resultClass, int timeOut) throws Exception;
-
-	public <T> T selectOneProcedure(CallableType type, String name, Object[] inputParameters, String[] outputParametersName, Class<T> resultClass)
-			throws Exception;
-
-	public <T> T selectOneProcedure(CallableType type, String name, Object[] inputParameters, String[] outputParametersName, Class<T> resultClass,
-			int timeOut) throws Exception;
-
-	public <T> List<T> selectList(String sql, Class<T> resultClass) throws Exception;
-
-	public <T> List<T> selectList(String sql, Object[] parameter, Class<T> resultClass) throws Exception;
-
-	public <T> List<T> selectList(String sql, Map<String, Object> namedParameter, Class<T> resultClass) throws Exception;
-
-	public <T> List<T> selectList(String sql, NamedParameter[] namedParameter, Class<T> resultClass) throws Exception;
-	
-	public <T> List<T> selectList(String sql, Class<T> resultClass, int timeOut) throws Exception;
-
-	public <T> List<T> selectList(String sql, Object[] parameter, Class<T> resultClass, int timeOut) throws Exception;
-
-	public <T> List<T> selectList(String sql, Map<String, Object> namedParameter, Class<T> resultClass, int timeOut)
-			throws Exception;
-
-	public <T> List<T> selectList(String sql, NamedParameter[] namedParameter, Class<T> resultClass, int timeOut) throws Exception;
-	
-	public <T> List<T> selectList(String sql, Class<T> resultClass, LockModeType lockMode) throws Exception;
-
-	public <T> List<T> selectList(String sql, Object[] parameter, Class<T> resultClass, LockModeType lockMode) throws Exception;
-
-	public <T> List<T> selectList(String sql, Map<String, Object> namedParameter, Class<T> resultClass, LockModeType lockMode) throws Exception;
-
-	public <T> List<T> selectList(String sql, NamedParameter[] namedParameter, Class<T> resultClass, LockModeType lockMode) throws Exception;
-	
-	public <T> List<T> selectList(String sql, Class<T> resultClass, int timeOut, LockModeType lockMode) throws Exception;
-
-	public <T> List<T> selectList(String sql, Object[] parameter, Class<T> resultClass, int timeOut, LockModeType lockMode) throws Exception;
-
-	public <T> List<T> selectList(String sql, Map<String, Object> namedParameter, Class<T> resultClass, int timeOut, LockModeType lockMode)
-			throws Exception;
-
-	public <T> List<T> selectList(String sql, NamedParameter[] namedParameter, Class<T> resultClass, int timeOut, LockModeType lockMode) throws Exception;
-
-	public <T> SQLSessionResult selectListAndResultSet(String sql, NamedParameter[] namedParameter, Class<T> resultClass, int timeOut) throws Exception;
-
-	public <T> List<T> selectListProcedure(CallableType type, String name, Object[] inputParameters, String[] outputParametersName,
-			Class<T> resultClass) throws Exception;
-
-	public <T> List<T> selectListProcedure(CallableType type, String name, Object[] inputParameters, String[] outputParametersName,
-			Class<T> resultClass, int timeOut) throws Exception;
-
-	public <T> List<T> selectListNamedQuery(String name, Object[] parameters, Class<T> resultClass) throws Exception;
-
-	public <T> List<T> selectListNamedQuery(String name, Object[] parameters, Class<T> resultClass, int timeOut) throws Exception;
-
-	public <T> List<T> selectListNamedQuery(String name, Class<T> resultClass) throws Exception;
-
-	public <T> List<T> selectListNamedQuery(String name, Class<T> resultClass, int timeOut) throws Exception;
-
-	public <T> List<T> selectListNamedQuery(String name, Map<String, Object> namedParameter, Class<T> resultClass) throws Exception;
-
-	public <T> List<T> selectListNamedQuery(String name, Map<String, Object> namedParameter, Class<T> resultClass, int timeOut)
-			throws Exception;
-
-	public <T> List<T> selectListNamedQuery(String name, NamedParameter[] namedParameter, Class<T> resultClass) throws Exception;
-
-	public <T> List<T> selectListNamedQuery(String name, NamedParameter[] namedParameter, Class<T> resultClass, int timeOut)
-			throws Exception;
-
-	public Object loadData(EntityCache entityCacheTarget, Object owner, DescriptionField descriptionFieldOwner, Map<String, Object> columnKeyTarget,
-			Cache transactionCache) throws IllegalAccessException, Exception;
-
-	public Object select(String sql, ResultSetHandler handler) throws Exception;
-
-	public Object select(String sql, Object[] parameter, ResultSetHandler handler) throws Exception;
-
-	public Object select(String sql, Map<String, Object> namedParameter, ResultSetHandler handler) throws Exception;
-
-	public Object select(String sql, NamedParameter[] namedParameter, ResultSetHandler handler) throws Exception;
-
-	public Object select(String sql, ResultSetHandler handler, int timeOut) throws Exception;
-
-	public Object select(String sql, Object[] parameter, ResultSetHandler handler, int timeOut) throws Exception;
-
-	public Object select(String sql, Map<String, Object> namedParameter, ResultSetHandler handler, int timeOut) throws Exception;
-
-	public Object select(String sql, NamedParameter[] namedParameter, ResultSetHandler handler, int timeOut) throws Exception;
-
-	public <T> List<T> selectProcedure(CallableType type, String name, Object[] inputParameters, String[] outputParametersName,
-			ResultSetHandler handler) throws Exception;
-
-	public <T> List<T> selectProcedure(CallableType type, String name, Object[] inputParameters, String[] outputParametersName,
-			ResultSetHandler handler, int timeOut) throws Exception;
-
-	public <T> T selectId(Identifier<T> id) throws Exception;
-
-	public <T> T selectId(Identifier<T> id, int timeOut) throws Exception;
-	
-	public <T> T selectId(Identifier<T> id, LockModeType lockMode) throws Exception;
-
-	public <T> T selectId(Identifier<T> id, int timeOut, LockModeType lockMode) throws Exception;
-	
+	/*
+	 * Bloqueia o objeto
+	 */
 	public void lock(Object entity, LockModeType mode);
-	
+
 	public void lock(Object entity, LockModeType mode, int timeout);
 
-    public void lock(Object entity);
+	public void lock(Object entity);
 
-    public void lockAll(Collection<?> entities, LockModeType mode);
-    
-    public void lockAll(Collection<?> entities, LockModeType mode, int timeout);
+	/*
+	 * Bloqueia a lista de objetos
+	 */
+	public void lockAll(Collection<?> entities, LockModeType mode);
 
-    public void lockAll(Collection<?> entities);
+	public void lockAll(Collection<?> entities, LockModeType mode, int timeout);
 
-    public void lockAll(Object[] entities, LockModeType mode);
-    
-    public void lockAll(Object[] entities, LockModeType mode, int timeout);
+	public void lockAll(Collection<?> entities);
 
-    public void lockAll(Object... entities);
+	public void lockAll(Object[] entities, LockModeType mode);
 
-	public ResultSet executeQuery(String sql) throws Exception;
+	public void lockAll(Object[] entities, LockModeType mode, int timeout);
 
-	public ResultSet executeQuery(String sql, Object[] parameter) throws Exception;
+	public void lockAll(Object... entities);
 
-	public ResultSet executeQuery(String sql, Map<String, Object> parameter) throws Exception;
+	/*
+	 * Desconecta o objeto do contexto de persistência
+	 */
+	public void detach(Object entity);
 
-	public ResultSet executeQuery(String sql, NamedParameter[] parameter) throws Exception;
+	/**
+	 * Remove todas as instâncias dos objetos da classe passada por parâmetro
+	 * gerenciadas pela sessão
+	 * 
+	 * @param object
+	 */
+	public void evict(Class class0);
 
-	public ResultSet executeQuery(String sql, int timeOut) throws Exception;
+	/**
+	 * Limpa o cache de entidades gerenciadas da sessão
+	 */
+	public void evictAll();
 
-	public ResultSet executeQuery(String sql, Object[] parameter, int timeOut) throws Exception;
+	/*
+	 * Cria uma query
+	 */
+	public SQLQuery createQuery(String sql) throws Exception;
 
-	public ResultSet executeQuery(String sql, Map<String, Object> parameter, int timeOut) throws Exception;
+	public SQLQuery createQuery(String sql, Object parameters) throws Exception;
 
-	public ResultSet executeQuery(String sql, NamedParameter[] parameter, int timeOut) throws Exception;
-	
-	public void executeDDL(String ddl) throws Exception;
+	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass) throws Exception;
 
-	public ProcedureResult executeProcedure(CallableType type, String name, Object[] inputParameters, String[] outputParametersName) throws Exception;
+	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, Object parameters) throws Exception;
 
-	public ProcedureResult executeProcedure(CallableType type, String name, Object[] inputParameters, String[] outputParametersName, int timeOut)
-			throws Exception;
+	/*
+	 * Cria uma query nomeada
+	 */
+	public SQLQuery createNamedQuery(String name) throws Exception;
+
+	public SQLQuery createNamedQuery(String name, Object parameters) throws Exception;
+
+	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass) throws Exception;
+
+	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters) throws Exception;
+
+	/*
+	 * Cria uma query stored procedure
+	 */
+	public StoredProcedureSQLQuery createStoredProcedureQuery(String procedureName) throws Exception;
+
+	public StoredProcedureSQLQuery createStoredProcedureQuery(String procedureName, Object parameters) throws Exception;
+
+	public StoredProcedureSQLQuery createStoredProcedureQuery(String procedureName, Class<?> resultClass) throws Exception;
+
+	public StoredProcedureSQLQuery createStoredProcedureQuery(String procedureName, Class<?> resultClass,
+			Object[] parameters) throws Exception;
+
+	/*
+	 * Cria uma query stored procedure nomeada
+	 */
+	public  StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name) throws Exception;
+
+	public  StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name, Object parameters) throws Exception;
+
+	public  StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name, Class<?> resultClass) throws Exception;
+
+	public StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name, Class<?> resultClass,
+			Object[] parameters) throws Exception;
 
 	public Object save(Object object) throws Exception;
 
@@ -290,49 +229,37 @@ public interface SQLSession {
 
 	public boolean isFormatSql();
 
-	public <T> SQLQuery<T> createSQLQuery(String sql);
-
 	public void removeTable(String tableName) throws Exception;
-	
+
 	public void enableLockMode() throws Exception;
-	
+
 	public void disableLockMode() throws Exception;
-	
-	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String, String> expressions, Map<SQLQueryAnalyserAlias,Map<String,String>> columnAliases,
-			Cache transactionCache) throws Exception;
-	
+
+	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String, String> expressions,
+			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, Cache transactionCache,
+			boolean allowDuplicateObjects, Object objectToRefresh) throws Exception;
+
 	public boolean isProxyObject(Object object) throws Exception;
-	
+
 	public boolean proxyIsInitialized(Object object) throws Exception;
-	
+
 	public void savePoint(String savepoint) throws Exception;
 
 	public void rollbackToSavePoint(String savepoint) throws Exception;
 
 	public <T> T cloneEntityManaged(Object object) throws Exception;
 
-	/**
-	 * Remove todas as instâncias dos objetos da classe passada por parâmetro
-	 * gerenciadas pela sessão
-	 * 
-	 * @param object
-	 */
-	public void evict(Class class0);
-
-	/**
-	 * Limpa o cache de entidades gerenciadas da sessão
-	 */
-	public void evictAll();
-	
 	public boolean isClosed() throws Exception;
-	
+
 	public void setClientInfo(String clientInfo) throws SQLException;
-	
-    public String getClientInfo() throws SQLException;
-    
-    public Transaction getTransaction() throws Exception;
-    
-    public SQLSessionFactory getSQLSessionFactory();
-    
-    public void clear() throws Exception;
+
+	public String getClientInfo() throws SQLException;
+
+	public Transaction getTransaction() throws Exception;
+
+	public SQLSessionFactory getSQLSessionFactory();
+
+	public void clear() throws Exception;
+
+	public void executeDDL(String ddl) throws Exception;
 }

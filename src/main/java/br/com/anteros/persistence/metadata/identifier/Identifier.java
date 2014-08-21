@@ -34,6 +34,7 @@ public class Identifier<T> {
 	private Object owner;
 	private SQLSession session;
 	private EntityCache entityCache;
+	private boolean onlyRefreshOwner=false;
 
 	public static <T> Identifier<T> create(SQLSession session, Class<T> sourceClass) throws Exception {
 		return new Identifier<T>(session, sourceClass);
@@ -41,6 +42,10 @@ public class Identifier<T> {
 
 	public static <T> Identifier<T> create(SQLSession session, T owner) throws Exception {
 		return new Identifier<T>(session, owner);
+	}
+	
+	public static <T> Identifier<T> create(SQLSession session, T owner, boolean onlyRefreshOwner) throws Exception {
+		return new Identifier<T>(session, owner, onlyRefreshOwner);
 	}
 
 	public Identifier(SQLSession session, Class<T> sourceClass) throws Exception {
@@ -66,6 +71,11 @@ public class Identifier<T> {
 		if (entityCache == null)
 			throw new IdentifierException("Classe " + clazz.getName() + " não encontrada na lista de entidades.");
 	}
+	
+	public Identifier(SQLSession session, T owner, boolean onlyRefreshOwner) throws Exception {
+		this(session,owner);
+		this.onlyRefreshOwner = onlyRefreshOwner;
+	}
 
 	public Identifier<T> setFieldValue(String fieldName, Object value) throws Exception {
 		DescriptionField descriptionField = entityCache.getDescriptionField(fieldName);
@@ -87,11 +97,11 @@ public class Identifier<T> {
 		List<NamedParameter> params = new ArrayList<NamedParameter>();
 		boolean append = false;
 		if (value instanceof Map) {
-			for (Object column : ((Map<?,?>) value).keySet()) {
+			for (Object column : ((Map<?, ?>) value).keySet()) {
 				if (append)
 					select.and();
 				select.addCondition("" + column, "=", ":P" + column);
-				params.add(new NamedParameter("P" + column, ((Map<?,?>) value).get(column)));
+				params.add(new NamedParameter("P" + column, ((Map<?, ?>) value).get(column)));
 				append = true;
 			}
 		} else if (value instanceof IdentifierColumn[]) {
@@ -123,8 +133,10 @@ public class Identifier<T> {
 					+ ". Não foi possível atribuir o valor para o campo " + descriptionField.getName() + " da classe "
 					+ entityCache.getEntityClass().getName());
 		}
-		descriptionField.setObjectValue(owner, session.selectOne(select.toStatementString(),
-				params.toArray(new NamedParameter[] {}), descriptionField.getField().getType()));
+		descriptionField.setObjectValue(
+				owner,
+				session.createQuery(select.toStatementString(), descriptionField.getField().getType(),
+						params.toArray(new NamedParameter[] {})).getSingleResult());
 		return this;
 	}
 
@@ -160,7 +172,7 @@ public class Identifier<T> {
 
 	public String getUniqueId() throws Exception {
 		StringBuffer sb = new StringBuffer("");
-		Map<String, Object> primaryKey = new TreeMap<String,Object>(this.getColumns());
+		Map<String, Object> primaryKey = new TreeMap<String, Object>(this.getColumns());
 		for (String key : primaryKey.keySet()) {
 			if (!"".equals(sb.toString()))
 				sb.append("_");
@@ -213,5 +225,53 @@ public class Identifier<T> {
 		} catch (Exception e) {
 		}
 		return sb.toString();
+	}
+
+	public void setIdIfPossible(Object id) throws Exception {
+		if (id == null) {
+			throw new IdentifierException("Não é possível atribuir um valor nulo para o Identificador da classe "
+					+ entityCache.getEntityClass().getName());
+		}
+		if (id instanceof Map) {
+			for (Object fieldName : ((Map) id).keySet()) {
+				DescriptionField descriptionField = entityCache.getDescriptionField(fieldName.toString());
+				if (descriptionField == null) {
+					throw new IdentifierException("Campo " + fieldName + " não encontrado na classe "
+							+ entityCache.getEntityClass().getName()
+							+ ". Não foi possível atribuir o id para o Identificador.");
+				}
+				descriptionField.setObjectValue(owner, ((Map) id).get(fieldName));
+			}
+		} else {
+			if (entityCache.getPrimaryKeyFields().length == 1) {
+				Class<?> fieldClass = entityCache.getPrimaryKeyFields()[0].getFieldClass();
+				if ((id.getClass() != fieldClass)
+						&& (!ReflectionUtils.isStrictlyAssignableFrom(id.getClass(), fieldClass))) {
+					throw new IdentifierException("Objeto ID passado como parâmetro é do tipo "
+							+ id.getClass().getName() + " diferente do tipo ID (" + fieldClass + ") do campo "
+							+ entityCache.getPrimaryKeyFields()[0].getField().getName() + "  encontrado na classe "
+							+ entityCache.getEntityClass().getName()
+							+ ". Não foi possível atribuir o id para o Identificador.");
+				}
+				entityCache.getPrimaryKeyFields()[0].setObjectValue(owner, id);
+			} else {
+				throw new IdentifierException(
+						"Objeto ID passado como parâmetro é do tipo "
+								+ id.getClass().getName()
+								+ " diferente do tipo ID  encontrado na classe "
+								+ entityCache.getEntityClass().getName()
+								+ ". Não foi possível atribuir o id para o Identificador. Use mapas de <Campo,Valor> ou um objeto compatível com o ID para criar um identificar. ");
+			}
+
+		}
+
+	}
+
+	public boolean isOnlyRefreshOwner() {
+		return onlyRefreshOwner;
+	}
+
+	public void setOnlyRefreshOwner(boolean onlyRefreshOwner) {
+		this.onlyRefreshOwner = onlyRefreshOwner;
 	}
 }

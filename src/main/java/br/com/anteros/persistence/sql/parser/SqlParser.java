@@ -30,7 +30,9 @@ import br.com.anteros.persistence.sql.parser.node.InsertStatementNode;
 import br.com.anteros.persistence.sql.parser.node.IntoNode;
 import br.com.anteros.persistence.sql.parser.node.JoinNode;
 import br.com.anteros.persistence.sql.parser.node.KeywordNode;
+import br.com.anteros.persistence.sql.parser.node.LimitNode;
 import br.com.anteros.persistence.sql.parser.node.MinusNode;
+import br.com.anteros.persistence.sql.parser.node.OffsetNode;
 import br.com.anteros.persistence.sql.parser.node.OnNode;
 import br.com.anteros.persistence.sql.parser.node.OperatorNode;
 import br.com.anteros.persistence.sql.parser.node.OrderbyNode;
@@ -82,7 +84,8 @@ public class SqlParser implements ISqlParser {
 			if (isCanceled())
 				return;
 
-			switch (nextToken()) {
+			int next = nextToken();
+			switch (next) {
 			case TokenUtil.TYPE_END_SQL:
 				return;
 			case TokenUtil.TYPE_SYMBOL:
@@ -120,6 +123,7 @@ public class SqlParser implements ISqlParser {
 				tokenizer.pushBack();
 				parseExpression(node);
 				break;
+
 			case TokenUtil.TYPE_KEYWORD:
 				if ("select".equalsIgnoreCase(getToken())) {
 					scope = SCOPE_SELECT;
@@ -133,7 +137,6 @@ public class SqlParser implements ISqlParser {
 						parseSelectStatement(select);
 						break;
 					} else {
-
 						SelectStatementNode ss = new SelectStatementNode(offset, length, scope);
 						SelectNode select = new SelectNode(offset, length, scope);
 						ss.addChild(select);
@@ -200,6 +203,12 @@ public class SqlParser implements ISqlParser {
 				} else if ("minus".equalsIgnoreCase(getToken())) {
 					scope = SCOPE_DEFAULT;
 					node.addChild(new MinusNode(offset, length, scope));
+				} else if ("limit".equalsIgnoreCase(getToken())) {
+					scope = SCOPE_DEFAULT;
+					LimitNode limit = new LimitNode(offset, length, scope);
+					node.addChildToStatement(limit);
+					parseLimitClause(limit);
+					return;
 
 				} else if ("from".equalsIgnoreCase(getToken())) {
 					scope = SCOPE_FROM;
@@ -370,7 +379,8 @@ public class SqlParser implements ISqlParser {
 						outfile.setFilePath(getToken());
 
 					} else if (node instanceof FromNode) {
-						if ((lastNode instanceof OnNode) || ("AND".equalsIgnoreCase(lastNode.getName())) || ("OR".equalsIgnoreCase(lastNode.getName())))  {
+						if ((lastNode instanceof OnNode) || ("AND".equalsIgnoreCase(lastNode.getName()))
+								|| ("OR".equalsIgnoreCase(lastNode.getName()))) {
 							node.addChild(new ColumnNode(getToken(), offset, length, scope));
 						} else {
 							node.addChild(new TableNode(getToken(), offset, length, scope));
@@ -395,7 +405,6 @@ public class SqlParser implements ISqlParser {
 					} else {
 						((AliasNode) lastNode2).setAliasName(getToken(), offset, length);
 					}
-					// -->
 				} else if (lastNode2 instanceof OperatorNode) {
 					throw new UnexpectedTokenException(getToken(), offset, length);
 				} else {
@@ -415,7 +424,9 @@ public class SqlParser implements ISqlParser {
 			if (isCanceled())
 				return;
 
-			switch (nextToken()) {
+			int next = nextToken();
+
+			switch (next) {
 			case TokenUtil.TYPE_END_SQL:
 				return;
 
@@ -442,7 +453,6 @@ public class SqlParser implements ISqlParser {
 						}
 						throw new UnexpectedTokenException(node.getClass().getName(), offset, length);
 					}
-					// -->
 					break;
 				} else if (",".equals(getToken())) {
 					node.addChild(new CommaNode(offset, length, scope));
@@ -692,7 +702,9 @@ public class SqlParser implements ISqlParser {
 			if (isCanceled())
 				return;
 
-			switch (nextToken()) {
+			int next = nextToken();
+
+			switch (next) {
 			case TokenUtil.TYPE_END_SQL:
 				return;
 
@@ -746,6 +758,12 @@ public class SqlParser implements ISqlParser {
 					break;
 				} else if ("union all".equalsIgnoreCase(getToken())) {
 					parseUnion(node, true);
+					break;
+				} else if ("limit".equalsIgnoreCase(getToken())) {
+					scope = SCOPE_DEFAULT;
+					LimitNode limit = new LimitNode(offset, length, scope);
+					node.addChildToStatement(limit);
+					parseLimitClause(limit);
 					break;
 				} else if ("minus".equalsIgnoreCase(getToken())) {
 					scope = SCOPE_DEFAULT;
@@ -843,6 +861,12 @@ public class SqlParser implements ISqlParser {
 					node.addChildToStatement(by);
 					parseOrderByClause(by);
 					break;
+				} else if ("limit".equalsIgnoreCase(getToken())) {
+					scope = SCOPE_DEFAULT;
+					LimitNode limit = new LimitNode(offset, length, scope);
+					node.addChildToStatement(limit);
+					parseLimitClause(limit);
+					break;
 
 				} else if ("group by".equalsIgnoreCase(getToken())) {
 					scope = SCOPE_BY;
@@ -911,6 +935,114 @@ public class SqlParser implements ISqlParser {
 			}
 		}
 
+	}
+
+	protected void parseLimitClause(LimitNode node) throws ParserException {
+		for (;;) {
+			if (isCanceled())
+				return;
+			INode lastNode;
+
+			int next = nextToken();
+			switch (next) {
+			case TokenUtil.TYPE_END_SQL:
+				return;
+
+			case TokenUtil.TYPE_SYMBOL:
+				if (")".equals(getToken())) {
+					ParenthesesNode begin = node.getParentheses();
+					begin.setEndOffset(offset);
+					scope = begin.getScope();
+					parse(begin.getParent());
+					return;
+				} else if ("(".equals(getToken())) {
+					ParenthesesNode p = new ParenthesesNode(offset, length, scope);
+					node.addChild(p);
+					parse(p);
+					break;
+				} else if (",".equals(getToken())) {
+					node.addChild(new CommaNode(offset, length, scope));
+				}
+				break;
+
+			case TokenUtil.TYPE_VALUE:
+				node.addChild(new ValueNode(getToken(), offset, length, scope));
+				break;
+
+			case TokenUtil.TYPE_NAME:
+				lastNode = node.getLastChild();
+				if (lastNode instanceof AliasNode) {
+					((AliasNode) lastNode).setAliasName(getToken(), offset, length);
+				} else {
+					node.addChild(new ValueNode(getToken(), offset, length, scope));
+				}
+				break;
+
+			case TokenUtil.TYPE_KEYWORD:
+				if ("offset".equalsIgnoreCase(getToken())) {
+					scope = SCOPE_DEFAULT;
+					OffsetNode os = new OffsetNode(offset, length, scope);
+					node.addChildToStatement(os);
+					parseOffsetClause(os);
+					break;
+				} else {
+					tokenizer.pushBack();
+					return;
+				}
+			default:
+				break;
+			}
+		}
+	}
+
+	protected void parseOffsetClause(OffsetNode node) throws ParserException {
+		for (;;) {
+			if (isCanceled())
+				return;
+
+			int next = nextToken();
+			switch (next) {
+			case TokenUtil.TYPE_END_SQL:
+				return;
+
+			case TokenUtil.TYPE_SYMBOL:
+				if (")".equals(getToken())) {
+					ParenthesesNode begin = node.getParentheses();
+					begin.setEndOffset(offset);
+					scope = begin.getScope();
+					parse(begin.getParent());
+					return;
+				} else if ("(".equals(getToken())) {
+					ParenthesesNode p = new ParenthesesNode(offset, length, scope);
+					node.addChild(p);
+					parse(p);
+					break;
+				} else if (",".equals(getToken())) {
+					node.addChild(new CommaNode(offset, length, scope));
+				}
+				break;
+
+			case TokenUtil.TYPE_VALUE:
+				node.addChild(new ValueNode(getToken(), offset, length, scope));
+				break;
+				
+			case TokenUtil.TYPE_NAME:
+				INode lastNode = node.getLastChild();
+				if (lastNode instanceof AliasNode) {
+					((AliasNode) lastNode).setAliasName(getToken(), offset, length);
+				} else {
+					ValueNode val = new ValueNode(getToken(), offset, length, scope);
+					node.addChild(val);
+				}
+				break;
+
+			case TokenUtil.TYPE_KEYWORD:
+				tokenizer.pushBack();
+				return;
+			default:
+				break;
+			}
+		}
 	}
 
 	protected void skipToken(INode node, int offset, int length) throws ParserException {

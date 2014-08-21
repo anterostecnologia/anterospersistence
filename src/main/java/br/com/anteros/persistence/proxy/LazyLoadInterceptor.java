@@ -103,7 +103,7 @@ public class LazyLoadInterceptor implements MethodHandler {
 						}
 					}
 
-					target = session.loadData(entityCache, owner, descriptionFieldOwner, columnKeyValuesTarget, transactionCache);
+					target = session.createQuery("").loadData(entityCache, owner, descriptionFieldOwner, columnKeyValuesTarget, transactionCache);
 
 					if (ownerEntityCache != null) {
 						if ((ownerEntityCache.getCacheScope().equals(ScopeType.TRANSACTION)) && (transactionCache != null))

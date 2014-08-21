@@ -84,9 +84,9 @@ public class TableGenerator implements IdentifierGenerator {
 	public Serializable generate() throws Exception {
 		long currentValue = 1;
 		try {
-			ResultSet rsSelect = session.executeQuery(select.toStatementString() + " "
+			ResultSet rsSelect = session.createQuery(select.toStatementString() + " "
 					+ session.getDialect().getSelectForUpdateNoWaitString(),
-					new Object[] { value });
+					new Object[] { value }).executeQuery();
 			if (!rsSelect.next())
 				currentValue = 0;
 			else

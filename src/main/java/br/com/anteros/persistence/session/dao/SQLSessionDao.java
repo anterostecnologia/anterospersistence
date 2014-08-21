@@ -1,7 +1,6 @@
 package br.com.anteros.persistence.session.dao;
 
 import br.com.anteros.persistence.session.SQLSession;
-import br.com.anteros.persistence.session.SQLSessionFactory;
 
 public class SQLSessionDao<T> extends SQLDao<T> {
 

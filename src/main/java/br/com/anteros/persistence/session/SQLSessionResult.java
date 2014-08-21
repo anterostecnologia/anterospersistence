@@ -15,22 +15,21 @@
  ******************************************************************************/
 package br.com.anteros.persistence.session;
 
-import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-public class SQLSessionResult {
+public class SQLSessionResult<X> {
 
-	private List<? extends Serializable> resultList;
+	private List<X> resultList;
 	
 	private ResultSet resultSet;
 
-	public List<? extends Serializable> getResultList() {
+	public List<X> getResultList() {
 		return resultList;
 	}
 
-	public void setResultList(List<? extends Serializable> resultList) {
+	public void setResultList(List<X> resultList) {
 		this.resultList = resultList;
 	}
 

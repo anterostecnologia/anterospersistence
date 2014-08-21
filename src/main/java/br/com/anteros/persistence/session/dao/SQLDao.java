@@ -47,55 +47,55 @@ public abstract class SQLDao<T> {
 	}
 
 	public T selectOne(String sql) throws Exception {
-		return (T) getSession().selectOne(sql, clazz);
+		return (T) getSession().createQuery(sql, clazz).getSingleResult();
 	}
 
 	public Object selectOne(String sql, Object[] parameter) throws Exception {
-		return getSession().selectOne(sql, parameter, clazz);
+		return getSession().createQuery(sql, clazz, parameter);
 	}
 
 	public Object selectOne(String sql, Map<String, Object> namedParameter) throws Exception {
-		return getSession().selectOne(sql, namedParameter, clazz);
+		return getSession().createQuery(sql, clazz, namedParameter).getSingleResult();
 	}
 
 	public Object selectOne(String sql, NamedParameter[] namedParameter) throws Exception {
-		return getSession().selectOne(sql, namedParameter, clazz);
+		return getSession().createQuery(sql, clazz, namedParameter).getSingleResult();
 	}
 
 	public List<T> selectList(String sql) throws Exception {
-		return (List<T>) getSession().selectList(sql, clazz);
+		return (List<T>) getSession().createQuery(sql, clazz).getResultList();
 	}
 
 	public List<T> selectList(String sql, Object[] parameter) throws Exception {
-		return (List<T>) getSession().selectList(sql, parameter, clazz);
+		return (List<T>) getSession().createQuery(sql, clazz, parameter).getResultList();
 	}
 
 	public List<T> selectList(String sql, Map<String, Object> namedParameter) throws Exception {
-		return (List<T>) getSession().selectList(sql, namedParameter, clazz);
+		return (List<T>) getSession().createQuery(sql, clazz, namedParameter).getResultList();
 	}
 
 	public List<T> selectList(String sql, NamedParameter[] namedParameter) throws Exception {
-		return (List<T>) getSession().selectList(sql, namedParameter, clazz);
+		return (List<T>) getSession().createQuery(sql, clazz, namedParameter).getResultList();
 	}
 
 	public Object select(String sql, ResultSetHandler handler) throws Exception {
-		return getSession().select(sql, handler);
+		return getSession().createQuery(sql).resultSetHandler(handler).getSingleResult();
 	}
 
 	public Object select(String sql, Object[] parameter, ResultSetHandler handler) throws Exception {
-		return getSession().select(sql, parameter, handler);
+		return getSession().createQuery(sql, parameter).resultSetHandler(handler).getSingleResult();
 	}
 
 	public Object select(String sql, Map<String, Object> namedParameter, ResultSetHandler handler) throws Exception {
-		return getSession().select(sql, namedParameter, handler);
+		return getSession().createQuery(sql, namedParameter).resultSetHandler(handler).getSingleResult();
 	}
 
 	public Object select(String sql, NamedParameter[] namedParameter, ResultSetHandler handler) throws Exception {
-		return getSession().select(sql, namedParameter, handler);
+		return getSession().createQuery(sql, namedParameter).resultSetHandler(handler).getSingleResult();
 	}
 
 	public T selectId(Identifier<T> id) throws Exception {
-		return getSession().selectId(id);
+		return getSession().find(id);
 	}
 
 	public Object save(Object object) throws Exception {

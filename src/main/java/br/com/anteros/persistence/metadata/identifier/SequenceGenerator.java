@@ -61,7 +61,7 @@ public class SequenceGenerator implements IdentifierGenerator {
 
 	public Serializable generate() throws Exception {
 		try {
-			ResultSet rs = session.executeQuery(sql);
+			ResultSet rs = session.createQuery(sql).executeQuery();
 			try {
 				Long value = new Long(1);
 				if (rs.next())

@@ -16,7 +16,7 @@
 package br.com.anteros.persistence.metadata.identifier;
 
 @SuppressWarnings("serial")
-public class IdentifierException extends Exception {
+public class IdentifierException extends RuntimeException {
 
 	public IdentifierException(String message) {
 		super(message);
