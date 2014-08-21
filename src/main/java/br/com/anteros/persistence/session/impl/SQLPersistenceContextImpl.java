@@ -36,7 +36,7 @@ import br.com.anteros.persistence.session.context.SQLPersistenceContext;
 
 public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 
-	private Map<EntityManaged, Reference> entities = new HashMap<EntityManaged, Reference>();
+	private Map<EntityManaged, Reference<?>> entities = new HashMap<EntityManaged, Reference<?>>();
 	private EntityCacheManager entityCacheManager;
 	private SQLSession session;
 	private Cache cache;
@@ -64,7 +64,7 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 					.getDescriptionFields())
 				key.addLastValue(descriptionField.getFieldEntityValue(
 						session, value));
-			entities.put(key, new WeakReference(value));
+			entities.put(key, new WeakReference<Object>(value));
 		}
 		return key;
 	}
@@ -74,7 +74,7 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 		List<EntityManaged> keysToRemove = new ArrayList<EntityManaged>();
 		EntityManaged em = null;
 		for (EntityManaged entityManaged : entities.keySet()) {
-			Reference ref = entities.get(entityManaged);
+			Reference<?> ref = entities.get(entityManaged);
 			if (ref.get() == null) {
 				keysToRemove.add(entityManaged);
 				continue;
@@ -161,7 +161,7 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 	
 	public EntityManaged createEmptyEntityManaged(Object key) {
 		EntityManaged em = new EntityManaged(entityCacheManager.getEntityCache(key.getClass()));
-		entities.put(em, new WeakReference(key));
+		entities.put(em, new WeakReference<Object>(key));
 		return em;
 	}
 
@@ -169,7 +169,7 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 	public void evict(Class class0) {
 		List<EntityManaged> keys = new ArrayList<EntityManaged>(entities.keySet());
 		for (EntityManaged entityManaged : keys) {
-			Reference obj = entities.get(entityManaged);
+			Reference<?> obj = entities.get(entityManaged);
 			if (obj.get().getClass().equals(class0)) {
 				entities.remove(entityManaged);
 			}
@@ -191,7 +191,7 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 	public void detach(Object entity) {
 		List<EntityManaged> keys = new ArrayList<EntityManaged>(entities.keySet());
 		for (EntityManaged entityManaged : keys) {
-			Reference obj = entities.get(entityManaged);			
+			Reference<?> obj = entities.get(entityManaged);			
 			if (obj.get().equals(entity)) {
 				entities.remove(entityManaged);
 				break;

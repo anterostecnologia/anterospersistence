@@ -63,7 +63,7 @@ public class LazyLoadInterceptor implements MethodHandler {
 				 * COLLECTION_TABLE o entityCache sera
 				 */
 				if (entityCache != null && ReflectionUtils.isPublic(entityCache.getEntityClass(), thisMethod)) {
-					Class dc = thisMethod.getDeclaringClass(); 
+					Class<?> dc = thisMethod.getDeclaringClass(); 
 					if (!dc.isInstance(target))
 						throw new ClassCastException(target.getClass().getName());
 					returnValue = thisMethod.invoke(target, args);
