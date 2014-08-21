@@ -35,7 +35,7 @@ public class NamedParameterParserResult {
 		this.parsedSql = parsedSql;
 	}
 
-	public Map<String, Object> getParsedParams() {
+	public Map<String, Object> getParsedParams() { 
 		return parsedParams;
 	}
 
@@ -51,8 +51,7 @@ public class NamedParameterParserResult {
 	public List<NamedParameter> getNamedParameters() {
 		List<NamedParameter> result = new ArrayList<NamedParameter>();
 		for (String param : parsedParams.keySet()) {
-			Object value = parsedParams.get(param);
-			result.add(new NamedParameter(param, value));
+			result.add(new NamedParameter(param));
 		}
 		return result;
 	}

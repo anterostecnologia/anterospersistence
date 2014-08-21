@@ -563,9 +563,9 @@ public class SQLSessionImpl implements SQLSession {
 	public SQLQuery createQuery(String sql, Object parameters) throws Exception{
 		errorIfClosed();
 		SQLQuery result = new SQLQueryImpl(this);
+		result.sql(sql);
 		result.setParameters(parameters);
 		result.timeOut(queryTimeout);
-		result.sql(sql);
 		return result;
 	}
 
@@ -582,9 +582,9 @@ public class SQLSessionImpl implements SQLSession {
 	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, Object parameters) throws Exception{
 		errorIfClosed();
 		TypedSQLQuery<T> result = new SQLQueryImpl<T>(this, resultClass);
-		result.setParameters(parameters);
 		result.timeOut(queryTimeout);
 		result.sql(sql);
+		result.setParameters(parameters);
 		return result;
 	}
 
@@ -601,8 +601,8 @@ public class SQLSessionImpl implements SQLSession {
 	public SQLQuery createNamedQuery(String name, Object parameters) throws Exception {
 		errorIfClosed();
 		SQLQuery result = new SQLQueryImpl(this);
-		result.setParameters(parameters);
 		result.namedQuery(name);
+		result.setParameters(parameters);		
 		result.timeOut(queryTimeout);
 		return result;
 	}
@@ -616,7 +616,7 @@ public class SQLSessionImpl implements SQLSession {
 	@Override
 	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters) throws Exception{
 		errorIfClosed();
-		return new SQLQueryImpl<T>(this).resultClass(resultClass).setParameters(parameters).namedQuery(name);
+		return new SQLQueryImpl<T>(this).resultClass(resultClass).namedQuery(name).setParameters(parameters);
 	}
 
 	@Override

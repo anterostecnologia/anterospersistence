@@ -163,8 +163,9 @@ public class NamedParameterStatement {
 			throws Exception {
 		if (parameter instanceof ParameterBinding) {
 			((ParameterBinding) parameter).bindValue(statement, parameterIndex);
-		} else
+		} else {
 			stmt.setObject(parameterIndex, parameter);
+		}
 	}
 
 	public void setString(String name, String value) throws SQLException {

@@ -35,6 +35,11 @@ public class NamedParameter {
 	private Object value;
 	private boolean key;
 	private TemporalType temporalType;
+	
+	public NamedParameter(String name) {
+		this.name = name;
+		this.key = false;
+	}
 
 	public NamedParameter(String name, Object value) {
 		this.name = name;

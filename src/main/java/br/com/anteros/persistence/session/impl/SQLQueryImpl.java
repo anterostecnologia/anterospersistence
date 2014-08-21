@@ -153,13 +153,17 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	public TypedSQLQuery<T> setParameters(NamedParameter[] parameters) throws Exception {
 		for (NamedParameter parameter : parameters) {
+			boolean found = false;
 			for (Integer index : namedParameters.keySet()) {
 				NamedParameter np = namedParameters.get(index);
 				if (np.getName().equals(parameter.getName())) {
 					namedParameters.put(index, parameter);
+					found = true;
 					break;
 				}
 			}
+			if (!found)
+				throw new SQLQueryException("Parâmetro "+parameter.getName()+" não encontrado. Verifique se o parâmetro existe ou se o SQL já foi definido.");
 		}
 		return this;
 	}
@@ -1170,7 +1174,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			setParameters((Map<String, Object>) parameters);
 		} else if (parameters instanceof Object[]) {
 			setParameters((Object[]) parameters);
-		}
+		} else
+			throw new SQLQueryException("Formato para setParameters inválido. Use NamedParameter[], Map ou Object[].");
 
 		return this;
 	}
