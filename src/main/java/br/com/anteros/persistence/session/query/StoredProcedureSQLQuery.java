@@ -18,5 +18,6 @@ public interface StoredProcedureSQLQuery extends SQLQuery {
 	public StoredProcedureSQLQuery outputParametersName(String[] outputParametersName);
 	
 	public StoredProcedureSQLQuery namedStoredProcedureQuery(String name);
+
 	
 }
