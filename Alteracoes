@@ -9,7 +9,8 @@
    Deveria ser ID_PESSOA_PAPEL mas como havia a coluna na outra classe não deu erro e só foi gerar o erro na hora
    da geração do script.
    
-- Corrigir problema no relacionamento ONY_TO_MANY com EAGER, o framework tenta buscar a lista antes de adicionar o objeto pai ao cache.
+OK - Corrigir problema no relacionamento ONY_TO_MANY com EAGER, o framework tenta buscar a lista antes de adicionar o objeto pai ao cache. 
+    Obs: O problema era o tamanho do cache de objetos, muito pequeno.
   
 - Terminar implementação de Convert
 
@@ -38,7 +39,9 @@
 
 - Implementar comandos sql para sugestão de indices
 
-- Implementar limit para trazer registros
+OK - Implementar limit para trazer registros
+   Obs: Implementado junto com DSL.
+   
 
 - Ver possibilidade de implementar @SecondaryTables, @SecondaryTable: Ver exemplo MovimentoEstoque x MovimentoEstoqueValor
  sendo que a segunda tabela seria a de valor.
@@ -125,7 +128,7 @@ public class Employee {
               
 - Não permitir 2 entidades com mesmo nome de tabela         
 
-     
+- Concluir implementação MappedSuperClass     
               
               
               

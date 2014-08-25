@@ -89,6 +89,8 @@ public class SQLQueryAnalyzer {
 		SqlParser parser = new SqlParser(sql, new SqlFormatRule());
 		INode node = new Node("root");
 		parser.parse(node);
+		
+		System.out.println(parser.dump(node));
 
 		buildUsedAliases(node);
 
