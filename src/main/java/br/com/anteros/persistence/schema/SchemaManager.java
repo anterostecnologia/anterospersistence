@@ -41,6 +41,7 @@ import br.com.anteros.persistence.metadata.identifier.SequenceGenerator;
 import br.com.anteros.persistence.metadata.identifier.TableGenerator;
 import br.com.anteros.persistence.schema.definition.ColumnSchema;
 import br.com.anteros.persistence.schema.definition.ForeignKeySchema;
+import br.com.anteros.persistence.schema.definition.GeneratorSchema;
 import br.com.anteros.persistence.schema.definition.IndexSchema;
 import br.com.anteros.persistence.schema.definition.ObjectSchema;
 import br.com.anteros.persistence.schema.definition.SequenceGeneratorSchema;
@@ -49,6 +50,7 @@ import br.com.anteros.persistence.schema.definition.StoredProcedureSchema;
 import br.com.anteros.persistence.schema.definition.TableGeneratorSchema;
 import br.com.anteros.persistence.schema.definition.TableSchema;
 import br.com.anteros.persistence.schema.definition.UniqueKeySchema;
+import br.com.anteros.persistence.schema.definition.ViewSchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 import br.com.anteros.persistence.schema.exception.SchemaGeneratorException;
 import br.com.anteros.persistence.schema.type.TableCreationType;
@@ -63,7 +65,10 @@ public class SchemaManager implements Comparator<TableSchema> {
 	protected Writer createSchemaWriter;
 	protected Writer dropSchemaWriter;
 	protected Set<TableSchema> tables;
-	protected Set<ObjectSchema> sequences;
+	protected Set<ViewSchema> views;
+	protected Set<StoredProcedureSchema> procedures;
+	protected Set<StoredFunctionSchema> functions;
+	protected Set<GeneratorSchema> sequences;
 	protected boolean ignoreDatabaseException;
 	protected boolean createReferentialIntegrity;
 
@@ -81,7 +86,10 @@ public class SchemaManager implements Comparator<TableSchema> {
 	public void buildTablesSchema() throws Exception {
 		if (tables == null) {
 			tables = new LinkedHashSet<TableSchema>();
-			sequences = new LinkedHashSet<ObjectSchema>();
+			views = new LinkedHashSet<ViewSchema>();
+			sequences = new LinkedHashSet<GeneratorSchema>();
+			procedures = new LinkedHashSet<StoredProcedureSchema>();
+			functions = new LinkedHashSet<StoredFunctionSchema>();
 
 			for (EntityCache entityCache : entityCacheManager.getEntities().values()) {
 
@@ -358,7 +366,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 	 *            Tabela
 	 * @return
 	 */
-	private TableSchema getTable(String tableName) {
+	public TableSchema getTable(String tableName) {
 		for (TableSchema tableSchema : tables) {
 			if (tableSchema.getName().equalsIgnoreCase(tableName))
 				return tableSchema;
@@ -661,6 +669,9 @@ public class SchemaManager implements Comparator<TableSchema> {
 		if (descriptionField.hasGenerator()) {
 			newColumn.setSequenceName(descriptionField.getSequenceName());
 		}
+		
+		newColumn.setPrimaryKey(descriptionColumn.isPrimaryKey());
+		newColumn.setForeignKey(descriptionColumn.isForeignKey());
 
 		return newColumn;
 	}
@@ -1955,6 +1966,46 @@ public class SchemaManager implements Comparator<TableSchema> {
 		Set<StoredFunctionSchema> result = getStoredFunctions(functionName);
 		if (result.size() > 0)
 			return result.iterator().next();
+		return null;
+	}
+
+	public Set<TableSchema> getTables() {
+		return tables;
+	}
+	
+	public Set<ViewSchema> getViews() {
+		return views;
+	}
+
+	public Set<GeneratorSchema> getSequences() {
+		return sequences;
+	}
+	
+	public Set<StoredProcedureSchema> getProcedures() {
+		return procedures;
+	}
+	
+	public Set<StoredFunctionSchema> getFunctions() {
+		return functions;
+	}
+
+	public StoredProcedureSchema getProcedure(String procedureName) {
+		if (procedures!=null){
+			for (StoredProcedureSchema procedure : procedures){
+				if (procedure.getName().equalsIgnoreCase(procedureName))
+					return procedure;
+			}
+		}
+		return null;
+	}
+	
+	public StoredFunctionSchema getFunction(String functionName) {
+		if (procedures!=null){
+			for (StoredFunctionSchema function : functions){
+				if (function.getName().equalsIgnoreCase(functionName))
+					return function;
+			}
+		}
 		return null;
 	}
 

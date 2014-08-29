@@ -18,6 +18,15 @@ package br.com.anteros.persistence.sql.parser;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.com.anteros.persistence.sql.parser.node.ExpressionNode;
+import br.com.anteros.persistence.sql.parser.node.FunctionNode;
+import br.com.anteros.persistence.sql.parser.node.GroupbyNode;
+import br.com.anteros.persistence.sql.parser.node.HavingByNode;
+import br.com.anteros.persistence.sql.parser.node.OperatorNode;
+import br.com.anteros.persistence.sql.parser.node.ParenthesesNode;
+import br.com.anteros.persistence.sql.parser.node.SelectNode;
+import br.com.anteros.persistence.sql.parser.node.WhereNode;
+
 public class ParserUtil {
 
 	public static INode findParent(INode node, String type) {
@@ -92,5 +101,28 @@ public class ParserUtil {
 		}
 		return (INode[]) list.toArray(new INode[0]);
 	}
+
+	public static INode findBindParent(INode node) {
+		INode result = null;
+		if (node.getParent() instanceof ParenthesesNode)
+			result = findBindParent(node.getParent());
+		if (node.getParent() instanceof OperatorNode)
+			result = findBindParent(node.getParent());
+		else if (node.getParent() instanceof FunctionNode)
+			result = node.getParent();
+		else if (node.getParent() instanceof ExpressionNode)
+			result = node.getParent();
+		else if (node.getParent() instanceof GroupbyNode)
+			result = node.getParent();
+		else if (node.getParent() instanceof HavingByNode)
+			result = node.getParent();
+		else if (node.getParent() instanceof SelectNode)
+			result = node.getParent();
+		else if (node.getParent() instanceof WhereNode)
+			result = node.getParent();
+
+		return result;
+	}
+	
 
 }

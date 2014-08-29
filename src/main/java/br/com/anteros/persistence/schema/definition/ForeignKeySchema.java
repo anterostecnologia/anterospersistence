@@ -28,12 +28,12 @@ public class ForeignKeySchema extends ConstraintSchema {
 	protected TableSchema referencedTable;
 	protected boolean cascadeOnDelete;
 
-	public ForeignKeySchema(TableSchema table, String name, ColumnSchema sourceColumn, ColumnSchema referencedColumn, TableSchema referencedTable) {
+	public ForeignKeySchema(TableSchema table, String name, ColumnSchema sourceColumn, ColumnSchema referencedColumn,
+			TableSchema referencedTable) {
 		super();
 		this.name = name;
 		this.setTable(table);
-		this.getColumns().add(sourceColumn);
-		this.getColumnsReferences().add(referencedColumn);
+		this.addColumns(sourceColumn, referencedColumn);
 		this.setReferencedTable(referencedTable);
 	}
 
@@ -47,20 +47,25 @@ public class ForeignKeySchema extends ConstraintSchema {
 		super();
 		this.setTable(table);
 	}
-	
+
 	public void addColumns(ColumnSchema sourceColumn, ColumnSchema referencedColumn) {
-		getColumns().add(sourceColumn);
-		columnsReferences.add(referencedColumn);
+		if (sourceColumn != null) {
+			sourceColumn.setForeignKey(true);
+			getColumns().add(sourceColumn);
+			columnsReferences.add(referencedColumn);
+		}
 	}
 
 	public void addSourceColumn(ColumnSchema sourceColumn) {
-		getColumns().add(sourceColumn);
+		if (sourceColumn != null) {
+			sourceColumn.setForeignKey(true);
+			getColumns().add(sourceColumn);
+		}
 	}
 
 	public void addReferencedColumn(ColumnSchema referencedColumn) {
 		columnsReferences.add(referencedColumn);
 	}
-
 
 	public List<ColumnSchema> getColumnsReferences() {
 		return columnsReferences;
@@ -99,26 +104,26 @@ public class ForeignKeySchema extends ConstraintSchema {
 	public void setCascadeOnDelete(boolean cascadeOnDelete) {
 		this.cascadeOnDelete = cascadeOnDelete;
 	}
-	
-	public String getColumnsToString(){
+
+	public String getColumnsToString() {
 		String result = "";
 		boolean appendDelimiter = false;
-		for (ColumnSchema columnSchema : columns){
+		for (ColumnSchema columnSchema : columns) {
 			if (appendDelimiter)
 				result += "_";
 			result += columnSchema.getName();
 			appendDelimiter = true;
 		}
-		
+
 		return result;
 	}
-	
-	public String[] getColumnNames(){
+
+	public String[] getColumnNames() {
 		List<String> result = new ArrayList<String>();
-		for (ColumnSchema columnSchema : columns){
+		for (ColumnSchema columnSchema : columns) {
 			result.add(columnSchema.name);
 		}
-		return result.toArray(new String[]{});
+		return result.toArray(new String[] {});
 	}
 
 }

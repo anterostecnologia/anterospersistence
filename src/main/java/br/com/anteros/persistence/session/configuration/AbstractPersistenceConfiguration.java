@@ -18,6 +18,7 @@ package br.com.anteros.persistence.session.configuration;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -228,6 +229,8 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 			this.dataSource = null;
 			this.buildDataSource();
 			return this;
+		} catch (final InvocationTargetException e) {
+			throw new AnterosConfigurationException("Impossível realizar a leitura do arquivo de configuração." + e.getTargetException());
 		} catch (final Exception e) {
 			throw new AnterosConfigurationException("Impossível realizar a leitura do arquivo de configuração." + e);
 		}

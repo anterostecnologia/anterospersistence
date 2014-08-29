@@ -20,7 +20,7 @@ import java.io.Writer;
 import br.com.anteros.persistence.schema.exception.SchemaGeneratorException;
 import br.com.anteros.persistence.session.SQLSession;
 
-public class SequenceGeneratorSchema extends ObjectSchema {
+public class SequenceGeneratorSchema extends GeneratorSchema {
 
 	protected int initialValue = 1;
 	protected int incrementSize = 1;

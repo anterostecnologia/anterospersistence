@@ -18,6 +18,7 @@ package br.com.anteros.persistence.schema.definition;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -29,7 +30,7 @@ public class StoredProcedureSchema extends ObjectSchema {
 
 	protected final Set<StoredParameterSchema> parameters = new HashSet<StoredParameterSchema>();
 	protected final List<String> statements = new ArrayList<String>();
-	protected final Set<ColumnSchema> variables = new HashSet<ColumnSchema>();
+	protected final Set<ColumnSchema> variables = new LinkedHashSet<ColumnSchema>();
 
 	public Set<StoredParameterSchema> getParameters() {
 		return parameters;

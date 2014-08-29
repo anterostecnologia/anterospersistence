@@ -19,7 +19,7 @@ import java.io.Writer;
 
 import br.com.anteros.persistence.session.SQLSession;
 
-public class TableGeneratorSchema extends ObjectSchema {
+public class TableGeneratorSchema extends GeneratorSchema {
 
 	private String pkColumnName;
 	private String pkName;

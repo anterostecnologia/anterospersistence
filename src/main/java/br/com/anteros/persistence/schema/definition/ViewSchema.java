@@ -23,6 +23,7 @@ import br.com.anteros.persistence.session.SQLSession;
 public class ViewSchema extends ObjectSchema {
 
 	protected String sql;
+	protected String alias;
 
 	public String getSql() {
 		return sql;
@@ -49,5 +50,13 @@ public class ViewSchema extends ObjectSchema {
 
 	@Override
 	public void beforeDropObject(SQLSession session, Writer dropSchemaWriter) throws SchemaGeneratorException {
+	}
+
+	public String getAlias() {
+		return alias;
+	}
+
+	public void setAlias(String alias) {
+		this.alias = alias;
 	}
 }

@@ -33,6 +33,7 @@ public class TableSchema extends ObjectSchema {
 	protected final List<IndexSchema> indexes = new ArrayList<IndexSchema>();
 	protected final List<TriggerSchema> triggers = new ArrayList<TriggerSchema>();
 	protected String createTableSuffix = "";
+	protected String alias;
 
 	protected String comment;
 
@@ -291,6 +292,34 @@ public class TableSchema extends ObjectSchema {
 
 	public boolean existsForeignKeyByName(String foreignKeyName) {
 		return false;
+	}
+	
+	public List<ConstraintSchema> getConstraints(){
+		List<ConstraintSchema> result = new ArrayList<ConstraintSchema>();
+		if (primaryKey!=null)
+		result.add(primaryKey);
+		result.addAll(foreignKeys);
+		
+		return result;
+	}
+
+	public String getAlias() {
+		return alias;
+	}
+
+	public void setAlias(String alias) {
+		this.alias = alias;
+	}
+
+	public ColumnSchema getColumn(String columnName) {
+		if (columns!=null){
+			for (ColumnSchema column : columns){
+				if (column.getName().equalsIgnoreCase(columnName)){
+					return column;
+				}
+			}
+		}
+		return null;
 	}
 
 }

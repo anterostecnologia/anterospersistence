@@ -17,15 +17,16 @@
 package br.com.anteros.persistence.sql.datasource;
 
 import java.io.PrintWriter;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.sql.Connection;
+import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
 
 import javax.sql.DataSource;
-
-
 
 public class JDBCDataSource implements DataSource {
 	private PrintWriter logWriter;
@@ -34,21 +35,20 @@ public class JDBCDataSource implements DataSource {
 	private String username;
 	private String password;
 	private String url;
-	
+
 	public JDBCDataSource() {
-		
+
 	}
-	
-	public JDBCDataSource(String driverClassName, String username, String password, String url) throws Exception {
+
+	public JDBCDataSource(String driverClassName, String username,
+			String password, String url) throws Exception {
 		this.driverClassName = driverClassName;
 		this.username = username;
 		this.password = password;
 		this.url = url;
-		//Thread.currentThread().getContextClassLoader().loadClass(driverClassName);
-        Class.forName(driverClassName);
+		Thread.currentThread().getContextClassLoader().loadClass(driverClassName);
 	}
 
-	
 	public PrintWriter getLogWriter() throws SQLException {
 		if (logWriter == null) {
 			logWriter = new PrintWriter(System.out);
@@ -56,39 +56,53 @@ public class JDBCDataSource implements DataSource {
 		return logWriter;
 	}
 
-	
 	public int getLoginTimeout() throws SQLException {
 		return loginTimeout;
 	}
 
-	
 	public void setLogWriter(PrintWriter logWriter) throws SQLException {
 		this.logWriter = logWriter;
 	}
 
-	
 	public void setLoginTimeout(int loginTimeout) throws SQLException {
 		this.loginTimeout = loginTimeout;
 	}
 
-	
 	public boolean isWrapperFor(Class<?> arg0) throws SQLException {
 		return false;
 	}
 
-	
 	public <T> T unwrap(Class<T> arg0) throws SQLException {
 		throw new SQLException("JDBCDataSource is not a wrapper.");
 	}
 
-	
 	public Connection getConnection() throws SQLException {
+		try {
+			Thread.currentThread().getContextClassLoader().loadClass(driverClassName);
+		} catch (ClassNotFoundException e) {
+			throw new SQLException(e);
+		}
 		return getConnection(username, password);
 	}
 
-	
-	public Connection getConnection(String username, String password) throws SQLException {
-		Connection result = DriverManager.getConnection(url, username, password);
+	public Connection getConnection(String username, String password)
+			throws SQLException {
+		
+		 Class driver_class=null;
+		try {
+			driver_class = Thread.currentThread().getContextClassLoader().loadClass(driverClassName);
+			Driver driver = (Driver) driver_class.newInstance();
+	         DriverManager.registerDriver(driver);
+		} catch (ClassNotFoundException e) {
+			throw new SQLException(e);
+		} catch (InstantiationException e) {
+			throw new SQLException(e);
+		} catch (IllegalAccessException e) {
+			throw new SQLException(e);
+		}         
+		
+		Connection result = DriverManager
+				.getConnection(url, username, password);
 		return result;
 	}
 
@@ -96,8 +110,9 @@ public class JDBCDataSource implements DataSource {
 		return driverClassName;
 	}
 
-	public void setDriverClassName(String driverClassName) throws ClassNotFoundException {
-		Class.forName(driverClassName);
+	public void setDriverClassName(String driverClassName)
+			throws ClassNotFoundException {
+		Thread.currentThread().getContextClassLoader().loadClass(driverClassName);
 		this.driverClassName = driverClassName;
 	}
 
@@ -124,7 +139,6 @@ public class JDBCDataSource implements DataSource {
 	public void setUrl(String url) {
 		this.url = url;
 	}
-
 
 	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
 		return null;

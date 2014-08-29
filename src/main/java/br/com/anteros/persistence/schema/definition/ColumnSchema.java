@@ -81,6 +81,16 @@ public class ColumnSchema extends ObjectSchema {
 	 * Tabela a qual pertence a coluna
 	 */
 	protected TableSchema table;
+	
+	/**
+	 * Indica se a coluna é uma chave primária
+	 */
+	protected boolean primaryKey=false;
+	
+	/**
+	 * Indica se a coluna é uma chave estrangeira 
+	 */
+	protected boolean foreignKey=false;
 
 	public ColumnSchema() {
 		this.name = "";
@@ -218,36 +228,58 @@ public class ColumnSchema extends ObjectSchema {
 		return columnDefinition;
 	}
 
-	public void setColumnDefinition(String columnDefinition) {
+	public ColumnSchema setColumnDefinition(String columnDefinition) {
 		this.columnDefinition = columnDefinition;
+		return this;
 	}
 
 	public TableSchema getTable() {
 		return table;
 	}
 
-	public void setTable(TableSchema table) {
+	public ColumnSchema setTable(TableSchema table) {
 		this.table = table;
+		return this;
 	}
 
 	public int getDataTypeSql() {
 		return dataTypeSql;
 	}
 
-	public void setDataTypeSql(int dataTypeSql) {
+	public ColumnSchema setDataTypeSql(int dataTypeSql) {
 		this.dataTypeSql = dataTypeSql;
+		return this;
 	}
 
 	public String getSequenceName() {
 		return sequenceName;
 	}
 
-	public void setSequenceName(String sequenceName) {
+	public ColumnSchema setSequenceName(String sequenceName) {
 		this.sequenceName = sequenceName;
+		return this;
 	}
 	
 	public boolean hasSequenceName(){
 		return (sequenceName!=null) && !"".equals(sequenceName);
+	}
+
+	public boolean isPrimaryKey() {
+		return primaryKey;
+	}
+
+	public ColumnSchema setPrimaryKey(boolean primaryKey) {
+		this.primaryKey = primaryKey;
+		return this;
+	}
+
+	public boolean isForeignKey() {
+		return foreignKey;
+	}
+
+	public ColumnSchema setForeignKey(boolean foreignKey) {
+		this.foreignKey = foreignKey;
+		return this;
 	}
 
 }

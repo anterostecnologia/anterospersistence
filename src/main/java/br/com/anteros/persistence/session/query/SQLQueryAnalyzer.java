@@ -90,8 +90,6 @@ public class SQLQueryAnalyzer {
 		INode node = new Node("root");
 		parser.parse(node);
 		
-		System.out.println(parser.dump(node));
-
 		buildUsedAliases(node);
 
 		aliases = getFirstAliasesFromNode(node);
