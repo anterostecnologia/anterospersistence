@@ -13,7 +13,6 @@
  */
 package br.com.anteros.persistence.dsl.osql;
 
-import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.session.SQLSession;
 
 /**
@@ -45,8 +44,8 @@ public class OSQLQuery extends AbstractOSQLQuery<OSQLQuery> {
 	 * @param templates
 	 *            SQLTemplates to use
 	 */
-	public OSQLQuery(SQLSession session, SQLTemplates templates) {
-		super(session, templates, new DefaultQueryMetadata());
+	public OSQLQuery(SQLSession session) {
+		super(session, session.getDialect().getTemplateSQL(), new DefaultQueryMetadata());
 	}
 
 	/**
@@ -58,13 +57,13 @@ public class OSQLQuery extends AbstractOSQLQuery<OSQLQuery> {
 	 *            SQLTemplates to use
 	 * @param metadata
 	 */
-	public OSQLQuery(SQLSession session, SQLTemplates templates, QueryMetadata metadata) {
-		super(session, templates, metadata);
+	public OSQLQuery(SQLSession session, QueryMetadata metadata) {
+		super(session, session.getDialect().getTemplateSQL(), metadata);
 	}
 
 	@Override
 	public OSQLQuery clone(SQLSession session) {
-		OSQLQuery q = new OSQLQuery(session, templates, getMetadata().clone());
+		OSQLQuery q = new OSQLQuery(session, getMetadata().clone());
 		q.clone(this);
 		return q;
 	}

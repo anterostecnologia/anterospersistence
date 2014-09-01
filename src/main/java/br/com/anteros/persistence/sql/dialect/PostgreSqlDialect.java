@@ -25,6 +25,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 
+import br.com.anteros.persistence.dsl.osql.SQLTemplates;
+import br.com.anteros.persistence.dsl.osql.templates.PostgresTemplates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 
@@ -234,5 +236,10 @@ public class PostgreSqlDialect extends DatabaseDialect {
 		} finally {
 			stmt.close();
 		}
+	}
+
+	@Override
+	public SQLTemplates getTemplateSQL() {
+		return new PostgresTemplates();
 	}
 }

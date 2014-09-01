@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.handler.EntityHandler;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
@@ -262,4 +263,5 @@ public interface SQLSession {
 	public void clear() throws Exception;
 
 	public void executeDDL(String ddl) throws Exception;
+	
 }

@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.ColumnSchema;
 import br.com.anteros.persistence.schema.definition.ForeignKeySchema;
@@ -1692,6 +1693,8 @@ public abstract class DatabaseDialect {
 	 * @throws SQLException
 	 */
 	public abstract String getConnectionClientInfo(Connection connection) throws SQLException;
+
+	public abstract SQLTemplates getTemplateSQL();
 
 	// public abstract List<ProcedureMetadata> getNativeFunctions() throws
 	// Exception;

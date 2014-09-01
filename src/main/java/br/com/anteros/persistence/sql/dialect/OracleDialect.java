@@ -38,6 +38,8 @@ import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.IOUtils;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.dsl.osql.SQLTemplates;
+import br.com.anteros.persistence.dsl.osql.templates.OracleTemplates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.ColumnSchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
@@ -566,6 +568,11 @@ public class OracleDialect extends DatabaseDialect {
 			}
 		}
 		return schemaWriter;
+	}
+
+	@Override
+	public SQLTemplates getTemplateSQL() {
+		return new OracleTemplates();
 	}
 
 

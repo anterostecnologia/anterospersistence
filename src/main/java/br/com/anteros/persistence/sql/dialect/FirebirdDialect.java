@@ -25,6 +25,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import br.com.anteros.persistence.dsl.osql.SQLTemplates;
+import br.com.anteros.persistence.dsl.osql.templates.FirebirdTemplates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.SequenceGeneratorSchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
@@ -291,6 +293,11 @@ public class FirebirdDialect extends DatabaseDialect {
 		} finally {
 			stmt.close();
 		}
+	}
+
+	@Override
+	public SQLTemplates getTemplateSQL() {
+		return new FirebirdTemplates();
 	}
 
 }

@@ -21,6 +21,8 @@ import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import br.com.anteros.persistence.dsl.osql.SQLTemplates;
+import br.com.anteros.persistence.dsl.osql.templates.HSQLDBTemplates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 
@@ -154,6 +156,11 @@ public class HSQLDialect extends DatabaseDialect {
 	@Override
 	public String getConnectionClientInfo(Connection connection) throws SQLException {
 		return "";
+	}
+
+	@Override
+	public SQLTemplates getTemplateSQL() {
+		return new HSQLDBTemplates();
 	}
 
 }
