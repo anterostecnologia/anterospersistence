@@ -1,6 +1,7 @@
 package br.com.anteros.persistence.session.repository;
 
 import java.io.Serializable;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +20,7 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionNamedQuery;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.query.SQLQueryException;
-import br.com.anteros.persistence.session.service.GenericSQLService;
+import br.com.anteros.persistence.session.query.TypedSQLQuery;
 
 public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepository<T, ID> {
 
@@ -133,10 +134,8 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 				"A classe de persistência não foi informada. Verifique se usou a classe GenericSQLRepository diretamente, se usou será necessário passar a classe de persistência como parâmetro. Se preferir pode extender a classe GenericSQLRepository e definir os parâmetros do genérics da classe.");
 
 		try {
-			PathBuilder<?> entityPath = new PathBuilder(persistentClass, "entity");
-			OSQLQuery query = new OSQLQuery(getSession());
-			query.from(entityPath);
-			return (List<T>) query.list();
+			return (List<T>) getSession().createQuery("select * from " + getEntityCache().getTableName(),
+					persistentClass).getResultList();
 		} catch (Exception e) {
 			throw new SQLRepositoryException(e);
 		}
@@ -157,13 +156,27 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 			return new PageImpl<T>(findAll());
 		}
 
-		return findAll(null, pageable);
+		TypedSQLQuery<?> query;
+		try {
+			query = getSession().createQuery("select * from " + getEntityCache().getTableName(), persistentClass);
+
+			query.setFirstResult(pageable.getOffset());
+			query.setMaxResults(pageable.getPageSize());
+
+			Long total = count();
+			List<T> content = (List<T>) (total > pageable.getOffset() ? query.getResultList() : Collections
+					.<T> emptyList());
+
+			return new PageImpl<T>(content, pageable, total);
+		} catch (Exception e) {
+			throw new SQLRepositoryException(e);
+		}
 	}
 
 	@Override
 	public List<T> find(String sql) {
 		try {
-			return (List<T>) getSession().createQuery(sql).getResultList();
+			return (List<T>) getSession().createQuery(sql, persistentClass).getResultList();
 		} catch (Exception e) {
 			throw new SQLRepositoryException(e);
 		}
@@ -174,13 +187,27 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 		if (null == pageable) {
 			return new PageImpl<T>(find(sql));
 		}
-		return find(sql, pageable);
+
+		TypedSQLQuery<?> query;
+		try {
+			query = getSession().createQuery(sql, persistentClass);
+			query.setFirstResult(pageable.getOffset());
+			query.setMaxResults(pageable.getPageSize());
+
+			Long total = doCount(getCountQueryString("(" + sql + ")"));
+			List<T> content = (List<T>) (total > pageable.getOffset() ? query.getResultList() : Collections
+					.<T> emptyList());
+
+			return new PageImpl<T>(content, pageable, total);
+		} catch (Exception e) {
+			throw new SQLRepositoryException(e);
+		}
 	}
 
 	@Override
 	public List<T> find(String sql, Object parameters) {
 		try {
-			return getSession().createQuery(sql, parameters).getResultList();
+			return (List<T>) getSession().createQuery(sql, persistentClass, parameters).getResultList();
 		} catch (Exception e) {
 			throw new SQLRepositoryException(e);
 		}
@@ -191,7 +218,22 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 		if (null == pageable) {
 			return new PageImpl<T>(find(sql, parameters));
 		}
-		return find(sql, parameters, pageable);
+
+		TypedSQLQuery<?> query;
+		try {
+			query = getSession().createQuery(sql, persistentClass);
+			query.setFirstResult(pageable.getOffset());
+			query.setMaxResults(pageable.getPageSize());
+			query.setParameters(parameters);
+
+			Long total = doCount(getCountQueryString("(" + sql + ")"), parameters);
+			List<T> content = (List<T>) (total > pageable.getOffset() ? query.getResultList() : Collections
+					.<T> emptyList());
+
+			return new PageImpl<T>(content, pageable, total);
+		} catch (Exception e) {
+			throw new SQLRepositoryException(e);
+		}
 	}
 
 	@Override
@@ -341,8 +383,28 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 
 	@Override
 	public long count() {
+		return doCount(getCountQueryString(getEntityCache().getTableName()));
+	}
+
+	protected long doCount(String countSql) {
 		try {
-			return (Long) getSession().createQuery(getCountQueryString()).getSingleResult();
+			ResultSet rs = getSession().createQuery(countSql).executeQuery();
+			rs.next();
+			Long value = rs.getLong(1);
+			rs.close();
+			return value;
+		} catch (Exception e) {
+			throw new SQLRepositoryException(e);
+		}
+	}
+
+	protected long doCount(String countSql, Object parameters) {
+		try {
+			ResultSet rs = getSession().createQuery(countSql).setParameters(parameters).executeQuery();
+			rs.next();
+			Long value = rs.getLong(1);
+			rs.close();
+			return value;
 		} catch (Exception e) {
 			throw new SQLRepositoryException(e);
 		}
@@ -360,7 +422,6 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 			Assert.notNull(
 					persistentClass,
 					"A classe de persistência não foi informada. Verifique se usou a classe GenericSQLRepository diretamente, se usou será necessário passar a classe de persistência como parâmetro. Se preferir pode extender a classe GenericSQLRepository e definir os parâmetros do genérics da classe.");
-
 
 			T entity = findOne(id);
 			if (entity == null) {
@@ -416,8 +477,8 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 		return query;
 	}
 
-	private String getCountQueryString() {
-		return String.format(COUNT_QUERY_STRING, getEntityCache().getTableName());
+	private String getCountQueryString(String tableName) {
+		return String.format(COUNT_QUERY_STRING, tableName);
 	}
 
 	public Class<?> getPersistentClass() {

@@ -238,7 +238,7 @@ public interface SQLSession {
 
 	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String, String> expressions,
 			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, Cache transactionCache,
-			boolean allowDuplicateObjects, Object objectToRefresh) throws Exception;
+			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults) throws Exception;
 
 	public boolean isProxyObject(Object object) throws Exception;
 

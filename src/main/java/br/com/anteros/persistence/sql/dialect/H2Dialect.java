@@ -27,11 +27,11 @@ import java.util.List;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
-import br.com.anteros.core.utils.ResourceUtils;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.H2Templates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
+import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 
 public class H2Dialect extends DatabaseDialect {
 
@@ -134,14 +134,14 @@ public class H2Dialect extends DatabaseDialect {
 		sql.append(") }");
 
 		if (showSql) {
-			log.debug(ResourceUtils.getMessage(H2Dialect.class, "showSql", sql.toString(), clientId));
+			log.debug(AnterosPersistenceTranslate.getMessage(H2Dialect.class, "showSql", sql.toString(), clientId));
 			if (inputParameters != null) {
-				log.debug(ResourceUtils.getMessage(H2Dialect.class, "showSql1", clientId));
+				log.debug(AnterosPersistenceTranslate.getMessage(H2Dialect.class, "showSql1", clientId));
 				for (Object parameter : inputParameters)
 					log.debug("        " + parameter + " ##" + clientId);
 			}
 			if (outputParametersName != null) {
-				log.debug(ResourceUtils.getMessage(H2Dialect.class, "showSql2", clientId));
+				log.debug(AnterosPersistenceTranslate.getMessage(H2Dialect.class, "showSql2", clientId));
 				for (String opt : outputParametersName)
 					log.debug("        " + opt + " ##" + clientId);
 			}

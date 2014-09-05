@@ -46,6 +46,7 @@ import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
 import br.com.anteros.persistence.metadata.configuration.ModelConfiguration;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.impl.SQLSessionFactoryImpl;
+import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 
 @Root(name = "anteros-configuration")
 public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfiguration implements
@@ -177,7 +178,7 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 		buildDataSource();
 		if (dataSource == null)
 			throw new AnterosConfigurationException(
-					ResourceUtils.getMessage(this.getClass(), "datasourceNotConfigured"));
+					AnterosPersistenceTranslate.getMessage(this.getClass(), "datasourceNotConfigured"));
 		loadEntities();
 		SQLSessionFactoryImpl sessionFactory = new SQLSessionFactoryImpl(entityCacheManager, dataSource,
 				this.getSessionFactoryConfiguration());

@@ -79,6 +79,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	private String namedQuery;
 	protected LockModeType lockMode;
 	protected boolean allowDuplicateObjects = false;
+	private int firstResult;
+	private int maxResults;
 
 	public SQLQueryImpl(SQLSession session) {
 		this.session = session;
@@ -423,7 +425,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 				}
 				handler = session.createNewEntityHandler(getResultClass(), analyzer.getExpressions(),
-						analyzer.getColumnAliases(), transactionCache, allowDuplicateObjects, objectToRefresh);
+						analyzer.getColumnAliases(), transactionCache, allowDuplicateObjects, objectToRefresh, firstResult, maxResults);
 			}
 
 			if (this.parameters.size() > 0)
@@ -1006,7 +1008,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer(session);
 			analyzer.analyze(sql, resultClass);
 			handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(),
-					analyzer.getColumnAliases(), transactionCache, false,null);
+					analyzer.getColumnAliases(), transactionCache, false,null, firstResult, maxResults);
 			sql = analyzer.getParsedSQL();
 		}
 
@@ -1037,7 +1039,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer(session);
 				analyzer.analyze(sql, resultClass);
 				handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(),
-						analyzer.getColumnAliases(), transactionCache, false, null);
+						analyzer.getColumnAliases(), transactionCache, false, null,firstResult, maxResults);
 			}
 
 			result = (List) session.getRunner().query(session.getConnection(), sql, handler, parameter, showSql,
@@ -1134,7 +1136,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 							+ sql);
 				}
 				handler = session.createNewEntityHandler(getResultClass(), analyzer.getExpressions(),
-						analyzer.getColumnAliases(), transactionCache, allowDuplicateObjects, null);
+						analyzer.getColumnAliases(), transactionCache, allowDuplicateObjects, null,firstResult, maxResults);
 			}
 
 			if (this.parameters.size() > 0)
@@ -1203,8 +1205,19 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	@Override
 	public void refresh(Object entity) throws Exception {
-		
-		
+		session.refresh(entity);		
+	}
+
+	@Override
+	public TypedSQLQuery<T> setMaxResults(int maxResults) {
+		this.maxResults = maxResults;
+		return this;
+	}
+
+	@Override
+	public TypedSQLQuery<T> setFirstResult(int firstResult) {
+		this.firstResult = firstResult;
+		return this;
 	}
 
 }

@@ -24,11 +24,11 @@ import java.sql.SQLException;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
-import br.com.anteros.core.utils.ResourceUtils;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.MySQLTemplates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
+import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 
 public class MySQLDialect extends DatabaseDialect {
 
@@ -84,7 +84,7 @@ public class MySQLDialect extends DatabaseDialect {
 
 	@Override
 	public String getSequenceNextValString(String sequenceName) throws Exception {
-		throw new DatabaseDialectException(ResourceUtils.getMessage(MySQLDialect.class, "sequenceException", getClass()
+		throw new DatabaseDialectException(AnterosPersistenceTranslate.getMessage(MySQLDialect.class, "sequenceException", getClass()
 				.getName()));
 	}
 

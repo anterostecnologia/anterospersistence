@@ -18,7 +18,7 @@ package br.com.anteros.persistence.beans;
 import java.lang.ref.Reference;
 import java.lang.reflect.Method;
 
-import br.com.anteros.core.utils.ResourceUtils;
+import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 
 /**
  * An IndexedPropertyDescriptor describes a property that acts like an
@@ -98,12 +98,12 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
 
 		this.indexedReadMethodName = indexedReadMethodName;
 		if(indexedReadMethodName != null && getIndexedReadMethod() == null){
-			throw new IntrospectionException(ResourceUtils.getMessage(IndexedPropertyDescriptor.class, "IntrospectionException", indexedReadMethodName));
+			throw new IntrospectionException(AnterosPersistenceTranslate.getMessage(IndexedPropertyDescriptor.class, "IntrospectionException", indexedReadMethodName));
 		}
 
 		this.indexedWriteMethodName = indexedWriteMethodName;
 		if(indexedWriteMethodName != null && getIndexedWriteMethod() == null){
-			throw new IntrospectionException(ResourceUtils.getMessage(IndexedPropertyDescriptor.class, "IntrospectionException", indexedReadMethodName));
+			throw new IntrospectionException(AnterosPersistenceTranslate.getMessage(IndexedPropertyDescriptor.class, "IntrospectionException", indexedReadMethodName));
 		}
 		// Implemented only for type checking.
 		findIndexedPropertyType(getIndexedReadMethod(), getIndexedWriteMethod());

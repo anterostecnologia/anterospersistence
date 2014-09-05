@@ -18,7 +18,7 @@ package br.com.anteros.persistence.beans;
 import java.lang.ref.Reference;
 import java.lang.reflect.Method;
 
-import br.com.anteros.core.utils.ResourceUtils;
+import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 
 /**
  * An EventSetDescriptor describes a group of events that a given Java bean
@@ -77,7 +77,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
 			// Check for EventSet compliance. Special case for vetoableChange.
 			// See 4529996
 			if (!"vetoableChange".equals(eventSetName) && !args[0].getName().endsWith(eventName)) {
-				throw new IntrospectionException(ResourceUtils.getMessage(EventSetDescriptor.class,
+				throw new IntrospectionException(AnterosPersistenceTranslate.getMessage(EventSetDescriptor.class,
 						"IntrospectionException", listenerMethodName, eventName));
 			}
 		}
@@ -182,7 +182,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
 		}
 		Method method = BeanUtils.findAccessibleMethodIncludeInterfaces(cls, name, args, null);
 		if (method == null) {
-			throw new IntrospectionException(ResourceUtils.getMessage(EventSetDescriptor.class,
+			throw new IntrospectionException(AnterosPersistenceTranslate.getMessage(EventSetDescriptor.class,
 					"IntrospectionException2", name, cls.getName()));
 		}
 		return method;

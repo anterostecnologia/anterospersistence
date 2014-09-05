@@ -309,10 +309,10 @@ public class SQLSessionImpl implements SQLSession {
 
 	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String, String> expressions,
 			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, Cache transactionCache,
-			boolean allowDuplicateObjects, Object objectToRefresh) throws Exception {
+			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults) throws Exception {
 		errorIfClosed();
 		EntityHandler handler = new EntityHandler(proxyFactory, resultClass, getEntityCacheManager(), expressions, columnAliases, this,
-				transactionCache, allowDuplicateObjects);
+				transactionCache, allowDuplicateObjects, firstResult, maxResults);
 		handler.setObjectToRefresh(objectToRefresh);
 		return handler;
 	}

@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Set;
 
 import br.com.anteros.core.utils.ReflectionUtils;
-import br.com.anteros.core.utils.ResourceUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.annotation.BooleanValue;
 import br.com.anteros.persistence.metadata.annotation.Cache;
@@ -117,6 +116,7 @@ import br.com.anteros.persistence.metadata.descriptor.type.SQLStatementType;
 import br.com.anteros.persistence.metadata.exception.EntityCacheManagerException;
 import br.com.anteros.persistence.parameter.NamedParameterParserResult;
 import br.com.anteros.persistence.sql.statement.NamedParameterStatement;
+import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 import br.com.anteros.synchronism.annotation.IdSynchronism;
 import br.com.anteros.synchronism.annotation.Remote;
 
@@ -196,7 +196,7 @@ public class EntityCacheManager {
 						if ((entityCache.getDescriptionColumnByName(param) == null)
 								&& (!descriptionSQL.getSuccessParameter().equalsIgnoreCase(param))
 								&& (descriptionSQL.getParametersId().get(param) == null))
-							throw new EntityCacheException(ResourceUtils.getMessage(this.getClass(),
+							throw new EntityCacheException(AnterosPersistenceTranslate.getMessage(this.getClass(),
 									"descriptionSql.parameter.not.found", param, descriptionSQL.getSql(),
 									descriptionSQL.getSqlType(), entityCache.getEntityClass().getName()));
 					}

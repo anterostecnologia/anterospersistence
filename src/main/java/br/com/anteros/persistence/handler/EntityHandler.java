@@ -46,11 +46,12 @@ public class EntityHandler implements ResultSetHandler {
 	protected Object objectToRefresh;
 	protected LazyLoadProxyFactory proxyFactory;
 	protected boolean allowDuplicateObjects = false;
+	protected int firstResult, maxResults;
 
 	public EntityHandler(LazyLoadProxyFactory proxyFactory, Class<?> targetClass,
 			EntityCacheManager entityCacheManager, Map<String, String> expressions,
 			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, SQLSession session, Cache transactionCache,
-			boolean allowDuplicateObjects) {
+			boolean allowDuplicateObjects, int firstResult, int maxResults) {
 		this.resultClass = targetClass;
 		this.session = session;
 		this.expressions = expressions;
@@ -59,14 +60,15 @@ public class EntityHandler implements ResultSetHandler {
 		this.proxyFactory = proxyFactory;
 		this.columnAliases = columnAliases;
 		this.allowDuplicateObjects = allowDuplicateObjects;
+		this.firstResult = firstResult;
 	}
 
 	public EntityHandler(LazyLoadProxyFactory proxyFactory, Class<?> targetClazz,
 			EntityCacheManager entityCacheManager, SQLSession session, Cache transactionCache,
-			boolean allowDuplicateObjects) {
+			boolean allowDuplicateObjects, int firstResult, int maxResults) {
 		this(proxyFactory, targetClazz, entityCacheManager, new LinkedHashMap<String, String>(),
 				new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String>>(), session, transactionCache,
-				allowDuplicateObjects);
+				allowDuplicateObjects, firstResult, maxResults);
 	}
 
 	public Object handle(ResultSet resultSet) throws Exception {
@@ -86,50 +88,58 @@ public class EntityHandler implements ResultSetHandler {
 			/*
 			 * Se o ResultSet não estiver vazio
 			 */
+			int numberOfRow = 0;
+			int numberOfRecords = 0;
 			if (resultSet.next()) {
 				/*
 				 * Faz o loop para processar os registros do ResultSet
 				 */
 				do {
-					/*
-					 * Se a classe passada para o handler for uma entidade
-					 * abstrata localiza no entityCache a classe correspondente
-					 * ao discriminator colum
-					 */
+					if (numberOfRow >= firstResult) {
+						if ((maxResults == 0) || (numberOfRecords < maxResults)) {
+							/*
+							 * Se a classe passada para o handler for uma
+							 * entidade abstrata localiza no entityCache a
+							 * classe correspondente ao discriminator colum
+							 */
 
-					Class<?> targetResultClass = resultClass;
-					EntityCache entityCache = entityCacheManager.getEntityCache(resultClass);
-					try {
-						if (entityCache.hasDiscriminatorColumn()
-								&& ReflectionUtils.isAbstractClass(entityCache.getEntityClass())) {
-							String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache
-									.getDiscriminatorColumn().getColumnName()));
-							entityCache = entityCacheManager.getEntityCache(resultClass, dsValue);
-							targetResultClass = entityCache.getEntityClass();
-						} else if (entityCache.hasDiscriminatorColumn()) {
-							String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache
-									.getDiscriminatorColumn().getColumnName()));
-							if (!entityCache.getDiscriminatorValue().equals(dsValue)) {
-								continue;
+							Class<?> targetResultClass = resultClass;
+							EntityCache entityCache = entityCacheManager.getEntityCache(resultClass);
+							try {
+								if (entityCache.hasDiscriminatorColumn()
+										&& ReflectionUtils.isAbstractClass(entityCache.getEntityClass())) {
+									String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache
+											.getDiscriminatorColumn().getColumnName()));
+									entityCache = entityCacheManager.getEntityCache(resultClass, dsValue);
+									targetResultClass = entityCache.getEntityClass();
+								} else if (entityCache.hasDiscriminatorColumn()) {
+									String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache
+											.getDiscriminatorColumn().getColumnName()));
+									if (!entityCache.getDiscriminatorValue().equals(dsValue)) {
+										continue;
+									}
+								}
+							} catch (Exception e) {
+								throw new EntityHandlerException(
+										"Para que seja criado o objeto da classe "
+												+ entityCache.getEntityClass().getName()
+												+ " será necessário adicionar no sql a coluna "
+												+ entityCache.getDiscriminatorColumn().getColumnName()
+												+ " que informe que tipo de classe será usada para instanciar o objeto. Verifique também se o discriminator value "
+												+ resultSet.getString(getAliasColumnName(entityCache, entityCache
+														.getDiscriminatorColumn().getColumnName()))
+												+ " é o mesmo que está configurado na classe herdada.");
 							}
+							if (result == null)
+								result = new ArrayList<Object>();
+							/*
+							 * Gera o objeto
+							 */
+							createObject(targetResultClass, resultSet, result);							
+							numberOfRecords++;
 						}
-					} catch (Exception e) {
-						throw new EntityHandlerException(
-								"Para que seja criado o objeto da classe "
-										+ entityCache.getEntityClass().getName()
-										+ " será necessário adicionar no sql a coluna "
-										+ entityCache.getDiscriminatorColumn().getColumnName()
-										+ " que informe que tipo de classe será usada para instanciar o objeto. Verifique também se o discriminator value "
-										+ resultSet.getString(getAliasColumnName(entityCache, entityCache
-												.getDiscriminatorColumn().getColumnName()))
-										+ " é o mesmo que está configurado na classe herdada.");
 					}
-					if (result == null)
-						result = new ArrayList<Object>();
-					/*
-					 * Gera o objeto
-					 */
-					createObject(targetResultClass, resultSet, result);
+					numberOfRow++;
 
 				} while (resultSet.next());
 			}

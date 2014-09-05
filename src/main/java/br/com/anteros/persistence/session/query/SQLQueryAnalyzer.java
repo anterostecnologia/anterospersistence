@@ -18,7 +18,6 @@ package br.com.anteros.persistence.session.query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -89,7 +88,7 @@ public class SQLQueryAnalyzer {
 		SqlParser parser = new SqlParser(sql, new SqlFormatRule());
 		INode node = new Node("root");
 		parser.parse(node);
-		
+
 		buildUsedAliases(node);
 
 		aliases = getFirstAliasesFromNode(node);
@@ -109,7 +108,7 @@ public class SQLQueryAnalyzer {
 			validateAliases();
 			buildExpressionsAndColumnAliases(firstSelectStatement);
 
-			//System.out.println(sql);
+			// System.out.println(sql);
 
 			/*
 			 * System.out.println(
@@ -236,7 +235,8 @@ public class SQLQueryAnalyzer {
 										if (!descriptionField.isCollection() && !descriptionField.isJoinTable()) {
 											for (DescriptionColumn descriptionColumn : descriptionField
 													.getDescriptionColumns()) {
-												String aliasColumnName = makeNextAliasName(alias.getAlias(),descriptionColumn.getColumnName());
+												String aliasColumnName = makeNextAliasName(alias.getAlias(),
+														descriptionColumn.getColumnName());
 												if (!cols.containsKey(descriptionColumn.getColumnName())) {
 													cols.put(descriptionColumn.getColumnName(), aliasColumnName);
 												}
@@ -245,7 +245,8 @@ public class SQLQueryAnalyzer {
 										}
 									}
 									if (cache.hasDiscriminatorColumn()) {
-										String aliasColumnName = makeNextAliasName(alias.getAlias(),cache.getDiscriminatorColumn().getColumnName()); 
+										String aliasColumnName = makeNextAliasName(alias.getAlias(), cache
+												.getDiscriminatorColumn().getColumnName());
 										if (!cols.containsKey(cache.getDiscriminatorColumn().getColumnName())) {
 											cols.put(cache.getDiscriminatorColumn().getColumnName(), aliasColumnName);
 										}
@@ -267,7 +268,7 @@ public class SQLQueryAnalyzer {
 						String tableName = ((ColumnNode) selectNodeChild).getTableName();
 						String columnName = ((ColumnNode) selectNodeChild).getColumnName();
 						if (!((ColumnNode) selectNodeChild).hasAlias()) {
-							String aliasColumnName = makeNextAliasName(tableName,columnName);
+							String aliasColumnName = makeNextAliasName(tableName, columnName);
 							if (!cols.containsKey(columnName)) {
 								cols.put(columnName, aliasColumnName);
 								sbColumns.append(aliasColumnName);
@@ -318,7 +319,8 @@ public class SQLQueryAnalyzer {
 						if (!existsColumnByAlias(selectStatement, alias.getAlias(), descriptionColumn.getColumnName())) {
 							if (appendDelimiter)
 								sbDiscriminatorColumn.append(", ");
-							String aliasColumnName = makeNextAliasName(alias.getAlias(), descriptionColumn.getColumnName()); 
+							String aliasColumnName = makeNextAliasName(alias.getAlias(),
+									descriptionColumn.getColumnName());
 							sbDiscriminatorColumn.append(aliasColumnName);
 							appendDelimiter = true;
 						}
@@ -340,6 +342,9 @@ public class SQLQueryAnalyzer {
 		 */
 		boolean found = false;
 		for (SQLQueryAnalyserAlias a : aliases) {
+			if (a.getEntity() == null)
+				continue;
+
 			if (a.getEntity().getEntityClass().equals(resultClass)) {
 				found = true;
 				break;
@@ -420,7 +425,7 @@ public class SQLQueryAnalyzer {
 		return false;
 	}
 
-	public Set<SQLQueryAnalyserAlias> getFirstAliasesFromNode(INode node) {
+	public Set<SQLQueryAnalyserAlias> getFirstAliasesFromNode(INode node) throws SQLQueryAnalyzerException {
 		Set<SQLQueryAnalyserAlias> result = new LinkedHashSet<SQLQueryAnalyserAlias>();
 		for (Object child : node.getChildren()) {
 			if (child instanceof SelectStatementNode) {
@@ -432,6 +437,10 @@ public class SQLQueryAnalyzer {
 							if (fromChild instanceof TableNode) {
 								EntityCache entityCache = session.getEntityCacheManager().getEntityCacheByTableName(
 										((TableNode) fromChild).getName());
+								if (entityCache == null) {
+									throw new SQLQueryAnalyzerException("A tabela " + ((TableNode) fromChild).getName()
+											+ " não foi encontrada na lista de entidades gerenciadas.");
+								}
 								SQLQueryAnalyserAlias alias = new SQLQueryAnalyserAlias();
 								result.add(alias);
 								alias.setAlias(((TableNode) fromChild).getAliasName() == null ? ((TableNode) fromChild)
