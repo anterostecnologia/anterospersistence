@@ -11,7 +11,7 @@ import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.repository.Page;
 import br.com.anteros.persistence.session.repository.Pageable;
 import br.com.anteros.persistence.session.repository.SQLRepository;
-import br.com.anteros.persistence.session.repository.GenericSQLRepository;
+import br.com.anteros.persistence.session.repository.impl.GenericSQLRepository;
 
 public class GenericSQLService<T, ID extends Serializable> implements SQLService<T, ID> {
 

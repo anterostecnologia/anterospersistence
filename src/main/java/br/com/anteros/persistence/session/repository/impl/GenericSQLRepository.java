@@ -1,4 +1,4 @@
-package br.com.anteros.persistence.session.repository;
+package br.com.anteros.persistence.session.repository.impl;
 
 import java.io.Serializable;
 import java.sql.ResultSet;
@@ -21,6 +21,11 @@ import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.query.SQLQueryException;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
+import br.com.anteros.persistence.session.repository.Page;
+import br.com.anteros.persistence.session.repository.Pageable;
+import br.com.anteros.persistence.session.repository.SQLRepository;
+import br.com.anteros.persistence.session.repository.SQLRepositoryException;
+import br.com.anteros.persistence.transaction.Transaction;
 
 public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepository<T, ID> {
 
@@ -114,6 +119,22 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 		} catch (Exception e) {
 			throw new SQLRepositoryException(e);
 		}
+	}
+
+	@Override
+	public T findOne(String sql) {
+		List<T> result = find(sql);
+		if ((result != null) && (result.size() > 0))
+			return result.get(0);
+		return null;
+	}
+
+	@Override
+	public T findOne(String sql, Object parameters) {
+		List<T> result = find(sql, parameters);
+		if ((result != null) && (result.size() > 0))
+			return result.get(0);
+		return null;
 	}
 
 	@Override
@@ -487,6 +508,11 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 
 	public void setPersistentClass(Class<?> persistentClass) {
 		this.persistentClass = persistentClass;
+	}
+
+	@Override
+	public Transaction getTransaction() throws Exception {
+		return session.getTransaction();
 	}
 
 }

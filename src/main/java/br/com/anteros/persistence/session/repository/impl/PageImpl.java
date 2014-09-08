@@ -1,6 +1,10 @@
-package br.com.anteros.persistence.session.repository;
+package br.com.anteros.persistence.session.repository.impl;
 
 import java.util.List;
+
+import br.com.anteros.persistence.session.repository.Chunk;
+import br.com.anteros.persistence.session.repository.Page;
+import br.com.anteros.persistence.session.repository.Pageable;
 
 public class PageImpl<T> extends Chunk<T> implements Page<T> {
 

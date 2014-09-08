@@ -8,7 +8,7 @@ import java.util.List;
 
 import br.com.anteros.core.utils.Assert;
 
-abstract class Chunk<T> implements Slice<T>, Serializable {
+public abstract class Chunk<T> implements Slice<T>, Serializable {
 
 	private static final long serialVersionUID = 867755909294344406L;
 

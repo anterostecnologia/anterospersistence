@@ -15,6 +15,7 @@
  ******************************************************************************/
 package br.com.anteros.persistence.metadata.identifier;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +29,9 @@ import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.sql.command.Select;
 
-public class Identifier<T> {
+public class Identifier<T> implements Serializable {
 
+	private static final long serialVersionUID = 1L;
 	private Class<T> clazz;
 	private Object owner;
 	private SQLSession session;

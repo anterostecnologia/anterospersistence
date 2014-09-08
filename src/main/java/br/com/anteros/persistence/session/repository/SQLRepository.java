@@ -6,6 +6,7 @@ import java.util.List;
 import br.com.anteros.persistence.dsl.osql.types.OrderSpecifier;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.session.SQLSession;
+import br.com.anteros.persistence.transaction.Transaction;
 
 public interface SQLRepository<T, ID extends Serializable> {
 
@@ -18,6 +19,10 @@ public interface SQLRepository<T, ID extends Serializable> {
 	void flush();
 
 	T findOne(ID id);
+	
+	T findOne(String sql);
+	
+	T findOne(String sql, Object parameters);
 
 	boolean exists(ID id);
 
@@ -66,5 +71,7 @@ public interface SQLRepository<T, ID extends Serializable> {
 	void remove(Iterable<? extends T> entities);
 
 	void removeAll();
+	
+	Transaction getTransaction() throws Exception;
 	
 }
