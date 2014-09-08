@@ -98,7 +98,7 @@ public class SQLQueryAnalyserOwner {
 
 	public String getPath() {
 		String result = owner.getPath();
-		if (result != "")
+		if (!result.equals(""))
 			result += ".";
 		result += fieldOwner.getName();
 

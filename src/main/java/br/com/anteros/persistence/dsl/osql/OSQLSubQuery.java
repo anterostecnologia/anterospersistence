@@ -22,7 +22,7 @@ import br.com.anteros.persistence.metadata.EntityCacheManager;
  * @author tiwe
  *
  */
-public class OSQLSubQuery extends AbstractOSQLSubQuery<OSQLSubQuery> {
+public class OSQLSubQuery extends AbstractOSQLSubQuery<OSQLSubQuery> implements Cloneable {
 
     public OSQLSubQuery(EntityCacheManager entityCacheManager, SQLTemplates templates, QueryMetadata metadata) {
         super(entityCacheManager, templates, metadata);

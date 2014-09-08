@@ -97,7 +97,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 		try {
 			getSession().flush();
 		} catch (Exception e) {
-			new SQLRepositoryException(e);
+			throw new SQLRepositoryException(e);
 		}
 	}
 

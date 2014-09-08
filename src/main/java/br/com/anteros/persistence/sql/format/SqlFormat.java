@@ -389,7 +389,7 @@ public class SqlFormat implements ISqlFormat {
 				sb.append(' ');
 			} else if ((this.rule.isDecodeSpecialFormat()) && (parentToken != null) && ("DECODE".equals(parentToken.getUpper()))) {
 				int elementIndexInParen = token.getElementIndexInParen();
-				if (elementIndexInParen % 2 == 1) {
+				if (elementIndexInParen % 2 != 0) {
 					sb.append(' ');
 				}
 			} else if ((!this.rule.isNewLineFunctionParen()) && (parentToken != null) && (parentToken.getSubType() == 12)) {
@@ -535,7 +535,7 @@ public class SqlFormat implements ISqlFormat {
 					return true;
 				}
 				int elementIndexInParen = token.getElementIndexInParen();
-				return elementIndexInParen % 2 == 1;
+				return (elementIndexInParen & 1) == 1;
 			}
 
 			if ((!this.rule.isNewLineFunctionParen()) && (parentToken.getSubType() == 12)) {

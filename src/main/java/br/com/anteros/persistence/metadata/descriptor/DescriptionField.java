@@ -302,7 +302,7 @@ public class DescriptionField {
 			if (date != null)
 				field.set(targetObject, new java.sql.Date(date.getTime()));
 		} else if (temporalType == TemporalType.DATE_TIME) {
-			String dateTimePattern = this.getSimpleColumn().getDateTimePattern() != "" ? this.getSimpleColumn()
+			String dateTimePattern = !(this.getSimpleColumn().getDateTimePattern()).equals("") ? this.getSimpleColumn()
 					.getDateTimePattern() : DatabaseDialect.DATETIME_PATTERN;
 			Date date = new SimpleDateFormat(dateTimePattern).parse(value);
 			if (date != null)
@@ -315,11 +315,11 @@ public class DescriptionField {
 		if (value instanceof String) {
 			TemporalType temporalType = this.getSimpleColumn().getTemporalType();
 			if (temporalType == TemporalType.DATE) {
-				String datePattern = this.getSimpleColumn().getDatePattern() != "" ? this.getSimpleColumn()
+				String datePattern = !(this.getSimpleColumn().getDatePattern()).equals("") ? this.getSimpleColumn()
 						.getDatePattern() : DatabaseDialect.DATE_PATTERN;
 				field.set(targetObject, new SimpleDateFormat(datePattern).parse(value));
 			} else if (temporalType == TemporalType.DATE_TIME) {
-				String dateTimePattern = this.getSimpleColumn().getDateTimePattern() != "" ? this.getSimpleColumn()
+				String dateTimePattern = !("".equals(this.getSimpleColumn().getDateTimePattern())) ? this.getSimpleColumn()
 						.getDateTimePattern() : DatabaseDialect.DATETIME_PATTERN;
 				field.set(targetObject, new SimpleDateFormat(dateTimePattern).parse(value));
 			}
@@ -731,7 +731,7 @@ public class DescriptionField {
 	public Object getColumnValue(String columnName, Object object) throws Exception {
 		DescriptionColumn column = getDescriptionColumnByName(columnName);
 		if (column == null)
-			new EntityCacheException("Coluna " + columnName + " não encontrada no campo " + getName() + " "
+			throw new EntityCacheException("Coluna " + columnName + " não encontrada no campo " + getName() + " "
 					+ getEntityCache().getEntityClass().getName());
 		return column.getColumnValue(object);
 	}

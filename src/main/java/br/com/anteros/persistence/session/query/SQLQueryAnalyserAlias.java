@@ -47,7 +47,7 @@ public class SQLQueryAnalyserAlias {
 		if (owner == null)
 			return "";
 		String result = owner.getAliasPath();
-		if (result != "")
+		if (!result.equals(""))
 			result += ".";
 		return result + alias;
 	}

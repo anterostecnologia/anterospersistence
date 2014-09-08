@@ -21,6 +21,7 @@ import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -321,7 +322,7 @@ public class EntityCacheManager {
 				entityCache.addAllDescriptionIndex(cacheSuper.getDescriptionIndexes());
 			} catch (Exception ex) {
 				throw new EntityCacheException("Erro lendo configuração da classe " + sourceClazz.getName() + ". "
-						+ ex.getStackTrace());
+						+ Arrays.toString(ex.getStackTrace()));
 			}
 		}
 
@@ -1941,8 +1942,8 @@ public class EntityCacheManager {
 								"A quantidade de valores definidos no Enum "
 										+ enumClass.getName()
 										+ " difere da quantidade de valores definidos na configuração EnumValues.\nEnumValues->"
-										+ enumValuesConfiguration.toString() + "\n" + enumClass.getName() + "->"
-										+ enumClass.getEnumConstants());
+										+ Arrays.toString(enumValuesConfiguration) + "\n" + enumClass.getName() + "->"
+										+ Arrays.toString(enumClass.getEnumConstants()));
 
 					for (EnumValueConfiguration value : enumValuesConfiguration)
 						enumValues.put(value.getEnumValue(), value.getValue());

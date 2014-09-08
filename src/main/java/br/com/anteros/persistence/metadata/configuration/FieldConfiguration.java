@@ -23,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import br.com.anteros.core.utils.Assert;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.annotation.BooleanValue;
 import br.com.anteros.persistence.metadata.annotation.Cascade;
@@ -131,7 +132,9 @@ public class FieldConfiguration {
 	}
 
 	public FieldConfiguration(EntityConfiguration entity, Field field) {
-		this.name = field.getName();
+		Assert.notNull(field,"Parâmetro field é obrigatório. Erro criando FieldConfiguration.");
+		if (field != null)
+			this.name = field.getName();
 		this.field = field;
 		if (this.field != null)
 			this.type = this.field.getType();
@@ -145,14 +148,16 @@ public class FieldConfiguration {
 		this.name = name;
 	}
 
-	public FieldConfiguration column(String name, int length, int precision, int scale, boolean required, String inversedColumn,
-			boolean exportColumn, String defaultValue) {
-		columns.add(new ColumnConfiguration(name, length, precision, scale, required, inversedColumn, exportColumn, defaultValue));
+	public FieldConfiguration column(String name, int length, int precision, int scale, boolean required,
+			String inversedColumn, boolean exportColumn, String defaultValue) {
+		columns.add(new ColumnConfiguration(name, length, precision, scale, required, inversedColumn, exportColumn,
+				defaultValue));
 		annotations.add(Column.class);
 		return this;
 	}
 
-	public FieldConfiguration column(String name, int length, int precision, int scale, boolean required, String inversedColumn) {
+	public FieldConfiguration column(String name, int length, int precision, int scale, boolean required,
+			String inversedColumn) {
 		columns.add(new ColumnConfiguration(name, length, precision, scale, required, inversedColumn));
 		annotations.add(Column.class);
 		return this;
@@ -194,7 +199,8 @@ public class FieldConfiguration {
 		return this;
 	}
 
-	public FieldConfiguration fetch(FetchType type, FetchMode mode, String mappedBy, Class<?> targetEntity, String statement) {
+	public FieldConfiguration fetch(FetchType type, FetchMode mode, String mappedBy, Class<?> targetEntity,
+			String statement) {
 		annotations.add(Fetch.class);
 		this.fetch = new FetchConfiguration(statement, type, mode, mappedBy, targetEntity);
 		return this;
@@ -206,7 +212,8 @@ public class FieldConfiguration {
 		return this;
 	}
 
-	public FieldConfiguration foreignKey(String statement, FetchType type, FetchMode mode, String mappedBy, boolean useIndex) {
+	public FieldConfiguration foreignKey(String statement, FetchType type, FetchMode mode, String mappedBy,
+			boolean useIndex) {
 		annotations.add(ForeignKey.class);
 		this.foreignKey = new ForeignKeyConfiguration(statement, type, mode, mappedBy, useIndex);
 		return this;
@@ -235,7 +242,8 @@ public class FieldConfiguration {
 		return this;
 	}
 
-	public FieldConfiguration joinTable(String name, JoinColumnConfiguration[] joinColumns, JoinColumnConfiguration[] inversedJoinColumns) {
+	public FieldConfiguration joinTable(String name, JoinColumnConfiguration[] joinColumns,
+			JoinColumnConfiguration[] inversedJoinColumns) {
 		annotations.add(JoinTable.class);
 		this.joinTable = new JoinTableConfiguration(name, joinColumns, inversedJoinColumns);
 		return this;
@@ -247,9 +255,11 @@ public class FieldConfiguration {
 		return this;
 	}
 
-	public FieldConfiguration sequenceGenerator(String sequenceName, String catalog, int initialValue, int startsWith, String schema) {
+	public FieldConfiguration sequenceGenerator(String sequenceName, String catalog, int initialValue, int startsWith,
+			String schema) {
 		annotations.add(SequenceGenerator.class);
-		this.sequenceGenerator = new SequenceGeneratorConfiguration(sequenceName, catalog, initialValue, startsWith, schema);
+		this.sequenceGenerator = new SequenceGeneratorConfiguration(sequenceName, catalog, initialValue, startsWith,
+				schema);
 		return this;
 	}
 
@@ -447,7 +457,8 @@ public class FieldConfiguration {
 		Annotation[] annotations = field.getAnnotations();
 		for (Annotation annotation : annotations) {
 			if (annotation instanceof BooleanValue) {
-				booleanValue(((BooleanValue) annotation).trueValue(), ((BooleanValue) annotation).falseValue(), ((BooleanValue) annotation).type());
+				booleanValue(((BooleanValue) annotation).trueValue(), ((BooleanValue) annotation).falseValue(),
+						((BooleanValue) annotation).type());
 			} else if (annotation instanceof Cascade) {
 				cascade(((Cascade) annotation).values());
 			} else if (annotation instanceof MapKeyEnumerated) {
@@ -471,8 +482,8 @@ public class FieldConfiguration {
 				if (indexes != null) {
 					indexesConf = new IndexConfiguration[indexes.length];
 					for (int i = 0; i < indexes.length; i++) {
-						indexesConf[i] = new IndexConfiguration(indexes[i].name(), indexes[i].columnNames()).catalog(indexes[i].catalog())
-								.schema(indexes[i].schema()).unique(indexes[i].unique());
+						indexesConf[i] = new IndexConfiguration(indexes[i].name(), indexes[i].columnNames())
+								.catalog(indexes[i].catalog()).schema(indexes[i].schema()).unique(indexes[i].unique());
 					}
 				}
 				if (annotation instanceof Indexes)
@@ -487,8 +498,8 @@ public class FieldConfiguration {
 					for (int i = 0; i < cols.length; i++) {
 						colsConf[i] = new ColumnConfiguration(cols[i]);
 					}
+					columns(colsConf);
 				}
-				columns(colsConf);
 			} else if (annotation instanceof CompositeId) {
 				compositeId();
 			} else if (annotation instanceof Enumerated) {
@@ -530,7 +541,7 @@ public class FieldConfiguration {
 			} else if (annotation instanceof Comment) {
 				comment(((Comment) annotation).value());
 			} else if (annotation instanceof ExternalFile) {
-				externalFile(true);	
+				externalFile(true);
 			} else if ((annotation instanceof Converters) || (annotation instanceof Converter)) {
 				Converter[] converts = null;
 				if (annotation instanceof Converters)
@@ -715,7 +726,7 @@ public class FieldConfiguration {
 		this.annotations.add(Converter.class);
 		return this;
 	}
-	
+
 	public FieldConfiguration converter(ConverterConfiguration converter) {
 		this.converters = new ConverterConfiguration[] { converter };
 		this.annotations.add(Converter.class);
@@ -723,11 +734,12 @@ public class FieldConfiguration {
 	}
 
 	public FieldConfiguration remote(String displayLabel, String mobileActionExport, String mobileActionImport,
-			RemoteParamConfiguration[] importParams, RemoteParamConfiguration[] exportParams, int exportOrderToSendData, String[] exportFields,
-			ConnectivityType importConnectivityType, ConnectivityType exportConnectivityType) {
+			RemoteParamConfiguration[] importParams, RemoteParamConfiguration[] exportParams,
+			int exportOrderToSendData, String[] exportFields, ConnectivityType importConnectivityType,
+			ConnectivityType exportConnectivityType) {
 		annotations.add(Remote.class);
-		this.remote = new RemoteConfiguration(displayLabel, mobileActionExport, mobileActionImport, importParams, exportParams,
-				exportOrderToSendData, exportFields, importConnectivityType, exportConnectivityType);
+		this.remote = new RemoteConfiguration(displayLabel, mobileActionExport, mobileActionImport, importParams,
+				exportParams, exportOrderToSendData, exportFields, importConnectivityType, exportConnectivityType);
 		return this;
 	}
 
@@ -764,7 +776,7 @@ public class FieldConfiguration {
 		this.mapKeyConvert = mapKeyConvert;
 		return this;
 	}
-	
+
 	public ObjectTypeConverterConfiguration[] getObjectTypeConverters() {
 		return objectTypeConverters;
 	}
@@ -802,6 +814,5 @@ public class FieldConfiguration {
 		this.annotations.add(TypeConverters.class);
 		return this;
 	}
-	
 
 }

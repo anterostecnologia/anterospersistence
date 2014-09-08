@@ -66,12 +66,12 @@ public class UniqueKeySchema  extends IndexSchema {
 		
 	}
 	
-	public String[] getColumnNames(){
+	public List<String> getColumnNames(){
 		List<String> result = new ArrayList<String>();
 		for (ColumnSchema columnSchema : getColumns()){
 			result.add(columnSchema.name);
 		}
-		return result.toArray(new String[]{});
+		return result;
 	}
 
     

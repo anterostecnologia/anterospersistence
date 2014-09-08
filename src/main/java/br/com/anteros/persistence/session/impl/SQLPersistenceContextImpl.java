@@ -41,35 +41,27 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 	private SQLSession session;
 	private Cache cache;
 
-	public SQLPersistenceContextImpl(SQLSession session,
-			EntityCacheManager entityCacheManager, int cacheSize) {
+	public SQLPersistenceContextImpl(SQLSession session, EntityCacheManager entityCacheManager, int cacheSize) {
 		this.entityCacheManager = entityCacheManager;
 		this.session = session;
 		this.cache = new SQLCache(cacheSize);
 	}
 
-	
-	public EntityManaged addEntityManaged(Object value, boolean readOnly,
-			boolean newEntity) throws Exception {
+	public EntityManaged addEntityManaged(Object value, boolean readOnly, boolean newEntity) throws Exception {
 		EntityManaged key = getEntityManaged(value);
 		if (key == null) {
-			EntityCache entityCache = entityCacheManager.getEntityCache(value
-					.getClass());
+			EntityCache entityCache = entityCacheManager.getEntityCache(value.getClass());
 			key = new EntityManaged(entityCache);
-			key.setStatus(readOnly ? EntityStatus.READ_ONLY
-					: EntityStatus.MANAGED);
+			key.setStatus(readOnly ? EntityStatus.READ_ONLY : EntityStatus.MANAGED);
 			key.setFieldsForUpdate(entityCache.getAllFieldNames());
 			key.setNewEntity(newEntity);
-			for (DescriptionField descriptionField : entityCache
-					.getDescriptionFields())
-				key.addLastValue(descriptionField.getFieldEntityValue(
-						session, value));
+			for (DescriptionField descriptionField : entityCache.getDescriptionFields())
+				key.addLastValue(descriptionField.getFieldEntityValue(session, value));
 			entities.put(key, new WeakReference<Object>(value));
 		}
 		return key;
 	}
 
-	
 	public EntityManaged getEntityManaged(Object key) {
 		List<EntityManaged> keysToRemove = new ArrayList<EntityManaged>();
 		EntityManaged em = null;
@@ -93,30 +85,25 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 		return em;
 	}
 
-	
 	public void removeEntityManaged(Object key) {
 		EntityManaged entity = getEntityManaged(key);
 		if (entity != null)
 			entities.remove(entity);
 	}
 
-	
 	public boolean isExistsEntityManaged(Object key) {
 		EntityManaged entity = getEntityManaged(key);
 		return (entity != null);
 	}
 
-	
 	public void onBeforeExecuteCommit(Connection connection) throws Exception {
 		session.onBeforeExecuteCommit(connection);
 	}
 
-	
 	public void onBeforeExecuteRollback(Connection connection) throws Exception {
 		session.onBeforeExecuteRollback(connection);
 	}
 
-	
 	public void onAfterExecuteCommit(Connection connection) throws Exception {
 		if (session.getConnection() == connection) {
 			for (EntityManaged entityManaged : entities.keySet())
@@ -124,7 +111,6 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 		}
 	}
 
-	
 	public void onAfterExecuteRollback(Connection connection) throws Exception {
 		if (session.getConnection() == connection) {
 			for (EntityManaged entityManaged : entities.keySet())
@@ -143,60 +129,59 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 			entities.remove(entityManaged);
 	}
 
-	
 	public Object getObjectFromCache(Object key) {
 		return cache.get(key);
 	}
 
-	
 	public void addObjectToCache(Object key, Object value) {
 		cache.put(key, value);
 	}
 
-	
 	public void addObjectToCache(Object key, Object value, int secondsToLive) {
 		cache.put(key, value, secondsToLive);
 	}
 
-	
 	public EntityManaged createEmptyEntityManaged(Object key) {
 		EntityManaged em = new EntityManaged(entityCacheManager.getEntityCache(key.getClass()));
 		entities.put(em, new WeakReference<Object>(key));
 		return em;
 	}
 
-	
-	public void evict(Class class0) {
+	public void evict(Class sourceClass) {
 		List<EntityManaged> keys = new ArrayList<EntityManaged>(entities.keySet());
+		Object obj = null;
 		for (EntityManaged entityManaged : keys) {
-			Reference<?> obj = entities.get(entityManaged);
-			if (obj.get().getClass().equals(class0)) {
-				entities.remove(entityManaged);
+			Reference<?> ref = entities.get(entityManaged);
+			obj = ref.get();
+			if (obj != null) {
+				if (obj.getClass().equals(sourceClass)) {
+					entities.remove(entityManaged);
+				}
 			}
 		}
 	}
 
-	
 	public void evictAll() {
 		entities.clear();
 	}
 
-	
 	public void clearCache() {
 		cache.clear();
 	}
-
 
 	@Override
 	public void detach(Object entity) {
 		List<EntityManaged> keys = new ArrayList<EntityManaged>(entities.keySet());
 		for (EntityManaged entityManaged : keys) {
-			Reference<?> obj = entities.get(entityManaged);			
-			if (obj.get().equals(entity)) {
-				entities.remove(entityManaged);
-				break;
+			Reference<?> ref = entities.get(entityManaged);
+			Object obj = ref.get();
+			if (obj != null) {
+				if (obj.equals(entity)) {
+					entities.remove(entityManaged);
+					break;
+				}
 			}
-		}		
+		}
 	}
 
 }

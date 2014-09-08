@@ -1345,7 +1345,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 				 */
 				for (IndexSchema indexSchema : tableSchema.getIndexes()) {
 					//System.out.println("  CHECANDO INDICE "+indexSchema.getName());
-					if (!checkIndexExists(indexSchema.getName(),indexSchema.getColumnNames(),allIndexes)) {
+					if (!checkIndexExists(indexSchema.getName(),indexSchema.getColumnNames().toArray(new String[]{}),allIndexes)) {
 						try {
 							if (isWriteToDatabase()) {
 								indexSchema.createOnDatabase(session);
@@ -1375,7 +1375,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 			 * Verifica se existe a chave única. Se não existir cria.
 			 */
 			for (UniqueKeySchema uniqueKeySchema : tableSchema.getUniqueKeys()) {
-				if (!checkUniqueKeyExists(uniqueKeySchema.getName(), uniqueKeySchema.getColumnNames(), allIndexes)) {
+				if (!checkUniqueKeyExists(uniqueKeySchema.getName(), uniqueKeySchema.getColumnNames().toArray(new String[]{}), allIndexes)) {
 					if (!isWriteToDatabase() && writeCommentUniqueConstraint) {
 						createSchemaWriter
 								.write("/******************************************************************************/\n");

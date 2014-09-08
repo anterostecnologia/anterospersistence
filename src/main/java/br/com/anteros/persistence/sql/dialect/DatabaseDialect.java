@@ -733,7 +733,7 @@ public abstract class DatabaseDialect {
 			if (resultSet.next()) {
 				return true;
 			}
-			
+
 			resultSet.close();
 
 			resultSet = metaData.getTables((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
@@ -768,7 +768,7 @@ public abstract class DatabaseDialect {
 			if (resultSet.next()) {
 				return true;
 			}
-			
+
 			resultSet.close();
 
 			resultSet = metaData.getColumns((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
@@ -813,7 +813,7 @@ public abstract class DatabaseDialect {
 					}
 				} while (resultSet.next());
 			}
-			
+
 			resultSet.close();
 
 			resultSet = metaData.getImportedKeys(
@@ -871,7 +871,7 @@ public abstract class DatabaseDialect {
 			}
 			resultSet.close();
 		}
-		
+
 		resultSet.close();
 
 		if (!found) {
@@ -922,7 +922,7 @@ public abstract class DatabaseDialect {
 					}
 				} while (resultSet.next());
 			}
-			
+
 			resultSet.close();
 
 			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
@@ -1130,7 +1130,8 @@ public abstract class DatabaseDialect {
 					result.add(columns.getString("COLUMN_NAME"));
 				} while (columns.next());
 			} else {
-				columns.close();
+				if (columns != null)
+					columns.close();
 				columns = conn.getMetaData().getColumns(
 						(getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
 						(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
@@ -1140,7 +1141,8 @@ public abstract class DatabaseDialect {
 						result.add(columns.getString("COLUMN_NAME"));
 					} while (columns.next());
 				} else {
-					columns.close();
+					if (columns != null)
+						columns.close();
 					columns = conn.getMetaData().getColumns(
 							(getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
 							(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
@@ -1587,7 +1589,7 @@ public abstract class DatabaseDialect {
 					parameterSchema.setSize(parameterPrecision);
 					parameterSchema.setSubSize(parameterScale);
 					parameterSchema.setTypeSql(parameterTypeName);
-					parameterSchema.setNullable(parameterNullable.equals(0) ? true : false);
+					parameterSchema.setNullable(parameterNullable.equals("0") ? true : false);
 					parameterSchema.setDataTypeSql(dataType);
 					switch (parameterType) {
 					case DatabaseMetaData.procedureColumnIn:

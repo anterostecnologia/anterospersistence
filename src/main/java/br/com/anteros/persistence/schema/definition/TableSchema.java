@@ -257,7 +257,7 @@ public class TableSchema extends ObjectSchema {
 		for (IndexSchema idx : indexes) {
 			found = false;
 			for (String column : columns) {
-				if (idx.getColumns().contains(column)) {
+				if (idx.getColumnNames().contains(column)) {
 					found = true;
 				} else
 					break;

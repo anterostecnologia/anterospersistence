@@ -48,6 +48,6 @@ public class CreateStatementNode extends StatementNode {
 	}
 
 	public boolean hasType(){
-		return type != null && !"".equals(type);
+		return type != null && !"".equals(type.toString());
 	}
 }

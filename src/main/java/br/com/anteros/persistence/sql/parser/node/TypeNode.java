@@ -64,6 +64,6 @@ public class TypeNode extends KeywordNode {
 	}
 
 	public boolean hasTarget(){
-		return target != null && !"".equals(target);
+		return target != null && !"".equals(target.toString());
 	}
 }

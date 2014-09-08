@@ -160,7 +160,8 @@ public class H2Dialect extends DatabaseDialect {
 				call.registerOutParameter(numberInputParameters + i + 1, outputTypes[i]);
 		}
 
-		setParametersCallableStatement(call, type, inputParameters);
+		if (inputParameters != null)
+			setParametersCallableStatement(call, type, inputParameters);
 		return call;
 	}
 
@@ -266,7 +267,7 @@ public class H2Dialect extends DatabaseDialect {
 		}
 
 		statement = conn.createStatement();
-		statement
+		resultSet = statement
 				.executeQuery("SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_NAME = '"
 						+ sequenceName + "'");
 

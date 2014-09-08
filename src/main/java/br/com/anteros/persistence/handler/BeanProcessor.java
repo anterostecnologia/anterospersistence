@@ -80,7 +80,8 @@ public class BeanProcessor {
 		return results;
 	}
 
-	private <T> T createBean(ResultSet rs, Class<T> type, PropertyDescriptor[] props, int[] columnToProperty) throws SQLException {
+	private <T> T createBean(ResultSet rs, Class<T> type, PropertyDescriptor[] props, int[] columnToProperty)
+			throws SQLException {
 
 		T bean = this.newInstance(type);
 
@@ -93,7 +94,9 @@ public class BeanProcessor {
 			PropertyDescriptor prop = props[columnToProperty[i]];
 			Class<?> propType = prop.getPropertyType();
 
-			Object value = this.processColumn(rs, i, propType);
+			Object value = null;
+			if (propType != null)
+				value = this.processColumn(rs, i, propType);
 
 			if (propType != null && value == null && propType.isPrimitive()) {
 				value = primitiveDefaults.get(propType);

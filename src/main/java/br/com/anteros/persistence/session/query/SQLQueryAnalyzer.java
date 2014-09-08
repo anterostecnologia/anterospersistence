@@ -549,11 +549,11 @@ public class SQLQueryAnalyzer {
 						}
 						if ((descriptionColumn != null) && (!descriptionColumn.isDiscriminatorColumn())) {
 							String path = alias.getPath();
-							if (path != "")
+							if (!path.equals(""))
 								path += ".";
 
 							expressions.put(path + descriptionColumn.getDescriptionField().getName(),
-									(alias.getAliasPath() == "" ? "" : alias.getAliasPath() + ".") + aliasName);
+									((alias.getAliasPath()).equals("") ? "" : alias.getAliasPath() + ".") + aliasName);
 						} else {
 							if (!((cache.getDiscriminatorColumn() != null) && (cache.getDiscriminatorColumn()
 									.getColumnName().equalsIgnoreCase(columnName))))

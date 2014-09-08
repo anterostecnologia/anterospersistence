@@ -165,7 +165,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				}
 			}
 			if (!found)
-				throw new SQLQueryException("Parâmetro "+parameter.getName()+" não encontrado. Verifique se o parâmetro existe ou se o SQL já foi definido.");
+				throw new SQLQueryException("Parâmetro " + parameter.getName()
+						+ " não encontrado. Verifique se o parâmetro existe ou se o SQL já foi definido.");
 		}
 		return this;
 	}
@@ -289,15 +290,18 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	}
 
 	protected void set(String parameterName, Object value) throws SQLQueryException {
-		if (!namedParameters.containsKey(parameterName))
-			throw new SQLQueryException("Parâmetro " + parameterName + " não encontrado.");
+		boolean found = false;
 		for (Integer index : namedParameters.keySet()) {
 			NamedParameter np = namedParameters.get(index);
 			if (np.getName().equals(parameterName)) {
 				np.setValue(value);
+				found = true;
 				break;
 			}
 		}
+		if (!found)
+			throw new SQLQueryException("Parâmetro " + parameterName + " não encontrado.");
+
 	}
 
 	public TypedSQLQuery<T> setString(String parameterName, String value) throws Exception {
@@ -400,7 +404,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		return result;
 	}
 
-	protected List getResultListByEntityHandler(Object objectToRefresh) throws Exception, SQLQueryAnalyzerException, SQLException {
+	protected List getResultListByEntityHandler(Object objectToRefresh) throws Exception, SQLQueryAnalyzerException,
+			SQLException {
 		List result;
 		if (getResultClass() == null)
 			throw new SQLQueryException("Informe a Classe para executar a consulta.");
@@ -425,7 +430,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 				}
 				handler = session.createNewEntityHandler(getResultClass(), analyzer.getExpressions(),
-						analyzer.getColumnAliases(), transactionCache, allowDuplicateObjects, objectToRefresh, firstResult, maxResults);
+						analyzer.getColumnAliases(), transactionCache, allowDuplicateObjects, objectToRefresh,
+						firstResult, maxResults);
 			}
 
 			if (this.parameters.size() > 0)
@@ -466,15 +472,15 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		this.sql(select.toStatementString());
 		this.resultClass(identifier.getClazz());
 		this.setParameters(params.toArray(new NamedParameter[] {}));
-		Object objectToRefresh=null;
-		if (identifier.isOnlyRefreshOwner()){
+		Object objectToRefresh = null;
+		if (identifier.isOnlyRefreshOwner()) {
 			objectToRefresh = identifier.getOwner();
 		}
 		List<T> resultList = getResultListByEntityHandler(objectToRefresh);
-		if ((resultList != null) && (resultList.size() > 0)) 
+		if ((resultList != null) && (resultList.size() > 0))
 			return resultList.get(0);
 		else {
-			if (identifier.isOnlyRefreshOwner()){
+			if (identifier.isOnlyRefreshOwner()) {
 				throw new SQLQueryException("Objeto não encontrado. Não foi possível realizar o refresh. ");
 			}
 		}
@@ -1008,7 +1014,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer(session);
 			analyzer.analyze(sql, resultClass);
 			handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(),
-					analyzer.getColumnAliases(), transactionCache, false,null, firstResult, maxResults);
+					analyzer.getColumnAliases(), transactionCache, false, null, firstResult, maxResults);
 			sql = analyzer.getParsedSQL();
 		}
 
@@ -1039,7 +1045,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer(session);
 				analyzer.analyze(sql, resultClass);
 				handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(),
-						analyzer.getColumnAliases(), transactionCache, false, null,firstResult, maxResults);
+						analyzer.getColumnAliases(), transactionCache, false, null, firstResult, maxResults);
 			}
 
 			result = (List) session.getRunner().query(session.getConnection(), sql, handler, parameter, showSql,
@@ -1136,7 +1142,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 							+ sql);
 				}
 				handler = session.createNewEntityHandler(getResultClass(), analyzer.getExpressions(),
-						analyzer.getColumnAliases(), transactionCache, allowDuplicateObjects, null,firstResult, maxResults);
+						analyzer.getColumnAliases(), transactionCache, allowDuplicateObjects, null, firstResult,
+						maxResults);
 			}
 
 			if (this.parameters.size() > 0)
@@ -1194,7 +1201,6 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		return sql;
 	}
 
-
 	public Class<?> getResultClass() {
 		return resultClass;
 	}
@@ -1205,7 +1211,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	@Override
 	public void refresh(Object entity) throws Exception {
-		session.refresh(entity);		
+		session.refresh(entity);
 	}
 
 	@Override

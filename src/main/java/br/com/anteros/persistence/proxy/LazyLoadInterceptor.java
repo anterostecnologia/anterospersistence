@@ -38,12 +38,12 @@ public class LazyLoadInterceptor implements MethodHandler {
 	private Object target;
 	private Object owner;
 	private DescriptionField descriptionFieldOwner;
-	private boolean constructed = false;
-	private boolean initialized = false;
-	private Boolean processing = false;
+	private Boolean constructed = Boolean.FALSE;
+	private Boolean initialized = Boolean.FALSE;
+	private Boolean processing = Boolean.FALSE;
 
-	public LazyLoadInterceptor(SQLSession session, EntityCache entityCache, Map<String, Object> columKeyValues, Cache transactionCache, Object owner,
-			DescriptionField descriptionField) {
+	public LazyLoadInterceptor(SQLSession session, EntityCache entityCache, Map<String, Object> columKeyValues,
+			Cache transactionCache, Object owner, DescriptionField descriptionField) {
 		this.session = session;
 		this.entityCache = entityCache;
 		this.columnKeyValuesTarget = columKeyValues;
@@ -52,8 +52,8 @@ public class LazyLoadInterceptor implements MethodHandler {
 		this.descriptionFieldOwner = descriptionField;
 	}
 
-	
-	public Object invoke(final Object proxy, final Method thisMethod, final Method proceed, final Object[] args) throws Throwable {
+	public Object invoke(final Object proxy, final Method thisMethod, final Method proceed, final Object[] args)
+			throws Throwable {
 		if (this.constructed) {
 			Object target = getTargetObject();
 			final Object returnValue;
@@ -63,7 +63,7 @@ public class LazyLoadInterceptor implements MethodHandler {
 				 * COLLECTION_TABLE o entityCache sera
 				 */
 				if (entityCache != null && ReflectionUtils.isPublic(entityCache.getEntityClass(), thisMethod)) {
-					Class<?> dc = thisMethod.getDeclaringClass(); 
+					Class<?> dc = thisMethod.getDeclaringClass();
 					if (!dc.isInstance(target))
 						throw new ClassCastException(target.getClass().getName());
 					returnValue = thisMethod.invoke(target, args);
@@ -80,60 +80,60 @@ public class LazyLoadInterceptor implements MethodHandler {
 		return null;
 	}
 
-	private Object getTargetObject() throws Exception {
-		synchronized (processing) {
-			if (!initialized) {
-				try {
-					initialized = true;
-					processing = true;
+	private synchronized Object getTargetObject() throws Exception {
+		if (!initialized) {
+			try {
+				initialized = Boolean.TRUE;
+				processing = Boolean.TRUE;
 
-					/*
-					 * Se a lista possui um pai adiciona no cache para evitar
-					 * duplicidade de objetos
-					 */
-					EntityCache ownerEntityCache = null;
-					if (owner != null) {
-						ownerEntityCache = session.getEntityCacheManager().getEntityCache(owner.getClass());
-						if (ownerEntityCache != null) {
-							String uniqueId = ownerEntityCache.getCacheUniqueId(owner);
-							if ((ownerEntityCache.getCacheScope().equals(ScopeType.TRANSACTION)) && (transactionCache != null)) {
-								transactionCache.put(ownerEntityCache.getEntityClass().getName() + "_" + uniqueId, owner,
-										ownerEntityCache.getMaxTimeCache());
-							}
+				/*
+				 * Se a lista possui um pai adiciona no cache para evitar
+				 * duplicidade de objetos
+				 */
+				EntityCache ownerEntityCache = null;
+				if (owner != null) {
+					ownerEntityCache = session.getEntityCacheManager().getEntityCache(owner.getClass());
+					if (ownerEntityCache != null) {
+						String uniqueId = ownerEntityCache.getCacheUniqueId(owner);
+						if ((ownerEntityCache.getCacheScope().equals(ScopeType.TRANSACTION))
+								&& (transactionCache != null)) {
+							transactionCache.put(ownerEntityCache.getEntityClass().getName() + "_" + uniqueId, owner,
+									ownerEntityCache.getMaxTimeCache());
 						}
 					}
-
-					target = session.createQuery("").loadData(entityCache, owner, descriptionFieldOwner, columnKeyValuesTarget, transactionCache);
-
-					if (ownerEntityCache != null) {
-						if ((ownerEntityCache.getCacheScope().equals(ScopeType.TRANSACTION)) && (transactionCache != null))
-							transactionCache.clear();
-					}
-
-					EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(owner);
-					/*
-					 * Caso o objeto possa ser gerenciado(objeto completo ou parcial
-					 * que tenha sido buscado id no sql) adiciona o objeto no cache
-					 */
-					if (entityManaged != null) {
-						/*
-						 * Guarda o valor da chave do objeto result na lista de
-						 * oldValues
-						 */
-						FieldEntityValue value = descriptionFieldOwner.getFieldEntityValue(session, owner, target);
-						entityManaged.addOriginalValue(value);
-						entityManaged.addLastValue(value);
-						/*
-						 * Adiciona o campo na lista de campos que poderão ser
-						 * alterados. Se o campo não for buscado no select não
-						 * poderá ser alterado.
-						 */
-						entityManaged.getFieldsForUpdate().add(descriptionFieldOwner.getField().getName());
-					}
-
-				} finally {
-					processing = false;
 				}
+
+				target = session.createQuery("").loadData(entityCache, owner, descriptionFieldOwner,
+						columnKeyValuesTarget, transactionCache);
+
+				if (ownerEntityCache != null) {
+					if ((ownerEntityCache.getCacheScope().equals(ScopeType.TRANSACTION)) && (transactionCache != null))
+						transactionCache.clear();
+				}
+
+				EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(owner);
+				/*
+				 * Caso o objeto possa ser gerenciado(objeto completo ou parcial
+				 * que tenha sido buscado id no sql) adiciona o objeto no cache
+				 */
+				if (entityManaged != null) {
+					/*
+					 * Guarda o valor da chave do objeto result na lista de
+					 * oldValues
+					 */
+					FieldEntityValue value = descriptionFieldOwner.getFieldEntityValue(session, owner, target);
+					entityManaged.addOriginalValue(value);
+					entityManaged.addLastValue(value);
+					/*
+					 * Adiciona o campo na lista de campos que poderão ser
+					 * alterados. Se o campo não for buscado no select não
+					 * poderá ser alterado.
+					 */
+					entityManaged.getFieldsForUpdate().add(descriptionFieldOwner.getField().getName());
+				}
+
+			} finally {
+				processing = Boolean.FALSE;
 			}
 		}
 		return target;

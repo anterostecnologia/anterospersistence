@@ -29,7 +29,7 @@ import br.com.anteros.persistence.dsl.osql.types.Predicate;
  * @author tiwe
  *
  */
-public final class EmptyMetadata implements QueryMetadata {
+public final class EmptyMetadata implements QueryMetadata, Cloneable {
 
     private static final long serialVersionUID = 134750105981272499L;
 

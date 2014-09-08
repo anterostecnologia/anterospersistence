@@ -37,8 +37,8 @@ public class TableGenerator implements IdentifierGenerator {
 	private String value;
 	private String valueColumnName;
 	private Type type;
-	private String catalog;
-	private String schema;
+	private String catalog=null;
+	private String schema=null;
 	private Select select;
 	private Update update;
 	private Insert insert;

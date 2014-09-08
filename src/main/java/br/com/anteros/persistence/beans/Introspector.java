@@ -1147,7 +1147,7 @@ public class Introspector {
 		if(p1.length == p2.length){
 			match = true;
 			for(int i = 0; i < p1.length; i++){
-				if(p1[i] != p2[i]){
+				if(!p1[i].equals(p2[i])){
 					match = false;
 					break;
 				}

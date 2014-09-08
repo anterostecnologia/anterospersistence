@@ -181,6 +181,7 @@ public class MySQLDialect extends DatabaseDialect {
 				call.registerOutParameter(numberInputParameters + i + 1, outputTypes[i]);
 		}
 
+		if (inputParameters!=null)
 		setParametersCallableStatement(call, type, inputParameters);
 		return call;
 	}

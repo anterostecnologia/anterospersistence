@@ -62,8 +62,10 @@ public class ThreadLocalSQLSessionContext implements CurrentSQLSessionContext {
 	}
 	
 	private boolean needsWrapping(SQLSession session) {
-		return session != null
-		       && ! Proxy.isProxyClass( session.getClass() )
+		if (session ==null)
+			return false;
+		
+		return ! Proxy.isProxyClass( session.getClass() )
 		       || ( Proxy.getInvocationHandler( session ) != null
 		       && ! ( Proxy.getInvocationHandler( session ) instanceof TransactionProtectionWrapper ) );
 	}

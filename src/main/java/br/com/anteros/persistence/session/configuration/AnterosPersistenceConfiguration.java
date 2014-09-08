@@ -70,7 +70,7 @@ public class AnterosPersistenceConfiguration extends AbstractPersistenceConfigur
 				if (datasourceClass == JNDIDataSourceFactory.class) {
 					String jndiName = getSessionFactoryConfiguration().ConvertPlaceHolder(
 							dataSourceConfiguration.getProperty(AnterosPersistenceProperties.JNDI_DATASOURCE));
-					if ((jndiName == null) || (jndiName == ""))
+					if ((jndiName == null) || (jndiName.equals("")))
 						throw new AnterosConfigurationException("não foi possível criar o DataSource " + dataSourceId
 								+ ", não foi configurado o nome do JNDI.");
 					dataSource = JNDIDataSourceFactory.getDataSource(jndiName);

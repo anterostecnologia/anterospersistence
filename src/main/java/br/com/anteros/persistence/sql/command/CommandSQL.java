@@ -150,7 +150,7 @@ public abstract class CommandSQL {
 
 	public NamedParameter getNamedParameter(String name) {
 		for (NamedParameter parameter : namedParameters) {
-			if (parameter.equals(name))
+			if (parameter.getName().equals(name))
 				return parameter;
 		}
 		return null;

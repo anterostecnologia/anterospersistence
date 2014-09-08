@@ -454,7 +454,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
 			if(getPropertyType() == other.getPropertyType()
 					&& getPropertyEditorClass() == other.getPropertyEditorClass()
 					&& bound == other.isBound() && constrained == other.isConstrained()
-					&& writeMethodName == other.writeMethodName && readMethodName == other.readMethodName){
+					&& writeMethodName.equals(other.writeMethodName) && readMethodName.equals(other.readMethodName)){
 				return true;
 			}
 		}
