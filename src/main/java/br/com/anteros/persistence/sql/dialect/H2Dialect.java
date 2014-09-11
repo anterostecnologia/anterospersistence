@@ -134,14 +134,14 @@ public class H2Dialect extends DatabaseDialect {
 		sql.append(") }");
 
 		if (showSql) {
-			log.debug(AnterosPersistenceTranslate.getMessage(H2Dialect.class, "showSql", sql.toString(), clientId));
+			log.debug(AnterosPersistenceTranslate.getInstance().getMessage(H2Dialect.class, "showSql", sql.toString(), clientId));
 			if (inputParameters != null) {
-				log.debug(AnterosPersistenceTranslate.getMessage(H2Dialect.class, "showSql1", clientId));
+				log.debug(AnterosPersistenceTranslate.getInstance().getMessage(H2Dialect.class, "showSql1", clientId));
 				for (Object parameter : inputParameters)
 					log.debug("        " + parameter + " ##" + clientId);
 			}
 			if (outputParametersName != null) {
-				log.debug(AnterosPersistenceTranslate.getMessage(H2Dialect.class, "showSql2", clientId));
+				log.debug(AnterosPersistenceTranslate.getInstance().getMessage(H2Dialect.class, "showSql2", clientId));
 				for (String opt : outputParametersName)
 					log.debug("        " + opt + " ##" + clientId);
 			}

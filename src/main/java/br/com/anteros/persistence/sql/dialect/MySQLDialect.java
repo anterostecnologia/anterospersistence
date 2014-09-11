@@ -84,7 +84,7 @@ public class MySQLDialect extends DatabaseDialect {
 
 	@Override
 	public String getSequenceNextValString(String sequenceName) throws Exception {
-		throw new DatabaseDialectException(AnterosPersistenceTranslate.getMessage(MySQLDialect.class, "sequenceException", getClass()
+		throw new DatabaseDialectException(AnterosPersistenceTranslate.getInstance().getMessage(MySQLDialect.class, "sequenceException", getClass()
 				.getName()));
 	}
 

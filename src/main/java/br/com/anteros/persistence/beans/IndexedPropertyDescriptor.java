@@ -98,12 +98,12 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
 
 		this.indexedReadMethodName = indexedReadMethodName;
 		if(indexedReadMethodName != null && getIndexedReadMethod() == null){
-			throw new IntrospectionException(AnterosPersistenceTranslate.getMessage(IndexedPropertyDescriptor.class, "IntrospectionException", indexedReadMethodName));
+			throw new IntrospectionException(AnterosPersistenceTranslate.getInstance().getMessage(IndexedPropertyDescriptor.class, "IntrospectionException", indexedReadMethodName));
 		}
 
 		this.indexedWriteMethodName = indexedWriteMethodName;
 		if(indexedWriteMethodName != null && getIndexedWriteMethod() == null){
-			throw new IntrospectionException(AnterosPersistenceTranslate.getMessage(IndexedPropertyDescriptor.class, "IntrospectionException", indexedReadMethodName));
+			throw new IntrospectionException(AnterosPersistenceTranslate.getInstance().getMessage(IndexedPropertyDescriptor.class, "IntrospectionException", indexedReadMethodName));
 		}
 		// Implemented only for type checking.
 		findIndexedPropertyType(getIndexedReadMethod(), getIndexedWriteMethod());

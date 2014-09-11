@@ -178,7 +178,7 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 		buildDataSource();
 		if (dataSource == null)
 			throw new AnterosConfigurationException(
-					AnterosPersistenceTranslate.getMessage(this.getClass(), "datasourceNotConfigured"));
+					AnterosPersistenceTranslate.getInstance().getMessage(this.getClass(), "datasourceNotConfigured"));
 		loadEntities();
 		SQLSessionFactoryImpl sessionFactory = new SQLSessionFactoryImpl(entityCacheManager, dataSource,
 				this.getSessionFactoryConfiguration());

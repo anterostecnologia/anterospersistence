@@ -274,7 +274,7 @@ public class EntityCache {
 
 	@Override
 	public String toString() {
-		return AnterosPersistenceTranslate.getMessage(EntityCache.class, "entity", getEntityClass());
+		return AnterosPersistenceTranslate.getInstance().getMessage(EntityCache.class, "entity", getEntityClass());
 	}
 
 	/**
