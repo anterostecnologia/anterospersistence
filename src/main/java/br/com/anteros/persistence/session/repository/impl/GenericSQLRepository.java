@@ -383,14 +383,16 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 
 	@Override
 	public SQLSession getSession() {
-		if (sessionFactory != null)
+		if (session!=null)
+			return session;
+		else if (sessionFactory != null) {
 			try {
 				return sessionFactory.getCurrentSession();
 			} catch (Exception e) {
 				throw new SQLRepositoryException(e);
 			}
-		else
-			return session;
+		}
+		throw new SQLRepositoryException("Não foi configurado nenhuma SQLSession ou SQLSessionFactory para o repositório.");
 	}
 
 	@Override
