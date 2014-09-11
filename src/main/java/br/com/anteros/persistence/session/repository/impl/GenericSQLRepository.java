@@ -512,7 +512,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 
 	@Override
 	public Transaction getTransaction() throws Exception {
-		return session.getTransaction();
+		return getSession().getTransaction();
 	}
 
 }
