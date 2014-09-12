@@ -213,4 +213,14 @@ public class GenericSQLService<T, ID extends Serializable> implements SQLService
 			this.repository = new GenericSQLRepository<T, ID>(sessionFactory, typeArguments[0]);
 		}
 	}
+
+	@Override
+	public T findOne(String sql) {
+		return this.repository.findOne(sql);
+	}
+
+	@Override
+	public T findOne(String sql, Object parameters) {
+		return this.repository.findOne(sql, parameters);
+	}
 }
