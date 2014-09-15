@@ -4,7 +4,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.TimeZone;
 
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;

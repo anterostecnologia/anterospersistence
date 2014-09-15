@@ -17,8 +17,6 @@
 package br.com.anteros.persistence.sql.datasource;
 
 import java.io.PrintWriter;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;

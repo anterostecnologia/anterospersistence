@@ -17,6 +17,8 @@ package br.com.anteros.persistence.session;
 
 import java.sql.Connection;
 
+import br.com.anteros.persistence.metadata.EntityCacheManager;
+
 
 /**
  * SessionFactory - Responsável por fornecedor instâncias de SQLSession.
@@ -41,5 +43,11 @@ public interface SQLSessionFactory {
 	 * @throws Exception
 	 */
 	public SQLSession openSession(Connection connection) throws Exception;
+	
+	/**
+	 * Retorna o cache das descrições das entidades 
+	 * @return
+	 */
+	public EntityCacheManager getEntityCacheManager();
 
 }

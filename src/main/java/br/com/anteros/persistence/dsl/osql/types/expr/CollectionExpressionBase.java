@@ -15,8 +15,6 @@ package br.com.anteros.persistence.dsl.osql.types.expr;
 
 import java.util.Collection;
 
-
-
 import br.com.anteros.persistence.dsl.osql.types.CollectionExpression;
 import br.com.anteros.persistence.dsl.osql.types.ConstantImpl;
 import br.com.anteros.persistence.dsl.osql.types.EntityPath;

@@ -38,6 +38,7 @@ public class LazyLoadProxyFactoryImpl implements LazyLoadProxyFactory {
 	public Object createProxy(SQLSession session, Object targetObject, DescriptionField descriptionField, EntityCache targetEntityCache,
 			Map<String, Object> columnKeyValues, Cache transactionCache) throws Exception {
 		ProxyFactory factory = new ProxyFactory();
+		factory.setInterfaces(new Class[]{AnterosProxyObject.class});
 		if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), Set.class))
 			factory.setSuperclass(SQLHashSet.class);
 		else if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), List.class))
@@ -71,6 +72,6 @@ public class LazyLoadProxyFactoryImpl implements LazyLoadProxyFactory {
 
 	
 	public boolean isProxyObject(Object object) throws Exception {
-		return (object instanceof ProxyObject);
+		return (object instanceof AnterosProxyObject);
 	}
 }

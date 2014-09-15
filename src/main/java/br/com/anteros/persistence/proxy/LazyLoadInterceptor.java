@@ -138,6 +138,10 @@ public class LazyLoadInterceptor implements MethodHandler {
 		}
 		return target;
 	}
+	
+	public Object initializeAndReturnObject() throws Exception{
+		return getTargetObject();
+	}
 
 	public SQLSession getSession() {
 		return session;

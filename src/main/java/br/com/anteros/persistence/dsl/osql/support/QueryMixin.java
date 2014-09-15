@@ -27,6 +27,7 @@ import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.ExpressionUtils;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpressionUtils;
+import br.com.anteros.persistence.dsl.osql.types.FactoryExpressionUtils.FactoryExpressionAdapter;
 import br.com.anteros.persistence.dsl.osql.types.MapExpression;
 import br.com.anteros.persistence.dsl.osql.types.OrderSpecifier;
 import br.com.anteros.persistence.dsl.osql.types.ParamExpression;
@@ -35,7 +36,6 @@ import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.ProjectionRole;
 import br.com.anteros.persistence.dsl.osql.types.QTuple;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
-import br.com.anteros.persistence.dsl.osql.types.FactoryExpressionUtils.FactoryExpressionAdapter;
 
 /**
  * Mixin style Query implementation

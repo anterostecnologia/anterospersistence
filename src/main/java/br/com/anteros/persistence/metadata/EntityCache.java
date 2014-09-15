@@ -849,6 +849,19 @@ public class EntityCache {
 			descriptionField.setObjectValue(fieldName, values.get(fieldName));
 		}
 	}
+
+	public DescriptionField getDescriptionFieldWithMappedBy(String mappedBy) {
+		for (DescriptionField descriptionField : getDescriptionFields()) {
+			if (mappedBy.equals(descriptionField.getMappedBy())) {
+				return descriptionField;
+			}
+		}
+		return null;
+	}
 	
+	public boolean hasDescriptionFieldWithMappedBy(String mappedBy) {
+		DescriptionField result = getDescriptionFieldWithMappedBy(mappedBy);
+		return (result!=null);
+	}
 
 }

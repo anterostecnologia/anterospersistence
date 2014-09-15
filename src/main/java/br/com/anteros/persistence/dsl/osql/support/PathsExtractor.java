@@ -16,7 +16,15 @@ package br.com.anteros.persistence.dsl.osql.support;
 import java.util.Collection;
 import java.util.List;
 
-import br.com.anteros.persistence.dsl.osql.types.*;
+import br.com.anteros.persistence.dsl.osql.types.Constant;
+import br.com.anteros.persistence.dsl.osql.types.Expression;
+import br.com.anteros.persistence.dsl.osql.types.FactoryExpression;
+import br.com.anteros.persistence.dsl.osql.types.Operation;
+import br.com.anteros.persistence.dsl.osql.types.ParamExpression;
+import br.com.anteros.persistence.dsl.osql.types.Path;
+import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
+import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
+import br.com.anteros.persistence.dsl.osql.types.Visitor;
 
 /**
  * Extracts the paths that occurs in an expression via breadth first search

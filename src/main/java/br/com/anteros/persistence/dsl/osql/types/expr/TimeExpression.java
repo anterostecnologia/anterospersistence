@@ -15,8 +15,6 @@ package br.com.anteros.persistence.dsl.osql.types.expr;
 
 import java.sql.Time;
 
-
-
 import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.Ops;
 import br.com.anteros.persistence.dsl.osql.types.Path;

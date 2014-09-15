@@ -13,15 +13,17 @@
  */
 package br.com.anteros.persistence.dsl.osql.types;
 
-import static br.com.anteros.persistence.dsl.osql.util.ConstructorUtils.*;
-
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
+import static br.com.anteros.persistence.dsl.osql.util.ConstructorUtils.getConstructor;
+import static br.com.anteros.persistence.dsl.osql.util.ConstructorUtils.getConstructorParameters;
+import static br.com.anteros.persistence.dsl.osql.util.ConstructorUtils.getTransformers;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
+
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
 
 
 

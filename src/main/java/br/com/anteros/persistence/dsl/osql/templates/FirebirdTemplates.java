@@ -4,7 +4,6 @@ import br.com.anteros.persistence.dsl.osql.QueryMetadata;
 import br.com.anteros.persistence.dsl.osql.QueryModifiers;
 import br.com.anteros.persistence.dsl.osql.SQLSerializer;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
-import br.com.anteros.persistence.dsl.osql.SQLTemplates.Builder;
 import br.com.anteros.persistence.dsl.osql.types.Ops;
 
 public class FirebirdTemplates extends SQLTemplates {

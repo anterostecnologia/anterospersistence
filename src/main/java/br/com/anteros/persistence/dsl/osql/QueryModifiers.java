@@ -16,7 +16,6 @@ package br.com.anteros.persistence.dsl.osql;
 import java.io.Serializable;
 import java.util.List;
 
-
 import com.google.common.base.Objects;
 
 /**

@@ -16,8 +16,6 @@ package br.com.anteros.persistence.dsl.osql.types.expr;
 import java.util.ArrayList;
 import java.util.List;
 
-
-
 import br.com.anteros.persistence.dsl.osql.types.ConstantImpl;
 import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.NullExpression;

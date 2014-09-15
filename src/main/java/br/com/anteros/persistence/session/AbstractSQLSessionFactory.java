@@ -344,5 +344,5 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 			transactionManager = getTransactionManagerLookup().getTransactionManager();
 		return transactionManager;
 	}
-
+	
 }

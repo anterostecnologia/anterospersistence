@@ -13,9 +13,7 @@
  */
 package br.com.anteros.persistence.dsl.osql.templates;
 
-import java.math.BigInteger;
 import java.sql.Types;
-import java.util.List;
 
 import br.com.anteros.persistence.dsl.osql.QueryFlag.Position;
 import br.com.anteros.persistence.dsl.osql.QueryMetadata;
@@ -23,11 +21,7 @@ import br.com.anteros.persistence.dsl.osql.QueryModifiers;
 import br.com.anteros.persistence.dsl.osql.SQLOps;
 import br.com.anteros.persistence.dsl.osql.SQLSerializer;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
-import br.com.anteros.persistence.dsl.osql.SQLTemplates.Builder;
-import br.com.anteros.persistence.dsl.osql.lang.Pair;
-import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.Ops;
-import br.com.anteros.persistence.dsl.osql.types.Path;
 
 /**
  * OracleTemplates is an SQL dialect for Oracle

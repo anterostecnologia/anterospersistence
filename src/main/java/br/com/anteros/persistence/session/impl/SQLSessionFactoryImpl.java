@@ -32,7 +32,6 @@ import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.transaction.TransactionFactory;
 import br.com.anteros.persistence.transaction.TransactionManagerLookup;
 import br.com.anteros.persistence.transaction.impl.JDBCTransactionFactory;
-import br.com.anteros.persistence.transaction.impl.JNDITransactionManagerLookup;
 import br.com.anteros.persistence.transaction.impl.TransactionException;
 
 /**

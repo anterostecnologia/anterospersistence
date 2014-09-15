@@ -15,7 +15,6 @@ package br.com.anteros.persistence.dsl.osql;
 
 import java.util.List;
 
-
 import br.com.anteros.persistence.dsl.osql.lang.CloseableIterator;
 
 /**

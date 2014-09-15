@@ -16,8 +16,6 @@ package br.com.anteros.persistence.dsl.osql.types;
 import java.io.Serializable;
 import java.util.List;
 
-
-
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 

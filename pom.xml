@@ -62,4 +62,23 @@
 			</plugin>
 		</plugins>
 	</build>
+	
+	<!-- DECLARAÇÃO DE REPOSITÓRIO PARA BAIXAR AS BIBLIOTECAS DO ANTEROS NO 
+		10.0.0.33 -->
+	<repositories>
+		<repository>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<id>central</id>
+			<name>libs-release</name>
+			<url>http://mobile.ajrorato.ind.br:8090/artifactory/libs-release</url>
+		</repository>
+		<repository>
+			<snapshots />
+			<id>snapshots</id>
+			<name>libs-snapshot</name>
+			<url>http://mobile.ajrorato.ind.br:8090/artifactory/libs-snapshot</url>
+		</repository>
+	</repositories>
 </project>

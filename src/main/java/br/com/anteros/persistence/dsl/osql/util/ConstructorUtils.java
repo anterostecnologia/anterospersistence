@@ -15,6 +15,13 @@ package br.com.anteros.persistence.dsl.osql.util;
 
 import static br.com.anteros.persistence.dsl.osql.util.ArrayUtils.isEmpty;
 import static com.google.common.collect.Iterables.filter;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Set;
+
 import br.com.anteros.persistence.dsl.osql.types.ExpressionException;
 
 import com.google.common.base.Function;
@@ -25,12 +32,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Primitives;
-
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Set;
 
 
 

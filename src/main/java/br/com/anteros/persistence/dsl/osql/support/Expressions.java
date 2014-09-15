@@ -16,8 +16,6 @@ package br.com.anteros.persistence.dsl.osql.support;
 import java.sql.Time;
 import java.util.Date;
 
-
-
 import br.com.anteros.persistence.dsl.osql.QueryMetadata;
 import br.com.anteros.persistence.dsl.osql.Tuple;
 import br.com.anteros.persistence.dsl.osql.types.ConstantImpl;

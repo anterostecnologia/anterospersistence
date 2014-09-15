@@ -16,8 +16,6 @@
 
 package br.com.anteros.persistence.metadata;
 
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;

@@ -15,8 +15,6 @@ package br.com.anteros.persistence.dsl.osql.types.expr;
 
 import java.util.Collection;
 
-
-
 import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.OperationImpl;
 import br.com.anteros.persistence.dsl.osql.types.Operator;

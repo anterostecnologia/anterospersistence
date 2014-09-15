@@ -15,8 +15,6 @@ package br.com.anteros.persistence.dsl.osql.types;
 
 import java.util.List;
 
-
-
 import com.google.common.collect.ImmutableList;
 
 /**

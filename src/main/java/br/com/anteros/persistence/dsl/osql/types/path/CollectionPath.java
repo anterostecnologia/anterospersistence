@@ -16,8 +16,6 @@ package br.com.anteros.persistence.dsl.osql.types.path;
 import java.lang.reflect.AnnotatedElement;
 import java.util.Collection;
 
-
-
 import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.PathImpl;
 import br.com.anteros.persistence.dsl.osql.types.PathMetadata;

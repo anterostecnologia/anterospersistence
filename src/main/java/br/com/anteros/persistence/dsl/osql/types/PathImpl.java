@@ -15,9 +15,6 @@ package br.com.anteros.persistence.dsl.osql.types;
 
 import java.lang.reflect.AnnotatedElement;
 
-
-
-
 import br.com.anteros.persistence.dsl.osql.util.ReflectionUtils;
 
 /**

@@ -15,8 +15,6 @@ package br.com.anteros.persistence.dsl.osql.types.path;
 
 import java.util.Map;
 
-
-
 import br.com.anteros.persistence.dsl.osql.ColumnMetadata;
 import br.com.anteros.persistence.dsl.osql.types.EntityPath;
 import br.com.anteros.persistence.dsl.osql.types.Path;

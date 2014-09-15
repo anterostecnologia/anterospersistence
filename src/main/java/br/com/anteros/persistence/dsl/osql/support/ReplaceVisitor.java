@@ -13,16 +13,36 @@
  */
 package br.com.anteros.persistence.dsl.osql.support;
 
-import br.com.anteros.persistence.dsl.osql.*;
-import br.com.anteros.persistence.dsl.osql.types.*;
+import java.util.List;
+import java.util.Map;
+
+import br.com.anteros.persistence.dsl.osql.DefaultQueryMetadata;
+import br.com.anteros.persistence.dsl.osql.JoinExpression;
+import br.com.anteros.persistence.dsl.osql.JoinFlag;
+import br.com.anteros.persistence.dsl.osql.QueryFlag;
+import br.com.anteros.persistence.dsl.osql.QueryMetadata;
+import br.com.anteros.persistence.dsl.osql.types.Constant;
+import br.com.anteros.persistence.dsl.osql.types.Expression;
+import br.com.anteros.persistence.dsl.osql.types.FactoryExpression;
+import br.com.anteros.persistence.dsl.osql.types.FactoryExpressionUtils;
+import br.com.anteros.persistence.dsl.osql.types.Operation;
+import br.com.anteros.persistence.dsl.osql.types.OperationImpl;
+import br.com.anteros.persistence.dsl.osql.types.Operator;
+import br.com.anteros.persistence.dsl.osql.types.OrderSpecifier;
+import br.com.anteros.persistence.dsl.osql.types.ParamExpression;
+import br.com.anteros.persistence.dsl.osql.types.Path;
+import br.com.anteros.persistence.dsl.osql.types.PathImpl;
+import br.com.anteros.persistence.dsl.osql.types.PathMetadata;
+import br.com.anteros.persistence.dsl.osql.types.Predicate;
+import br.com.anteros.persistence.dsl.osql.types.PredicateOperation;
+import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
+import br.com.anteros.persistence.dsl.osql.types.SubQueryExpressionImpl;
+import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
+import br.com.anteros.persistence.dsl.osql.types.TemplateExpressionImpl;
+import br.com.anteros.persistence.dsl.osql.types.Visitor;
 import br.com.anteros.persistence.dsl.osql.types.template.BooleanTemplate;
 
 import com.google.common.collect.ImmutableList;
-
-
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * ReplaceVisitor is a deep visitor that can be customized to replace segments of

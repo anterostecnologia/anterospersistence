@@ -5,6 +5,7 @@ import java.util.List;
 
 import br.com.anteros.persistence.dsl.osql.types.OrderSpecifier;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
+import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.session.repository.Page;
 import br.com.anteros.persistence.session.repository.Pageable;
 
@@ -69,4 +70,8 @@ public interface SQLService<T, ID extends Serializable> {
 	void remove(Iterable<? extends T> entities);
 
 	void removeAll();
+
+	Identifier<T> createIdentifier() throws Exception;
+
+	Identifier<T> getIdentifier(T owner) throws Exception;
 }

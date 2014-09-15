@@ -15,10 +15,6 @@
  ******************************************************************************/
 package br.com.anteros.persistence.handler;
 
-import br.com.anteros.persistence.beans.BeanInfo;
-import br.com.anteros.persistence.beans.IntrospectionException;
-import br.com.anteros.persistence.beans.Introspector;
-import br.com.anteros.persistence.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.ResultSet;
@@ -30,6 +26,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import br.com.anteros.persistence.beans.BeanInfo;
+import br.com.anteros.persistence.beans.IntrospectionException;
+import br.com.anteros.persistence.beans.Introspector;
+import br.com.anteros.persistence.beans.PropertyDescriptor;
 
 public class BeanProcessor {
 

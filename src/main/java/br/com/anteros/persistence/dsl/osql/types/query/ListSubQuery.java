@@ -15,8 +15,6 @@ package br.com.anteros.persistence.dsl.osql.types.query;
 
 import java.util.List;
 
-
-
 import br.com.anteros.persistence.dsl.osql.QueryMetadata;
 import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.ExpressionUtils;

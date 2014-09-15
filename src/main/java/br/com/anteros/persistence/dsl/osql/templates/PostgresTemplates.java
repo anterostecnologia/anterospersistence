@@ -14,7 +14,6 @@
 package br.com.anteros.persistence.dsl.osql.templates;
 
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
-import br.com.anteros.persistence.dsl.osql.SQLTemplates.Builder;
 import br.com.anteros.persistence.dsl.osql.types.Ops;
 
 /**

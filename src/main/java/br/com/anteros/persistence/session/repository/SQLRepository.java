@@ -5,6 +5,7 @@ import java.util.List;
 
 import br.com.anteros.persistence.dsl.osql.types.OrderSpecifier;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
+import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.transaction.Transaction;
 
@@ -73,5 +74,9 @@ public interface SQLRepository<T, ID extends Serializable> {
 	void removeAll();
 	
 	Transaction getTransaction() throws Exception;
+	
+	Identifier<T> createIdentifier() throws Exception;
+	
+	Identifier<T> getIdentifier(T owner) throws Exception;
 	
 }

@@ -18,16 +18,14 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-
-
 import br.com.anteros.persistence.dsl.osql.types.CollectionExpression;
 import br.com.anteros.persistence.dsl.osql.types.ConstantImpl;
 import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.ExpressionUtils;
 import br.com.anteros.persistence.dsl.osql.types.Ops;
+import br.com.anteros.persistence.dsl.osql.types.Ops.MathOps;
 import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.PathImpl;
-import br.com.anteros.persistence.dsl.osql.types.Ops.MathOps;
 import br.com.anteros.persistence.dsl.osql.util.MathUtils;
 
 /**

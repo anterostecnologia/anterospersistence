@@ -7,6 +7,7 @@ import br.com.anteros.core.utils.Assert;
 import br.com.anteros.core.utils.TypeResolver;
 import br.com.anteros.persistence.dsl.osql.types.OrderSpecifier;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
+import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.repository.Page;
 import br.com.anteros.persistence.session.repository.Pageable;
@@ -222,5 +223,15 @@ public class GenericSQLService<T, ID extends Serializable> implements SQLService
 	@Override
 	public T findOne(String sql, Object parameters) {
 		return this.repository.findOne(sql, parameters);
+	}
+
+	@Override
+	public Identifier<T> createIdentifier() throws Exception {
+		return repository.createIdentifier();
+	}
+
+	@Override
+	public Identifier<T> getIdentifier(T owner) throws Exception {
+		return repository.getIdentifier(owner);
 	}
 }
