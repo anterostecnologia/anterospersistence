@@ -18,6 +18,7 @@ package br.com.anteros.persistence.session.query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -102,32 +103,74 @@ public class SQLQueryAnalyzer {
 		SelectStatementNode firstSelectStatement = getFirstSelectStatement(node);
 
 		if (firstSelectStatement != null) {
-			for (SQLQueryAnalyserAlias alias : aliases)
-				findOwnerByAlias(firstSelectStatement, alias);
+
+			SQLQueryAnalyserAlias aliasResultClass = getAliasResultClass();
+
+			findAndSetOwnerToChildAlias(firstSelectStatement, aliasResultClass);
 
 			validateAliases();
+
 			buildExpressionsAndColumnAliases(firstSelectStatement);
 
-			// System.out.println(sql);
+			/*System.out.println(sql);
 
-			/*
-			 * System.out.println(
-			 * "--------------------EXPRESSIONS-------------------------------"
-			 * ); Iterator<String> iterator = expressions.keySet().iterator();
-			 * while (iterator.hasNext()) { String k = iterator.next(); String v
-			 * = expressions.get(k); System.out.println(k + " = " + v); }
-			 * System.out.println(
-			 * "--------------------COLUMN ALIASES----------------------------"
-			 * ); for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
-			 * System.out.println("ALIAS-> " + a.getAlias() + " path " +
-			 * a.getAliasPath());
-			 * System.out.println("    ----------------------------------"); for
-			 * (String k : columnAliases.get(a).keySet()) {
-			 * System.out.println("    " + k + " = " +
-			 * columnAliases.get(a).get(k)); } }
-			 */
+			System.out.println("--------------------EXPRESSIONS-------------------------------");
+			Iterator<String> iterator = expressions.keySet().iterator();
+			while (iterator.hasNext()) {
+				String k = iterator.next();
+				String v = expressions.get(k);
+				System.out.println(k + " = " + v);
+			}
+			System.out.println("--------------------COLUMN ALIASES----------------------------");
+			for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
+				System.out.println("ALIAS-> " + a.getAlias() + " path " + a.getAliasPath());
+				System.out.println("    ----------------------------------");
+				for (String k : columnAliases.get(a).keySet()) {
+					System.out.println("    " + k + " = " + columnAliases.get(a).get(k));
+				}
+			}*/
 
 		}
+	}
+
+	protected void findAndSetOwnerToChildAlias(Node node, SQLQueryAnalyserAlias aliasOwner)
+			throws SQLQueryAnalyzerException {
+		List<String> columnNames = null;
+		for (SQLQueryAnalyserAlias aliasChild : aliases) {
+			if ((aliasChild == getAliasResultClass()) || (aliasChild.getOwner() != null) || (aliasChild == aliasOwner))
+				continue;
+
+			columnNames = getColumnNameEqualsAliases(node, aliasChild, aliasOwner);
+			if (columnNames.size() > 0) {
+				if (aliasOwner.getEntity() != null) {
+
+					EntityCache caches[] = { aliasOwner.getEntity() };
+					if (aliasOwner.getEntity().isAbstractClass())
+						caches = session.getEntityCacheManager().getEntitiesBySuperClass(aliasOwner.getEntity());
+					for (EntityCache cache : caches) {
+						DescriptionField descriptionField = cache.getDescriptionFieldUsesColumns(aliasChild.getEntity()
+								.getEntityClass(), columnNames);
+						if (descriptionField != null) {
+							aliasChild.setOwner(new SQLQueryAnalyserOwner(aliasOwner, aliasOwner.getEntity(),
+									descriptionField));
+							findAndSetOwnerToChildAlias(node, aliasChild);
+							break;
+						}
+					}
+				}
+			}
+
+		}
+
+	}
+
+	protected SQLQueryAnalyserAlias getAliasResultClass() {
+		for (SQLQueryAnalyserAlias alias : aliases) {
+			if ((alias.getEntity() == null) || (alias.getEntity().getEntityClass() == resultClass)
+					|| (ReflectionUtils.isExtendsClass(alias.getEntity().getEntityClass(), resultClass)))
+				return alias;
+		}
+		return null;
 	}
 
 	protected String makeNextAliasName(String alias, String columnName) {
@@ -164,20 +207,13 @@ public class SQLQueryAnalyzer {
 				Class<?> childClass = resultClass;
 				if ((a.getOwner() == null) && ((!a.getEntity().getEntityClass().equals(resultClass)))
 						&& (!ReflectionUtils.isExtendsClass(superClass, childClass))) {
-					boolean containsColumns = false;
-					if (columnAliases.containsKey(a)) {
-						containsColumns = (columnAliases.get(a).size() > 0);
-					}
-
-					if (containsColumns) {
-						throw new SQLQueryAnalyzerException(
-								"Foi encontrado alias "
-										+ a.getAlias()
-										+ "->"
-										+ a.getEntity().getEntityClass().getName()
-										+ " no sql sem junção com nenhum outro alias ou as colunas usadas não está mapeadas na classe. Somente pode ficar sem junção o alias da classe de resultado "
-										+ resultClass.getName());
-					}
+					throw new SQLQueryAnalyzerException(
+							"Foi encontrado alias "
+									+ a.getAlias()
+									+ "->"
+									+ a.getEntity().getEntityClass().getName()
+									+ " no sql sem junção com nenhum outro alias ou as colunas usadas não está mapeadas na classe. Somente pode ficar sem junção o alias da classe de resultado "
+									+ resultClass.getName());
 				}
 			}
 		}

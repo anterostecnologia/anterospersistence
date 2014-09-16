@@ -101,7 +101,7 @@ public class SQLQueryAnalyserOwner {
 		if (!result.equals(""))
 			result += ".";
 		result += fieldOwner.getName();
-
+		
 		return result;
 	}
 	
