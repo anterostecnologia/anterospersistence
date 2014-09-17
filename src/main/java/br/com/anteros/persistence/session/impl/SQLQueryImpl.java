@@ -1385,7 +1385,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		} else if (parameters instanceof Object[]) {
 			setParameters((Object[]) parameters);
 		} else if (parameters instanceof NamedParameter) {
-			setParameters(new NamedParameter[] { (NamedParameter) namedParameters });
+			setParameters(new NamedParameter[] { (NamedParameter) parameters });
 		} else if (parameters instanceof NamedParameterList) {
 			setParameters(((NamedParameterList) parameters).values());
 		} else
