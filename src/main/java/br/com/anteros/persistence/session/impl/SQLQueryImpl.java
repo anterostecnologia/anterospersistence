@@ -44,6 +44,7 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionNamedQuery;
 import br.com.anteros.persistence.metadata.descriptor.type.FieldType;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.parameter.NamedParameter;
+import br.com.anteros.persistence.parameter.NamedParameterList;
 import br.com.anteros.persistence.parameter.NamedParameterParserResult;
 import br.com.anteros.persistence.proxy.collection.SQLArrayList;
 import br.com.anteros.persistence.proxy.collection.SQLHashMap;
@@ -1385,6 +1386,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			setParameters((Object[]) parameters);
 		} else if (parameters instanceof NamedParameter) {
 			setParameters(new NamedParameter[] { (NamedParameter) namedParameters });
+		} else if (parameters instanceof NamedParameterList) {
+			setParameters(((NamedParameterList) parameters).values());
 		} else
 			throw new SQLQueryException(
 					"Formato para setParameters inválido. Use NamedParameter[], Map ou Object[].");
