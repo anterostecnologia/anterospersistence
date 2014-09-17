@@ -22,7 +22,8 @@ import br.com.anteros.persistence.parameter.type.EnumeratedFormatSQL;
 
 public class NamedParameterList extends ArrayList<NamedParameter> {
 
-	
+	private static final long serialVersionUID = 1L;
+
 	public NamedParameterList addParameter(String name, Object value) {
 		this.add(new NamedParameter(name, value));
 		return this;
@@ -33,12 +34,18 @@ public class NamedParameterList extends ArrayList<NamedParameter> {
 		return this;
 	}
 
-	public NamedParameterList addEnumeratedParameter(String name, Enum[] value, EnumeratedFormatSQL format) {
+	public NamedParameterList addEnumeratedParameter(String name, Enum<?>[] value, EnumeratedFormatSQL format) {
 		this.add(new EnumeratedParameter(name, value, format));
 		return this;
 	}
 
 	public NamedParameter[] values() {
+		NamedParameter[] result = new NamedParameter[] {};
+		result = (NamedParameter[]) this.toArray(result);
+		return result;
+	}
+	
+	public NamedParameter[] toArray() {
 		NamedParameter[] result = new NamedParameter[] {};
 		result = (NamedParameter[]) this.toArray(result);
 		return result;
