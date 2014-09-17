@@ -17,6 +17,7 @@ package br.com.anteros.persistence.parameter;
 
 import java.util.ArrayList;
 
+import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
 import br.com.anteros.persistence.parameter.type.EnumeratedFormatSQL;
 
 
@@ -26,6 +27,11 @@ public class NamedParameterList extends ArrayList<NamedParameter> {
 
 	public NamedParameterList addParameter(String name, Object value) {
 		this.add(new NamedParameter(name, value));
+		return this;
+	}
+	
+	public NamedParameterList addParameter(String name, Object value, TemporalType type) {
+		this.add(new NamedParameter(name, value, type));
 		return this;
 	}
 
