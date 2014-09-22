@@ -46,6 +46,7 @@ import br.com.anteros.core.utils.ResourceUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.annotation.Entity;
+import br.com.anteros.persistence.metadata.annotation.EnumValues;
 import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
 import br.com.anteros.persistence.metadata.configuration.ModelConfiguration;
 import br.com.anteros.persistence.session.SQLSessionFactory;
@@ -186,7 +187,7 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 				getSessionFactoryConfiguration().getPackageToScanEntity().setPackageName(getSessionFactoryConfiguration().getPackageToScanEntity().getPackageName()+ ", " + SECURITY_PACKAGE);
 			String[] packages = StringUtils.tokenizeToStringArray(getSessionFactoryConfiguration().getPackageToScanEntity().getPackageName(), ", ;");
 			List<Class<?>> scanClasses = ClassPathScanner.scanClasses(new ClassFilter().packages(packages).annotation(
-					Entity.class));
+					Entity.class).annotation(EnumValues.class));
 			getSessionFactoryConfiguration().addToAnnotatedClasses(scanClasses);
 		}
 		
