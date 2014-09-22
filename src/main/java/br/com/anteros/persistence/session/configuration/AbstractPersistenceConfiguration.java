@@ -40,11 +40,16 @@ import br.com.anteros.core.configuration.DataSourceConfiguration;
 import br.com.anteros.core.configuration.PropertyConfiguration;
 import br.com.anteros.core.configuration.SessionFactoryConfiguration;
 import br.com.anteros.core.configuration.exception.AnterosConfigurationException;
+import br.com.anteros.core.scanner.ClassFilter;
+import br.com.anteros.core.scanner.ClassPathScanner;
 import br.com.anteros.core.utils.ResourceUtils;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
+import br.com.anteros.persistence.metadata.annotation.Entity;
 import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
 import br.com.anteros.persistence.metadata.configuration.ModelConfiguration;
 import br.com.anteros.persistence.session.SQLSessionFactory;
+import br.com.anteros.persistence.session.exception.SQLSessionFactoryException;
 import br.com.anteros.persistence.session.impl.SQLSessionFactoryImpl;
 import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 
@@ -52,6 +57,7 @@ import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfiguration implements
 		PersistenceConfiguration {
 
+	public static final String SECURITY_PACKAGE = "br.com.anteros.security.model";
 	@Transient
 	protected EntityCacheManager entityCacheManager;
 	@Transient
@@ -173,12 +179,29 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 		addProperty(new PropertyConfiguration().setName(name).setValue(value));
 		return this;
 	}
+	
+	protected void prepareClassesToLoad() throws ClassNotFoundException{
+		if ((getSessionFactoryConfiguration().getPackageToScanEntity() != null) && (!"".equals(getSessionFactoryConfiguration().getPackageToScanEntity().getPackageName()))) {
+			if (getSessionFactoryConfiguration().isIncludeSecurityModel())
+				getSessionFactoryConfiguration().getPackageToScanEntity().setPackageName(getSessionFactoryConfiguration().getPackageToScanEntity().getPackageName()+ ", " + SECURITY_PACKAGE);
+			String[] packages = StringUtils.tokenizeToStringArray(getSessionFactoryConfiguration().getPackageToScanEntity().getPackageName(), ", ;");
+			List<Class<?>> scanClasses = ClassPathScanner.scanClasses(new ClassFilter().packages(packages).annotation(
+					Entity.class));
+			getSessionFactoryConfiguration().addToAnnotatedClasses(scanClasses);
+		}
+		
+		if ((getSessionFactoryConfiguration().getClasses() == null)
+				|| (getSessionFactoryConfiguration().getClasses().size() == 0))
+			throw new SQLSessionFactoryException(
+					"Não foram encontradas classes representando entidades. Informe o pacote onde elas podem ser localizadas ou informe manualmente cada uma delas.");
+	}
 
-	public SQLSessionFactory buildSessionFactory() throws Exception {
+	public SQLSessionFactory buildSessionFactory() throws Exception {		
+		prepareClassesToLoad();
 		buildDataSource();
 		if (dataSource == null)
-			throw new AnterosConfigurationException(
-					AnterosPersistenceTranslate.getInstance().getMessage(this.getClass(), "datasourceNotConfigured"));
+			throw new AnterosConfigurationException(AnterosPersistenceTranslate.getInstance().getMessage(
+					this.getClass(), "datasourceNotConfigured"));
 		loadEntities();
 		SQLSessionFactoryImpl sessionFactory = new SQLSessionFactoryImpl(entityCacheManager, dataSource,
 				this.getSessionFactoryConfiguration());
@@ -231,7 +254,8 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 			this.buildDataSource();
 			return this;
 		} catch (final InvocationTargetException e) {
-			throw new AnterosConfigurationException("Impossível realizar a leitura do arquivo de configuração." + e.getTargetException());
+			throw new AnterosConfigurationException("Impossível realizar a leitura do arquivo de configuração."
+					+ e.getTargetException());
 		} catch (final Exception e) {
 			throw new AnterosConfigurationException("Impossível realizar a leitura do arquivo de configuração." + e);
 		}

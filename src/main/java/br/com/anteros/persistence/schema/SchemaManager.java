@@ -161,6 +161,8 @@ public class SchemaManager implements Comparator<TableSchema> {
 										tableGeneratorSchema.setValueColumnName(((TableGenerator) generator)
 												.getValueColumnName());
 										sequences.add(tableGeneratorSchema);
+									} else if (generator instanceof IdentifierGenerator){
+										newColumn.setAutoIncrement(true);
 									}
 								}
 							}

@@ -814,8 +814,6 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		fromEntityCache.generateAliasTableName();
 		descriptionFieldOwner.generateAliasTableName();
 
-		select.addTableName(fromEntityCache.getTableName() + " "
-				+ fromEntityCache.getAliasTableName());
 		select.addTableName(targetEntityCache.getTableName() + " "
 				+ targetEntityCache.getAliasTableName());
 		select.addTableName(descriptionFieldOwner.getTableName() + " "
@@ -836,38 +834,21 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			if (!column.isInversedJoinColumn()) {
 				if (appendOperator)
 					select.and();
-				select.addCondition(fromEntityCache.getAliasTableName() + "."
-						+ column.getColumnName(), "=",
-						":P" + column.getColumnName());
+				select.addCondition(descriptionFieldOwner.getAliasTableName() + "."
+						+ column.getReferencedColumnName(), "=",
+						":P" + column.getReferencedColumnName());
 				params.add(new NamedParameter("P"
 						+ column.getReferencedColumnName(), columnKeyTarget
 						.get(column.getReferencedColumnName())));
 
 				appendOperator = true;
 			}
-		}
-
-		/*
-		 * Adiciona no WHERE colunas da entidade de Origem
-		 */
-		DescriptionColumn referencedColumn;
-		for (DescriptionColumn column : fromEntityCache.getPrimaryKeyColumns()) {
-			if (appendOperator)
-				select.and();
-			referencedColumn = descriptionFieldOwner
-					.getDescriptionColumnByReferencedColumnName(column
-							.getColumnName());
-			select.addWhereToken(fromEntityCache.getAliasTableName() + "."
-					+ column.getColumnName() + " = "
-					+ descriptionFieldOwner.getAliasTableName() + "."
-					+ referencedColumn.getColumnName());
-
-			appendOperator = true;
-		}
-
+		} 
+		
 		/*
 		 * Adiciona no WHERE colunas da entidade de Destino
 		 */
+		DescriptionColumn referencedColumn;
 		for (DescriptionColumn column : targetEntityCache
 				.getPrimaryKeyColumns()) {
 			if (appendOperator)

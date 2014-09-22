@@ -59,6 +59,8 @@ public interface SQLRepository<T, ID extends Serializable> {
 	
 	SQLSession getSession();
 	
+	SQLSession openSession() throws Exception;
+	
 	void refresh(T entity);
 
 	long count();

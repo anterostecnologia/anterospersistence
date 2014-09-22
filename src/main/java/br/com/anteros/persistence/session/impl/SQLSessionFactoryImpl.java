@@ -47,7 +47,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 
 	public SQLSessionFactoryImpl(EntityCacheManager entityCacheManager, DataSource dataSource,
 			SessionFactoryConfiguration configuration) throws Exception {
-		super(entityCacheManager, dataSource, configuration);
+		super(entityCacheManager, dataSource, configuration);	
 
 		String tmLookupClass = configuration.getProperty(AnterosPersistenceProperties.TRANSACTION_MANAGER_LOOKUP);
 		if (tmLookupClass == null) {

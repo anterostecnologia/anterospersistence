@@ -529,4 +529,11 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 	    return getSession().getIdentifier(owner);
 	}
 
+	@Override
+	public SQLSession openSession() throws Exception {
+		if (sessionFactory==null)
+			throw new SQLRepositoryException("Nenhuma fábrica de sessões foi atribuída ao repositório não é possível criar uma nova sessão SQL.");
+		return sessionFactory.openSession();
+	}
+
 }

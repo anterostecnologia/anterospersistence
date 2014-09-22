@@ -30,6 +30,7 @@ import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.configuration.ModelConfiguration;
 import br.com.anteros.persistence.sql.datasource.JDBCDataSource;
 import br.com.anteros.persistence.sql.datasource.JNDIDataSourceFactory;
+import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 
 public class AnterosPersistenceConfiguration extends AbstractPersistenceConfiguration {
 
@@ -91,9 +92,12 @@ public class AnterosPersistenceConfiguration extends AbstractPersistenceConfigur
 					throw new AnterosConfigurationException("Nenhum DataSource foi configurado.");
 			}
 		}
+		if (dataSource == null)
+			throw new AnterosConfigurationException(AnterosPersistenceTranslate.getInstance().getMessage(this.getClass(),
+					"datasourceNotConfigured"));
 	}
-	
-	public static InputStream getDefaultXmlInputStream() throws Exception {	
+
+	public static InputStream getDefaultXmlInputStream() throws Exception {
 		List<URL> resources = ResourceUtils.getResources("/anteros-config.xml", AnterosPersistenceConfiguration.class);
 		if ((resources == null) || (resources.isEmpty())) {
 			resources = ResourceUtils.getResources("/assets/anteros-config.xml", AnterosPersistenceConfiguration.class);
@@ -104,7 +108,5 @@ public class AnterosPersistenceConfiguration extends AbstractPersistenceConfigur
 		}
 		return null;
 	}
-	
-
 
 }
