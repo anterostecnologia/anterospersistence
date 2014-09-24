@@ -7,6 +7,7 @@ import br.com.anteros.persistence.dsl.osql.types.OrderSpecifier;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.session.SQLSession;
+import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.transaction.Transaction;
 
 public interface SQLRepository<T, ID extends Serializable> {
@@ -59,7 +60,11 @@ public interface SQLRepository<T, ID extends Serializable> {
 	
 	SQLSession getSession();
 	
+	void setSession(SQLSession session);
+	
 	SQLSession openSession() throws Exception;
+	
+	SQLSessionFactory getSQLSessionFactory() throws Exception;
 	
 	void refresh(T entity);
 
