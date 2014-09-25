@@ -24,6 +24,8 @@ import javassist.util.proxy.MethodFilter;
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 import javassist.util.proxy.ProxyObject;
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
@@ -34,9 +36,12 @@ import br.com.anteros.persistence.session.cache.Cache;
 
 public class LazyLoadProxyFactoryImpl implements LazyLoadProxyFactory {
 
+	private static Logger LOG = LoggerProvider.getInstance().getLogger(LazyLoadProxyFactory.class); 
 	
 	public Object createProxy(SQLSession session, Object targetObject, DescriptionField descriptionField, EntityCache targetEntityCache,
 			Map<String, Object> columnKeyValues, Cache transactionCache) throws Exception {
+		
+		LOG.debug("Criando proxy para objeto "+targetObject+" usando session "+session);
 		ProxyFactory factory = new ProxyFactory();
 		factory.setInterfaces(new Class[]{AnterosProxyObject.class});
 		if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), Set.class))
@@ -52,6 +57,7 @@ public class LazyLoadProxyFactoryImpl implements LazyLoadProxyFactory {
 				targetObject, descriptionField);
 		((ProxyObject) newObject).setHandler(lazyLoadInterceptor);
 		lazyLoadInterceptor.setConstructed(true);
+		LOG.debug("Proxy criado");
 		return newObject;
 	}
 

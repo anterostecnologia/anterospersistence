@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.persistence.handler.EntityHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
@@ -52,6 +54,8 @@ import br.com.anteros.persistence.transaction.Transaction;
 import br.com.anteros.persistence.transaction.TransactionFactory;
 
 public class SQLSessionImpl implements SQLSession {
+	
+	private static Logger LOG = LoggerProvider.getInstance().getLogger(SQLSession.class);
 
 	public static int FIRST_RECORD = 0;
 	private EntityCacheManager entityCacheManager;
@@ -205,6 +209,7 @@ public class SQLSessionImpl implements SQLSession {
 			commandQueue.clear();
 		}
 		connection.close();
+		LOG.debug("Fechou session "+this);
 	}
 
 	public void onBeforeExecuteCommit(Connection connection) throws Exception {

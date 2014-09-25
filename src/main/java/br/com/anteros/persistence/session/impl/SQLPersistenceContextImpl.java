@@ -21,6 +21,7 @@ import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -49,46 +50,55 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 
 	public EntityManaged addEntityManaged(Object value, boolean readOnly, boolean newEntity) throws Exception {
 		EntityManaged key = getEntityManaged(value);
-		if (key == null) {
-			EntityCache entityCache = entityCacheManager.getEntityCache(value.getClass());
-			key = new EntityManaged(entityCache);
-			key.setStatus(readOnly ? EntityStatus.READ_ONLY : EntityStatus.MANAGED);
-			key.setFieldsForUpdate(entityCache.getAllFieldNames());
-			key.setNewEntity(newEntity);
-			for (DescriptionField descriptionField : entityCache.getDescriptionFields())
-				key.addLastValue(descriptionField.getFieldEntityValue(session, value));
-			entities.put(key, new WeakReference<Object>(value));
+		synchronized (entities) {
+			if (key == null) {
+				EntityCache entityCache = entityCacheManager.getEntityCache(value.getClass());
+				key = new EntityManaged(entityCache);
+				key.setStatus(readOnly ? EntityStatus.READ_ONLY : EntityStatus.MANAGED);
+				key.setFieldsForUpdate(entityCache.getAllFieldNames());
+				key.setNewEntity(newEntity);
+				for (DescriptionField descriptionField : entityCache.getDescriptionFields())
+					key.addLastValue(descriptionField.getFieldEntityValue(session, value));
+				entities.put(key, new WeakReference<Object>(value));
+			}
 		}
 		return key;
 	}
 
 	public EntityManaged getEntityManaged(Object key) {
-		List<EntityManaged> keysToRemove = new ArrayList<EntityManaged>();
 		EntityManaged em = null;
-		for (EntityManaged entityManaged : entities.keySet()) {
-			Reference<?> ref = entities.get(entityManaged);
-			if (ref.get() == null) {
-				keysToRemove.add(entityManaged);
-				continue;
+		synchronized (entities) {
+			List<EntityManaged> keysToRemove = new ArrayList<EntityManaged>();
+			for (EntityManaged entityManaged : entities.keySet()) {
+				Reference<?> ref = entities.get(entityManaged);
+				if (ref.get() == null) {
+					keysToRemove.add(entityManaged);
+					continue;
+				}
+				/*
+				 * Utiliza a função System.identityHashCode() para obter o
+				 * hashCode único do objeto e não chamar o hashCode() reescrito
+				 * pelo usuário
+				 */
+				if (System.identityHashCode(key) == System.identityHashCode(ref.get())) {
+					em = entityManaged;
+				}
 			}
-			/*
-			 * Utiliza a função System.identityHashCode() para obter o hashCode
-			 * único do objeto e não chamar o hashCode() reescrito pelo usuário
-			 */
-			if (System.identityHashCode(key) == System.identityHashCode(ref.get())) {
-				em = entityManaged;
+
+			for (EntityManaged entityManaged : keysToRemove) {
+				entities.remove(entityManaged);
 			}
 		}
-		for (EntityManaged entityManaged : keysToRemove) {
-			entities.remove(entityManaged);
-		}
+
 		return em;
 	}
 
 	public void removeEntityManaged(Object key) {
-		EntityManaged entity = getEntityManaged(key);
-		if (entity != null)
-			entities.remove(entity);
+		synchronized (entities) {
+			EntityManaged entity = getEntityManaged(key);
+			if (entity != null)
+				entities.remove(entity);
+		}
 	}
 
 	public boolean isExistsEntityManaged(Object key) {
