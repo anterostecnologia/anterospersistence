@@ -157,6 +157,9 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	public TypedSQLQuery<T> setParameters(NamedParameter[] parameters)
 			throws Exception {
+		if (parameters.length != this.namedParameters.size())
+			throw new SQLQueryException(
+					"Número de parâmetros diferente do número encontrado na instrução SQL.");
 		for (NamedParameter parameter : parameters) {
 			boolean found = false;
 			for (Integer index : namedParameters.keySet()) {
@@ -188,7 +191,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	public TypedSQLQuery<T> setParameters(Map<String, Object> parameters)
 			throws Exception {
-		if (parameters.size() != this.parameters.size())
+		if (parameters.size() != this.namedParameters.size())
 			throw new SQLQueryException(
 					"Número de parâmetros diferente do número encontrado na instrução SQL.");
 

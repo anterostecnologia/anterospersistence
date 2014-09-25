@@ -197,9 +197,10 @@ public class EntityCacheManager {
 						if ((entityCache.getDescriptionColumnByName(param) == null)
 								&& (!descriptionSQL.getSuccessParameter().equalsIgnoreCase(param))
 								&& (descriptionSQL.getParametersId().get(param) == null))
-							throw new EntityCacheException(AnterosPersistenceTranslate.getInstance().getMessage(this.getClass(),
-									"descriptionSql.parameter.not.found", param, descriptionSQL.getSql(),
-									descriptionSQL.getSqlType(), entityCache.getEntityClass().getName()));
+							throw new EntityCacheException(AnterosPersistenceTranslate.getInstance().getMessage(
+									this.getClass(), "descriptionSql.parameter.not.found", param,
+									descriptionSQL.getSql(), descriptionSQL.getSqlType(),
+									entityCache.getEntityClass().getName()));
 					}
 				}
 			}
@@ -2257,6 +2258,17 @@ public class EntityCacheManager {
 		return result.toArray(new EntityCache[] {});
 	}
 
+	public EntityCache getEntitySuperClass(Class<?> clazz) {
+		for (EntityCache entityCache : entities.values()) {
+			if ((ReflectionUtils.isExtendsClass(entityCache.getEntityClass(), clazz))
+					&& (entityCache.getEntityClass() != clazz))
+				if (!entityCache.isInheritance()) {
+					return entityCache;
+				}
+		}
+		return null;
+	}
+
 	public EntityCache[] getEntitiesBySuperClass(EntityCache cache) {
 		return getEntitiesBySuperClass(cache.getEntityClass());
 	}
@@ -2327,11 +2339,12 @@ public class EntityCacheManager {
 		}
 		return null;
 	}
-	
+
 	public EntityCache getEntityCacheByName(String name) {
 		if ((name != null) && (!"".equals(name))) {
 			for (EntityCache entityCache : entities.values()) {
-				if ((name.equalsIgnoreCase(entityCache.getEntityClass().getName())) && (!entityCache.hasDiscriminatorValue()))
+				if ((name.equalsIgnoreCase(entityCache.getEntityClass().getName()))
+						&& (!entityCache.hasDiscriminatorValue()))
 					return entityCache;
 			}
 		}
