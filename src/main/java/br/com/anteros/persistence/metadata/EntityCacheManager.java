@@ -2331,6 +2331,11 @@ public class EntityCacheManager {
 	 * param tableName return
 	 */
 	public EntityCache getEntityCacheByTableName(String tableName) {
+		int count = countEntityCacheByTableName(tableName); 
+		if (countEntityCacheByTableName(tableName)>1) {
+			throw new EntityCacheManagerException("Foram encontradas "+count+" classes com o mesmo nome de tabela "+tableName);
+		}
+		
 		if ((tableName != null) && (!"".equals(tableName))) {
 			for (EntityCache entityCache : entities.values()) {
 				if ((tableName.equalsIgnoreCase(entityCache.getTableName())) && (!entityCache.hasDiscriminatorValue()))
@@ -2338,6 +2343,17 @@ public class EntityCacheManager {
 			}
 		}
 		return null;
+	}
+	
+	public int countEntityCacheByTableName(String tableName) {
+		int result = 0;
+		if ((tableName != null) && (!"".equals(tableName))) {
+			for (EntityCache entityCache : entities.values()) {
+				if ((tableName.equalsIgnoreCase(entityCache.getTableName())) && (!entityCache.hasDiscriminatorValue()))
+					result++;
+			}
+		}
+		return result;
 	}
 
 	public EntityCache getEntityCacheByName(String name) {

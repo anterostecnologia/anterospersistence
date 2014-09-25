@@ -270,7 +270,7 @@ public class DescriptionColumn {
 				.append(columnName).append(" compositeId=").append(compositeId).append(" referencedColumnName=").append(referencedColumnName)
 				.append(" isPrimaryKey=").append(isPrimaryKey()).append(" isForeignKey=").append(isForeignKey()).append(" isDiscriminatorColumn=")
 				.append(isDiscriminatorColumn()).append(" isNoneColumn=").append(isNoneColumn()).append(" targetClass=")
-				.append(this.getDescriptionField().getTargetClass()).toString();
+				.append((this.getDescriptionField()==null?"<no descriptionField>":this.getDescriptionField().getTargetClass())).toString();
 	}
 
 	public List<DescriptionColumn> getColumns() {
