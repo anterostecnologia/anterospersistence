@@ -838,11 +838,11 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				if (appendOperator)
 					select.and();
 				select.addCondition(descriptionFieldOwner.getAliasTableName() + "."
-						+ column.getReferencedColumnName(), "=",
-						":P" + column.getReferencedColumnName());
+						+ column.getColumnName(), "=",
+						":P" + column.getColumnName());
 				params.add(new NamedParameter("P"
-						+ column.getReferencedColumnName(), columnKeyTarget
-						.get(column.getReferencedColumnName())));
+						+ column.getColumnName(), columnKeyTarget
+						.get(column.getColumnName())));
 
 				appendOperator = true;
 			}
