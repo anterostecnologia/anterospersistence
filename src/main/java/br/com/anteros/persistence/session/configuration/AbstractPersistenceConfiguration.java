@@ -195,7 +195,6 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 					Entity.class).annotation(EnumValues.class));
 			if (LOG.isDebugEnabled()){
 				for (Class<?> cl : scanClasses){
-					System.out.println("Encontrado classe scaneada "+cl.getName());
 					LOG.debug("Encontrado classe scaneada "+cl.getName());
 				}
 			}
