@@ -850,18 +850,19 @@ public class EntityCache {
 		}
 	}
 
-	public DescriptionField getDescriptionFieldWithMappedBy(String mappedBy) {
+	public DescriptionField getDescriptionFieldWithMappedBy(Class<?> sourceType, String mappedBy) {
 		for (DescriptionField descriptionField : getDescriptionFields()) {
 			if (mappedBy.equals(descriptionField.getMappedBy())) {
-				return descriptionField;
+				if (descriptionField.getTargetClass().equals(sourceType))
+					return descriptionField;
 			}
 		}
 		return null;
 	}
-	
-	public boolean hasDescriptionFieldWithMappedBy(String mappedBy) {
-		DescriptionField result = getDescriptionFieldWithMappedBy(mappedBy);
-		return (result!=null);
+
+	public boolean hasDescriptionFieldWithMappedBy(Class<?> sourceType, String mappedBy) {
+		DescriptionField result = getDescriptionFieldWithMappedBy(sourceType, mappedBy);
+		return (result != null);
 	}
 
 }

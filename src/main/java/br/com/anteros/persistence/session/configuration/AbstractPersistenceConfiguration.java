@@ -60,7 +60,7 @@ import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfiguration implements
 		PersistenceConfiguration {
 	
-	private static Logger LOG = LoggerProvider.getInstance().getLogger(AbstractPersistenceConfiguration.class); 
+	protected static Logger LOG = LoggerProvider.getInstance().getLogger(AbstractPersistenceConfiguration.class); 
 
 	public static final String SECURITY_PACKAGE = "br.com.anteros.security.model";
 	@Transient
