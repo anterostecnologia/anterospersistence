@@ -18,7 +18,6 @@ package br.com.anteros.persistence.session.query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -54,7 +53,6 @@ public class SQLQueryAnalyzer {
 	private Set<SQLQueryAnalyserAlias> aliases;
 	private Set<SQLQueryAnalyserAlias> aliasesTemporary = new LinkedHashSet<SQLQueryAnalyserAlias>();
 	private Map<String, String> expressions;
-	private Map<String, Map<String, Object>> cacheResultAnalyze = new HashMap<String, Map<String, Object>>();
 	private Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases = new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String>>();
 	private int numberOfColumn = 0;
 	private Set<String> usedAliases = new HashSet<String>();
@@ -66,23 +64,7 @@ public class SQLQueryAnalyzer {
 	public void analyze(String sql, Class<?> resultClass) throws SQLQueryAnalyzerException {
 		this.sql = sql;
 		this.resultClass = resultClass;
-		// Map<String, Object> result = cacheResultAnalyze.get(sql);
-		// if (result == null) {
 		loadAliases();
-		// result = new HashMap<String, Object>();
-		// result.put("columnAliases", columnAliases);
-		// result.put("aliases", aliases);
-		// result.put("expressions", expressions);
-		// result.put("sql", this.sql);
-		// cacheResultAnalyze.put(sql, result);
-		// } else {
-		// columnAliases = (Map<SQLQueryAnalyserAlias, Map<String, String>>)
-		// result.get("columnAliases");
-		// aliases = (LinkedHashSet<SQLQueryAnalyserAlias>)
-		// result.get("aliases");
-		// expressions = (Map<String, String>) result.get("expressions");
-		// this.sql = (String) result.get("sql");
-		// }
 	}
 
 	protected void loadAliases() throws SQLQueryAnalyzerException {
@@ -178,7 +160,7 @@ public class SQLQueryAnalyzer {
 		String result = null;
 		while (true) {
 			numberOfColumn++;
-			result = alias + "." + columnName + " AS " + alias + "_COL_" + String.valueOf(numberOfColumn);
+			result = alias + "." + columnName + " AS " + adpatAliasColumnName(alias) + "_COL_" + String.valueOf(numberOfColumn);
 			if (usedAliases.contains(alias + "_COL_" + String.valueOf(numberOfColumn)))
 				continue;
 			return result;
@@ -788,5 +770,43 @@ public class SQLQueryAnalyzer {
 
 	public Map<SQLQueryAnalyserAlias, Map<String, String>> getColumnAliases() {
 		return columnAliases;
+	}
+
+	public String adpatAliasColumnName(String aliasColumnNamePrefix) {
+		int maximumNameLength = session.getDialect().getMaxColumnNameSize()-8;
+		String result = adjustName(aliasColumnNamePrefix);
+
+		if (result.length() > maximumNameLength) {
+			result = StringUtils.removeAllButAlphaNumericToFit(aliasColumnNamePrefix, maximumNameLength);
+			if (result.length() > maximumNameLength) {
+				String onlyAlphaNumeric = StringUtils.removeAllButAlphaNumericToFit(aliasColumnNamePrefix, 0);
+				result = StringUtils.shortenStringsByRemovingVowelsToFit(onlyAlphaNumeric, "", maximumNameLength);
+				if (result.length() > maximumNameLength) {
+					String shortenedName = StringUtils.removeVowels(onlyAlphaNumeric);
+					if (shortenedName.length() >= maximumNameLength) {
+						result = StringUtils.truncate(shortenedName, maximumNameLength);
+					} else {
+						result = StringUtils.truncate(shortenedName, maximumNameLength - shortenedName.length());
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+	protected String adjustName(String name) {
+		String adjustedName = name;
+		if (adjustedName.indexOf(' ') != -1 || adjustedName.indexOf('\"') != -1
+				|| adjustedName.indexOf('`') != -1) {
+			StringBuffer buff = new StringBuffer();
+			for (int i = 0; i < name.length(); i++) {
+				char c = name.charAt(i);
+				if (c != ' ' && c != '\"' && c != '`') {
+					buff.append(c);
+				}
+			}
+			adjustedName = buff.toString();
+		}
+		return adjustedName;
 	}
 }

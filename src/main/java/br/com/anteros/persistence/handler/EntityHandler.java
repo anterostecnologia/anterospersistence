@@ -23,9 +23,9 @@ import br.com.anteros.persistence.metadata.annotation.type.FetchType;
 import br.com.anteros.persistence.metadata.annotation.type.ScopeType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
-import br.com.anteros.persistence.proxy.LazyLoadProxyFactory;
-import br.com.anteros.persistence.proxy.collection.SQLArrayList;
-import br.com.anteros.persistence.proxy.collection.SQLHashSet;
+import br.com.anteros.persistence.proxy.LazyLoadFactory;
+import br.com.anteros.persistence.proxy.collection.DefaultSQLList;
+import br.com.anteros.persistence.proxy.collection.DefaultSQLSet;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
@@ -44,14 +44,13 @@ public class EntityHandler implements ResultSetHandler {
 	protected Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases;
 	protected Object mainObject;
 	protected Object objectToRefresh;
-	protected LazyLoadProxyFactory proxyFactory;
+	protected LazyLoadFactory proxyFactory;
 	protected boolean allowDuplicateObjects = false;
 	protected int firstResult, maxResults;
 
-	public EntityHandler(LazyLoadProxyFactory proxyFactory, Class<?> targetClass,
-			EntityCacheManager entityCacheManager, Map<String, String> expressions,
-			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, SQLSession session, Cache transactionCache,
-			boolean allowDuplicateObjects, int firstResult, int maxResults) {
+	public EntityHandler(LazyLoadFactory proxyFactory, Class<?> targetClass, EntityCacheManager entityCacheManager,
+			Map<String, String> expressions, Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases,
+			SQLSession session, Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults) {
 		this.resultClass = targetClass;
 		this.session = session;
 		this.expressions = expressions;
@@ -63,9 +62,8 @@ public class EntityHandler implements ResultSetHandler {
 		this.firstResult = firstResult;
 	}
 
-	public EntityHandler(LazyLoadProxyFactory proxyFactory, Class<?> targetClazz,
-			EntityCacheManager entityCacheManager, SQLSession session, Cache transactionCache,
-			boolean allowDuplicateObjects, int firstResult, int maxResults) {
+	public EntityHandler(LazyLoadFactory proxyFactory, Class<?> targetClazz, EntityCacheManager entityCacheManager,
+			SQLSession session, Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults) {
 		this(proxyFactory, targetClazz, entityCacheManager, new LinkedHashMap<String, String>(),
 				new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String>>(), session, transactionCache,
 				allowDuplicateObjects, firstResult, maxResults);
@@ -135,7 +133,7 @@ public class EntityHandler implements ResultSetHandler {
 							/*
 							 * Gera o objeto
 							 */
-							createObject(targetResultClass, resultSet, result);							
+							createObject(targetResultClass, resultSet, result);
 							numberOfRecords++;
 						}
 					}
@@ -295,10 +293,10 @@ public class EntityHandler implements ResultSetHandler {
 				targetObject = descriptionField.getObjectValue(targetObject);
 				if (targetObject == null) {
 					if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), Set.class)) {
-						targetObject = new SQLHashSet();
+						targetObject = new DefaultSQLSet();
 						descriptionField.setObjectValue(oldTargetObject, targetObject);
 					} else if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), List.class)) {
-						targetObject = new SQLArrayList();
+						targetObject = new DefaultSQLList();
 						descriptionField.setObjectValue(oldTargetObject, targetObject);
 					}
 				}
@@ -596,7 +594,7 @@ public class EntityHandler implements ResultSetHandler {
 				Object value = descriptionField.getObjectValue(targetObject);
 				if (value != null) {
 					if (descriptionField.isCollection()) {
-						if ((value instanceof SQLArrayList) || (value instanceof SQLHashSet)) {
+						if ((value instanceof DefaultSQLList) || (value instanceof DefaultSQLSet)) {
 							process = false;
 						}
 					}

@@ -33,8 +33,8 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
 import br.com.anteros.persistence.parameter.NamedParameter;
-import br.com.anteros.persistence.proxy.LazyLoadProxyFactory;
-import br.com.anteros.persistence.proxy.LazyLoadProxyFactoryImpl;
+import br.com.anteros.persistence.proxy.LazyLoadFactory;
+import br.com.anteros.persistence.proxy.ProxyLazyLoadFactory;
 import br.com.anteros.persistence.session.SQLPersister;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionFactory;
@@ -71,7 +71,7 @@ public class SQLSessionImpl implements SQLSession {
 	private List<SQLSessionListener> listeners = new ArrayList<SQLSessionListener>();
 	private Map<Object, Map<DescriptionColumn, IdentifierPostInsert>> cacheIdentifier = new LinkedHashMap<Object, Map<DescriptionColumn, IdentifierPostInsert>>();
 	private SQLPersister persister;
-	private LazyLoadProxyFactory proxyFactory = new LazyLoadProxyFactoryImpl();
+	private LazyLoadFactory lazyLoadFactory = new ProxyLazyLoadFactory();
 	private TransactionFactory transactionFactory;
 	private Transaction transaction;
 
@@ -316,7 +316,7 @@ public class SQLSessionImpl implements SQLSession {
 			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, Cache transactionCache,
 			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults) throws Exception {
 		errorIfClosed();
-		EntityHandler handler = new EntityHandler(proxyFactory, resultClass, getEntityCacheManager(), expressions, columnAliases, this,
+		EntityHandler handler = new EntityHandler(lazyLoadFactory, resultClass, getEntityCacheManager(), expressions, columnAliases, this,
 				transactionCache, allowDuplicateObjects, firstResult, maxResults);
 		handler.setObjectToRefresh(objectToRefresh);
 		return handler;
@@ -359,11 +359,11 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public boolean isProxyObject(Object object) throws Exception {
-		return proxyFactory.isProxyObject(object);
+		return lazyLoadFactory.isProxyObject(object);
 	}
 
 	public boolean proxyIsInitialized(Object object) throws Exception {
-		return proxyFactory.proxyIsInitialized(object);
+		return lazyLoadFactory.proxyIsInitialized(object);
 	}
 
 	public void savePoint(String savepoint) throws Exception {

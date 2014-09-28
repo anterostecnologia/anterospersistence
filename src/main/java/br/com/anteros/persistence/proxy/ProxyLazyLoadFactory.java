@@ -29,14 +29,14 @@ import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
-import br.com.anteros.persistence.proxy.collection.SQLArrayList;
-import br.com.anteros.persistence.proxy.collection.SQLHashSet;
+import br.com.anteros.persistence.proxy.collection.ProxiedSQLLazyLoadList;
+import br.com.anteros.persistence.proxy.collection.ProxiedSQLLazyLoadSet;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
 
-public class LazyLoadProxyFactoryImpl implements LazyLoadProxyFactory {
+public class ProxyLazyLoadFactory implements LazyLoadFactory {
 
-	private static Logger LOG = LoggerProvider.getInstance().getLogger(LazyLoadProxyFactory.class); 
+	private static Logger LOG = LoggerProvider.getInstance().getLogger(LazyLoadFactory.class); 
 	
 	public Object createProxy(SQLSession session, Object targetObject, DescriptionField descriptionField, EntityCache targetEntityCache,
 			Map<String, Object> columnKeyValues, Cache transactionCache) throws Exception {
@@ -45,15 +45,15 @@ public class LazyLoadProxyFactoryImpl implements LazyLoadProxyFactory {
 		ProxyFactory factory = new ProxyFactory();
 		factory.setInterfaces(new Class[]{AnterosProxyObject.class});
 		if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), Set.class))
-			factory.setSuperclass(SQLHashSet.class);
+			factory.setSuperclass(ProxiedSQLLazyLoadSet.class);
 		else if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), List.class))
-			factory.setSuperclass(SQLArrayList.class);
+			factory.setSuperclass(ProxiedSQLLazyLoadList.class);
 		else
 			factory.setSuperclass(descriptionField.getField().getType());
 		factory.setFilter(FINALIZE_FILTER);
 		Class<?> classNewObject = factory.createClass();
 		Object newObject = classNewObject.newInstance();
-		LazyLoadInterceptor lazyLoadInterceptor = new LazyLoadInterceptor(session, targetEntityCache, columnKeyValues, transactionCache,
+		ProxyLazyLoadInterceptor lazyLoadInterceptor = new ProxyLazyLoadInterceptor(session, targetEntityCache, columnKeyValues, transactionCache,
 				targetObject, descriptionField);
 		((ProxyObject) newObject).setHandler(lazyLoadInterceptor);
 		lazyLoadInterceptor.setConstructed(true);
@@ -71,7 +71,7 @@ public class LazyLoadProxyFactoryImpl implements LazyLoadProxyFactory {
 	public boolean proxyIsInitialized(Object object) throws Exception {
 		if (object instanceof ProxyObject) {
 			MethodHandler mh = ((ProxyObject) object).getHandler();
-			return ((LazyLoadInterceptor) mh).isInitialized();
+			return ((ProxyLazyLoadInterceptor) mh).isInitialized();
 		}
 		return false;
 	}

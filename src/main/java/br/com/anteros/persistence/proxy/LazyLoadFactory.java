@@ -22,7 +22,7 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
 
-public interface LazyLoadProxyFactory {
+public interface LazyLoadFactory {
 
 	public Object createProxy(SQLSession session, Object targetObject, DescriptionField descriptionField, EntityCache targetEntityCache,
 			Map<String, Object> columnKeyValues, Cache transactionCache) throws Exception;

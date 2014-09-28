@@ -17,6 +17,7 @@ package br.com.anteros.persistence.proxy.collection;
 
 import java.util.LinkedHashMap;
 
-public class SQLHashMap<T> extends LinkedHashMap<T, Object> {
+public abstract class AbstractSQLMap<K,V> extends LinkedHashMap<K, V> implements AnterosPersistentMap {
+
 
 }

@@ -17,6 +17,7 @@ package br.com.anteros.persistence.proxy.collection;
 
 import java.util.LinkedHashSet;
 
-public class SQLHashSet<T> extends LinkedHashSet<T> {
+public abstract class AbstractSQLSet<T> extends LinkedHashSet<T> implements AnterosPersistentCollection {
 
+	
 }

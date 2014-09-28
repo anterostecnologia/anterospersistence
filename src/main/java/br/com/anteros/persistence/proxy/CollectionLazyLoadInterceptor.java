@@ -1,26 +1,7 @@
-/*******************************************************************************
- * Copyright 2012 Anteros Tecnologia
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ******************************************************************************/
 package br.com.anteros.persistence.proxy;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Map;
 
-import javassist.util.proxy.MethodHandler;
-import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityManaged;
 import br.com.anteros.persistence.metadata.FieldEntityValue;
@@ -29,7 +10,8 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
 
-public class LazyLoadInterceptor implements MethodHandler {
+
+public class CollectionLazyLoadInterceptor {
 
 	private SQLSession session;
 	private EntityCache entityCache;
@@ -38,11 +20,11 @@ public class LazyLoadInterceptor implements MethodHandler {
 	private Object target;
 	private Object owner;
 	private DescriptionField descriptionFieldOwner;
-	private Boolean constructed = Boolean.FALSE;
-	private Boolean initialized = Boolean.FALSE;
-	private Boolean processing = Boolean.FALSE;
+	private boolean constructed = false;
+	private boolean initialized = false;
+	private Boolean processing = false;
 
-	public LazyLoadInterceptor(SQLSession session, EntityCache entityCache, Map<String, Object> columKeyValues,
+	public CollectionLazyLoadInterceptor(SQLSession session, EntityCache entityCache, Map<String, Object> columKeyValues,
 			Cache transactionCache, Object owner, DescriptionField descriptionField) {
 		this.session = session;
 		this.entityCache = entityCache;
@@ -52,39 +34,11 @@ public class LazyLoadInterceptor implements MethodHandler {
 		this.descriptionFieldOwner = descriptionField;
 	}
 
-	public Object invoke(final Object proxy, final Method thisMethod, final Method proceed, final Object[] args)
-			throws Throwable {
-		if (this.constructed) {
-			Object target = getTargetObject();
-			final Object returnValue;
-			try {
-				/*
-				 * [ALTERADO] se entityCache != null, já que qdo for
-				 * COLLECTION_TABLE o entityCache sera
-				 */
-				if (entityCache != null && ReflectionUtils.isPublic(entityCache.getEntityClass(), thisMethod)) {
-					Class<?> dc = thisMethod.getDeclaringClass();
-					if (!dc.isInstance(target))
-						throw new ClassCastException(target.getClass().getName());
-					returnValue = thisMethod.invoke(target, args);
-				} else {
-					if (!thisMethod.isAccessible())
-						thisMethod.setAccessible(true);
-					returnValue = thisMethod.invoke(target, args);
-				}
-				return returnValue == target ? proxy : returnValue;
-			} catch (InvocationTargetException ite) {
-				throw ite.getTargetException();
-			}
-		}
-		return null;
-	}
-
-	private synchronized Object getTargetObject() throws Exception {
+	public synchronized Object getTargetObject() throws Exception {
 		if (!initialized) {
 			try {
-				initialized = Boolean.TRUE;
-				processing = Boolean.TRUE;
+				initialized = true;
+				processing = true;
 
 				/*
 				 * Se a lista possui um pai adiciona no cache para evitar
@@ -112,10 +66,6 @@ public class LazyLoadInterceptor implements MethodHandler {
 				}
 
 				EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(owner);
-				/*
-				 * Caso o objeto possa ser gerenciado(objeto completo ou parcial
-				 * que tenha sido buscado id no sql) adiciona o objeto no cache
-				 */
 				if (entityManaged != null) {
 					/*
 					 * Guarda o valor da chave do objeto result na lista de
@@ -133,14 +83,10 @@ public class LazyLoadInterceptor implements MethodHandler {
 				}
 
 			} finally {
-				processing = Boolean.FALSE;
+				processing = false;
 			}
 		}
 		return target;
-	}
-	
-	public Object initializeAndReturnObject() throws Exception{
-		return getTargetObject();
 	}
 
 	public SQLSession getSession() {

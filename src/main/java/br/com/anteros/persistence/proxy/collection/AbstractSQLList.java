@@ -17,6 +17,7 @@ package br.com.anteros.persistence.proxy.collection;
 
 import java.util.ArrayList;
 
-public class SQLArrayList<T> extends ArrayList<T> {
+public abstract class AbstractSQLList<T> extends ArrayList<T> implements AnterosPersistentCollection {
+
 
 }

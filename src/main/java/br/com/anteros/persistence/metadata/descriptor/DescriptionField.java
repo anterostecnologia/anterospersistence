@@ -288,7 +288,7 @@ public class DescriptionField {
 			}
 		} catch (Exception ex) {
 			throw new EntityCacheException("Erro convertendo o valor do campo " + this.getName() + " valor=" + value
-					+ " para " + field.getType(), ex);
+					+ " para " + field.getType()+" na classe "+entityCache.getEntityClass().getName(), ex);
 		}
 	}
 
