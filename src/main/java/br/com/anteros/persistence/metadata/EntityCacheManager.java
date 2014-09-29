@@ -826,6 +826,19 @@ public class EntityCacheManager {
 					+ sourceClazz.getName()
 					+ " não possuí nenhuma configuração. Caso o campo não seja persistido configurar como Transient.");
 
+		if (!ReflectionUtils.hasGetterAccessor(sourceClazz, fieldConfiguration.getField())) {
+			throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe "
+					+ sourceClazz.getName()
+					+ " não possuí um método acessor (GET) configurado. Defina os métodos acessores para todos os campos das entidades.");
+		}
+		
+		if (!ReflectionUtils.hasSetterAccessor(sourceClazz, fieldConfiguration.getField())) {
+			throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe "
+					+ sourceClazz.getName()
+					+ " não possuí um método acessor (SET) configurado. Defina os métodos acessores para todos os campos das entidades.");
+		}
+
+		
 		if (validate) {
 			/*
 			 * if ((fieldConfiguration.getColumns()!=null) &&
