@@ -667,10 +667,12 @@ public class EntityCache {
 				if ((containsColumns) && ((fc == sourceClass) || (isInheritance)))
 					return descriptionField;
 			} else if (descriptionField.isCollectionEntity()) {
-				if (descriptionField.getFieldClass() == sourceClass)
+				boolean isInheritance = ReflectionUtils.isExtendsClass(sourceClass, descriptionField.getFieldClass());
+				if ((descriptionField.getFieldClass() == sourceClass) || (isInheritance))
 					return descriptionField;
 			} else if (descriptionField.isJoinTable()) {
-				if (descriptionField.getFieldClass() == sourceClass)
+				boolean isInheritance = ReflectionUtils.isExtendsClass(sourceClass, descriptionField.getFieldClass());
+				if ((descriptionField.getFieldClass() == sourceClass) || (isInheritance))
 					return descriptionField;
 			}
 		}

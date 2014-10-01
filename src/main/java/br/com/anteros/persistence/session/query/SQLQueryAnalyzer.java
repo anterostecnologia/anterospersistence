@@ -195,7 +195,7 @@ public class SQLQueryAnalyzer {
 									+ a.getAlias()
 									+ "->"
 									+ a.getEntity().getEntityClass().getName()
-									+ " no sql sem junção com nenhum outro alias ou as colunas usadas não está mapeadas na classe. Somente pode ficar sem junção o alias da classe de resultado "
+									+ " no sql sem junção com nenhum outro alias ou as colunas usadas não estão mapeadas na classe. Somente pode ficar sem junção o alias da classe de resultado "
 									+ resultClass.getName());
 				}
 			}
