@@ -25,6 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.EntityManaged;
@@ -41,6 +43,7 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 	private EntityCacheManager entityCacheManager;
 	private SQLSession session;
 	private Cache cache;
+	private static Logger LOG = LoggerProvider.getInstance().getLogger(SQLPersistenceContext.class);
 
 	public SQLPersistenceContextImpl(SQLSession session, EntityCacheManager entityCacheManager, int cacheSize) {
 		this.entityCacheManager = entityCacheManager;
@@ -49,56 +52,62 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 	}
 
 	public EntityManaged addEntityManaged(Object value, boolean readOnly, boolean newEntity) throws Exception {
+		LOG.debug("Add entity managed " + value);
 		EntityManaged key = getEntityManaged(value);
-		synchronized (entities) {
-			if (key == null) {
-				EntityCache entityCache = entityCacheManager.getEntityCache(value.getClass());
-				key = new EntityManaged(entityCache);
-				key.setStatus(readOnly ? EntityStatus.READ_ONLY : EntityStatus.MANAGED);
-				key.setFieldsForUpdate(entityCache.getAllFieldNames());
-				key.setNewEntity(newEntity);
-				for (DescriptionField descriptionField : entityCache.getDescriptionFields())
-					key.addLastValue(descriptionField.getFieldEntityValue(session, value));
-				entities.put(key, new WeakReference<Object>(value));
-			}
+		// synchronized (entities) {
+		if (key == null) {
+			LOG.debug("Create new entity managed");
+			EntityCache entityCache = entityCacheManager.getEntityCache(value.getClass());
+			key = new EntityManaged(entityCache);
+			key.setStatus(readOnly ? EntityStatus.READ_ONLY : EntityStatus.MANAGED);
+			key.setFieldsForUpdate(entityCache.getAllFieldNames());
+			key.setNewEntity(newEntity);
+			for (DescriptionField descriptionField : entityCache.getDescriptionFields())
+				key.addLastValue(descriptionField.getFieldEntityValue(session, value));
+			entities.put(key, new WeakReference<Object>(value));
+			LOG.debug("Entity managed created");
+			// }
 		}
 		return key;
 	}
 
 	public EntityManaged getEntityManaged(Object key) {
-		EntityManaged em = null;
-		synchronized (entities) {
-			List<EntityManaged> keysToRemove = new ArrayList<EntityManaged>();
-			for (EntityManaged entityManaged : entities.keySet()) {
-				Reference<?> ref = entities.get(entityManaged);
-				if (ref.get() == null) {
-					keysToRemove.add(entityManaged);
-					continue;
-				}
-				/*
-				 * Utiliza a função System.identityHashCode() para obter o
-				 * hashCode único do objeto e não chamar o hashCode() reescrito
-				 * pelo usuário
-				 */
-				if (System.identityHashCode(key) == System.identityHashCode(ref.get())) {
-					em = entityManaged;
-				}
-			}
 
-			for (EntityManaged entityManaged : keysToRemove) {
-				entities.remove(entityManaged);
+		EntityManaged em = null;
+		// synchronized (entities) {
+		LOG.debug("Get entity managed - total " + entities.size());
+		List<EntityManaged> keysToRemove = new ArrayList<EntityManaged>();
+		for (EntityManaged entityManaged : entities.keySet()) {
+			Reference<?> ref = entities.get(entityManaged);
+			if (ref.get() == null) {
+				LOG.debug("Add entity managed to remove ");
+				keysToRemove.add(entityManaged);
+				continue;
+			}
+			/*
+			 * Utiliza a função System.identityHashCode() para obter o hashCode
+			 * único do objeto e não chamar o hashCode() reescrito pelo usuário
+			 */
+			if (System.identityHashCode(key) == System.identityHashCode(ref.get())) {
+				em = entityManaged;
 			}
 		}
 
+		for (EntityManaged entityManaged : keysToRemove) {
+			entities.remove(entityManaged);
+		}
+		// }
+		LOG.debug("Entity managed returned");
 		return em;
 	}
 
 	public void removeEntityManaged(Object key) {
-		synchronized (entities) {
-			EntityManaged entity = getEntityManaged(key);
-			if (entity != null)
-				entities.remove(entity);
-		}
+		// synchronized (entities) {
+		LOG.debug("Remove entity managed");
+		EntityManaged entity = getEntityManaged(key);
+		if (entity != null)
+			entities.remove(entity);
+		// }
 	}
 
 	public boolean isExistsEntityManaged(Object key) {
