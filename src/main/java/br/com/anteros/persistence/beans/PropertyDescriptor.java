@@ -16,7 +16,6 @@
 package br.com.anteros.persistence.beans;
 
 import java.lang.ref.Reference;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 /**
@@ -382,47 +381,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
 		return (Class) getObject(propertyEditorClassRef);
 	}
 
-	/**
-	 * Constructs an instance of a property editor using the current
-	 * property editor class.
-	 * <p>
-	 * If the property editor class has a public constructor that takes an
-	 * Object argument then it will be invoked using the bean parameter as the
-	 * argument. Otherwise, the default constructor will be invoked.
-	 * 
-	 * @param bean
-	 *            the source object
-	 * @return a property editor instance or null if a property editor has
-	 *         not been defined or cannot be created
-	 * @since 1.5
-	 */
-	public PropertyEditor createPropertyEditor(Object bean) {
-		Object editor = null;
-
-		Class cls = getPropertyEditorClass();
-		if(cls != null){
-			Constructor ctor = null;
-			if(bean != null){
-				try{
-					ctor = cls.getConstructor(new Class[] { Object.class });
-				} catch(Exception ex){
-					// Fall through
-				}
-			}
-			try{
-				if(ctor == null){
-					editor = cls.newInstance();
-				} else{
-					editor = ctor.newInstance(new Object[] { bean });
-				}
-			} catch(Exception ex){
-				// A serious error has occured.
-				// Proably due to an invalid property editor.
-				throw new RuntimeException("PropertyEditor not instantiated", ex);
-			}
-		}
-		return (PropertyEditor) editor;
-	}
+	
 
 	/**
 	 * Compares this <code>PropertyDescriptor</code> against the specified

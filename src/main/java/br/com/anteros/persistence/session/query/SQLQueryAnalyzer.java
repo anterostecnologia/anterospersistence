@@ -130,15 +130,27 @@ public class SQLQueryAnalyzer {
 					EntityCache caches[] = { aliasOwner.getEntity() };
 					if (aliasOwner.getEntity().isAbstractClass())
 						caches = session.getEntityCacheManager().getEntitiesBySuperClass(aliasOwner.getEntity());
+					boolean found = false;
 					for (EntityCache cache : caches) {
 						DescriptionField descriptionField = cache.getDescriptionFieldUsesColumns(aliasChild.getEntity()
 								.getEntityClass(), columnNames);
 						if (descriptionField != null) {
 							aliasChild.setOwner(new SQLQueryAnalyserOwner(aliasOwner, aliasOwner.getEntity(),
 									descriptionField));
+							found = true;
 							findAndSetOwnerToChildAlias(node, aliasChild);
 							break;
 						}
+					}
+					
+					if (!found) {
+						throw new SQLQueryAnalyzerException(
+								"Foi encontrado alias "
+										+ aliasChild.getAlias()
+										+ "->"
+										+ aliasChild.getEntity().getEntityClass().getName()
+										+ " no sql sem junção com nenhum outro alias ou as colunas usadas não estão mapeadas na classe ou as mesmas não possuem um relacionamento. Somente pode ficar sem junção o alias da classe de resultado "
+										+ resultClass.getName());
 					}
 				}
 			}
@@ -160,7 +172,8 @@ public class SQLQueryAnalyzer {
 		String result = null;
 		while (true) {
 			numberOfColumn++;
-			result = alias + "." + columnName + " AS " + adpatAliasColumnName(alias) + "_COL_" + String.valueOf(numberOfColumn);
+			result = alias + "." + columnName + " AS " + adpatAliasColumnName(alias) + "_COL_"
+					+ String.valueOf(numberOfColumn);
 			if (usedAliases.contains(alias + "_COL_" + String.valueOf(numberOfColumn)))
 				continue;
 			return result;
@@ -773,7 +786,7 @@ public class SQLQueryAnalyzer {
 	}
 
 	public String adpatAliasColumnName(String aliasColumnNamePrefix) {
-		int maximumNameLength = session.getDialect().getMaxColumnNameSize()-8;
+		int maximumNameLength = session.getDialect().getMaxColumnNameSize() - 8;
 		String result = adjustName(aliasColumnNamePrefix);
 
 		if (result.length() > maximumNameLength) {
@@ -793,11 +806,10 @@ public class SQLQueryAnalyzer {
 		}
 		return result;
 	}
-	
+
 	protected String adjustName(String name) {
 		String adjustedName = name;
-		if (adjustedName.indexOf(' ') != -1 || adjustedName.indexOf('\"') != -1
-				|| adjustedName.indexOf('`') != -1) {
+		if (adjustedName.indexOf(' ') != -1 || adjustedName.indexOf('\"') != -1 || adjustedName.indexOf('`') != -1) {
 			StringBuffer buff = new StringBuffer();
 			for (int i = 0; i < name.length(); i++) {
 				char c = name.charAt(i);
