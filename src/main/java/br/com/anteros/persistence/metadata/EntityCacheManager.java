@@ -874,7 +874,7 @@ public class EntityCacheManager {
 						"O campo "
 								+ fieldConfiguration.getName()
 								+ " da classe "
-								+ fieldConfiguration.getType().getName()
+								+ sourceClazz.getName()
 								+ " é um tipo primitivo. Utilize somente classes Wrapper's. Ex: Long, Integer, Short, Double, etc.");
 
 			/*
