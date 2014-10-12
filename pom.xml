@@ -28,6 +28,13 @@
 			<artifactId>Anteros-Core</artifactId>
 			<version>LATEST</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>br.com.anteros</groupId>
+			<artifactId>Anteros-Bean-Validation-Api</artifactId>
+			<version>LATEST</version>
+			<scope>provided</scope>
+		</dependency>
 
 		<dependency>
 			<groupId>c3p0</groupId>
