@@ -22,11 +22,19 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Validator;
+
+import br.com.anteros.core.log.Logger;
+import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityManaged;
@@ -52,15 +60,49 @@ import br.com.anteros.persistence.sql.command.InsertCommandSQL;
 import br.com.anteros.persistence.sql.command.Select;
 import br.com.anteros.persistence.sql.command.Update;
 import br.com.anteros.persistence.sql.command.UpdateCommandSQL;
+import br.com.anteros.persistence.util.AnterosBeanValidationHelper;
 import br.com.anteros.persistence.validation.version.Versioning;
 
 public class SQLPersisterImpl implements SQLPersister {
+	
+	private Logger LOG = LoggerProvider.getInstance().getLogger(SQLPersister.class);
 
 	private SQLSession session;
 
 	public Object save(SQLSession session, Object object) throws Exception {
+		validateBeanBeforeSave(object);
 		this.session = session;
 		return save(object, null);
+	}
+
+	protected void validateBeanBeforeSave(Object object) {
+		if (AnterosBeanValidationHelper.isBeanValidationPresent()){
+			Validator validator = AnterosBeanValidationHelper.getBeanValidator();
+			final Set<ConstraintViolation<Object>> constraintViolations = validator.validate( object);
+			if ( constraintViolations.size() > 0 ) {
+				Set<ConstraintViolation<?>> propagatedViolations =
+						new HashSet<ConstraintViolation<?>>( constraintViolations.size() );
+				Set<String> classNames = new HashSet<String>();
+				for ( ConstraintViolation<?> violation : constraintViolations ) {
+					LOG.debug( violation );
+					propagatedViolations.add( violation );
+					classNames.add( violation.getLeafBean().getClass().getName() );
+				}
+				StringBuilder builder = new StringBuilder();
+				builder.append( "Validation failed for classes [" );
+				builder.append( classNames );
+				builder.append( "] during saving object." );
+				builder.append( "\nList of constraint violations:[\n" );
+				for (ConstraintViolation<?> violation : constraintViolations) {
+					builder.append( "\t" ).append( violation.toString() ).append("\n");
+				}
+				builder.append( "]" );
+
+				throw new ConstraintViolationException(
+						builder.toString(), propagatedViolations
+				);
+			}
+		}
 	}
 
 	public void remove(SQLSession session, Object object) throws Exception {
