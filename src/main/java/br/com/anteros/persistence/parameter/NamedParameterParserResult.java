@@ -45,7 +45,7 @@ public class NamedParameterParserResult {
 
 	@Override
 	public String toString() {
-		return AnterosPersistenceTranslate.getInstance().getMessage(NamedParameterParserResult.class, "toString", parsedSql, parsedParams);
+		return AnterosPersistenceTranslate.getMessage(NamedParameterParserResult.class, "toString", parsedSql, parsedParams);
 	}
 
 	public List<NamedParameter> getNamedParameters() {

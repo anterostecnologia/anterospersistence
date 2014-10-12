@@ -20,7 +20,7 @@ public enum SimpleEntityPathResolver implements EntityPathResolver {
 		String pathClassName = getQueryClassName(domainClass);
 
 		try {
-			Class<?> pathClass = ClassUtils.forName(pathClassName, domainClass.getClassLoader());
+			Class<?> pathClass = Class.forName(pathClassName, false, domainClass.getClassLoader());
 			Field field = getStaticFieldOfType(pathClass);
 
 			if (field == null) {

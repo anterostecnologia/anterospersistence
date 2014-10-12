@@ -197,7 +197,7 @@ public class EntityCacheManager {
 						if ((entityCache.getDescriptionColumnByName(param) == null)
 								&& (!descriptionSQL.getSuccessParameter().equalsIgnoreCase(param))
 								&& (descriptionSQL.getParametersId().get(param) == null))
-							throw new EntityCacheException(AnterosPersistenceTranslate.getInstance().getMessage(
+							throw new EntityCacheException(AnterosPersistenceTranslate.getMessage(
 									this.getClass(), "descriptionSql.parameter.not.found", param,
 									descriptionSQL.getSql(), descriptionSQL.getSqlType(),
 									entityCache.getEntityClass().getName()));

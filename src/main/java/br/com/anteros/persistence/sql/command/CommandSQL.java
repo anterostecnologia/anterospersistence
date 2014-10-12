@@ -137,7 +137,7 @@ public abstract class CommandSQL {
 
 	@Override
 	public String toString() {
-		return AnterosPersistenceTranslate.getInstance().getMessage(CommandSQL.class, "toString", sql, namedParameters, targetTableName);
+		return AnterosPersistenceTranslate.getMessage(CommandSQL.class, "toString", sql, namedParameters, targetTableName);
 	}
 
 	public List<NamedParameter> getNamedParameters() {

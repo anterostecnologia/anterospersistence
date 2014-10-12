@@ -93,7 +93,7 @@ public class AnterosPersistenceConfiguration extends AbstractPersistenceConfigur
 			}
 		}
 		if (dataSource == null)
-			throw new AnterosConfigurationException(AnterosPersistenceTranslate.getInstance().getMessage(this.getClass(),
+			throw new AnterosConfigurationException(AnterosPersistenceTranslate.getMessage(this.getClass(),
 					"datasourceNotConfigured"));
 	}
 
