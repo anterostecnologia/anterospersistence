@@ -27,10 +27,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import br.com.anteros.persistence.beans.BeanInfo;
-import br.com.anteros.persistence.beans.IntrospectionException;
-import br.com.anteros.persistence.beans.Introspector;
-import br.com.anteros.persistence.beans.PropertyDescriptor;
+import br.com.anteros.core.metadata.beans.BeanInfo;
+import br.com.anteros.core.metadata.beans.IntrospectionException;
+import br.com.anteros.core.metadata.beans.Introspector;
+import br.com.anteros.core.metadata.beans.PropertyDescriptor;
+
+
+
 
 public class BeanProcessor {
 
