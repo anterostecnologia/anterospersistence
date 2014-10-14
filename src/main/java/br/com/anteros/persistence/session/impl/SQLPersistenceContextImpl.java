@@ -52,7 +52,7 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 	}
 
 	public EntityManaged addEntityManaged(Object value, boolean readOnly, boolean newEntity) throws Exception {
-		LOG.debug("Add entity managed " + value);
+		LOG.debug("Add entity managed ");
 		EntityManaged key = getEntityManaged(value);
 		// synchronized (entities) {
 		if (key == null) {

@@ -36,4 +36,9 @@ public class DateParameterBinding implements ParameterBinding {
 		Date date = (Date) this.getValue();
 		statement.setDate(parameterIndex, new java.sql.Date(date.getTime()));
 	}
+	
+	@Override
+	public String toString() {
+		return ""+value;
+	}
 }

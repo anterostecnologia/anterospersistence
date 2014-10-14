@@ -663,7 +663,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 	protected void showSQLAndParameters(String sql, Object[] parameters, boolean formatSql,
 			List<SQLSessionListener> listeners, String clientId) {
 		String sqlFormatted = (formatSql == true ? SQLFormatter.format(sql) : sql);
-		log.debug("Sql-> " + sqlFormatted + " ##" + clientId);
+		System.out.println("Sql-> " + sqlFormatted + " ##" + clientId);
 
 		if ((parameters != null) && (parameters.length > 0)) {
 			StringBuffer sb = new StringBuffer("Parameters -> ");
@@ -674,7 +674,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 				sb.append(p + "");
 				append = true;
 			}
-			log.debug(sb.toString() + " ##" + clientId);
+			System.out.println(sb.toString() + " ##" + clientId);
 		}
 
 		if (listeners != null)
@@ -685,7 +685,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 	protected void showSQLAndParameters(String sql, NamedParameter[] parameters, boolean formatSql,
 			List<SQLSessionListener> listeners, String clientId) {
 		String sqlFormatted = (formatSql == true ? SQLFormatter.format(sql) : sql);
-		log.debug("Sql-> " + sqlFormatted + " ##" + clientId);
+		System.out.println("Sql-> " + sqlFormatted + " ##" + clientId);
 		if ((parameters != null) && (parameters.length > 0)) {
 			StringBuffer sb = new StringBuffer("Parâmetros -> ");
 			boolean append = false;
@@ -695,7 +695,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 				sb.append(p.toString());
 				append = true;
 			}
-			log.debug(sb.toString() + " ##" + clientId);
+			System.out.println(sb.toString() + " ##" + clientId);
 		}
 
 		if (listeners != null) {
@@ -707,7 +707,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 	protected void showSQLAndParameters(String sql, Map<String, Object> parameters, boolean formatSql,
 			List<SQLSessionListener> listeners, String clientId) {
 		String sqlFormatted = (formatSql == true ? SQLFormatter.format(sql) : sql);
-		log.debug("Sql-> " + sqlFormatted + " ##" + clientId);
+		System.out.println("Sql-> " + sqlFormatted + " ##" + clientId);
 		if ((parameters != null) && (parameters.size() > 0)) {
 			StringBuffer sb = new StringBuffer("Parâmetros -> ");
 			boolean append = false;
@@ -718,7 +718,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 				sb.append(param);
 				append = true;
 			}
-			log.debug(sb.toString() + " ##" + clientId);
+			System.out.println(sb.toString() + " ##" + clientId);
 
 			if (listeners != null) {
 				for (SQLSessionListener listener : listeners)

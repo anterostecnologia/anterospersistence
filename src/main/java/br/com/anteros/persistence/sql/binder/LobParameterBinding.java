@@ -74,4 +74,9 @@ public class LobParameterBinding implements ParameterBinding {
 	public int getType() {
 		return type;
 	}
+	
+	@Override
+	public String toString() {
+		return ""+value;
+	}
 }

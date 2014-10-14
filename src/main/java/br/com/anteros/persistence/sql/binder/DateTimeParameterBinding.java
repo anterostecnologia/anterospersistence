@@ -37,4 +37,9 @@ public class DateTimeParameterBinding implements ParameterBinding {
 		Date date = (Date) this.getValue();
 		statement.setTimestamp(parameterIndex, new Timestamp(date.getTime()));
 	}
+	
+	@Override
+	public String toString() {
+		return ""+value;
+	}
 }
