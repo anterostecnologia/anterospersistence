@@ -406,7 +406,7 @@ public class SQLPersisterImpl implements SQLPersister {
 	}
 
 	protected List<CommandSQL> getCommandsToUpdateObject(Object targetObject, EntityCache entityCache) throws Exception {
-		List<DescriptionField> fieldsModified = entityCache.getDescriptionFields();
+		List<DescriptionField> fieldsModified = entityCache.getDescriptionFieldsExcludingIds();
 		boolean hasFieldsModified = true;
 		EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(targetObject);
 
@@ -582,8 +582,9 @@ public class SQLPersisterImpl implements SQLPersister {
 											if (targetValue.getName().equals(sourceValue.getName())
 													&& (targetValue.getSource() != null)) {
 												EntityManaged tempEntityManaged = session.getPersistenceContext()
-														.addEntityManaged(targetValue.getSource(), false, false);
-												if (!tempEntityManaged.getStatus().equals(EntityStatus.READ_ONLY))
+														.getEntityManaged(targetValue.getSource());
+												
+												if (((tempEntityManaged!=null) && (!tempEntityManaged.getStatus().equals(EntityStatus.READ_ONLY))) || (tempEntityManaged==null)) 
 													save(session, targetValue.getSource());
 											}
 										}

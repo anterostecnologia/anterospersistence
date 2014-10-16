@@ -125,6 +125,15 @@ public class EntityCache {
 	public List<DescriptionField> getDescriptionFields() {
 		return fields;
 	}
+	
+	public List<DescriptionField> getDescriptionFieldsExcludingIds() {
+		List<DescriptionField> result = new ArrayList<DescriptionField>();
+		for (DescriptionField f : fields){
+			if (!f.isPrimaryKey())
+				result.add(f);
+		}
+		return result;		
+	}
 
 	public void setDescriptionFields(List<DescriptionField> fields) {
 		this.fields = fields;
