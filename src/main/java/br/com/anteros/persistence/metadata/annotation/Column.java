@@ -50,4 +50,6 @@ public @interface Column {
 	String dateTimePattern() default "";
 	
 	String timePattern() default "";
+	
+	String label() default "";
 }
