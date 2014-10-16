@@ -611,7 +611,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 					+ (descriptionField.getFieldClass().isEnum() ? "(ENUM)" : "")
 					+ " não disponível para este banco de dados. Verifique o campo na classe "
 					+ descriptionField.getEntityCache().getEntityClass().getName()
-					+ " se o mesmo não é uma chave estrangeira.");
+					+ " se o mesmo não é uma chave estrangeira ou se a classe do tipo "+descriptionField.getFieldClass().getSimpleName()+" possuí algum campo sem incorreto.");
 
 		if (dbType.isSizeAllowed() || dbType.isSizeRequired()) {
 			if (descriptionColumn.isBoolean()) {
