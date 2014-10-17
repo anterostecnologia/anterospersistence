@@ -24,4 +24,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Columns {
 	Column[] columns();
+	
+	String label() default "";
 }
