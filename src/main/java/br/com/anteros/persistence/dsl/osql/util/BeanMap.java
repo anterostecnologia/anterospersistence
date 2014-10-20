@@ -15,10 +15,7 @@
  */
 package br.com.anteros.persistence.dsl.osql.util;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -31,6 +28,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import br.com.anteros.core.metadata.beans.BeanInfo;
+import br.com.anteros.core.metadata.beans.IntrospectionException;
+import br.com.anteros.core.metadata.beans.Introspector;
+import br.com.anteros.core.metadata.beans.PropertyDescriptor;
 
 import com.google.common.base.Function;
 import com.google.common.primitives.Primitives;

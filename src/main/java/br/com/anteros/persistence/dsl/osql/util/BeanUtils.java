@@ -13,7 +13,8 @@
  */
 package br.com.anteros.persistence.dsl.osql.util;
 
-import java.beans.Introspector;
+import br.com.anteros.core.metadata.beans.Introspector;
+
 
 /**
  * BeanUtils provides JavaBean compliant property de/capitalization functionality

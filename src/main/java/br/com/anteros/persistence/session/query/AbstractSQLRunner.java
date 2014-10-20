@@ -15,9 +15,7 @@
  ******************************************************************************/
 package br.com.anteros.persistence.session.query;
 
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
@@ -36,6 +34,9 @@ import javax.sql.DataSource;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
+import br.com.anteros.core.metadata.beans.IntrospectionException;
+import br.com.anteros.core.metadata.beans.Introspector;
+import br.com.anteros.core.metadata.beans.PropertyDescriptor;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.handler.ResultSetHandler;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
