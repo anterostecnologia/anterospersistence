@@ -15,6 +15,10 @@
  ******************************************************************************/
 package br.com.anteros.persistence.handler;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.ResultSet;
@@ -26,11 +30,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import br.com.anteros.core.metadata.beans.BeanInfo;
-import br.com.anteros.core.metadata.beans.IntrospectionException;
-import br.com.anteros.core.metadata.beans.Introspector;
-import br.com.anteros.core.metadata.beans.PropertyDescriptor;
 
 
 
