@@ -29,6 +29,7 @@ import br.com.anteros.persistence.proxy.collection.DefaultSQLSet;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
+import br.com.anteros.persistence.util.AnterosPersistenceHelper;
 
 /**
  * Handler para criação de Objeto baseado em SELECT com Expressões.
@@ -647,7 +648,8 @@ public class EntityHandler implements ResultSetHandler {
 					/*
 					 * Se a estratégia for EAGER busca os dados do field
 					 */
-					if (descriptionField.getFetchType() == FetchType.EAGER) {
+					if ((descriptionField.getFetchType() == FetchType.EAGER)
+							|| ((AnterosPersistenceHelper.androidIsPresent()) && !(descriptionField.isCollection()))) {
 
 						Object result = session.createQuery("").loadData(targetEntityCache, targetObject,
 								descriptionField, columnKeyValue, transactionCache);

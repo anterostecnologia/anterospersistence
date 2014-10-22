@@ -10,6 +10,7 @@ import br.com.anteros.persistence.proxy.ProxyLazyLoadInterceptor;
 import br.com.anteros.persistence.proxy.collection.AnterosPersistentCollection;
 
 public class AnterosPersistenceHelper {
+	private static Boolean androidPresent = null;
 
 	private AnterosPersistenceHelper() {
 
@@ -40,5 +41,17 @@ public class AnterosPersistenceHelper {
 			return coll.isInitialized();
 		}
 		return true;
+	}
+
+	public static boolean androidIsPresent() {
+		if (androidPresent == null) {
+			try {
+				Class.forName("br.com.anteros.android.persistence.session.AndroidSQLSession");
+				androidPresent = true;
+			} catch (ClassNotFoundException e) {
+				androidPresent = false;
+			}
+		}
+		return androidPresent;
 	}
 }
