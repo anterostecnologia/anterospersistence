@@ -1,7 +1,7 @@
 - Qdo usar anotação @ForeignKey e não usar @Column ou @Columns usar as colunas da Classe estrangeira. Pra isso será necessário garantir
   que esta classe já tenha sido lida.
   
- - Colunas usadas em fields com anotação @ForeignKey devem ser obrigatoriamente ID's na outra classe
+OK - Colunas usadas em fields com anotação @ForeignKey devem ser obrigatoriamente ID's na outra classe
    Para não permitir que ocorra este tipo de erro, onde foi usado um atributo que não era ID:
    @ForeignKey
 	@Column(name = "ID_FORNECEDOR", inversedColumn = "ID_PESSOA")
@@ -18,7 +18,7 @@ OK - Corrigir problema no relacionamento ONY_TO_MANY com EAGER, o framework tent
 
 - Join Table anotação bidirecional. Utilizar mappedBy, para não ser necessario anotação de ambos lados;
 
-- Integração com API de Validação do JAVA
+OK - Integração com API de Validação do JAVA
 
 - Fazer LOB carregar com lazy
 
@@ -80,7 +80,7 @@ public class Employee {
 
 - Fazer Log só para estatisticas de tempo de sql e de parser de objetos no handler
 
-- Fazer Refresh na Session para permitir atualizar o objeto pela chave primária
+OK - Fazer Refresh na Session para permitir atualizar o objeto pela chave primária
 
 - Criar eventos para permitir integração com view no caso aplicações desktop
 

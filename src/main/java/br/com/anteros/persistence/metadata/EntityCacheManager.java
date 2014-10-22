@@ -181,7 +181,7 @@ public class EntityCacheManager {
 		}
 	}
 
-	private void validateAfterLoadConfigurations() throws Exception {
+	protected void validateAfterLoadConfigurations() throws Exception {
 
 		for (EntityCache entityCache : entities.values()) {
 			/*
@@ -249,28 +249,35 @@ public class EntityCacheManager {
 					}
 				}
 
-				// for (DescriptionColumn column :
-				// field.getDescriptionColumns()) {
-				// if (column.isForeignKey() &&
-				// (column.getReferencedTableName() != null)) {
-				// EntityCache referencedCache = field.getTargetEntity();
-				// if (referencedCache == null) {
-				// throw new EntityCacheException("Tabela " +
-				// column.getReferencedTableName() +
-				// " não encontrada na lista de entidades gerenciadas. Verifique o Campo "
-				// + field.getName() + " da classe " +
-				// entityCache.getEntityClass().getName());
-				// }
-				// if (referencedCache.getDescriptionByColumnName
-				// (column.getReferencedColumnName()) == null) {
-				// throw new EntityCacheException("A coluna " +
-				// column.getReferencedColumnName() + " referenciada no campo "
-				// + field.getName() + " não foi encontrada na classe " +
-				// referencedCache.getEntityClass().getName());
-				// }
-				// }
-				// }
+				if (descriptionField.isRelationShip()) {
+					for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
+						if (column.isForeignKey() && (column.getReferencedTableName() != null)) {
+							EntityCache referencedCache = descriptionField.getTargetEntity();
+							if (referencedCache == null) {
+								throw new EntityCacheException("Tabela " + column.getReferencedTableName()
+										+ " não encontrada na lista de entidades gerenciadas. Verifique o Campo "
+										+ descriptionField.getName() + " da classe "
+										+ entityCache.getEntityClass().getName());
+							}
+							List<EntityCache> entitiesCache = getEntityCachesByTableName(referencedCache.getTableName());
+							DescriptionColumn referencedColumn = null;
+							for (EntityCache ec : entitiesCache) {
+								referencedColumn = ec
+										.getDescriptionColumnByColumnName(column.getReferencedColumnName());
+								if (referencedColumn != null)
+									break;
+							}
 
+							if ((referencedColumn == null) || !(referencedColumn.isPrimaryKey())) {
+								throw new EntityCacheException("A coluna " + column.getReferencedColumnName()
+										+ " referenciada no campo " + descriptionField.getName() + " da classe "
+										+ descriptionField.getEntityCache().getEntityClass().getName()
+										+ " não foi encontrada na classe " + referencedCache.getEntityClass().getName()
+										+ " ou não é um ID.");
+							}
+						}
+					}
+				}
 			}
 		}
 
@@ -2451,7 +2458,7 @@ public class EntityCacheManager {
 	 * Retorna todas DescriptionColumn da Superclasse
 	 * 
 	 */
-	public Set<DescriptionColumn> AllDescriptionColumnsBySuperClass(Class<?> clazz) {
+	public Set<DescriptionColumn> allDescriptionColumnsBySuperClass(Class<?> clazz) {
 		Set<DescriptionColumn> columns = new HashSet<DescriptionColumn>();
 		EntityCache[] caches = getEntitiesBySuperClass(clazz);
 		for (EntityCache entityCache : caches)
