@@ -464,6 +464,14 @@ public class DescriptionField {
 	public boolean hasMapKeyColumn() {
 		return this.mapKeyColumn != null;
 	}
+	
+	public boolean isRequired() {
+		for (DescriptionColumn column : columns) {
+			if (column.isRequired())
+				return true;
+		}
+		return false;
+	}
 
 	public void setMapKeyColumn(DescriptionColumn mapKeyColumn) {
 		this.mapKeyColumn = mapKeyColumn;
@@ -1089,5 +1097,7 @@ public class DescriptionField {
 		}
 		return result;
 	}
+	
+	
 
 }

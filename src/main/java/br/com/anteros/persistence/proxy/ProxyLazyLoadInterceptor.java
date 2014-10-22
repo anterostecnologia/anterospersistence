@@ -138,8 +138,8 @@ public class ProxyLazyLoadInterceptor implements MethodHandler {
 		}
 		return target;
 	}
-	
-	public Object initializeAndReturnObject() throws Exception{
+
+	public Object initializeAndReturnObject() throws Exception {
 		return getTargetObject();
 	}
 

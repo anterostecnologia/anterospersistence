@@ -197,10 +197,9 @@ public class EntityCacheManager {
 						if ((entityCache.getDescriptionColumnByName(param) == null)
 								&& (!descriptionSQL.getSuccessParameter().equalsIgnoreCase(param))
 								&& (descriptionSQL.getParametersId().get(param) == null))
-							throw new EntityCacheException(AnterosPersistenceTranslate.getMessage(
-									this.getClass(), "descriptionSql.parameter.not.found", param,
-									descriptionSQL.getSql(), descriptionSQL.getSqlType(),
-									entityCache.getEntityClass().getName()));
+							throw new EntityCacheException(AnterosPersistenceTranslate.getMessage(this.getClass(),
+									"descriptionSql.parameter.not.found", param, descriptionSQL.getSql(),
+									descriptionSQL.getSqlType(), entityCache.getEntityClass().getName()));
 					}
 				}
 			}
@@ -827,18 +826,23 @@ public class EntityCacheManager {
 					+ " não possuí nenhuma configuração. Caso o campo não seja persistido configurar como Transient.");
 
 		if (!ReflectionUtils.hasGetterAccessor(sourceClazz, fieldConfiguration.getField())) {
-			throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe "
-					+ sourceClazz.getName()
-					+ " não possuí um método acessor (GET) configurado. Defina os métodos acessores para todos os campos das entidades.");
-		}
-		
-		if (!ReflectionUtils.hasSetterAccessor(sourceClazz, fieldConfiguration.getField())) {
-			throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe "
-					+ sourceClazz.getName()
-					+ " não possuí um método acessor (SET) configurado. Defina os métodos acessores para todos os campos das entidades.");
+			throw new EntityCacheException(
+					"O campo "
+							+ fieldConfiguration.getName()
+							+ " da classe "
+							+ sourceClazz.getName()
+							+ " não possuí um método acessor (GET) configurado. Defina os métodos acessores para todos os campos das entidades.");
 		}
 
-		
+		if (!ReflectionUtils.hasSetterAccessor(sourceClazz, fieldConfiguration.getField())) {
+			throw new EntityCacheException(
+					"O campo "
+							+ fieldConfiguration.getName()
+							+ " da classe "
+							+ sourceClazz.getName()
+							+ " não possuí um método acessor (SET) configurado. Defina os métodos acessores para todos os campos das entidades.");
+		}
+
 		if (validate) {
 			/*
 			 * if ((fieldConfiguration.getColumns()!=null) &&
@@ -2145,6 +2149,13 @@ public class EntityCacheManager {
 
 			entityCache.addDescriptionField(descriptionField);
 			entityCache.addDescriptionColumn(descriptionColumn);
+
+			if ((descriptionField.getFetchType() == FetchType.LAZY) && (descriptionField.isRelationShip())
+					&& !(descriptionField.isRequired())) {
+				throw new EntityCacheException(
+						"Não é permitido usar LAZY em chaves estrangeiras que não sejam obrigatórias pois isto inviabiliza a comparação do objeto com nulo devido ao uso de proxy.");
+			}
+
 		} catch (Exception ex) {
 			throw new EntityCacheException("Erro lendo configuração ForeignKey  do campo "
 					+ fieldConfiguration.getName() + " da classe " + entityCache.getEntityClass().getName() + ". "
@@ -2344,11 +2355,12 @@ public class EntityCacheManager {
 	 * param tableName return
 	 */
 	public EntityCache getEntityCacheByTableName(String tableName) {
-		int count = countEntityCacheByTableName(tableName); 
-		if (countEntityCacheByTableName(tableName)>1) {
-			throw new EntityCacheManagerException("Foram encontradas "+count+" classes com o mesmo nome de tabela "+tableName);
+		int count = countEntityCacheByTableName(tableName);
+		if (countEntityCacheByTableName(tableName) > 1) {
+			throw new EntityCacheManagerException("Foram encontradas " + count + " classes com o mesmo nome de tabela "
+					+ tableName);
 		}
-		
+
 		if ((tableName != null) && (!"".equals(tableName))) {
 			for (EntityCache entityCache : entities.values()) {
 				if ((tableName.equalsIgnoreCase(entityCache.getTableName())) && (!entityCache.hasDiscriminatorValue()))
@@ -2357,7 +2369,7 @@ public class EntityCacheManager {
 		}
 		return null;
 	}
-	
+
 	public int countEntityCacheByTableName(String tableName) {
 		int result = 0;
 		if ((tableName != null) && (!"".equals(tableName))) {
