@@ -51,20 +51,24 @@ public class Identifier<T> implements Serializable {
 	}
 
 	public Identifier(SQLSession session, Class<T> sourceClass) throws Exception {
+		Class<T> anyClass = null;
 		if (ReflectionUtils.isAbstractClass(sourceClass)) {
-			Class<T> anyClass = (Class<T>) session.getEntityCacheManager().getAnyConcreteClass(sourceClass);
+			anyClass = (Class<T>) session.getEntityCacheManager().getAnyConcreteClass(sourceClass);
 			if (anyClass == null) {
 				throw new IdentifierException("Não é possível criar um identificador para a classe abstrata "
-						+ sourceClass.getName()+" pois não foi localizado nenhuma classe concreta que implemente a mesma.");
+						+ sourceClass.getName()
+						+ " pois não foi localizado nenhuma classe concreta que implemente a mesma.");
 			}
-			sourceClass = anyClass;
 		}
 		entityCache = session.getEntityCacheManager().getEntityCache(sourceClass);
 		if (entityCache == null) {
 			throw new IdentifierException("Classe " + sourceClass.getName() + " não encontrada na lista de entidades.");
 		}
 		this.clazz = sourceClass;
-		this.owner = sourceClass.newInstance();
+		if (anyClass != null)
+			this.owner = anyClass.newInstance();
+		else
+			this.owner = sourceClass.newInstance();
 		this.session = session;
 	}
 
