@@ -2489,4 +2489,15 @@ public class EntityCacheManager {
 		return fields;
 	}
 
+	public Class<?> getAnyConcreteClass(Class<?> sourceClass) {
+		EntityCache sourceEntityCache = getEntityCache(sourceClass);
+		if (sourceEntityCache == null)
+			return null;
+		EntityCache[] allConcrete = getAllConcreteEntityCacheByTableName(sourceEntityCache.getTableName());
+		if (allConcrete.length == 0)
+			return null;
+		else
+			return allConcrete[0].getEntityClass();
+	}
+
 }

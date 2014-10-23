@@ -36,7 +36,7 @@ public class Identifier<T> implements Serializable {
 	private Object owner;
 	private SQLSession session;
 	private EntityCache entityCache;
-	private boolean onlyRefreshOwner=false;
+	private boolean onlyRefreshOwner = false;
 
 	public static <T> Identifier<T> create(SQLSession session, Class<T> sourceClass) throws Exception {
 		return new Identifier<T>(session, sourceClass);
@@ -45,15 +45,19 @@ public class Identifier<T> implements Serializable {
 	public static <T> Identifier<T> create(SQLSession session, T owner) throws Exception {
 		return new Identifier<T>(session, owner);
 	}
-	
+
 	public static <T> Identifier<T> create(SQLSession session, T owner, boolean onlyRefreshOwner) throws Exception {
 		return new Identifier<T>(session, owner, onlyRefreshOwner);
 	}
 
 	public Identifier(SQLSession session, Class<T> sourceClass) throws Exception {
 		if (ReflectionUtils.isAbstractClass(sourceClass)) {
-			throw new IdentifierException("Não é possível criar um identificador para uma classe abstrata "
-					+ sourceClass.getName());
+			Class<T> anyClass = (Class<T>) session.getEntityCacheManager().getAnyConcreteClass(sourceClass);
+			if (anyClass == null) {
+				throw new IdentifierException("Não é possível criar um identificador para a classe abstrata "
+						+ sourceClass.getName()+" pois não foi localizado nenhuma classe concreta que implemente a mesma.");
+			}
+			sourceClass = anyClass;
 		}
 		entityCache = session.getEntityCacheManager().getEntityCache(sourceClass);
 		if (entityCache == null) {
@@ -73,9 +77,9 @@ public class Identifier<T> implements Serializable {
 		if (entityCache == null)
 			throw new IdentifierException("Classe " + clazz.getName() + " não encontrada na lista de entidades.");
 	}
-	
+
 	public Identifier(SQLSession session, T owner, boolean onlyRefreshOwner) throws Exception {
-		this(session,owner);
+		this(session, owner);
 		this.onlyRefreshOwner = onlyRefreshOwner;
 	}
 
