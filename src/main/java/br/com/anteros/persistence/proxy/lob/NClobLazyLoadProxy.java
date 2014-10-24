@@ -50,7 +50,7 @@ public class NClobLazyLoadProxy implements InvocationHandler {
 
 		if ("initializeAndReturnObject".equals(method.getName())) {
 			initializeNClob();
-			return this;
+			return target;
 		}
 
 		if (!initialized)

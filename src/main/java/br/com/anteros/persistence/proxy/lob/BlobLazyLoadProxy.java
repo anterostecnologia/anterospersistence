@@ -49,7 +49,7 @@ public class BlobLazyLoadProxy implements InvocationHandler {
 
 		if ("initializeAndReturnObject".equals(method.getName())) {
 			initializeBlob();
-			return this;
+			return target;
 		}
 
 		if (!initialized)

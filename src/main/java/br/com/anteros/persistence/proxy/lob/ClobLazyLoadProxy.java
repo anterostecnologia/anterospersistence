@@ -49,7 +49,7 @@ public class ClobLazyLoadProxy implements InvocationHandler {
 
 		if ("initializeAndReturnObject".equals(method.getName())) {
 			initializeClob();
-			return this;
+			return target;
 		}
 		if (!initialized)
 			initializeClob();
