@@ -269,8 +269,9 @@ public class FieldConfiguration {
 		return this;
 	}
 
-	public FieldConfiguration lob() {
+	public FieldConfiguration lob(FetchType fetchType) {
 		annotations.add(Lob.class);
+		this.fetch = new FetchConfiguration(fetchType);
 		return this;
 	}
 
@@ -515,7 +516,7 @@ public class FieldConfiguration {
 			} else if (annotation instanceof JoinTable) {
 				joinTable(new JoinTableConfiguration(((JoinTable) annotation)));
 			} else if (annotation instanceof Lob) {
-				lob();
+				lob(((Lob)annotation).type());
 			} else if (annotation instanceof MapKeyColumn) {
 				mapKeyColumn(((MapKeyColumn) annotation).name());
 			} else if (annotation instanceof OrderBy) {

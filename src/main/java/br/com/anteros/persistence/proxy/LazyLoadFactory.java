@@ -30,4 +30,6 @@ public interface LazyLoadFactory {
 	public boolean proxyIsInitialized(Object object) throws Exception;
 	
 	public boolean isProxyObject(Object object) throws Exception;
+	
+	
 }

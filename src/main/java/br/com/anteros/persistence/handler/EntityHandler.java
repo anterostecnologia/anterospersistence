@@ -213,7 +213,7 @@ public class EntityHandler implements ResultSetHandler {
 		 * Preenche a árvore do objeto considerando as estratégias configuradas
 		 * em cada field com ForeignKey e Fetch
 		 */
-		loadCollectionsAndRelationShip(mainObject, entityCache, resultSet);
+		loadCollectionsRelationShipAndLob(mainObject, entityCache, resultSet);
 
 		if (entityCache.isVersioned()) {
 			entityManaged.setOriginalVersion(ObjectUtils.cloneObject(ReflectionUtils.getFieldValueByName(mainObject,
@@ -576,7 +576,7 @@ public class EntityHandler implements ResultSetHandler {
 		return result;
 	}
 
-	protected void loadCollectionsAndRelationShip(Object targetObject, EntityCache entityCache, ResultSet restultSet)
+	protected void loadCollectionsRelationShipAndLob(Object targetObject, EntityCache entityCache, ResultSet restultSet)
 			throws Exception {
 		/*
 		 * Faz um loop nos fields que tenham sido configuradas com ForeignKey e
@@ -590,7 +590,8 @@ public class EntityHandler implements ResultSetHandler {
 			 * criado o objeto e alimentado apenas com os dados da expressão no
 			 * método processExpression
 			 */
-			if (descriptionField.isCollection() || descriptionField.isJoinTable() || descriptionField.isRelationShip()) {
+			if (descriptionField.isCollection() || descriptionField.isJoinTable() || descriptionField.isRelationShip()
+					|| descriptionField.isLob()) {
 				boolean process = true;
 				Object value = descriptionField.getObjectValue(targetObject);
 				if (value != null) {
@@ -601,20 +602,26 @@ public class EntityHandler implements ResultSetHandler {
 					}
 				}
 				if (process && !existsExpressionForProcessing(entityCache, descriptionField.getField().getName())) {
-					/*
-					 * Busca a EntityCache da classe destino do field
-					 */
 					EntityCache targetEntityCache = null;
-					if (!descriptionField.isElementCollection() && !descriptionField.isJoinTable()) {
-						targetEntityCache = entityCacheManager.getEntityCache(descriptionField.getTargetEntity()
-								.getEntityClass());
+					if (descriptionField.isLob()) {
+						targetEntityCache = entityCache;
+					} else {
+						/*
+						 * Busca a EntityCache da classe destino do field
+						 */
 
-						if (targetEntityCache == null)
-							throw new EntityHandlerException("Para que seja criado o objeto da classe "
-									+ descriptionField.getTargetEntity().getEntityClass().getName()
-									+ " é preciso adicionar a Entity relacionada à classe na configuração da sessão. "
-									+ (descriptionField.getDescriptionColumns() == null ? "" : "Coluna(s) "
-											+ descriptionField));
+						if (!descriptionField.isElementCollection() && !descriptionField.isJoinTable()) {
+							targetEntityCache = entityCacheManager.getEntityCache(descriptionField.getTargetEntity()
+									.getEntityClass());
+
+							if (targetEntityCache == null)
+								throw new EntityHandlerException(
+										"Para que seja criado o objeto da classe "
+												+ descriptionField.getTargetEntity().getEntityClass().getName()
+												+ " é preciso adicionar a Entity relacionada à classe na configuração da sessão. "
+												+ (descriptionField.getDescriptionColumns() == null ? "" : "Coluna(s) "
+														+ descriptionField));
+						}
 					}
 
 					Map<String, Object> columnKeyValue = new TreeMap<String, Object>();
@@ -622,7 +629,7 @@ public class EntityHandler implements ResultSetHandler {
 					 * Se o DescriptionField for um FK guarda o valor da coluna
 					 */
 					try {
-						if (descriptionField.hasDescriptionColumn()) {
+						if (descriptionField.hasDescriptionColumn() && !(descriptionField.isLob())) {
 							for (DescriptionColumn descriptionColumn : descriptionField.getDescriptionColumns()) {
 								if (descriptionColumn.isForeignKey() && !descriptionColumn.isInversedJoinColumn())
 									columnKeyValue.put(
@@ -646,18 +653,32 @@ public class EntityHandler implements ResultSetHandler {
 					}
 
 					/*
-					 * Se a estratégia for EAGER busca os dados do field
+					 * Se a estratégia for EAGER busca os dados do field, se for
+					 * LAZY cria um proxy.
 					 */
-					if ((descriptionField.getFetchType() == FetchType.EAGER)
-							|| ((AnterosPersistenceHelper.androidIsPresent()) && !(descriptionField.isCollection()))) {
+					FetchType ft = descriptionField.getFetchType();
+					// Se estiver no android e não for uma coleção então assume
+					// EAGER
+					if (AnterosPersistenceHelper.androidIsPresent() && !(descriptionField.isCollection()))
+						ft = FetchType.EAGER;
+					// Se for um campo LOB assume o que estiver configurado.
+					if (descriptionField.isLob())
+						ft = descriptionField.getFetchType();
 
-						Object result = session.createQuery("").loadData(targetEntityCache, targetObject,
-								descriptionField, columnKeyValue, transactionCache);
-						descriptionField.getField().set(targetObject, result);
-						FieldEntityValue fieldEntityValue = descriptionField.getFieldEntityValue(session, targetObject);
-						entityManaged.addOriginalValue(fieldEntityValue);
-						entityManaged.addLastValue(fieldEntityValue);
-						entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
+					// Somente busca relacionamentos, LOB já é criado junto com
+					// os demais campos. Somente cria o LOB se for LAZY ai cria
+					// como um proxy.
+					if (ft == FetchType.EAGER) {
+						if (!descriptionField.isLob()) {
+							Object result = session.createQuery("").loadData(targetEntityCache, targetObject,
+									descriptionField, columnKeyValue, transactionCache);
+							descriptionField.getField().set(targetObject, result);
+							FieldEntityValue fieldEntityValue = descriptionField.getFieldEntityValue(session,
+									targetObject);
+							entityManaged.addOriginalValue(fieldEntityValue);
+							entityManaged.addLastValue(fieldEntityValue);
+							entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
+						}
 					} else {
 						Object newObject = proxyFactory.createProxy(session, targetObject, descriptionField,
 								targetEntityCache, columnKeyValue, transactionCache);

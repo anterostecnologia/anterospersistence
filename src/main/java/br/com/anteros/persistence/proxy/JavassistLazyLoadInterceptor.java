@@ -29,7 +29,7 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
 
-public class ProxyLazyLoadInterceptor implements MethodHandler {
+public class JavassistLazyLoadInterceptor implements MethodHandler {
 
 	private SQLSession session;
 	private EntityCache entityCache;
@@ -42,7 +42,7 @@ public class ProxyLazyLoadInterceptor implements MethodHandler {
 	private Boolean initialized = Boolean.FALSE;
 	private Boolean processing = Boolean.FALSE;
 
-	public ProxyLazyLoadInterceptor(SQLSession session, EntityCache entityCache, Map<String, Object> columKeyValues,
+	public JavassistLazyLoadInterceptor(SQLSession session, EntityCache entityCache, Map<String, Object> columKeyValues,
 			Cache transactionCache, Object owner, DescriptionField descriptionField) {
 		this.session = session;
 		this.entityCache = entityCache;
@@ -55,6 +55,21 @@ public class ProxyLazyLoadInterceptor implements MethodHandler {
 	public Object invoke(final Object proxy, final Method thisMethod, final Method proceed, final Object[] args)
 			throws Throwable {
 		if (this.constructed) {
+			
+			if ("isInitialized".equals(thisMethod.getName())){
+				return isInitialized();
+			}
+			
+			if ("initialize".equals(thisMethod.getName())) {
+				getTargetObject();
+				return null;
+			}
+			
+			if ("initializeAndReturnObject".equals(thisMethod.getName())){
+				return initializeAndReturnObject();
+			}
+			
+			
 			Object target = getTargetObject();
 			final Object returnValue;
 			try {

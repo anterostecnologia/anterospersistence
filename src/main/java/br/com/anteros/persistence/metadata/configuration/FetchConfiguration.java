@@ -45,6 +45,10 @@ public class FetchConfiguration {
 		this.mappedBy = fetch.mappedBy();
 		this.targetEntity = fetch.targetEntity();
 	}
+	
+	public FetchConfiguration(FetchType fetchType) {
+		this.type = fetchType;
+	}
 
 	public String getStatement() {
 		return statement;

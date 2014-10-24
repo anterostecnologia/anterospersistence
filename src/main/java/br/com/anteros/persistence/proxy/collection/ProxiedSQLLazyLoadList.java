@@ -2,9 +2,26 @@ package br.com.anteros.persistence.proxy.collection;
 
 import java.util.ArrayList;
 
-import br.com.anteros.persistence.proxy.AnterosProxyObject;
+public class ProxiedSQLLazyLoadList<T> extends ArrayList<T> implements AnterosProxyCollection {
 
-public class ProxiedSQLLazyLoadList<T> extends ArrayList<T> implements AnterosProxyObject {
+	@Override
+	public boolean isInitialized() {
+		return false;
+	}
+
+	@Override
+	public void initialize() {
+	}
+
+	@Override
+	public Object initializeAndReturnObject() {
+		return null;
+	}
+
+	@Override
+	public boolean isProxied() {
+		return true;
+	}
 
 
 }

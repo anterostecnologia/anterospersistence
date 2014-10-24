@@ -27,6 +27,7 @@ import java.util.Set;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
+import br.com.anteros.persistence.metadata.annotation.type.FetchType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.session.SQLSession;
@@ -264,7 +265,7 @@ public class SQLQueryAnalyzer {
 
 								for (EntityCache cache : caches) {
 									for (DescriptionField descriptionField : cache.getDescriptionFields()) {
-										if (!descriptionField.isCollection() && !descriptionField.isJoinTable()) {
+										if (!descriptionField.isCollection() && !descriptionField.isJoinTable() && !(descriptionField.isLob() && descriptionField.getFetchType()==FetchType.LAZY)) {
 											for (DescriptionColumn descriptionColumn : descriptionField
 													.getDescriptionColumns()) {
 												String aliasColumnName = makeNextAliasName(alias.getAlias(),

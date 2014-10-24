@@ -20,7 +20,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import br.com.anteros.persistence.metadata.annotation.type.FetchType;
+
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Lob {
+	FetchType type() default FetchType.EAGER;
 }

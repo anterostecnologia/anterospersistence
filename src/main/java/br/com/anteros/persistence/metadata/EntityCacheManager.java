@@ -1866,8 +1866,10 @@ public class EntityCacheManager {
 		/*
 		 * Se possuir Lob
 		 */
-		if (fieldConfiguration.isAnnotationPresent(Lob.class))
+		if (fieldConfiguration.isAnnotationPresent(Lob.class)){
 			descriptionColumn.setLob(true);
+			descriptionField.setFetchType(fieldConfiguration.getFetch().getType());
+		}
 
 		/*
 		 * Se possuir Boolean

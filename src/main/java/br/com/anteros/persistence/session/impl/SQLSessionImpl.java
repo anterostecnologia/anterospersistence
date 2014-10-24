@@ -34,7 +34,7 @@ import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.proxy.LazyLoadFactory;
-import br.com.anteros.persistence.proxy.ProxyLazyLoadFactory;
+import br.com.anteros.persistence.proxy.JavassistLazyLoadFactory;
 import br.com.anteros.persistence.session.SQLPersister;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionFactory;
@@ -71,7 +71,7 @@ public class SQLSessionImpl implements SQLSession {
 	private List<SQLSessionListener> listeners = new ArrayList<SQLSessionListener>();
 	private Map<Object, Map<DescriptionColumn, IdentifierPostInsert>> cacheIdentifier = new LinkedHashMap<Object, Map<DescriptionColumn, IdentifierPostInsert>>();
 	private SQLPersister persister;
-	private LazyLoadFactory lazyLoadFactory = new ProxyLazyLoadFactory();
+	private LazyLoadFactory lazyLoadFactory = new JavassistLazyLoadFactory();
 	private TransactionFactory transactionFactory;
 	private Transaction transaction;
 
@@ -561,6 +561,7 @@ public class SQLSessionImpl implements SQLSession {
 		SQLQuery result = new SQLQueryImpl(this);
 		result.timeOut(queryTimeout);
 		result.sql(sql);
+		result.showSql(showSql);
 		return result;
 	}
 
@@ -571,6 +572,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.sql(sql);
 		result.setParameters(parameters);
 		result.timeOut(queryTimeout);
+		result.showSql(showSql);
 		return result;
 	}
 
@@ -580,6 +582,7 @@ public class SQLSessionImpl implements SQLSession {
 		TypedSQLQuery<T> result = new SQLQueryImpl<T>(this, resultClass);
 		result.sql(sql);
 		result.timeOut(queryTimeout);
+		result.showSql(showSql);
 		return result;
 	}
 
@@ -589,6 +592,7 @@ public class SQLSessionImpl implements SQLSession {
 		TypedSQLQuery<T> result = new SQLQueryImpl<T>(this, resultClass);
 		result.timeOut(queryTimeout);
 		result.sql(sql);
+		result.showSql(showSql);
 		result.setParameters(parameters);
 		return result;
 	}
@@ -599,6 +603,7 @@ public class SQLSessionImpl implements SQLSession {
 		SQLQuery result = new SQLQueryImpl(this);
 		result.namedQuery(name);
 		result.timeOut(queryTimeout);
+		result.showSql(showSql);
 		return result;
 	}
 
@@ -609,6 +614,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.namedQuery(name);
 		result.setParameters(parameters);		
 		result.timeOut(queryTimeout);
+		result.showSql(showSql);
 		return result;
 	}
 
@@ -630,6 +636,7 @@ public class SQLSessionImpl implements SQLSession {
 		StoredProcedureSQLQuery result = new StoredProcedureSQLQueryImpl(this);
 		result.procedureOrFunctionName(procedureName);
 		result.timeOut(queryTimeout);
+		result.showSql(showSql);
 		return result;
 	}
 
@@ -640,6 +647,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.procedureOrFunctionName(procedureName);
 		result.setParameters(parameters);
 		result.timeOut(queryTimeout);
+		result.showSql(showSql);
 		return result;
 	}
 
@@ -649,6 +657,7 @@ public class SQLSessionImpl implements SQLSession {
 		StoredProcedureSQLQuery result = new StoredProcedureSQLQueryImpl(this, resultClass);
 		result.procedureOrFunctionName(procedureName);
 		result.timeOut(queryTimeout);
+		result.showSql(showSql);
 		return result;
 	}
 	
@@ -660,6 +669,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.procedureOrFunctionName(procedureName);
 		result.timeOut(queryTimeout);
 		result.setParameters(parameters);
+		result.showSql(showSql);
 		return result;
 	}
 

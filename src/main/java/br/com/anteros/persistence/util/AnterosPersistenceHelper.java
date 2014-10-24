@@ -6,7 +6,7 @@ import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyObject;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.proxy.AnterosProxyObject;
-import br.com.anteros.persistence.proxy.ProxyLazyLoadInterceptor;
+import br.com.anteros.persistence.proxy.JavassistLazyLoadInterceptor;
 import br.com.anteros.persistence.proxy.collection.AnterosPersistentCollection;
 
 public class AnterosPersistenceHelper {
@@ -31,10 +31,10 @@ public class AnterosPersistenceHelper {
 
 		if (AnterosProxyObject.class.isAssignableFrom(value.getClass())) {
 			MethodHandler handler = ((ProxyObject) value).getHandler();
-			if (!(handler instanceof ProxyLazyLoadInterceptor))
+			if (!(handler instanceof JavassistLazyLoadInterceptor))
 				return true;
 
-			return ((ProxyLazyLoadInterceptor) (handler)).isInitialized();
+			return ((JavassistLazyLoadInterceptor) (handler)).isInitialized();
 
 		} else if (value instanceof AnterosPersistentCollection) {
 			AnterosPersistentCollection coll = (AnterosPersistentCollection) value;

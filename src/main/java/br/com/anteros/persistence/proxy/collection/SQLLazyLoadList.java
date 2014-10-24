@@ -5,14 +5,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-import br.com.anteros.persistence.proxy.CollectionLazyLoadInterceptor;
+import br.com.anteros.persistence.proxy.SimpleLazyLoadInterceptor;
 
 public class SQLLazyLoadList<T> extends AbstractSQLList<T> {
 
-	private CollectionLazyLoadInterceptor interceptor;
+	private SimpleLazyLoadInterceptor interceptor;
 	private boolean initialized = false;
 
-	public SQLLazyLoadList(CollectionLazyLoadInterceptor interceptor) {
+	public SQLLazyLoadList(SimpleLazyLoadInterceptor interceptor) {
 		this.interceptor = interceptor;
 	}
 
@@ -200,7 +200,6 @@ public class SQLLazyLoadList<T> extends AbstractSQLList<T> {
 				e.printStackTrace();
 				throw new RuntimeException(e);
 			}
-
 		}
 	}
 

@@ -17,5 +17,5 @@ package br.com.anteros.persistence.metadata.annotation.type;
 
 public enum FetchType {
 
-	EAGER, LAZY, JOIN;
+	EAGER, LAZY;
 }

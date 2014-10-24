@@ -2,9 +2,26 @@ package br.com.anteros.persistence.proxy.collection;
 
 import java.util.LinkedHashMap;
 
-import br.com.anteros.persistence.proxy.AnterosProxyObject;
+public class ProxiedSQLLazyLoadMap<K,V> extends LinkedHashMap<K,V> implements AnterosProxyMap {
 
-public class ProxiedSQLLazyLoadMap<K,V> extends LinkedHashMap<K,V> implements AnterosProxyObject {
+	@Override
+	public boolean isInitialized() {
+		return false;
+	}
+
+	@Override
+	public void initialize() {
+	}
+
+	@Override
+	public Object initializeAndReturnObject() {
+		return null;
+	}
+
+	@Override
+	public boolean isProxied() {
+		return false;
+	}
 
 
 }

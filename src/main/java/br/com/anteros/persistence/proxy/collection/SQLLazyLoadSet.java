@@ -4,14 +4,14 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
-import br.com.anteros.persistence.proxy.CollectionLazyLoadInterceptor;
+import br.com.anteros.persistence.proxy.SimpleLazyLoadInterceptor;
 
 public class SQLLazyLoadSet<T> extends AbstractSQLSet<T> {
 
-	private CollectionLazyLoadInterceptor interceptor;
+	private SimpleLazyLoadInterceptor interceptor;
 	private boolean initialized = false;
 
-	public SQLLazyLoadSet(CollectionLazyLoadInterceptor interceptor) {
+	public SQLLazyLoadSet(SimpleLazyLoadInterceptor interceptor) {
 		this.interceptor = interceptor;
 	}
 

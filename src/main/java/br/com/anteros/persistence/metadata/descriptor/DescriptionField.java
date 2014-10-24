@@ -178,6 +178,8 @@ public class DescriptionField {
 	}
 
 	public boolean isLob() {
+		if (getSimpleColumn()==null)
+			return false;
 		return getSimpleColumn().isLob();
 	}
 

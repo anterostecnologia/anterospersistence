@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import br.com.anteros.core.utils.ObjectUtils;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.handler.BeanHandler;
 import br.com.anteros.persistence.handler.ElementCollectionHandler;
@@ -60,6 +61,8 @@ import br.com.anteros.persistence.session.query.SQLQueryAnalyzerException;
 import br.com.anteros.persistence.session.query.SQLQueryException;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
 import br.com.anteros.persistence.sql.command.Select;
+import br.com.anteros.persistence.sql.lob.AnterosBlob;
+import br.com.anteros.persistence.sql.lob.AnterosClob;
 import br.com.anteros.persistence.sql.statement.NamedParameterStatement;
 import br.com.anteros.persistence.util.SQLParserUtil;
 
@@ -592,8 +595,9 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	public Object loadData(EntityCache entityCacheTarget, Object owner, DescriptionField descriptionFieldOwner,
 			Map<String, Object> columnKeyTarget, Cache transactionCache) throws IllegalAccessException, Exception {
-		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
 		Object result = null;
+		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
+
 		StringBuffer sb = new StringBuffer("");
 		boolean keyIsNull = false;
 		for (String key : columnKeyTarget.keySet()) {
@@ -622,7 +626,9 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		 * configurada e seta o resultado do sql no field
 		 */
 		if (result == null) {
-			if (FetchMode.ONE_TO_MANY == descriptionFieldOwner.getModeType())
+			if (descriptionFieldOwner.isLob()) {
+				result = getResultToLob(owner, descriptionFieldOwner, columnKeyTarget);
+			} else if (FetchMode.ONE_TO_MANY == descriptionFieldOwner.getModeType())
 				result = getResultFromMappedBy(descriptionFieldOwner, columnKeyTarget, transactionCache);
 			else if (FetchMode.FOREIGN_KEY == descriptionFieldOwner.getModeType())
 				result = getResultFromForeignKey(entityCacheTarget, descriptionFieldOwner, columnKeyTarget,
@@ -671,20 +677,23 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				result = newValue;
 
 			} else {
-				/*
-				 * Se result for um objeto diferente de lista
-				 */
-				EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(result);
+				if (!(descriptionFieldOwner.isLob())) {
+					/*
+					 * Se result for um objeto diferente de lista e não for um
+					 * LOB
+					 */
+					EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(result);
 
-				/*
-				 * Caso o objeto possa ser gerenciado(objeto completo ou parcial
-				 * que tenha sido buscado id no sql) adiciona o objeto no cache
-				 */
-				if (entityManaged != null)
-					transactionCache.put(entityManaged.getEntityCache().getEntityClass().getName() + "_" + uniqueId,
-							result);
+					/*
+					 * Caso o objeto possa ser gerenciado(objeto completo ou
+					 * parcial que tenha sido buscado id no sql) adiciona o
+					 * objeto no cache
+					 */
+					if (entityManaged != null)
+						transactionCache.put(
+								entityManaged.getEntityCache().getEntityClass().getName() + "_" + uniqueId, result);
+				}
 			}
-
 		} else {
 			if (ReflectionUtils.isImplementsInterface(descriptionFieldOwner.getField().getType(), Set.class))
 				result = new DefaultSQLSet();
@@ -694,6 +703,46 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				result = new DefaultSQLMap();
 		}
 		return result;
+	}
+
+	private Object getResultToLob(Object owner, DescriptionField descriptionFieldOwner,
+			Map<String, Object> columnKeyTarget) throws Exception {
+		EntityCache entityCache = descriptionFieldOwner.getEntityCache();
+		Select select = new Select(session.getDialect());
+		select.addTableName(entityCache.getTableName() + " " + entityCache.getAliasTableName());
+		select.addColumn(entityCache.getAliasTableName() + "."
+				+ descriptionFieldOwner.getSimpleColumn().getColumnName());
+
+		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
+		boolean appendOperator = false;
+		for (DescriptionColumn descriptionColumn : entityCache.getPrimaryKeyColumns()) {
+			if (appendOperator)
+				select.and();
+			select.addCondition(descriptionColumn.getColumnName(), "=", ":P" + descriptionColumn.getColumnName());
+			String columnName = (descriptionColumn.getReferencedColumnName() == null
+					|| "".equals(descriptionColumn.getReferencedColumnName()) ? descriptionColumn.getColumnName()
+					: descriptionColumn.getReferencedColumnName());
+			params.add(new NamedParameter("P" + columnName, columnKeyTarget.get(columnName)));
+			appendOperator = true;
+		}
+
+		ResultSet resultSet = session.createQuery(select.toStatementString())
+				.setParameters(params.toArray(new NamedParameter[] {})).executeQuery();
+		if (resultSet.next()) {
+			Object object = resultSet.getObject(1);
+			if (descriptionFieldOwner.getFieldClass().equals(java.sql.Blob.class)) {
+				byte[] bytes = (byte[]) ObjectUtils.convert(object, byte[].class);
+				return new AnterosBlob(bytes);
+			} else if (descriptionFieldOwner.getFieldClass().equals(java.sql.Clob.class)) {
+				String value = (String) ObjectUtils.convert(object, String.class);
+				return new AnterosClob(value);
+			} else if (descriptionFieldOwner.getFieldClass().equals(java.sql.NClob.class)) {
+				String value = (String) ObjectUtils.convert(object, String.class);
+				return new AnterosClob(value);
+			}
+		}
+
+		return null;
 	}
 
 	private Object getResultFromJoinTable(final DescriptionField descriptionFieldOwner,
@@ -909,32 +958,35 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	protected Object getObjectFromCache(EntityCache targetEntityCache, String uniqueId, Cache transactionCache) {
 		Object result = null;
+		if (transactionCache != null) {
 
-		/*
-		 * Se a classe for abstrata pega todas as implementações não abstratas e
-		 * verifica se existe um objeto da classe + ID no entityCache
-		 */
-		if (ReflectionUtils.isAbstractClass(targetEntityCache.getEntityClass())) {
-			EntityCache[] entitiesCache = session.getEntityCacheManager().getEntitiesBySuperClassIncluding(
-					targetEntityCache);
-			for (EntityCache entityCache : entitiesCache) {
-				result = transactionCache.get(entityCache.getEntityClass().getName() + "_" + uniqueId);
-				if (result != null)
-					break;
-				result = session.getPersistenceContext().getObjectFromCache(
-						entityCache.getEntityClass().getName() + "_" + uniqueId);
-				if (result != null)
-					break;
-			}
-		} else {
 			/*
-			 * Caso não seja abstrata localiza classe+ID no entityCache
+			 * Se a classe for abstrata pega todas as implementações não
+			 * abstratas e verifica se existe um objeto da classe + ID no
+			 * entityCache
 			 */
-			result = transactionCache.get(targetEntityCache.getEntityClass().getName() + "_" + uniqueId);
+			if (ReflectionUtils.isAbstractClass(targetEntityCache.getEntityClass())) {
+				EntityCache[] entitiesCache = session.getEntityCacheManager().getEntitiesBySuperClassIncluding(
+						targetEntityCache);
+				for (EntityCache entityCache : entitiesCache) {
+					result = transactionCache.get(entityCache.getEntityClass().getName() + "_" + uniqueId);
+					if (result != null)
+						break;
+					result = session.getPersistenceContext().getObjectFromCache(
+							entityCache.getEntityClass().getName() + "_" + uniqueId);
+					if (result != null)
+						break;
+				}
+			} else {
+				/*
+				 * Caso não seja abstrata localiza classe+ID no entityCache
+				 */
+				result = transactionCache.get(targetEntityCache.getEntityClass().getName() + "_" + uniqueId);
 
-			if (result == null)
-				result = session.getPersistenceContext().getObjectFromCache(
-						targetEntityCache.getEntityClass().getName() + "_" + uniqueId);
+				if (result == null)
+					result = session.getPersistenceContext().getObjectFromCache(
+							targetEntityCache.getEntityClass().getName() + "_" + uniqueId);
+			}
 		}
 		return result;
 	}

@@ -11,7 +11,7 @@ import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
 
 
-public class CollectionLazyLoadInterceptor {
+public class SimpleLazyLoadInterceptor {
 
 	private SQLSession session;
 	private EntityCache entityCache;
@@ -24,7 +24,7 @@ public class CollectionLazyLoadInterceptor {
 	private boolean initialized = false;
 	private Boolean processing = false;
 
-	public CollectionLazyLoadInterceptor(SQLSession session, EntityCache entityCache, Map<String, Object> columKeyValues,
+	public SimpleLazyLoadInterceptor(SQLSession session, EntityCache entityCache, Map<String, Object> columKeyValues,
 			Cache transactionCache, Object owner, DescriptionField descriptionField) {
 		this.session = session;
 		this.entityCache = entityCache;
