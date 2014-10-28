@@ -17,8 +17,4 @@ public class ProxyCreationException extends RuntimeException {
 		super(message, cause);
 	}
 
-	public ProxyCreationException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
-	}
-
 }
