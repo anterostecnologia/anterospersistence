@@ -671,18 +671,18 @@ public class EntityHandler implements ResultSetHandler {
 							 * pai
 							 */
 							columnKeyValue = session.getIdentifier(targetObject).getColumns();
-					} catch (SQLException e) {
-						throw new EntityHandlerException("Para que seja criado o objeto do tipo "
-								+ descriptionField.getTargetEntity().getEntityClass().getSimpleName()+" que será atribuído ao campo "+descriptionField.getField().getName()+" na classe "+entityCache.getEntityClass()
-								+ " é preciso adicionar a coluna " + columnName+" da tabela "+entityCache.getTableName()
-								+ " no sql. ");						
 					} catch (Exception ex) {
 						/*
 						 * Se não for um DescriptionField do tipo
 						 * COLLECTION_TABLE, continua iteracao do proximo field.
 						 */
-						if (!descriptionField.isElementCollection() && !descriptionField.isJoinTable())
-							continue;
+						if (!descriptionField.isElementCollection() && !descriptionField.isJoinTable()) {
+							throw new EntityHandlerException("Para que seja criado o objeto do tipo "
+									+ descriptionField.getTargetEntity().getEntityClass().getSimpleName()
+									+ " que será atribuído ao campo " + descriptionField.getField().getName()
+									+ " na classe " + entityCache.getEntityClass() + " é preciso adicionar a coluna "
+									+ columnName + " da tabela " + entityCache.getTableName() + " no sql. ");
+						}
 					}
 
 					/*
