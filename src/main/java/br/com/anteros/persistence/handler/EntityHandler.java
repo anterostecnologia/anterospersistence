@@ -614,14 +614,18 @@ public class EntityHandler implements ResultSetHandler {
 						/*
 						 * Processa se a chave estiver incompleta
 						 */
-						EntityCache fieldentEntityCache = session.getEntityCacheManager().getEntityCache(
-								descriptionField.getFieldClass());
-						isIncompleteKey = fieldentEntityCache.isIncompletePrimaryKeyValue(assignedValue);
-						if (!isIncompleteKey) {
-							process = false;
-						} else {
-							process = true;
-							existsExpression = false;
+						if (descriptionField.isRelationShip()) {
+							EntityCache fieldentEntityCache = session.getEntityCacheManager().getEntityCache(
+									descriptionField.getFieldClass());
+							if (fieldentEntityCache != null) {
+								isIncompleteKey = fieldentEntityCache.isIncompletePrimaryKeyValue(assignedValue);
+								if (!isIncompleteKey) {
+									process = false;
+								} else {
+									process = true;
+									existsExpression = false;
+								}
+							}
 						}
 					}
 				}
@@ -676,7 +680,8 @@ public class EntityHandler implements ResultSetHandler {
 						 * Se não for um DescriptionField do tipo
 						 * COLLECTION_TABLE, continua iteracao do proximo field.
 						 */
-						if (!descriptionField.isElementCollection() && !descriptionField.isJoinTable() && isIncompleteKey) {
+						if (!descriptionField.isElementCollection() && !descriptionField.isJoinTable()
+								&& isIncompleteKey) {
 							throw new EntityHandlerException("Para que seja criado o objeto do tipo "
 									+ descriptionField.getTargetEntity().getEntityClass().getSimpleName()
 									+ " que será atribuído ao campo " + descriptionField.getField().getName()
