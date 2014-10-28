@@ -676,7 +676,7 @@ public class EntityHandler implements ResultSetHandler {
 						 * Se não for um DescriptionField do tipo
 						 * COLLECTION_TABLE, continua iteracao do proximo field.
 						 */
-						if (!descriptionField.isElementCollection() && !descriptionField.isJoinTable() && !isIncompleteKey) {
+						if (!descriptionField.isElementCollection() && !descriptionField.isJoinTable() && isIncompleteKey) {
 							throw new EntityHandlerException("Para que seja criado o objeto do tipo "
 									+ descriptionField.getTargetEntity().getEntityClass().getSimpleName()
 									+ " que será atribuído ao campo " + descriptionField.getField().getName()
