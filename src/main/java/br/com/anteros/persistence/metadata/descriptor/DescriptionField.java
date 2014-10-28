@@ -113,7 +113,7 @@ public class DescriptionField {
 	}
 
 	public boolean hasPrimaryKey() {
-		for (DescriptionColumn column : columns){
+		for (DescriptionColumn column : columns) {
 			if (column.isPrimaryKey())
 				return true;
 		}
@@ -178,7 +178,7 @@ public class DescriptionField {
 	}
 
 	public boolean isLob() {
-		if (getSimpleColumn()==null)
+		if (getSimpleColumn() == null)
 			return false;
 		return getSimpleColumn().isLob();
 	}
@@ -290,7 +290,7 @@ public class DescriptionField {
 			}
 		} catch (Exception ex) {
 			throw new EntityCacheException("Erro convertendo o valor do campo " + this.getName() + " valor=" + value
-					+ " para " + field.getType()+" na classe "+entityCache.getEntityClass().getName(), ex);
+					+ " para " + field.getType() + " na classe " + entityCache.getEntityClass().getName(), ex);
 		}
 	}
 
@@ -312,8 +312,7 @@ public class DescriptionField {
 		}
 	}
 
-	public void setStringValueToDate(Object targetObject, String value) throws IllegalAccessException,
-			ParseException {
+	public void setStringValueToDate(Object targetObject, String value) throws IllegalAccessException, ParseException {
 		if (value instanceof String) {
 			TemporalType temporalType = this.getSimpleColumn().getTemporalType();
 			if (temporalType == TemporalType.DATE) {
@@ -321,8 +320,8 @@ public class DescriptionField {
 						.getDatePattern() : DatabaseDialect.DATE_PATTERN;
 				field.set(targetObject, new SimpleDateFormat(datePattern).parse(value));
 			} else if (temporalType == TemporalType.DATE_TIME) {
-				String dateTimePattern = !("".equals(this.getSimpleColumn().getDateTimePattern())) ? this.getSimpleColumn()
-						.getDateTimePattern() : DatabaseDialect.DATETIME_PATTERN;
+				String dateTimePattern = !("".equals(this.getSimpleColumn().getDateTimePattern())) ? this
+						.getSimpleColumn().getDateTimePattern() : DatabaseDialect.DATETIME_PATTERN;
 				field.set(targetObject, new SimpleDateFormat(dateTimePattern).parse(value));
 			}
 		}
@@ -466,7 +465,7 @@ public class DescriptionField {
 	public boolean hasMapKeyColumn() {
 		return this.mapKeyColumn != null;
 	}
-	
+
 	public boolean isRequired() {
 		for (DescriptionColumn column : columns) {
 			if (column.isRequired())
@@ -1099,7 +1098,6 @@ public class DescriptionField {
 		}
 		return result;
 	}
-	
-	
 
+	
 }

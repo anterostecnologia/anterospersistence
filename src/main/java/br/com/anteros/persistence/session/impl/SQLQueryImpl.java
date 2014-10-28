@@ -594,7 +594,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	}
 
 	public Object loadData(EntityCache entityCacheTarget, Object owner, DescriptionField descriptionFieldOwner,
-			Map<String, Object> columnKeyTarget, Cache transactionCache) throws IllegalAccessException, Exception {
+			Map<String, Object> columnKeyTarget, Cache transactionCache)
+			throws IllegalAccessException, Exception {
 		Object result = null;
 		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
 
@@ -619,7 +620,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		 */
 		if (descriptionFieldOwner.hasDescriptionColumn() && !descriptionFieldOwner.isElementCollection()
 				&& !descriptionFieldOwner.isJoinTable())
-			result = getObjectFromCache(entityCacheTarget, uniqueId, transactionCache);
+				result = getObjectFromCache(entityCacheTarget, uniqueId, transactionCache);
 
 		/*
 		 * Senão encontrar o objeto no entityCache executa a estratégia

@@ -18,6 +18,7 @@ package br.com.anteros.persistence.session.query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -560,6 +561,7 @@ public class SQLQueryAnalyzer {
 				SQLQueryAnalyserAlias alias = getAlias(tableName);
 				if (alias != null) {
 
+					
 					EntityCache caches[] = { alias.getEntity() };
 					if (alias.getEntity().isAbstractClass())
 						caches = session.getEntityCacheManager().getEntitiesBySuperClassIncluding(alias.getEntity());
@@ -568,7 +570,6 @@ public class SQLQueryAnalyzer {
 						DescriptionColumn descriptionColumn = cache.getDescriptionColumnByName(columnName);
 						if (descriptionColumn == null)
 							continue;
-
 						if (!columnAliases.containsKey(alias)) {
 							columnAliases.put(alias, new HashMap<String, String>());
 						}

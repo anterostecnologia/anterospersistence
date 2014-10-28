@@ -579,7 +579,8 @@ public class EntityHandler implements ResultSetHandler {
 	protected void loadCollectionsRelationShipAndLob(Object targetObject, EntityCache entityCache, ResultSet restultSet)
 			throws Exception {
 		/*
-		 * Faz um loop nos fields que tenham sido configuradas com ForeignKey e
+		 * Faz um loop nos fields que tenham sido configuradas com ForeignKey,
+		 * Lob e
 		 * 
 		 * Fetch
 		 */
@@ -592,16 +593,40 @@ public class EntityHandler implements ResultSetHandler {
 			 */
 			if (descriptionField.isCollection() || descriptionField.isJoinTable() || descriptionField.isRelationShip()
 					|| descriptionField.isLob()) {
-				boolean process = true;
-				Object value = descriptionField.getObjectValue(targetObject);
-				if (value != null) {
-					if (descriptionField.isCollection()) {
-						if ((value instanceof DefaultSQLList) || (value instanceof DefaultSQLSet)) {
+				Object assignedValue = descriptionField.getObjectValue(targetObject);
+				/*
+				 * Processa todos os nulos
+				 */
+				boolean process = (assignedValue == null);
+				boolean existsExpression = existsExpressionForProcessing(entityCache, descriptionField.getField()
+						.getName());
+				boolean isIncompleteKey = false;
+
+				if (assignedValue != null) {
+					/*
+					 * Processa se for uma collection que não seja herança de
+					 * DefaultSQLList our DefaultSQLSet
+					 */
+					if (descriptionField.isCollection()
+							&& ((assignedValue instanceof DefaultSQLList) || (assignedValue instanceof DefaultSQLSet)))
+						process = false;
+					else {
+						/*
+						 * Processa se a chave estiver incompleta
+						 */
+						EntityCache fieldentEntityCache = session.getEntityCacheManager().getEntityCache(
+								descriptionField.getFieldClass());
+						isIncompleteKey = fieldentEntityCache.isIncompletePrimaryKeyValue(assignedValue);
+						if (!isIncompleteKey) {
 							process = false;
+						} else {
+							process = true;
+							existsExpression = false;
 						}
 					}
 				}
-				if (process && !existsExpressionForProcessing(entityCache, descriptionField.getField().getName())) {
+
+				if (process && !existsExpression) {
 					EntityCache targetEntityCache = null;
 					if (descriptionField.isLob()) {
 						targetEntityCache = entityCache;
@@ -628,14 +653,17 @@ public class EntityHandler implements ResultSetHandler {
 					/*
 					 * Se o DescriptionField for um FK guarda o valor da coluna
 					 */
+					String columnName = "";
 					try {
 						if (descriptionField.hasDescriptionColumn() && !(descriptionField.isLob())) {
 							for (DescriptionColumn descriptionColumn : descriptionField.getDescriptionColumns()) {
-								if (descriptionColumn.isForeignKey() && !descriptionColumn.isInversedJoinColumn())
-									columnKeyValue.put(
-											descriptionColumn.getReferencedColumnName(),
-											restultSet.getObject(getAliasColumnName(entityCache,
-													descriptionColumn.getColumnName())));
+								if (descriptionColumn.isForeignKey() && !descriptionColumn.isInversedJoinColumn()) {
+									columnName = descriptionColumn.getColumnName();
+									String aliasColumnName = getAliasColumnName(entityCache,
+											descriptionColumn.getColumnName());
+									columnKeyValue.put(descriptionColumn.getReferencedColumnName(),
+											restultSet.getObject(aliasColumnName));
+								}
 							}
 						} else
 							/*
@@ -643,6 +671,11 @@ public class EntityHandler implements ResultSetHandler {
 							 * pai
 							 */
 							columnKeyValue = session.getIdentifier(targetObject).getColumns();
+					} catch (SQLException e) {
+						throw new EntityHandlerException("Para que seja criado o objeto do tipo "
+								+ descriptionField.getTargetEntity().getEntityClass().getSimpleName()+" que será atribuído ao campo "+descriptionField.getField().getName()+" na classe "+entityCache.getEntityClass()
+								+ " é preciso adicionar a coluna " + columnName+" da tabela "+entityCache.getTableName()
+								+ " no sql. ");						
 					} catch (Exception ex) {
 						/*
 						 * Se não for um DescriptionField do tipo
@@ -670,8 +703,31 @@ public class EntityHandler implements ResultSetHandler {
 					// como um proxy.
 					if (ft == FetchType.EAGER) {
 						if (!descriptionField.isLob()) {
-							Object result = session.createQuery("").loadData(targetEntityCache, targetObject,
-									descriptionField, columnKeyValue, transactionCache);
+							Object result = null;
+							if (isIncompleteKey) {
+
+								StringBuffer sb = new StringBuffer("");
+								sb.append(targetEntityCache.getEntityClass().getName());
+								for (String key : columnKeyValue.keySet()) {
+									if (!"".equals(sb.toString())) {
+										sb.append("_");
+									}
+									sb.append(columnKeyValue.get(key));
+								}
+								String uniqueId = sb.toString();
+								transactionCache.remove(uniqueId);
+								result = session.createQuery("").loadData(targetEntityCache, targetObject,
+										descriptionField, columnKeyValue, transactionCache);
+
+								EntityCache fieldentEntityCache = session.getEntityCacheManager().getEntityCache(
+										descriptionField.getFieldClass());
+								fieldentEntityCache.setPrimaryKeyValue(result, assignedValue);
+								result = assignedValue;
+							} else {
+								result = session.createQuery("").loadData(targetEntityCache, targetObject,
+										descriptionField, columnKeyValue, transactionCache);
+							}
+
 							descriptionField.getField().set(targetObject, result);
 							FieldEntityValue fieldEntityValue = descriptionField.getFieldEntityValue(session,
 									targetObject);

@@ -875,5 +875,28 @@ public class EntityCache {
 		DescriptionField result = getDescriptionFieldWithMappedBy(sourceType, mappedBy);
 		return (result != null);
 	}
+	
+	
+	public boolean isIncompletePrimaryKeyValue(Object source) throws Exception {
+		if (source==null)
+			return true;
+		
+		for (DescriptionField descriptionField : this.getPrimaryKeyFields()){
+			if (descriptionField.getObjectValue(source)==null)
+				return true;
+		}
+		return false;
+	}
+
+	public void setPrimaryKeyValue(Object source, Object target) throws Exception {
+		if ((source == null) || (target == null))
+			return;
+		if (!(source.getClass().equals(target.getClass())))
+			return;
+		
+		for (DescriptionField descriptionField : this.getPrimaryKeyFields()){
+			descriptionField.setObjectValue(target, descriptionField.getObjectValue(source));
+		}
+	}
 
 }
