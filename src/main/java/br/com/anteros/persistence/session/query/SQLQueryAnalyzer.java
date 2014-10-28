@@ -35,9 +35,11 @@ import br.com.anteros.persistence.sql.format.SqlFormatRule;
 import br.com.anteros.persistence.sql.parser.INode;
 import br.com.anteros.persistence.sql.parser.Node;
 import br.com.anteros.persistence.sql.parser.ParserUtil;
+import br.com.anteros.persistence.sql.parser.ParserVisitorToSql;
 import br.com.anteros.persistence.sql.parser.SqlParser;
 import br.com.anteros.persistence.sql.parser.node.BindNode;
 import br.com.anteros.persistence.sql.parser.node.ColumnNode;
+import br.com.anteros.persistence.sql.parser.node.CommaNode;
 import br.com.anteros.persistence.sql.parser.node.ExpressionNode;
 import br.com.anteros.persistence.sql.parser.node.FromNode;
 import br.com.anteros.persistence.sql.parser.node.OperatorNode;
@@ -95,24 +97,23 @@ public class SQLQueryAnalyzer {
 
 			buildExpressionsAndColumnAliases(firstSelectStatement);
 
-			/*
-			 * System.out.println(sql);
-			 * 
-			 * System.out.println(
-			 * "--------------------EXPRESSIONS-------------------------------"
-			 * ); Iterator<String> iterator = expressions.keySet().iterator();
-			 * while (iterator.hasNext()) { String k = iterator.next(); String v
-			 * = expressions.get(k); System.out.println(k + " = " + v); }
-			 * System.out.println(
-			 * "--------------------COLUMN ALIASES----------------------------"
-			 * ); for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
-			 * System.out.println("ALIAS-> " + a.getAlias() + " path " +
-			 * a.getAliasPath());
-			 * System.out.println("    ----------------------------------"); for
-			 * (String k : columnAliases.get(a).keySet()) {
-			 * System.out.println("    " + k + " = " +
-			 * columnAliases.get(a).get(k)); } }
-			 */
+//			System.out.println(sql);
+//
+//			System.out.println("--------------------EXPRESSIONS-------------------------------");
+//			Iterator<String> iterator = expressions.keySet().iterator();
+//			while (iterator.hasNext()) {
+//				String k = iterator.next();
+//				String v = expressions.get(k);
+//				System.out.println(k + " = " + v);
+//			}
+//			System.out.println("--------------------COLUMN ALIASES----------------------------");
+//			for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
+//				System.out.println("ALIAS-> " + a.getAlias() + " path " + a.getAliasPath());
+//				System.out.println("    ----------------------------------");
+//				for (String k : columnAliases.get(a).keySet()) {
+//					System.out.println("    " + k + " = " + columnAliases.get(a).get(k));
+//				}
+//			}
 
 		}
 	}
@@ -143,7 +144,7 @@ public class SQLQueryAnalyzer {
 							break;
 						}
 					}
-					
+
 					if (!found) {
 						throw new SQLQueryAnalyzerException(
 								"Foi encontrado alias "
@@ -218,11 +219,9 @@ public class SQLQueryAnalyzer {
 
 	protected INode parseColumns(INode node) throws SQLQueryAnalyzerException {
 		SqlParser parser;
-		boolean appendDelimiter = false;
-		List<InjectSQLPart> partsToInject = new ArrayList<SQLQueryAnalyzer.InjectSQLPart>();
-
 		SelectStatementNode[] selectStatements = getAllSelectStatement(node);
-
+		Map<String, String> replaceStrings = new LinkedHashMap<String, String>();
+		Set<ColumnNode> newColumns = new LinkedHashSet<ColumnNode>();
 		for (SelectStatementNode selectStatement : selectStatements) {
 
 			/*
@@ -231,17 +230,19 @@ public class SQLQueryAnalyzer {
 			 */
 			validateColumnsAndWhereCondition(selectStatement);
 
+			int offset = ((SelectNode) selectStatement.getChild(0)).getOffset();
+			int offSetFinal = getLastPositionSelectNode((SelectNode) selectStatement.getChild(0));
+			String oldSelect = sql.substring(offset, offSetFinal);
+			newColumns.clear();
+
 			aliasesTemporary = getAliasesFromNode(selectStatement);
 			/*
 			 * Substituiu * pelos nomes das colunas
 			 */
 			for (INode selectNodeChild : ((SelectNode) selectStatement.getChild(0)).getChildren()) {
 				if (selectNodeChild instanceof ColumnNode) {
-					StringBuffer sbColumns = new StringBuffer();
-					Map<String, String> cols = new LinkedHashMap<String, String>();
 					if ("*".equals(((ColumnNode) selectNodeChild).getColumnName())) {
 						SQLQueryAnalyserAlias[] cacheAliases = null;
-						appendDelimiter = false;
 						if (((ColumnNode) selectNodeChild).getTableName() == null) {
 							cacheAliases = aliasesTemporary.toArray(new SQLQueryAnalyserAlias[] {});
 						} else {
@@ -265,34 +266,25 @@ public class SQLQueryAnalyzer {
 
 								for (EntityCache cache : caches) {
 									for (DescriptionField descriptionField : cache.getDescriptionFields()) {
-										if (!descriptionField.isCollection() && !descriptionField.isJoinTable() && !(descriptionField.isLob() && descriptionField.getFetchType()==FetchType.LAZY)) {
+										if (!descriptionField.isCollection()
+												&& !descriptionField.isJoinTable()
+												&& !(descriptionField.isLob() && descriptionField.getFetchType() == FetchType.LAZY)) {
 											for (DescriptionColumn descriptionColumn : descriptionField
 													.getDescriptionColumns()) {
 												String aliasColumnName = makeNextAliasName(alias.getAlias(),
 														descriptionColumn.getColumnName());
-												if (!cols.containsKey(descriptionColumn.getColumnName())) {
-													cols.put(descriptionColumn.getColumnName(), aliasColumnName);
-												}
-
+												ColumnNode newColumn = new ColumnNode(aliasColumnName, 0, 0, 0);
+												newColumns.add(newColumn);
 											}
 										}
 									}
 									if (cache.hasDiscriminatorColumn()) {
 										String aliasColumnName = makeNextAliasName(alias.getAlias(), cache
 												.getDiscriminatorColumn().getColumnName());
-										if (!cols.containsKey(cache.getDiscriminatorColumn().getColumnName())) {
-											cols.put(cache.getDiscriminatorColumn().getColumnName(), aliasColumnName);
-										}
+										ColumnNode newColumn = new ColumnNode(aliasColumnName, 0, 0, 0);
+										newColumns.add(newColumn);
 									}
 								}
-
-								for (String col : cols.values()) {
-									if (appendDelimiter)
-										sbColumns.append(", ");
-									sbColumns.append(col);
-									appendDelimiter = true;
-								}
-								cols.clear();
 							}
 
 						}
@@ -302,27 +294,40 @@ public class SQLQueryAnalyzer {
 						String columnName = ((ColumnNode) selectNodeChild).getColumnName();
 						if (!((ColumnNode) selectNodeChild).hasAlias()) {
 							String aliasColumnName = makeNextAliasName(tableName, columnName);
-							if (!cols.containsKey(columnName)) {
-								cols.put(columnName, aliasColumnName);
-								sbColumns.append(aliasColumnName);
-							}
+							ColumnNode newColumn = new ColumnNode(aliasColumnName, 0, 0, 0);
+							newColumns.add(newColumn);
+						} else {
+							newColumns.add(((ColumnNode) selectNodeChild));
 						}
 
 					}
-					if (sbColumns.length() > 0) {
-						partsToInject.add(new InjectSQLPart(((ColumnNode) selectNodeChild).getOriginalColumnName(),
-								sbColumns.toString()));
-					}
 				}
-
 			}
 
-			addColumnsIfNotExists(node, partsToInject, selectStatement);
+			addColumnsIfNotExists(node, newColumns, selectStatement);
+
+			while (((SelectNode) selectStatement.getChild(0)).getChildrenSize() > 0)
+				((SelectNode) selectStatement.getChild(0)).removeChild(((SelectNode) selectStatement.getChild(0))
+						.getChild(0));
+
+			ColumnNode oldColumn = null;
+			for (ColumnNode cn : newColumns) {
+				if (oldColumn != null)
+					oldColumn.addChild(new CommaNode(0, 0, 0));
+				((SelectNode) selectStatement.getChild(0)).addChild(cn);
+				oldColumn = cn;
+			}
+
+			ParserVisitorToSql v = new ParserVisitorToSql();
+			v.visit(((SelectNode) selectStatement.getChild(0)), sql);
+			String newSelect = v.toString();
+
+			replaceStrings.put(oldSelect, newSelect);
 		}
 
 		boolean reload = false;
-		for (InjectSQLPart part : partsToInject) {
-			sql = part.process(sql);
+		for (String r : replaceStrings.keySet()) {
+			sql = StringUtils.replaceOnce(sql, r, replaceStrings.get(r));
 			reload = true;
 		}
 
@@ -334,15 +339,21 @@ public class SQLQueryAnalyzer {
 		return node;
 	}
 
-	protected void addColumnsIfNotExists(INode node, List<InjectSQLPart> partsToInject,
+	protected int getLastPositionSelectNode(SelectNode node) {
+		INode lastChild = node.getLastChild();
+		if (lastChild != null) {
+			return (lastChild.getOffset() + lastChild.getLength());
+		}
+		return 0;
+	}
+
+	protected void addColumnsIfNotExists(INode node, Set<ColumnNode> newColumns,
 			SelectStatementNode selectStatement) throws SQLQueryAnalyzerException {
 		boolean appendDelimiter;
 		/*
 		 * Adiciona colunas DISCRIMINATOR caso não existam
 		 */
 		if (!isExistsSelectAsterisk(node)) {
-			StringBuffer sbDiscriminatorColumn = new StringBuffer();
-			appendDelimiter = false;
 			for (SQLQueryAnalyserAlias alias : aliasesTemporary) {
 				if (alias.getEntity() != null) {
 					List<DescriptionColumn> columns = alias.getEntity().getPrimaryKeyColumns();
@@ -350,21 +361,13 @@ public class SQLQueryAnalyzer {
 						columns.add(alias.getEntity().getDiscriminatorColumn());
 					for (DescriptionColumn descriptionColumn : columns) {
 						if (!existsColumnByAlias(selectStatement, alias.getAlias(), descriptionColumn.getColumnName())) {
-							if (appendDelimiter)
-								sbDiscriminatorColumn.append(", ");
 							String aliasColumnName = makeNextAliasName(alias.getAlias(),
 									descriptionColumn.getColumnName());
-							sbDiscriminatorColumn.append(aliasColumnName);
-							appendDelimiter = true;
+							ColumnNode newColumn = new ColumnNode(aliasColumnName, 0, 0, 0);
+							newColumns.add(newColumn);
 						}
 					}
 				}
-			}
-
-			if (sbDiscriminatorColumn.length() > 0) {
-				ColumnNode columnNode = getFirstColumnNode(selectStatement);
-				partsToInject
-						.add(new InjectSQLPart("", sbDiscriminatorColumn.toString() + ", ", columnNode.getOffset()));
 			}
 		}
 	}
@@ -470,13 +473,6 @@ public class SQLQueryAnalyzer {
 							if (fromChild instanceof TableNode) {
 								EntityCache entityCache = session.getEntityCacheManager().getEntityCacheByTableName(
 										((TableNode) fromChild).getName());
-								// if (entityCache == null) {
-								// throw new
-								// SQLQueryAnalyzerException("A tabela " +
-								// ((TableNode) fromChild).getName()
-								// +
-								// " não foi encontrada na lista de entidades gerenciadas.");
-								// }
 								if (entityCache != null) {
 									SQLQueryAnalyserAlias alias = new SQLQueryAnalyserAlias();
 									result.add(alias);
@@ -733,6 +729,7 @@ public class SQLQueryAnalyzer {
 		private String searchTo;
 		private String replaceWith;
 		private int position;
+		private SelectStatementNode selectStatementNode;
 
 		public InjectSQLPart(String searchTo, String replaceWith) {
 			this.searchTo = searchTo;
@@ -744,6 +741,20 @@ public class SQLQueryAnalyzer {
 			this.searchTo = searchTo;
 			this.replaceWith = replaceWith;
 			this.position = position;
+		}
+
+		public InjectSQLPart(String searchTo, String replaceWith, SelectStatementNode selectStatementNode) {
+			this.searchTo = searchTo;
+			this.replaceWith = replaceWith;
+			this.position = -1;
+			this.selectStatementNode = selectStatementNode;
+		}
+
+		public InjectSQLPart(String searchTo, String replaceWith, int position, SelectStatementNode selectStatementNode) {
+			this.searchTo = searchTo;
+			this.replaceWith = replaceWith;
+			this.position = position;
+			this.selectStatementNode = selectStatementNode;
 		}
 
 		public String getSearchTo() {
@@ -778,6 +789,14 @@ public class SQLQueryAnalyzer {
 			} else {
 				return StringUtils.replaceFirstWord(sql, searchTo, replaceWith, "+-/() ,\n\r");
 			}
+		}
+
+		public SelectStatementNode getSelectStatementNode() {
+			return selectStatementNode;
+		}
+
+		public void setSelectStatementNode(SelectStatementNode selectStatementNode) {
+			this.selectStatementNode = selectStatementNode;
 		}
 
 	}

@@ -20,7 +20,7 @@ OK - Corrigir problema no relacionamento ONY_TO_MANY com EAGER, o framework tent
 
 OK - Integração com API de Validação do JAVA
 
-- Fazer LOB carregar com lazy
+OK - Fazer LOB carregar com lazy
 
 - Implementar nas anotações para verificar quando salvar
    boolean insertable() default true;
