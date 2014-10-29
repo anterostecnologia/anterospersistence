@@ -59,8 +59,8 @@ import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 @Root(name = "anteros-configuration")
 public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfiguration implements
 		PersistenceConfiguration {
-	
-	protected static Logger LOG = LoggerProvider.getInstance().getLogger(AbstractPersistenceConfiguration.class); 
+
+	protected static Logger LOG = LoggerProvider.getInstance().getLogger(AbstractPersistenceConfiguration.class);
 
 	public static final String SECURITY_PACKAGE = "br.com.anteros.security.model";
 	@Transient
@@ -184,37 +184,40 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 		addProperty(new PropertyConfiguration().setName(name).setValue(value));
 		return this;
 	}
-	
-	protected void prepareClassesToLoad() throws ClassNotFoundException{
+
+	protected void prepareClassesToLoad() throws ClassNotFoundException {
 		LOG.debug("Preparando classes para ler entidades.");
-		if ((getSessionFactoryConfiguration().getPackageToScanEntity() != null) && (!"".equals(getSessionFactoryConfiguration().getPackageToScanEntity().getPackageName()))) {
+		if ((getSessionFactoryConfiguration().getPackageToScanEntity() != null)
+				&& (!"".equals(getSessionFactoryConfiguration().getPackageToScanEntity().getPackageName()))) {
 			if (getSessionFactoryConfiguration().isIncludeSecurityModel())
-				getSessionFactoryConfiguration().getPackageToScanEntity().setPackageName(getSessionFactoryConfiguration().getPackageToScanEntity().getPackageName()+ ", " + SECURITY_PACKAGE);
-			String[] packages = StringUtils.tokenizeToStringArray(getSessionFactoryConfiguration().getPackageToScanEntity().getPackageName(), ", ;");
-			List<Class<?>> scanClasses = ClassPathScanner.scanClasses(new ClassFilter().packages(packages).annotation(
-					Entity.class).annotation(EnumValues.class));
-			if (LOG.isDebugEnabled()){
-				for (Class<?> cl : scanClasses){
-					LOG.debug("Encontrado classe scaneada "+cl.getName());
+				getSessionFactoryConfiguration().getPackageToScanEntity().setPackageName(
+						getSessionFactoryConfiguration().getPackageToScanEntity().getPackageName() + ", "
+								+ SECURITY_PACKAGE);
+			String[] packages = StringUtils.tokenizeToStringArray(getSessionFactoryConfiguration()
+					.getPackageToScanEntity().getPackageName(), ", ;");
+			List<Class<?>> scanClasses = ClassPathScanner.scanClasses(new ClassFilter().packages(packages)
+					.annotation(Entity.class).annotation(EnumValues.class));
+			if (LOG.isDebugEnabled()) {
+				for (Class<?> cl : scanClasses) {
+					LOG.debug("Encontrado classe scaneada " + cl.getName());
 				}
 			}
 			getSessionFactoryConfiguration().addToAnnotatedClasses(scanClasses);
 		}
-		
+
 		if ((getSessionFactoryConfiguration().getClasses() == null)
 				|| (getSessionFactoryConfiguration().getClasses().size() == 0))
-			throw new SQLSessionFactoryException(
-					"Não foram encontradas classes representando entidades. Informe o pacote onde elas podem ser localizadas ou informe manualmente cada uma delas.");
-		
+			LOG.debug("Não foram encontradas classes representando entidades. Informe o pacote onde elas podem ser localizadas ou informe manualmente cada uma delas.");
+
 		LOG.debug("Preparação das classes concluída.");
 	}
 
-	public SQLSessionFactory buildSessionFactory() throws Exception {		
+	public SQLSessionFactory buildSessionFactory() throws Exception {
 		prepareClassesToLoad();
 		buildDataSource();
 		if (dataSource == null)
-			throw new AnterosConfigurationException(AnterosPersistenceTranslate.getMessage(
-					this.getClass(), "datasourceNotConfigured"));
+			throw new AnterosConfigurationException(AnterosPersistenceTranslate.getMessage(this.getClass(),
+					"datasourceNotConfigured"));
 		loadEntities();
 		SQLSessionFactoryImpl sessionFactory = new SQLSessionFactoryImpl(entityCacheManager, dataSource,
 				this.getSessionFactoryConfiguration());
