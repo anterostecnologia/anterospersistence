@@ -744,6 +744,11 @@ public class EntityHandler implements ResultSetHandler {
 						Object newObject = proxyFactory.createProxy(session, targetObject, descriptionField,
 								targetEntityCache, columnKeyValue, transactionCache);
 						descriptionField.getField().set(targetObject, newObject);
+						
+						FieldEntityValue value = descriptionField.getFieldEntityValue(session,
+								targetObject);
+						entityManaged.addOriginalValue(value);
+						entityManaged.addLastValue(value);
 					}
 				}
 			}

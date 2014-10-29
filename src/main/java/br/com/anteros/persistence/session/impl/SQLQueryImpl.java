@@ -753,8 +753,6 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		EntityCache fromEntityCache = session.getEntityCacheManager().getEntityCache(
 				descriptionFieldOwner.getField().getDeclaringClass());
 
-		System.out.println(descriptionFieldOwner.getStatement());
-
 		String sql = descriptionFieldOwner.getStatement();
 		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
 
