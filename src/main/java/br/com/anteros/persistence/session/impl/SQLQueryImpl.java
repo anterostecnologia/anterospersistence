@@ -842,7 +842,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	private Object getResultFromElementCollection(final DescriptionField descriptionFieldOwner,
 			Map<String, Object> columnKeyTarget, Object result) throws Exception {
 		/*
-		 * Se for um ELEMENT_COLLETION
+		 * Se for um ELEMENT_COLLECTION
 		 */
 		if (descriptionFieldOwner.getFieldType() == FieldType.COLLECTION_TABLE) {
 			Select select = new Select(session.getDialect());
@@ -942,25 +942,46 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		/*
 		 * Monta o SQL
 		 */
-		Select select = new Select(session.getDialect());
-		select.addTableName(targetEntityCache.getTableName());
-		String tempWhere = "";
+		String sql = descriptionFieldOwner.getStatement();
 		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
-		boolean appendOperator = false;
-		for (DescriptionColumn column : targetEntityCache.getPrimaryKeyColumns()) {
-			if (appendOperator)
-				select.and();
-			select.addCondition(column.getColumnName(), "=", ":P" + column.getColumnName());
-			params.add(new NamedParameter("P" + column.getColumnName(), columnKeyTarget.get(column.getColumnName())));
-			appendOperator = true;
+
+		if (StringUtils.isEmpty(sql)) {
+			Select select = new Select(session.getDialect());
+			select.addTableName(targetEntityCache.getTableName());
+			String tempWhere = "";
+			boolean appendOperator = false;
+			for (DescriptionColumn column : targetEntityCache.getPrimaryKeyColumns()) {
+				if (appendOperator)
+					select.and();
+				select.addCondition(column.getColumnName(), "=", ":P" + column.getColumnName());
+				params.add(new NamedParameter("P" + column.getColumnName(), columnKeyTarget.get(column.getColumnName())));
+				appendOperator = true;
+			}
+			if (descriptionFieldOwner.hasOrderByClause())
+				select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
+		} else {
+			NamedParameterParserResult parserResult = NamedParameterStatement.parse(sql, null);
+			for (NamedParameter parameter : parserResult.getNamedParameters()) {
+				Object value = columnKeyTarget.get(parameter.getName());
+				if (value == null) {
+					throw new SQLException(
+							"O parâmetro "
+									+ parameter.getName()
+									+ " informado no sql do campo "
+									+ descriptionFieldOwner.getField().getName()
+									+ " da classe "
+									+ descriptionFieldOwner.getEntityCache().getEntityClass()
+									+ " não corresponde a nenhuma uma coluna do objeto. Use apenas parâmetros com os nomes das colunas do objeto. ");
+				}
+				parameter.setValue(value);
+				params.add(parameter);
+			}
 		}
-		if (descriptionFieldOwner.hasOrderByClause())
-			select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
 
 		/*
 		 * Seleciona os dados
 		 */
-		result = getResultOneToLazyLoad(select.toStatementString(), params.toArray(new NamedParameter[] {}),
+		result = getResultOneToLazyLoad(sql, params.toArray(new NamedParameter[] {}),
 				descriptionFieldOwner.getTargetEntity().getEntityClass(), transactionCache);
 		return result;
 	}
@@ -1037,29 +1058,51 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		/*
 		 * Monta o SQL
 		 */
-		Select select = new Select(session.getDialect());
-		select.addTableName(mappedByEntityCache.getTableName(), "TAB");
-
+		String sql = descriptionFieldOwner.getStatement();
 		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
-		boolean appendOperator = false;
-		if (mappedByDescriptionColumn != null) {
-			for (DescriptionColumn descriptionColumn : mappedByDescriptionColumn) {
-				if (appendOperator)
-					select.and();
-				select.addCondition("TAB." + descriptionColumn.getColumnName(), "=",
-						":P" + descriptionColumn.getColumnName());
-				params.add(new NamedParameter("P" + descriptionColumn.getColumnName(), columnKeyTarget
-						.get(descriptionColumn.getReferencedColumnName())));
-				appendOperator = true;
+
+		if (StringUtils.isEmpty(sql)) {
+
+			Select select = new Select(session.getDialect());
+			select.addTableName(mappedByEntityCache.getTableName(), "TAB");
+
+			boolean appendOperator = false;
+			if (mappedByDescriptionColumn != null) {
+				for (DescriptionColumn descriptionColumn : mappedByDescriptionColumn) {
+					if (appendOperator)
+						select.and();
+					select.addCondition("TAB." + descriptionColumn.getColumnName(), "=",
+							":P" + descriptionColumn.getColumnName());
+					params.add(new NamedParameter("P" + descriptionColumn.getColumnName(), columnKeyTarget
+							.get(descriptionColumn.getReferencedColumnName())));
+					appendOperator = true;
+				}
+			}
+			if (descriptionFieldOwner.hasOrderByClause())
+				select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
+		} else {
+			NamedParameterParserResult parserResult = NamedParameterStatement.parse(sql, null);
+			for (NamedParameter parameter : parserResult.getNamedParameters()) {
+				Object value = columnKeyTarget.get(parameter.getName());
+				if (value == null) {
+					throw new SQLException(
+							"O parâmetro "
+									+ parameter.getName()
+									+ " informado no sql do campo "
+									+ descriptionFieldOwner.getField().getName()
+									+ " da classe "
+									+ descriptionFieldOwner.getEntityCache().getEntityClass()
+									+ " não corresponde a nenhuma uma coluna do objeto. Use apenas parâmetros com os nomes das colunas do objeto. ");
+				}
+				parameter.setValue(value);
+				params.add(parameter);
 			}
 		}
-		if (descriptionFieldOwner.hasOrderByClause())
-			select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
 		/*
 		 * Seleciona os dados
 		 */
-		result = getResultListToLoadData(select.toStatementString(), params.toArray(new NamedParameter[] {}),
-				descriptionFieldOwner.getTargetEntity().getEntityClass(), transactionCache);
+		result = getResultListToLoadData(sql, params.toArray(new NamedParameter[] {}), descriptionFieldOwner
+				.getTargetEntity().getEntityClass(), transactionCache);
 		return result;
 	}
 
