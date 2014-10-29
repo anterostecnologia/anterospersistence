@@ -102,7 +102,7 @@ OK - Fazer Refresh na Session para permitir atualizar o objeto pela chave primá
 - Gerar valores padrões para colunas de Entidades que não foram anotadas permitindo assim definir o mínimo possível de configurações para persistir um objeto. 
   Ex. Anotando apenas @Entity deveria conseguir salvar o objeto
 
- - Terminar validação das referencedColumn no cacheManager
+ OK - Terminar validação das referencedColumn no cacheManager
  
  - Implementar métodos de callback:
     PrePersist: Disparado quandoumobjeto novo é persistido através da operação persist() ou merge()
@@ -124,7 +124,7 @@ OK - Fazer Refresh na Session para permitir atualizar o objeto pela chave primá
               banco de dados.
               
               
-- Implementar validação de campos requeridos em heranças das entidades no modo "single table".
+OK - Implementar validação de campos requeridos em heranças das entidades no modo "single table".
               
 - Não permitir 2 entidades com mesmo nome de tabela         
 
