@@ -1622,6 +1622,7 @@ public class EntityCacheManager {
 			descriptionField.setFetchMode(fieldConfiguration.getFetch().getMode());
 			descriptionField.setFetchType(fieldConfiguration.getFetch().getType());
 			descriptionField.setTargetClass(fieldConfiguration.getFetch().getTargetEntity());
+			descriptionField.setStatement(fieldConfiguration.getFetch().getStatement());
 		} else {
 			descriptionField.setFetchMode(FetchMode.MANY_TO_MANY);
 			descriptionField.setFetchType(FetchType.LAZY);

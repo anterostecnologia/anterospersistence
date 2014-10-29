@@ -32,6 +32,7 @@ import java.util.TreeMap;
 
 import br.com.anteros.core.utils.ObjectUtils;
 import br.com.anteros.core.utils.ReflectionUtils;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.handler.BeanHandler;
 import br.com.anteros.persistence.handler.ElementCollectionHandler;
 import br.com.anteros.persistence.handler.ElementMapHandler;
@@ -594,8 +595,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	}
 
 	public Object loadData(EntityCache entityCacheTarget, Object owner, DescriptionField descriptionFieldOwner,
-			Map<String, Object> columnKeyTarget, Cache transactionCache)
-			throws IllegalAccessException, Exception {
+			Map<String, Object> columnKeyTarget, Cache transactionCache) throws IllegalAccessException, Exception {
 		Object result = null;
 		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
 
@@ -620,7 +620,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		 */
 		if (descriptionFieldOwner.hasDescriptionColumn() && !descriptionFieldOwner.isElementCollection()
 				&& !descriptionFieldOwner.isJoinTable())
-				result = getObjectFromCache(entityCacheTarget, uniqueId, transactionCache);
+			result = getObjectFromCache(entityCacheTarget, uniqueId, transactionCache);
 
 		/*
 		 * Senão encontrar o objeto no entityCache executa a estratégia
@@ -753,65 +753,91 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		EntityCache fromEntityCache = session.getEntityCacheManager().getEntityCache(
 				descriptionFieldOwner.getField().getDeclaringClass());
 
-		/*
-		 * Adiciona todas colunas da Entidade alvo
-		 */
-		Select select = new Select(session.getDialect());
+		System.out.println(descriptionFieldOwner.getStatement());
 
-		/*
-		 * Gera os aliases para as tabelas
-		 */
-		targetEntityCache.generateAliasTableName();
-		fromEntityCache.generateAliasTableName();
-		descriptionFieldOwner.generateAliasTableName();
-
-		select.addTableName(targetEntityCache.getTableName() + " " + targetEntityCache.getAliasTableName());
-		select.addTableName(descriptionFieldOwner.getTableName() + " " + descriptionFieldOwner.getAliasTableName());
-
+		String sql = descriptionFieldOwner.getStatement();
 		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
-		boolean appendOperator = false;
 
-		for (DescriptionColumn column : targetEntityCache.getDescriptionColumns())
-			select.addColumn(targetEntityCache.getAliasTableName() + "." + column.getColumnName());
+		if (StringUtils.isEmpty(sql)) {
+			/*
+			 * Adiciona todas colunas da Entidade alvo
+			 */
+			Select select = new Select(session.getDialect());
 
-		/*
-		 * Monta cláusula WHERE
-		 */
-		for (DescriptionColumn column : descriptionFieldOwner.getPrimaryKeys()) {
-			if (!column.isInversedJoinColumn()) {
+			/*
+			 * Gera os aliases para as tabelas
+			 */
+			targetEntityCache.generateAliasTableName();
+			fromEntityCache.generateAliasTableName();
+			descriptionFieldOwner.generateAliasTableName();
+
+			select.addTableName(targetEntityCache.getTableName() + " " + targetEntityCache.getAliasTableName());
+			select.addTableName(descriptionFieldOwner.getTableName() + " " + descriptionFieldOwner.getAliasTableName());
+
+			boolean appendOperator = false;
+
+			for (DescriptionColumn column : targetEntityCache.getDescriptionColumns())
+				select.addColumn(targetEntityCache.getAliasTableName() + "." + column.getColumnName());
+
+			/*
+			 * Monta cláusula WHERE
+			 */
+			for (DescriptionColumn column : descriptionFieldOwner.getPrimaryKeys()) {
+				if (!column.isInversedJoinColumn()) {
+					if (appendOperator)
+						select.and();
+					select.addCondition(descriptionFieldOwner.getAliasTableName() + "." + column.getColumnName(), "=",
+							":P" + column.getColumnName());
+					params.add(new NamedParameter("P" + column.getColumnName(), columnKeyTarget.get(column
+							.getColumnName())));
+
+					appendOperator = true;
+				}
+			}
+
+			/*
+			 * Adiciona no WHERE colunas da entidade de Destino
+			 */
+			DescriptionColumn referencedColumn;
+			for (DescriptionColumn column : targetEntityCache.getPrimaryKeyColumns()) {
 				if (appendOperator)
 					select.and();
-				select.addCondition(descriptionFieldOwner.getAliasTableName() + "." + column.getColumnName(), "=", ":P"
-						+ column.getColumnName());
-				params.add(new NamedParameter("P" + column.getColumnName(), columnKeyTarget.get(column.getColumnName())));
+				referencedColumn = descriptionFieldOwner.getDescriptionColumnByReferencedColumnName(column
+						.getColumnName());
+				select.addWhereToken(targetEntityCache.getAliasTableName() + "." + column.getColumnName() + " = "
+						+ descriptionFieldOwner.getAliasTableName() + "." + referencedColumn.getColumnName());
 
 				appendOperator = true;
 			}
+
+			/*
+			 * Se possuir @Order, adiciona SELECT
+			 */
+			if (descriptionFieldOwner.hasOrderByClause()) {
+				select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
+			}
+			sql = select.toStatementString();
+		} else {
+			NamedParameterParserResult parserResult = NamedParameterStatement.parse(sql, null);
+			for (NamedParameter parameter : parserResult.getNamedParameters()) {
+				Object value = columnKeyTarget.get(parameter.getName());
+				if (value == null) {
+					throw new SQLException(
+							"O parâmetro "
+									+ parameter.getName()
+									+ " informado no sql do campo "
+									+ descriptionFieldOwner.getField().getName()
+									+ " da classe "
+									+ descriptionFieldOwner.getEntityCache().getEntityClass()
+									+ " não corresponde a nenhuma uma coluna do objeto. Use apenas parâmetros com os nomes das colunas do objeto. ");
+				}
+				parameter.setValue(value);
+				params.add(parameter);
+			}
 		}
 
-		/*
-		 * Adiciona no WHERE colunas da entidade de Destino
-		 */
-		DescriptionColumn referencedColumn;
-		for (DescriptionColumn column : targetEntityCache.getPrimaryKeyColumns()) {
-			if (appendOperator)
-				select.and();
-			referencedColumn = descriptionFieldOwner.getDescriptionColumnByReferencedColumnName(column.getColumnName());
-			select.addWhereToken(targetEntityCache.getAliasTableName() + "." + column.getColumnName() + " = "
-					+ descriptionFieldOwner.getAliasTableName() + "." + referencedColumn.getColumnName());
-
-			appendOperator = true;
-		}
-
-		/*
-		 * Se possuir @Order, adiciona SELECT
-		 */
-		if (descriptionFieldOwner.hasOrderByClause()) {
-			select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
-		}
-
-		result = getResultListToLoadData(select.toStatementString(), params.toArray(new NamedParameter[] {}),
-				descriptionFieldOwner.getTargetEntity().getEntityClass(), transactionCache);
+		result = getResultListToLoadData(sql, params.toArray(new NamedParameter[] {}), descriptionFieldOwner
+				.getTargetEntity().getEntityClass(), transactionCache);
 		return result;
 	}
 

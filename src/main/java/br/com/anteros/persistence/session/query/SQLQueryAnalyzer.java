@@ -18,7 +18,6 @@ package br.com.anteros.persistence.session.query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -98,23 +97,25 @@ public class SQLQueryAnalyzer {
 
 			buildExpressionsAndColumnAliases(firstSelectStatement);
 
-//			System.out.println(sql);
-//
-//			System.out.println("--------------------EXPRESSIONS-------------------------------");
-//			Iterator<String> iterator = expressions.keySet().iterator();
-//			while (iterator.hasNext()) {
-//				String k = iterator.next();
-//				String v = expressions.get(k);
-//				System.out.println(k + " = " + v);
-//			}
-//			System.out.println("--------------------COLUMN ALIASES----------------------------");
-//			for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
-//				System.out.println("ALIAS-> " + a.getAlias() + " path " + a.getAliasPath());
-//				System.out.println("    ----------------------------------");
-//				for (String k : columnAliases.get(a).keySet()) {
-//					System.out.println("    " + k + " = " + columnAliases.get(a).get(k));
-//				}
-//			}
+			// System.out.println(sql);
+			//
+			// System.out.println("--------------------EXPRESSIONS-------------------------------");
+			// Iterator<String> iterator = expressions.keySet().iterator();
+			// while (iterator.hasNext()) {
+			// String k = iterator.next();
+			// String v = expressions.get(k);
+			// System.out.println(k + " = " + v);
+			// }
+			// System.out.println("--------------------COLUMN ALIASES----------------------------");
+			// for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
+			// System.out.println("ALIAS-> " + a.getAlias() + " path " +
+			// a.getAliasPath());
+			// System.out.println("    ----------------------------------");
+			// for (String k : columnAliases.get(a).keySet()) {
+			// System.out.println("    " + k + " = " +
+			// columnAliases.get(a).get(k));
+			// }
+			// }
 
 		}
 	}
@@ -348,8 +349,8 @@ public class SQLQueryAnalyzer {
 		return 0;
 	}
 
-	protected void addColumnsIfNotExists(INode node, Set<ColumnNode> newColumns,
-			SelectStatementNode selectStatement) throws SQLQueryAnalyzerException {
+	protected void addColumnsIfNotExists(INode node, Set<ColumnNode> newColumns, SelectStatementNode selectStatement)
+			throws SQLQueryAnalyzerException {
 		boolean appendDelimiter;
 		/*
 		 * Adiciona colunas DISCRIMINATOR caso não existam
@@ -476,10 +477,10 @@ public class SQLQueryAnalyzer {
 										((TableNode) fromChild).getName());
 								if (entityCache != null) {
 									SQLQueryAnalyserAlias alias = new SQLQueryAnalyserAlias();
-									result.add(alias);
 									alias.setAlias(((TableNode) fromChild).getAliasName() == null ? ((TableNode) fromChild)
 											.getTableName() : ((TableNode) fromChild).getAliasName());
 									alias.setEntity(entityCache);
+									result.add(alias);
 								}
 							}
 						}
@@ -500,11 +501,13 @@ public class SQLQueryAnalyzer {
 					if (fromChild instanceof TableNode) {
 						EntityCache entityCache = session.getEntityCacheManager().getEntityCacheByTableName(
 								((TableNode) fromChild).getName());
-						SQLQueryAnalyserAlias alias = new SQLQueryAnalyserAlias();
-						result.add(alias);
-						alias.setAlias(((TableNode) fromChild).getAliasName() == null ? ((TableNode) fromChild)
-								.getTableName() : ((TableNode) fromChild).getAliasName());
-						alias.setEntity(entityCache);
+						if (entityCache != null) {
+							SQLQueryAnalyserAlias alias = new SQLQueryAnalyserAlias();
+							alias.setAlias(((TableNode) fromChild).getAliasName() == null ? ((TableNode) fromChild)
+									.getTableName() : ((TableNode) fromChild).getAliasName());
+							alias.setEntity(entityCache);
+							result.add(alias);
+						}
 					}
 				}
 				break;
@@ -561,7 +564,6 @@ public class SQLQueryAnalyzer {
 				SQLQueryAnalyserAlias alias = getAlias(tableName);
 				if (alias != null) {
 
-					
 					EntityCache caches[] = { alias.getEntity() };
 					if (alias.getEntity().isAbstractClass())
 						caches = session.getEntityCacheManager().getEntitiesBySuperClassIncluding(alias.getEntity());
