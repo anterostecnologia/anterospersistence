@@ -959,6 +959,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			}
 			if (descriptionFieldOwner.hasOrderByClause())
 				select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
+			sql = select.toStatementString();
 		} else {
 			NamedParameterParserResult parserResult = NamedParameterStatement.parse(sql, null);
 			for (NamedParameter parameter : parserResult.getNamedParameters()) {
@@ -1080,6 +1081,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			}
 			if (descriptionFieldOwner.hasOrderByClause())
 				select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
+			sql = select.toStatementString();
 		} else {
 			NamedParameterParserResult parserResult = NamedParameterStatement.parse(sql, null);
 			for (NamedParameter parameter : parserResult.getNamedParameters()) {
