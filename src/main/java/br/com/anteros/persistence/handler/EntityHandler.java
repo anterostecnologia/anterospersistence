@@ -610,23 +610,25 @@ public class EntityHandler implements ResultSetHandler {
 					if (descriptionField.isCollection()
 							&& ((assignedValue instanceof DefaultSQLList) || (assignedValue instanceof DefaultSQLSet)))
 						process = false;
-					else {
+					else if (descriptionField.isCollection()) {
+						process = true;
+					}
+					else if (descriptionField.isRelationShip()) {
 						/*
 						 * Processa se a chave estiver incompleta
 						 */
-						if (descriptionField.isRelationShip()) {
-							EntityCache fieldentEntityCache = session.getEntityCacheManager().getEntityCache(
-									descriptionField.getFieldClass());
-							if (fieldentEntityCache != null) {
-								isIncompleteKey = fieldentEntityCache.isIncompletePrimaryKeyValue(assignedValue);
-								if (!isIncompleteKey) {
-									process = false;
-								} else {
-									process = true;
-									existsExpression = false;
-								}
+						EntityCache fieldentEntityCache = session.getEntityCacheManager().getEntityCache(
+								descriptionField.getFieldClass());
+						if (fieldentEntityCache != null) {
+							isIncompleteKey = fieldentEntityCache.isIncompletePrimaryKeyValue(assignedValue);
+							if (!isIncompleteKey) {
+								process = false;
+							} else {
+								process = true;
+								existsExpression = false;
 							}
 						}
+
 					}
 				}
 
@@ -744,7 +746,7 @@ public class EntityHandler implements ResultSetHandler {
 						Object newObject = proxyFactory.createProxy(session, targetObject, descriptionField,
 								targetEntityCache, columnKeyValue, transactionCache);
 						descriptionField.getField().set(targetObject, newObject);
-						
+
 						FieldEntityValue value = descriptionField.getFieldEntityValue(session,
 								targetObject);
 						entityManaged.addOriginalValue(value);
