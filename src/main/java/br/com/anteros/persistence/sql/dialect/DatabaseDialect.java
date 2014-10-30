@@ -37,6 +37,7 @@ import java.util.Set;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
+import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.schema.definition.ColumnSchema;
 import br.com.anteros.persistence.schema.definition.ForeignKeySchema;
 import br.com.anteros.persistence.schema.definition.IndexSchema;
@@ -229,7 +230,9 @@ public abstract class DatabaseDialect {
 				} else
 					call.setObject(index + 1, parameter);
 
-			} else
+			} else if (parameter instanceof NamedParameter)
+				call.setObject(index + 1, ((NamedParameter)parameter).getValue());
+			else
 				call.setObject(index + 1, parameter);
 			i++;
 		}

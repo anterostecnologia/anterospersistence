@@ -1287,6 +1287,9 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	@Override
 	public TypedSQLQuery<T> setParameters(Object parameters) throws Exception {
+		if (parameters==null)
+			return this;
+		
 		if (parameters instanceof NamedParameter[]) {
 			setParameters((NamedParameter[]) parameters);
 		} else if (parameters instanceof Map) {

@@ -4,16 +4,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionNamedQuery;
 import br.com.anteros.persistence.parameter.NamedParameter;
+import br.com.anteros.persistence.parameter.NamedParameterList;
 import br.com.anteros.persistence.session.ProcedureResult;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.query.SQLQueryException;
 import br.com.anteros.persistence.session.query.StoredProcedureSQLQuery;
+import br.com.anteros.persistence.session.query.TypedSQLQuery;
 
 public class StoredProcedureSQLQueryImpl extends SQLQueryImpl implements StoredProcedureSQLQuery {
 
@@ -62,9 +65,6 @@ public class StoredProcedureSQLQueryImpl extends SQLQueryImpl implements StoredP
 		if ((this.parameters.size() > 0) && (this.namedParameters.size() > 0))
 			throw new SQLQueryException(
 					"Use apenas um formato de parâmetros. Parâmetros nomeados ou lista de parâmetros.");
-
-		if (handler == null)
-			throw new SQLQueryException("Informe o ResultSetHandler para executar a consulta.");
 
 		if (StringUtils.isEmpty(procedureName))
 			throw new SQLQueryException("Informe o nome do procedimento ou função para executar.");
@@ -185,5 +185,43 @@ public class StoredProcedureSQLQueryImpl extends SQLQueryImpl implements StoredP
 		this.outputParametersName = outputParametersName;
 		return this;
 	}
+	
+	@Override
+	public TypedSQLQuery setParameters(Object[] parameters) throws Exception {
+		if ((parameters != null) && (parameters.length >0)){
+			if (parameters[0] instanceof NamedParameter){
+				List<NamedParameter> params = new ArrayList<NamedParameter>();
+				for (Object p : parameters){
+					params.add((NamedParameter)p);
+				}
+				this.setParameters(params.toArray(new NamedParameter[]{}));
+				return this;
+			}
+		}
+		throw new SQLQueryException("Formato para setParameters inválido. Use NamedParameter[] ou Map para execução de Stored Procedures. ");
+	}
+	
+	@Override
+	public TypedSQLQuery setParameters(Map parameters) throws Exception {
+		int paramCount = 0;
+		namedParameters.clear();
+		for (Object namedParameter : parameters.keySet()) {
+			paramCount++;
+			namedParameters.put(paramCount, new NamedParameter(namedParameter+""));
+		}
+		return super.setParameters(parameters);
+	}
+	
+	@Override
+	public TypedSQLQuery setParameters(NamedParameter[] parameters) throws Exception {
+		int paramCount = 0;
+		namedParameters.clear();
+		for (NamedParameter namedParameter : parameters) {
+			paramCount++;
+			namedParameters.put(paramCount, namedParameter);
+		}
+		return super.setParameters(parameters);
+	}
+	
 
 }
