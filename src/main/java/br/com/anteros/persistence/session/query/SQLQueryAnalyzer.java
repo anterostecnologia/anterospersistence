@@ -93,8 +93,6 @@ public class SQLQueryAnalyzer {
 
 			findAndSetOwnerToChildAlias(firstSelectStatement, aliasResultClass);
 
-			validateAliases();
-
 			buildExpressionsAndColumnAliases(firstSelectStatement);
 
 			// System.out.println(sql);
@@ -147,14 +145,15 @@ public class SQLQueryAnalyzer {
 						}
 					}
 
-					if (!found) {
+					if ((!found) && (aliasChild.isUsedOnSelect())) {
 						throw new SQLQueryAnalyzerException(
 								"Foi encontrado alias "
 										+ aliasChild.getAlias()
 										+ "->"
 										+ aliasChild.getEntity().getEntityClass().getName()
-										+ " no sql sem junção com nenhum outro alias ou as colunas usadas não estão mapeadas na classe ou as mesmas não possuem um relacionamento. Somente pode ficar sem junção o alias da classe de resultado "
-										+ resultClass.getName());
+										+ " no sql sem junção com nenhum outro alias ou as colunas usadas não estão mapeadas na classe ou as mesmas não possuem relacionamento. Não será possível montar a árvore do objeto sem que eles se relacionem diretamente. Somente pode ficar sem junção o alias da classe de resultado "
+										+ resultClass.getName()
+										+ " e os aliases não usados como resultado na colunas do SELECT.");
 					}
 				}
 			}
@@ -192,29 +191,6 @@ public class SQLQueryAnalyzer {
 				String alias = ((ColumnNode) column).getAliasName();
 				if ((alias != null) && (!alias.equals("")))
 					usedAliases.add(alias);
-			}
-		}
-	}
-
-	protected void validateAliases() throws SQLQueryAnalyzerException {
-		/*
-		 * Valida se existem aliases sem owner (sem junção) diferentes de
-		 * resultClass e que estejam no select
-		 */
-		for (SQLQueryAnalyserAlias a : aliases) {
-			if (a.getEntity() != null) {
-				Class<?> superClass = a.getEntity().getEntityClass();
-				Class<?> childClass = resultClass;
-				if ((a.getOwner() == null) && ((!a.getEntity().getEntityClass().equals(resultClass)))
-						&& (!ReflectionUtils.isExtendsClass(superClass, childClass))) {
-					throw new SQLQueryAnalyzerException(
-							"Foi encontrado alias "
-									+ a.getAlias()
-									+ "->"
-									+ a.getEntity().getEntityClass().getName()
-									+ " no sql sem junção com nenhum outro alias ou as colunas usadas não estão mapeadas na classe. Somente pode ficar sem junção o alias da classe de resultado "
-									+ resultClass.getName());
-				}
 			}
 		}
 	}
@@ -478,8 +454,10 @@ public class SQLQueryAnalyzer {
 								if (entityCache != null) {
 									SQLQueryAnalyserAlias alias = new SQLQueryAnalyserAlias();
 									alias.setAlias(((TableNode) fromChild).getAliasName() == null ? ((TableNode) fromChild)
-											.getTableName() : ((TableNode) fromChild).getAliasName());
+											.getTableName()
+											: ((TableNode) fromChild).getAliasName());
 									alias.setEntity(entityCache);
+									alias.setUsedOnSelect(isUsedOnSelect(selectStatement, alias.getAlias()));
 									result.add(alias);
 								}
 							}
@@ -490,6 +468,25 @@ public class SQLQueryAnalyzer {
 			}
 		}
 		return result;
+	}
+
+	private boolean isUsedOnSelect(
+			SelectStatementNode selectStatement, String alias) {
+		for (Object selectChild : selectStatement.getChildren()) {
+			if (selectChild instanceof SelectNode) {
+				SelectNode select = (SelectNode) selectChild;
+				for (Object column : select.getChildren()) {
+					if (column instanceof ColumnNode) {
+						String tableName = ((ColumnNode) column).getTableName();
+						String columnName = ((ColumnNode) column).getColumnName();
+						if (((columnName.equalsIgnoreCase("*") && tableName == null))
+								|| (alias.equalsIgnoreCase(tableName)))
+							return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 	public Set<SQLQueryAnalyserAlias> getAliasesFromNode(SelectStatementNode node) {

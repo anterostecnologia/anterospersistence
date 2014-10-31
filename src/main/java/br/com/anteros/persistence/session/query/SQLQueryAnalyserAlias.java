@@ -22,6 +22,15 @@ public class SQLQueryAnalyserAlias {
 	private String alias;
 	private EntityCache entity;
 	private SQLQueryAnalyserOwner owner;
+	private boolean usedOnSelect;
+
+	public boolean isUsedOnSelect() {
+		return usedOnSelect;
+	}
+
+	public void setUsedOnSelect(boolean usedOnSelect) {
+		this.usedOnSelect = usedOnSelect;
+	}
 
 	public String getAlias() {
 		return alias;
