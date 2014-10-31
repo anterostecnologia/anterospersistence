@@ -18,6 +18,7 @@ package br.com.anteros.persistence.session.query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -40,7 +41,6 @@ import br.com.anteros.persistence.sql.parser.SqlParser;
 import br.com.anteros.persistence.sql.parser.node.BindNode;
 import br.com.anteros.persistence.sql.parser.node.ColumnNode;
 import br.com.anteros.persistence.sql.parser.node.CommaNode;
-import br.com.anteros.persistence.sql.parser.node.ExpressionNode;
 import br.com.anteros.persistence.sql.parser.node.FromNode;
 import br.com.anteros.persistence.sql.parser.node.OperatorNode;
 import br.com.anteros.persistence.sql.parser.node.SelectNode;
@@ -95,25 +95,23 @@ public class SQLQueryAnalyzer {
 
 			buildExpressionsAndColumnAliases(firstSelectStatement);
 
-			// System.out.println(sql);
-			//
-			// System.out.println("--------------------EXPRESSIONS-------------------------------");
-			// Iterator<String> iterator = expressions.keySet().iterator();
-			// while (iterator.hasNext()) {
-			// String k = iterator.next();
-			// String v = expressions.get(k);
-			// System.out.println(k + " = " + v);
-			// }
-			// System.out.println("--------------------COLUMN ALIASES----------------------------");
-			// for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
-			// System.out.println("ALIAS-> " + a.getAlias() + " path " +
-			// a.getAliasPath());
-			// System.out.println("    ----------------------------------");
-			// for (String k : columnAliases.get(a).keySet()) {
-			// System.out.println("    " + k + " = " +
-			// columnAliases.get(a).get(k));
-			// }
-			// }
+//			System.out.println(sql);
+//
+//			System.out.println("--------------------EXPRESSIONS-------------------------------");
+//			Iterator<String> iterator = expressions.keySet().iterator();
+//			while (iterator.hasNext()) {
+//				String k = iterator.next();
+//				String v = expressions.get(k);
+//				System.out.println(k + " = " + v);
+//			}
+//			System.out.println("--------------------COLUMN ALIASES----------------------------");
+//			for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
+//				System.out.println("ALIAS-> " + a.getAlias() + " path " + a.getAliasPath());
+//				System.out.println("    ----------------------------------");
+//				for (String k : columnAliases.get(a).keySet()) {
+//					System.out.println("    " + k + " = " + columnAliases.get(a).get(k));
+//				}
+//			}
 
 		}
 	}
@@ -454,8 +452,7 @@ public class SQLQueryAnalyzer {
 								if (entityCache != null) {
 									SQLQueryAnalyserAlias alias = new SQLQueryAnalyserAlias();
 									alias.setAlias(((TableNode) fromChild).getAliasName() == null ? ((TableNode) fromChild)
-											.getTableName()
-											: ((TableNode) fromChild).getAliasName());
+											.getTableName() : ((TableNode) fromChild).getAliasName());
 									alias.setEntity(entityCache);
 									alias.setUsedOnSelect(isUsedOnSelect(selectStatement, alias.getAlias()));
 									result.add(alias);
@@ -470,8 +467,7 @@ public class SQLQueryAnalyzer {
 		return result;
 	}
 
-	private boolean isUsedOnSelect(
-			SelectStatementNode selectStatement, String alias) {
+	private boolean isUsedOnSelect(SelectStatementNode selectStatement, String alias) {
 		for (Object selectChild : selectStatement.getChildren()) {
 			if (selectChild instanceof SelectNode) {
 				SelectNode select = (SelectNode) selectChild;
@@ -585,7 +581,6 @@ public class SQLQueryAnalyzer {
 							String path = alias.getPath();
 							if (!path.equals(""))
 								path += ".";
-
 							expressions.put(path + descriptionColumn.getDescriptionField().getName(),
 									((alias.getAliasPath()).equals("") ? "" : alias.getAliasPath() + ".") + aliasName);
 						} else {
@@ -648,9 +643,9 @@ public class SQLQueryAnalyzer {
 	private List<String> getColumnNameEqualsAliases(INode node, SQLQueryAnalyserAlias sourceAlias,
 			SQLQueryAnalyserAlias targetAlias) throws SQLQueryAnalyzerException {
 		List<String> result = new ArrayList<String>();
-		INode[] expressions = ParserUtil.findChildren(node, ExpressionNode.class.getSimpleName());
+		INode[] expressions = ParserUtil.findChildren(node, OperatorNode.class.getSimpleName());
 		for (INode expression : expressions) {
-			OperatorNode operator = (OperatorNode) expression.getChild(0);
+			OperatorNode operator = (OperatorNode) expression;
 			if ("=".equals(operator.getName())) {
 				if ((operator.getChild(0) instanceof ColumnNode) && (operator.getChild(1) instanceof ColumnNode)
 						&& !(operator.getChild(0) instanceof ValueNode) && !(operator.getChild(1) instanceof ValueNode)) {
