@@ -45,7 +45,9 @@ public class LobParameterBinding implements ParameterBinding {
 
 	
 	public void bindValue(PreparedStatement statement, int parameterIndex) throws Exception {
-		if (this.getValue() instanceof Clob) {
+		if (this.getValue() == null) {
+			statement.setObject(parameterIndex, null);
+		} else if (this.getValue() instanceof Clob) {
 			statement.setClob(parameterIndex, (Clob) this.getValue());
 		} else if (this.getValue() instanceof Character[]) {
 			String value = new String(ArrayUtils.toPrimitive((Character[]) this.getValue()));
