@@ -610,7 +610,7 @@ public class EntityHandler implements ResultSetHandler {
 					if (descriptionField.isCollection()
 							&& ((assignedValue instanceof DefaultSQLList) || (assignedValue instanceof DefaultSQLSet)))
 						process = false;
-					else if (descriptionField.isCollection()) {
+					else if (descriptionField.isCollection() || descriptionField.isJoinTable()) {
 						process = true;
 					}
 					else if (descriptionField.isRelationShip()) {
