@@ -19,6 +19,7 @@ import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -30,4 +31,14 @@ public @interface TypeConverter {
     Class<?> dataType() default void.class;
 
     Class<?> objectType() default void.class;
+    
+    /**
+	 * Defines several {@code @TypeConverter} annotations on the same element.
+	 */
+	@Target({ FIELD, TYPE })
+	@Retention(RUNTIME)
+	@Documented
+	public @interface List {
+		TypeConverter[] value();
+	}
 }

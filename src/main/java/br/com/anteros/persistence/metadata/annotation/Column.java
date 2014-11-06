@@ -15,6 +15,10 @@
  ******************************************************************************/
 package br.com.anteros.persistence.metadata.annotation;
 
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -44,12 +48,22 @@ public @interface Column {
 	boolean insertable() default true;
 
 	boolean updatable() default true;
-	
+
 	String datePattern() default "";
-	
+
 	String dateTimePattern() default "";
-	
+
 	String timePattern() default "";
-	
+
 	String label() default "";
+
+	/**
+	 * Defines several {@code @Column} annotations on the same element.
+	 */
+	@Target({ FIELD })
+	@Retention(RUNTIME)
+	@Documented
+	public @interface List {
+		Column[] value();
+	}
 }

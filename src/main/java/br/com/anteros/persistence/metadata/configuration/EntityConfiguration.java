@@ -94,11 +94,13 @@ public class EntityConfiguration {
 	public FieldConfiguration addField(String fieldName) throws Exception {
 		for (FieldConfiguration field : fields) {
 			if (field.getName().equals(fieldName))
-				throw new ConfigurationException("Capo " + fieldName + " já adicionado na Entidade " + sourceClazz.getName());
+				throw new ConfigurationException("Capo " + fieldName + " já adicionado na Entidade "
+						+ sourceClazz.getName());
 		}
 
 		if (ReflectionUtils.getFieldByName(sourceClazz, fieldName) == null)
-			throw new ConfigurationException("Campo " + fieldName + " não encontrado na Classe " + sourceClazz.getName());
+			throw new ConfigurationException("Campo " + fieldName + " não encontrado na Classe "
+					+ sourceClazz.getName());
 
 		FieldConfiguration field = new FieldConfiguration(this, fieldName);
 		fields.add(field);
@@ -252,34 +254,44 @@ public class EntityConfiguration {
 				if (constraints != null) {
 					uniqueConstraintsDef = new UniqueConstraintConfiguration[constraints.length];
 					for (int i = 0; i < constraints.length; i++)
-						uniqueConstraintsDef[i] = new UniqueConstraintConfiguration(constraints[i].name(), constraints[i].columnNames());
+						uniqueConstraintsDef[i] = new UniqueConstraintConfiguration(constraints[i].name(),
+								constraints[i].columnNames());
 				}
 				uniqueConstraints(uniqueConstraintsDef);
-			} else if ((annotation instanceof Indexes) || (annotation instanceof Index)) {
+			} else if ((annotation instanceof Indexes) || (annotation instanceof Index) || (annotation instanceof Index.List)) {
 				Index[] indexes = null;
 				if (annotation instanceof Indexes)
 					indexes = ((Indexes) annotation).value();
-				else
+				else if (annotation instanceof Index)
 					indexes = new Index[] { (Index) annotation };
+				else if (annotation instanceof Index.List)
+					indexes = ((Index.List) annotation).value();
 
 				IndexConfiguration[] indexesConf = null;
 				if (indexes != null) {
 					indexesConf = new IndexConfiguration[indexes.length];
 					for (int i = 0; i < indexes.length; i++)
-						indexesConf[i] = new IndexConfiguration(indexes[i].name(), indexes[i].columnNames()).catalog(indexes[i].catalog())
-								.schema(indexes[i].schema()).unique(indexes[i].unique());
+						indexesConf[i] = new IndexConfiguration(indexes[i].name(), indexes[i].columnNames())
+								.catalog(indexes[i].catalog()).schema(indexes[i].schema()).unique(indexes[i].unique());
 				}
-				if (annotation instanceof Indexes)
+				if ((annotation instanceof Indexes) || (annotation instanceof Index.List))
 					indexes(indexesConf);
 				else
 					index(indexesConf);
 
 			} else if (annotation instanceof DiscriminatorColumn) {
-				discriminatorColumn(((DiscriminatorColumn) annotation).name(), ((DiscriminatorColumn) annotation).length(), ((DiscriminatorColumn) annotation).discriminatorType());
+				discriminatorColumn(((DiscriminatorColumn) annotation).name(),
+						((DiscriminatorColumn) annotation).length(),
+						((DiscriminatorColumn) annotation).discriminatorType());
 			} else if (annotation instanceof DiscriminatorValue) {
 				discriminatorValue(((DiscriminatorValue) annotation).value());
-			} else if (annotation instanceof EnumValues) {
-				EnumValue[] values = ((EnumValues) annotation).value();
+			} else if ((annotation instanceof EnumValues) || (annotation instanceof EnumValue.List)) {
+				EnumValue[] values = null;
+				if (annotation instanceof EnumValues) {
+					values = ((EnumValues) annotation).value();
+				} else {
+					values = ((EnumValue.List) annotation).value();
+				}
 				if (values != null) {
 					EnumValueConfiguration[] enValues = new EnumValueConfiguration[values.length];
 					for (int i = 0; i < values.length; i++)
@@ -303,7 +315,7 @@ public class EntityConfiguration {
 			} else if (annotation instanceof Comment) {
 				comment(((Comment) annotation).value());
 			} else if (annotation instanceof Remote) {
-				remote(new RemoteConfiguration((Remote) annotation));	
+				remote(new RemoteConfiguration((Remote) annotation));
 			}
 		}
 
@@ -443,11 +455,12 @@ public class EntityConfiguration {
 	}
 
 	public EntityConfiguration remote(String displayLabel, String mobileActionExport, String mobileActionImport,
-			RemoteParamConfiguration[] importParams, RemoteParamConfiguration[] exportParams, int exportOrderToSendData, String[] exportFields,
-			ConnectivityType importConnectivityType, ConnectivityType exportConnectivityType) {
+			RemoteParamConfiguration[] importParams, RemoteParamConfiguration[] exportParams,
+			int exportOrderToSendData, String[] exportFields, ConnectivityType importConnectivityType,
+			ConnectivityType exportConnectivityType) {
 		annotations.add(Remote.class);
-		this.remote = new RemoteConfiguration(displayLabel, mobileActionExport, mobileActionImport, importParams, exportParams,
-				exportOrderToSendData, exportFields, importConnectivityType, exportConnectivityType);
+		this.remote = new RemoteConfiguration(displayLabel, mobileActionExport, mobileActionImport, importParams,
+				exportParams, exportOrderToSendData, exportFields, importConnectivityType, exportConnectivityType);
 		return this;
 	}
 

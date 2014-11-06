@@ -132,7 +132,7 @@ public class FieldConfiguration {
 	}
 
 	public FieldConfiguration(EntityConfiguration entity, Field field) {
-		Assert.notNull(field,"Parâmetro field é obrigatório. Erro criando FieldConfiguration.");
+		Assert.notNull(field, "Parâmetro field é obrigatório. Erro criando FieldConfiguration.");
 		if (field != null)
 			this.name = field.getName();
 		this.field = field;
@@ -491,8 +491,13 @@ public class FieldConfiguration {
 					indexes(indexesConf);
 				else
 					index(indexesConf);
-			} else if (annotation instanceof Columns) {
-				Column[] cols = ((Columns) annotation).columns();
+			} else if ((annotation instanceof Columns) || (annotation instanceof Column.List)) {
+				Column[] cols = null;
+				if (annotation instanceof Columns) {
+					cols = ((Columns) annotation).columns();
+				} else {
+					cols = ((Column.List) annotation).value();
+				}
 				ColumnConfiguration[] colsConf = null;
 				if (cols != null) {
 					colsConf = new ColumnConfiguration[cols.length];
@@ -516,7 +521,7 @@ public class FieldConfiguration {
 			} else if (annotation instanceof JoinTable) {
 				joinTable(new JoinTableConfiguration(((JoinTable) annotation)));
 			} else if (annotation instanceof Lob) {
-				lob(((Lob)annotation).type());
+				lob(((Lob) annotation).type());
 			} else if (annotation instanceof MapKeyColumn) {
 				mapKeyColumn(((MapKeyColumn) annotation).name());
 			} else if (annotation instanceof OrderBy) {
@@ -543,12 +548,14 @@ public class FieldConfiguration {
 				comment(((Comment) annotation).value());
 			} else if (annotation instanceof ExternalFile) {
 				externalFile(true);
-			} else if ((annotation instanceof Converters) || (annotation instanceof Converter)) {
+			} else if ((annotation instanceof Converters) || (annotation instanceof Converter) || (annotation instanceof Converter.List)) {
 				Converter[] converts = null;
 				if (annotation instanceof Converters)
 					converts = ((Converters) annotation).value();
-				else
+				else if (annotation instanceof Converter)
 					converts = new Converter[] { (Converter) annotation };
+				else if (annotation instanceof Converter.List)
+					converts = ((Converter.List) annotation).value();
 
 				ConverterConfiguration[] convertsConf = null;
 				if (indexes != null) {
@@ -557,7 +564,7 @@ public class FieldConfiguration {
 						convertsConf[i] = new ConverterConfiguration(converts[i]);
 					}
 				}
-				if (annotation instanceof Indexes)
+				if ((annotation instanceof Converters) || (annotation instanceof Converter.List))
 					converters(convertsConf);
 				else
 					converter(convertsConf);

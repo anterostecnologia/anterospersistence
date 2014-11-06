@@ -15,6 +15,9 @@
  ******************************************************************************/
 package br.com.anteros.persistence.metadata.annotation;
 
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -24,5 +27,16 @@ import java.lang.annotation.Target;
 @Retention(value = RetentionPolicy.RUNTIME)
 public @interface EnumValue {
 	String enumValue();
+
 	String value();
+
+	/**
+	 * Defines several {@code @EnumValue} annotations on the same element.
+	 */
+	@Target({ ElementType.TYPE })
+	@Retention(RUNTIME)
+	@Documented
+	public @interface List {
+		EnumValue[] value();
+	}
 }
