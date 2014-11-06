@@ -36,6 +36,8 @@ import br.com.anteros.persistence.metadata.annotation.Index;
 import br.com.anteros.persistence.metadata.annotation.Indexes;
 import br.com.anteros.persistence.metadata.annotation.Inheritance;
 import br.com.anteros.persistence.metadata.annotation.MappedSuperclass;
+import br.com.anteros.persistence.metadata.annotation.NamedQueries;
+import br.com.anteros.persistence.metadata.annotation.NamedQuery;
 import br.com.anteros.persistence.metadata.annotation.ObjectTypeConverter;
 import br.com.anteros.persistence.metadata.annotation.ReadOnly;
 import br.com.anteros.persistence.metadata.annotation.SQLDelete;
@@ -258,7 +260,8 @@ public class EntityConfiguration {
 								constraints[i].columnNames());
 				}
 				uniqueConstraints(uniqueConstraintsDef);
-			} else if ((annotation instanceof Indexes) || (annotation instanceof Index) || (annotation instanceof Index.List)) {
+			} else if ((annotation instanceof Indexes) || (annotation instanceof Index)
+					|| (annotation instanceof Index.List)) {
 				Index[] indexes = null;
 				if (annotation instanceof Indexes)
 					indexes = ((Indexes) annotation).value();
@@ -297,6 +300,22 @@ public class EntityConfiguration {
 					for (int i = 0; i < values.length; i++)
 						enValues[i] = new EnumValueConfiguration(values[i].enumValue(), values[i].value());
 					enumValues(enValues);
+				}
+			} else if ((annotation instanceof NamedQueries) || (annotation instanceof NamedQuery.List)
+					|| (annotation instanceof NamedQuery)) {
+				NamedQuery[] values = null;
+				if (annotation instanceof NamedQueries) {
+					values = ((NamedQueries) annotation).value();
+				} else if (annotation instanceof NamedQuery.List) {
+					values = ((NamedQuery.List) annotation).value();
+				} else if (annotation instanceof NamedQueries) {
+					values = new NamedQuery[] { ((NamedQuery) annotation) };
+				}
+				if (values != null) {
+					NamedQueryConfiguration[] namedValues = new NamedQueryConfiguration[values.length];
+					for (int i = 0; i < values.length; i++)
+						namedValues[i] = new NamedQueryConfiguration(values[i]);
+					namedQueries(namedValues);
 				}
 			} else if (annotation instanceof Inheritance) {
 				inheritance(((Inheritance) annotation).strategy());
