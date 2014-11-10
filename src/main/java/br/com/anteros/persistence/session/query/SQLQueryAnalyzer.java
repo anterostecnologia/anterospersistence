@@ -77,7 +77,7 @@ public class SQLQueryAnalyzer {
 
 		buildUsedAliases(node);
 
-		aliases = getFirstAliasesFromNode(node);
+		aliases = getAliasesFromFirstSelectNode(node);
 
 		validateResultClassOnSQL();
 
@@ -95,23 +95,25 @@ public class SQLQueryAnalyzer {
 
 			buildExpressionsAndColumnAliases(firstSelectStatement);
 
-//			System.out.println(sql);
-//
-//			System.out.println("--------------------EXPRESSIONS-------------------------------");
-//			Iterator<String> iterator = expressions.keySet().iterator();
-//			while (iterator.hasNext()) {
-//				String k = iterator.next();
-//				String v = expressions.get(k);
-//				System.out.println(k + " = " + v);
-//			}
-//			System.out.println("--------------------COLUMN ALIASES----------------------------");
-//			for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
-//				System.out.println("ALIAS-> " + a.getAlias() + " path " + a.getAliasPath());
-//				System.out.println("    ----------------------------------");
-//				for (String k : columnAliases.get(a).keySet()) {
-//					System.out.println("    " + k + " = " + columnAliases.get(a).get(k));
-//				}
-//			}
+			// System.out.println(sql);
+			//
+			// System.out.println("--------------------EXPRESSIONS-------------------------------");
+			// Iterator<String> iterator = expressions.keySet().iterator();
+			// while (iterator.hasNext()) {
+			// String k = iterator.next();
+			// String v = expressions.get(k);
+			// System.out.println(k + " = " + v);
+			// }
+			// System.out.println("--------------------COLUMN ALIASES----------------------------");
+			// for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
+			// System.out.println("ALIAS-> " + a.getAlias() + " path " +
+			// a.getAliasPath());
+			// System.out.println("    ----------------------------------");
+			// for (String k : columnAliases.get(a).keySet()) {
+			// System.out.println("    " + k + " = " +
+			// columnAliases.get(a).get(k));
+			// }
+			// }
 
 		}
 	}
@@ -211,7 +213,7 @@ public class SQLQueryAnalyzer {
 			String oldSelect = sql.substring(offset, offSetFinal);
 			newColumns.clear();
 
-			aliasesTemporary = getAliasesFromNode(selectStatement);
+			aliasesTemporary = getAliasesFromSelectNode(selectStatement);
 			/*
 			 * Substituiu * pelos nomes das colunas
 			 */
@@ -331,7 +333,7 @@ public class SQLQueryAnalyzer {
 		 */
 		if (!isExistsSelectAsterisk(node)) {
 			for (SQLQueryAnalyserAlias alias : aliasesTemporary) {
-				if (alias.getEntity() != null) {
+				if ((alias.getEntity() != null) && (alias.isUsedOnSelect())) {
 					List<DescriptionColumn> columns = alias.getEntity().getPrimaryKeyColumns();
 					if (alias.getEntity().hasDiscriminatorColumn())
 						columns.add(alias.getEntity().getDiscriminatorColumn());
@@ -437,31 +439,12 @@ public class SQLQueryAnalyzer {
 		return false;
 	}
 
-	public Set<SQLQueryAnalyserAlias> getFirstAliasesFromNode(INode node) throws SQLQueryAnalyzerException {
+	public Set<SQLQueryAnalyserAlias> getAliasesFromFirstSelectNode(INode node) throws SQLQueryAnalyzerException {
 		Set<SQLQueryAnalyserAlias> result = new LinkedHashSet<SQLQueryAnalyserAlias>();
 		for (Object child : node.getChildren()) {
 			if (child instanceof SelectStatementNode) {
 				SelectStatementNode selectStatement = ((SelectStatementNode) child);
-				for (Object selectChild : selectStatement.getChildren()) {
-					if (selectChild instanceof FromNode) {
-						FromNode from = (FromNode) selectChild;
-						for (Object fromChild : from.getChildren()) {
-							if (fromChild instanceof TableNode) {
-								EntityCache entityCache = session.getEntityCacheManager().getEntityCacheByTableName(
-										((TableNode) fromChild).getName());
-								if (entityCache != null) {
-									SQLQueryAnalyserAlias alias = new SQLQueryAnalyserAlias();
-									alias.setAlias(((TableNode) fromChild).getAliasName() == null ? ((TableNode) fromChild)
-											.getTableName() : ((TableNode) fromChild).getAliasName());
-									alias.setEntity(entityCache);
-									alias.setUsedOnSelect(isUsedOnSelect(selectStatement, alias.getAlias()));
-									result.add(alias);
-								}
-							}
-						}
-						return result;
-					}
-				}
+				return getAliasesFromSelectNode(selectStatement);
 			}
 		}
 		return result;
@@ -485,9 +468,9 @@ public class SQLQueryAnalyzer {
 		return false;
 	}
 
-	public Set<SQLQueryAnalyserAlias> getAliasesFromNode(SelectStatementNode node) {
+	public Set<SQLQueryAnalyserAlias> getAliasesFromSelectNode(SelectStatementNode selectStatement) {
 		Set<SQLQueryAnalyserAlias> result = new LinkedHashSet<SQLQueryAnalyserAlias>();
-		for (Object selectChild : node.getChildren()) {
+		for (Object selectChild : selectStatement.getChildren()) {
 			if (selectChild instanceof FromNode) {
 				FromNode from = (FromNode) selectChild;
 				for (Object fromChild : from.getChildren()) {
@@ -499,11 +482,11 @@ public class SQLQueryAnalyzer {
 							alias.setAlias(((TableNode) fromChild).getAliasName() == null ? ((TableNode) fromChild)
 									.getTableName() : ((TableNode) fromChild).getAliasName());
 							alias.setEntity(entityCache);
+							alias.setUsedOnSelect(isUsedOnSelect(selectStatement, alias.getAlias()));
 							result.add(alias);
 						}
 					}
 				}
-				break;
 			}
 		}
 		return result;
