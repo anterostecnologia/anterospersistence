@@ -1779,10 +1779,12 @@ public class EntityCacheManager {
 				descComposite.setCompositeId(fieldConfiguration.isAnnotationPresent(CompositeId.class));
 				descComposite.setColumnDefinition(columnConfiguration.getColumnDefinition());
 
-				if (fieldConfiguration.isAnnotationPresent(CompositeId.class)) {
+				if ((fieldConfiguration.isAnnotationPresent(CompositeId.class)) || (fieldConfiguration.isAnnotationPresent(Id.class))) {
 					descComposite.setColumnType(ColumnType.PRIMARY_KEY);
 					descComposite.setRequired(true);
 				}
+				
+				
 
 				if (fieldConfiguration.isAnnotationPresent(ForeignKey.class)) {
 					descComposite.setForeignKey(true);
