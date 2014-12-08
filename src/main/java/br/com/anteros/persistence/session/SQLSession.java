@@ -60,6 +60,23 @@ public interface SQLSession {
 	public <T> T find(Identifier<T> id, Map<String, Object> properties) throws Exception;
 
 	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode) throws Exception;
+	
+	public <T> T find(Class<T> entityClass, Object primaryKey, boolean readOnly) throws Exception;
+
+	public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties, boolean readOnly) throws Exception;
+
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, boolean readOnly) throws Exception;
+
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties, boolean readOnly) throws Exception;
+
+	public <T> T find(Identifier<T> id, boolean readOnly) throws Exception;
+
+	public <T> T find(Identifier<T> id, LockModeType lockMode, boolean readOnly) throws Exception;
+
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, boolean readOnly) throws Exception;
+
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode, boolean readOnly) throws Exception;
+
 
 	/*
 	 * Atualiza o objeto com dados do banco descartando alterações na transação
@@ -125,7 +142,7 @@ public interface SQLSession {
 	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass) throws Exception;
 
 	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, Object parameters) throws Exception;
-
+	
 	/*
 	 * Cria uma query nomeada
 	 */
@@ -237,7 +254,7 @@ public interface SQLSession {
 
 	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String, String> expressions,
 			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, Cache transactionCache,
-			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults) throws Exception;
+			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly) throws Exception;
 
 	public boolean isProxyObject(Object object) throws Exception;
 

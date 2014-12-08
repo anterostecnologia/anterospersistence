@@ -54,11 +54,13 @@ import br.com.anteros.persistence.proxy.collection.DefaultSQLSet;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionResult;
 import br.com.anteros.persistence.session.cache.Cache;
+import br.com.anteros.persistence.session.cache.PersistenceMetadataCache;
 import br.com.anteros.persistence.session.cache.SQLCache;
 import br.com.anteros.persistence.session.lock.type.LockModeType;
 import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyzer;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyzerException;
+import br.com.anteros.persistence.session.query.SQLQueryAnalyzerResult;
 import br.com.anteros.persistence.session.query.SQLQueryException;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
 import br.com.anteros.persistence.sql.command.Select;
@@ -86,6 +88,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	protected boolean allowDuplicateObjects = false;
 	private int firstResult;
 	private int maxResults;
+	private boolean readOnly = false;
 
 	public SQLQueryImpl(SQLSession session) {
 		this.session = session;
@@ -422,8 +425,12 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		EntityCache entityCache = session.getEntityCacheManager().getEntityCache(getResultClass());
 		ResultSetHandler handler = null;
 
-		SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer(session);
-		analyzer.analyze(sql, getResultClass());
+		SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance()
+				.get(sql);
+		if (analyzerResult == null) {
+			analyzerResult = new SQLQueryAnalyzer(session).analyze(sql, getResultClass());
+			PersistenceMetadataCache.getInstance().put(sql, analyzerResult);
+		}
 
 		SQLCache transactionCache = new SQLCache(DEFAULT_CACHE_SIZE);
 
@@ -436,22 +443,22 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 							+ getResultClass().getName()
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 				}
-				handler = session.createNewEntityHandler(getResultClass(), analyzer.getExpressions(),
-						analyzer.getColumnAliases(), transactionCache, allowDuplicateObjects, objectToRefresh,
-						firstResult, maxResults);
+				handler = session.createNewEntityHandler(getResultClass(), analyzerResult.getExpressions(),
+						analyzerResult.getColumnAliases(), transactionCache, allowDuplicateObjects, objectToRefresh,
+						firstResult, maxResults, readOnly);
 			}
 
 			if (this.parameters.size() > 0)
-				result = (List) session.getRunner().query(session.getConnection(), analyzer.getParsedSQL(), handler,
-						parameters.values().toArray(), showSql, formatSql, timeOut, session.getListeners(),
+				result = (List) session.getRunner().query(session.getConnection(), analyzerResult.getParsedSql(),
+						handler, parameters.values().toArray(), showSql, formatSql, timeOut, session.getListeners(),
 						session.clientId());
 			else if (this.namedParameters.size() > 0)
-				result = (List) session.getRunner().query(session.getConnection(), analyzer.getParsedSQL(), handler,
-						namedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql, timeOut,
-						session.getListeners(), session.clientId());
+				result = (List) session.getRunner().query(session.getConnection(), analyzerResult.getParsedSql(),
+						handler, namedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql,
+						timeOut, session.getListeners(), session.clientId());
 			else
-				result = (List) session.getRunner().query(session.getConnection(), analyzer.getParsedSQL(), handler,
-						showSql, formatSql, timeOut, session.getListeners(), session.clientId());
+				result = (List) session.getRunner().query(session.getConnection(), analyzerResult.getParsedSql(),
+						handler, showSql, formatSql, timeOut, session.getListeners(), session.clientId());
 
 		} finally {
 			transactionCache.clear();
@@ -756,65 +763,74 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		String sql = descriptionFieldOwner.getStatement();
 		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
 
+		/*
+		 * Se o SQL não foi configurado no statement do field cria o select
+		 */
 		if (StringUtils.isEmpty(sql)) {
-			/*
-			 * Adiciona todas colunas da Entidade alvo
-			 */
-			Select select = new Select(session.getDialect());
+			sql = (String) PersistenceMetadataCache.getInstance().get(descriptionFieldOwner);
+			if (StringUtils.isEmpty(sql)) {
+				/*
+				 * Adiciona todas colunas da Entidade alvo
+				 */
+				Select select = new Select(session.getDialect());
 
-			/*
-			 * Gera os aliases para as tabelas
-			 */
-			targetEntityCache.generateAliasTableName();
-			fromEntityCache.generateAliasTableName();
-			descriptionFieldOwner.generateAliasTableName();
+				select.addTableName(targetEntityCache.getTableName() + " " + targetEntityCache.getAliasTableName());
+				select.addTableName(descriptionFieldOwner.getTableName() + " "
+						+ descriptionFieldOwner.getAliasTableName());
 
-			select.addTableName(targetEntityCache.getTableName() + " " + targetEntityCache.getAliasTableName());
-			select.addTableName(descriptionFieldOwner.getTableName() + " " + descriptionFieldOwner.getAliasTableName());
+				boolean appendOperator = false;
 
-			boolean appendOperator = false;
+				for (DescriptionColumn column : targetEntityCache.getDescriptionColumns())
+					select.addColumn(targetEntityCache.getAliasTableName() + "." + column.getColumnName());
 
-			for (DescriptionColumn column : targetEntityCache.getDescriptionColumns())
-				select.addColumn(targetEntityCache.getAliasTableName() + "." + column.getColumnName());
+				/*
+				 * Monta cláusula WHERE
+				 */
+				for (DescriptionColumn column : descriptionFieldOwner.getPrimaryKeys()) {
+					if (!column.isInversedJoinColumn()) {
+						if (appendOperator)
+							select.and();
+						select.addCondition(descriptionFieldOwner.getAliasTableName() + "." + column.getColumnName(),
+								"=", ":P" + column.getColumnName());
+						params.add(new NamedParameter("P" + column.getColumnName(), columnKeyTarget.get(column
+								.getColumnName())));
 
-			/*
-			 * Monta cláusula WHERE
-			 */
-			for (DescriptionColumn column : descriptionFieldOwner.getPrimaryKeys()) {
-				if (!column.isInversedJoinColumn()) {
+						appendOperator = true;
+					}
+				}
+
+				/*
+				 * Adiciona no WHERE colunas da entidade de Destino
+				 */
+				DescriptionColumn referencedColumn;
+				for (DescriptionColumn column : targetEntityCache.getPrimaryKeyColumns()) {
 					if (appendOperator)
 						select.and();
-					select.addCondition(descriptionFieldOwner.getAliasTableName() + "." + column.getColumnName(), "=",
-							":P" + column.getColumnName());
-					params.add(new NamedParameter("P" + column.getColumnName(), columnKeyTarget.get(column
-							.getColumnName())));
+					referencedColumn = descriptionFieldOwner.getDescriptionColumnByReferencedColumnName(column
+							.getColumnName());
+					select.addWhereToken(targetEntityCache.getAliasTableName() + "." + column.getColumnName() + " = "
+							+ descriptionFieldOwner.getAliasTableName() + "." + referencedColumn.getColumnName());
 
 					appendOperator = true;
 				}
-			}
 
-			/*
-			 * Adiciona no WHERE colunas da entidade de Destino
-			 */
-			DescriptionColumn referencedColumn;
-			for (DescriptionColumn column : targetEntityCache.getPrimaryKeyColumns()) {
-				if (appendOperator)
-					select.and();
-				referencedColumn = descriptionFieldOwner.getDescriptionColumnByReferencedColumnName(column
-						.getColumnName());
-				select.addWhereToken(targetEntityCache.getAliasTableName() + "." + column.getColumnName() + " = "
-						+ descriptionFieldOwner.getAliasTableName() + "." + referencedColumn.getColumnName());
+				/*
+				 * Se possuir @Order, adiciona SELECT
+				 */
+				if (descriptionFieldOwner.hasOrderByClause()) {
+					select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
+				}
+				sql = select.toStatementString();
 
-				appendOperator = true;
+				PersistenceMetadataCache.getInstance().put(descriptionFieldOwner, sql);
+			} else {
+				for (DescriptionColumn column : descriptionFieldOwner.getPrimaryKeys()) {
+					if (!column.isInversedJoinColumn()) {
+						params.add(new NamedParameter("P" + column.getColumnName(), columnKeyTarget.get(column
+								.getColumnName())));
+					}
+				}
 			}
-
-			/*
-			 * Se possuir @Order, adiciona SELECT
-			 */
-			if (descriptionFieldOwner.hasOrderByClause()) {
-				select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
-			}
-			sql = select.toStatementString();
 		} else {
 			NamedParameterParserResult parserResult = NamedParameterStatement.parse(sql, null);
 			for (NamedParameter parameter : parserResult.getNamedParameters()) {
@@ -844,52 +860,73 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		/*
 		 * Se for um ELEMENT_COLLECTION
 		 */
+		String sql = null;
+		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
+		EntityCache mappedByEntityCache = descriptionFieldOwner.getTargetEntity();
 		if (descriptionFieldOwner.getFieldType() == FieldType.COLLECTION_TABLE) {
-			Select select = new Select(session.getDialect());
-			select.addTableName(descriptionFieldOwner.getTableName());
-			ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
-			boolean appendOperator = false;
+			sql = (String) PersistenceMetadataCache.getInstance().get(descriptionFieldOwner);
+			if (StringUtils.isEmpty(sql)) {
+				Select select = new Select(session.getDialect());
+				select.addTableName(descriptionFieldOwner.getTableName());
+				boolean appendOperator = false;
 
-			EntityCache mappedByEntityCache = descriptionFieldOwner.getTargetEntity();
-
-			for (DescriptionColumn descriptionColumn : mappedByEntityCache.getPrimaryKeyColumns()) {
-				if (appendOperator)
-					select.and();
-				select.addCondition(descriptionColumn.getColumnName(), "=", ":P" + descriptionColumn.getColumnName());
-				String columnName = (descriptionColumn.getReferencedColumnName() == null
-						|| "".equals(descriptionColumn.getReferencedColumnName()) ? descriptionColumn.getColumnName()
-						: descriptionColumn.getReferencedColumnName());
-				params.add(new NamedParameter("P" + columnName, columnKeyTarget.get(columnName)));
-				appendOperator = true;
-			}
-			if (descriptionFieldOwner.hasOrderByClause())
-				select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
-
-			result = session.createQuery(select.toStatementString())
-					.setParameters(params.toArray(new NamedParameter[] {}))
-					.resultSetHandler(new ElementCollectionHandler(descriptionFieldOwner)).getSingleResult();
-
-		} else if (descriptionFieldOwner.getFieldType() == FieldType.COLLECTION_MAP_TABLE) {
-			Select select = new Select(session.getDialect());
-			select.addTableName(descriptionFieldOwner.getTableName());
-			ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
-			boolean appendOperator = false;
-			for (DescriptionColumn descriptionColumn : descriptionFieldOwner.getPrimaryKeys()) {
-				if (descriptionColumn.isForeignKey()) {
+				for (DescriptionColumn descriptionColumn : mappedByEntityCache.getPrimaryKeyColumns()) {
 					if (appendOperator)
 						select.and();
 					select.addCondition(descriptionColumn.getColumnName(), "=",
 							":P" + descriptionColumn.getColumnName());
-					params.add(new NamedParameter("P" + descriptionColumn.getReferencedColumnName(), columnKeyTarget
-							.get(descriptionColumn.getReferencedColumnName())));
+					String columnName = (descriptionColumn.getReferencedColumnName() == null
+							|| "".equals(descriptionColumn.getReferencedColumnName()) ? descriptionColumn
+							.getColumnName() : descriptionColumn.getReferencedColumnName());
+					params.add(new NamedParameter("P" + columnName, columnKeyTarget.get(columnName)));
 					appendOperator = true;
 				}
-			}
-			if (descriptionFieldOwner.hasOrderByClause())
-				select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
+				if (descriptionFieldOwner.hasOrderByClause())
+					select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
 
-			result = session.createQuery(select.toStatementString())
-					.setParameters(params.toArray(new NamedParameter[] {}))
+				sql = select.toStatementString();
+				PersistenceMetadataCache.getInstance().put(descriptionFieldOwner, sql);
+			} else {
+				for (DescriptionColumn descriptionColumn : mappedByEntityCache.getPrimaryKeyColumns()) {
+					String columnName = (descriptionColumn.getReferencedColumnName() == null
+							|| "".equals(descriptionColumn.getReferencedColumnName()) ? descriptionColumn
+							.getColumnName() : descriptionColumn.getReferencedColumnName());
+					params.add(new NamedParameter("P" + columnName, columnKeyTarget.get(columnName)));
+				}
+			}
+
+			result = session.createQuery(sql).setParameters(params.toArray(new NamedParameter[] {}))
+					.resultSetHandler(new ElementCollectionHandler(descriptionFieldOwner)).getSingleResult();
+
+		} else if (descriptionFieldOwner.getFieldType() == FieldType.COLLECTION_MAP_TABLE) {
+			sql = (String) PersistenceMetadataCache.getInstance().get(descriptionFieldOwner);
+			if (StringUtils.isEmpty(sql)) {
+				Select select = new Select(session.getDialect());
+				select.addTableName(descriptionFieldOwner.getTableName());
+				boolean appendOperator = false;
+				for (DescriptionColumn descriptionColumn : descriptionFieldOwner.getPrimaryKeys()) {
+					if (descriptionColumn.isForeignKey()) {
+						if (appendOperator)
+							select.and();
+						select.addCondition(descriptionColumn.getColumnName(), "=",
+								":P" + descriptionColumn.getColumnName());
+						params.add(new NamedParameter("P" + descriptionColumn.getReferencedColumnName(),
+								columnKeyTarget.get(descriptionColumn.getReferencedColumnName())));
+						appendOperator = true;
+					}
+				}
+				if (descriptionFieldOwner.hasOrderByClause())
+					select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
+				sql = select.toStatementString();
+				PersistenceMetadataCache.getInstance().put(descriptionFieldOwner, sql);
+			} else {
+				for (DescriptionColumn descriptionColumn : descriptionFieldOwner.getPrimaryKeys()) {
+					params.add(new NamedParameter("P" + descriptionColumn.getReferencedColumnName(), columnKeyTarget
+							.get(descriptionColumn.getReferencedColumnName())));
+				}
+			}
+
+			result = session.createQuery(sql).setParameters(params.toArray(new NamedParameter[] {}))
 					.resultSetHandler(new ElementMapHandler(descriptionFieldOwner)).getSingleResult();
 
 		}
@@ -908,8 +945,13 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		 * valores
 		 */
 		List<NamedParameter> lstParams = new ArrayList<NamedParameter>();
-		NamedParameterParserResult resultParams = NamedParameterStatement.parse(select.toString(), null);
-		for (String keySel : resultParams.getParsedParams().keySet()) {
+		NamedParameterParserResult namedParameterParseResult = (NamedParameterParserResult) PersistenceMetadataCache
+				.getInstance().get(select.toString());
+		if (namedParameterParseResult == null) {
+			namedParameterParseResult = NamedParameterStatement.parse(select.toString(), null);
+			PersistenceMetadataCache.getInstance().put(select.toString(), namedParameterParseResult);
+		}
+		for (String keySel : namedParameterParseResult.getParsedParams().keySet()) {
 			Object value = ReflectionUtils.getFieldValueByName(owner, keySel);
 			if (value != null)
 				lstParams.add(new NamedParameter(keySel, value));
@@ -919,15 +961,15 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		 * método selectOneToLazyLoad
 		 */
 		if (FieldType.SIMPLE.equals(descFieldOwner.getFieldType())) {
-			result = getResultOneToLazyLoad(select.toString(), lstParams.toArray(), descFieldOwner.getTargetEntity()
-					.getEntityClass(), transactionCache);
+			result = getResultOneToLazyLoad(namedParameterParseResult.getParsedSql(), lstParams.toArray(),
+					descFieldOwner.getTargetEntity().getEntityClass(), transactionCache);
 		} else if (FieldType.SIMPLE == descFieldOwner.getFieldType()) {
 			/*
 			 * Se o resultado exigido for do tipo COLLECTION seleciona os dados
 			 * pelo método selectListToLazyLoad
 			 */
-			result = this.getResultListToLazyLoad(select.toString(), lstParams.toArray(), descFieldOwner
-					.getTargetEntity().getEntityClass(), transactionCache);
+			result = this.getResultListToLazyLoad(namedParameterParseResult.getParsedSql(), lstParams.toArray(),
+					descFieldOwner.getTargetEntity().getEntityClass(), transactionCache);
 		}
 		return result;
 	}
@@ -946,20 +988,30 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
 
 		if (StringUtils.isEmpty(sql)) {
-			Select select = new Select(session.getDialect());
-			select.addTableName(targetEntityCache.getTableName());
-			String tempWhere = "";
-			boolean appendOperator = false;
-			for (DescriptionColumn column : targetEntityCache.getPrimaryKeyColumns()) {
-				if (appendOperator)
-					select.and();
-				select.addCondition(column.getColumnName(), "=", ":P" + column.getColumnName());
-				params.add(new NamedParameter("P" + column.getColumnName(), columnKeyTarget.get(column.getColumnName())));
-				appendOperator = true;
+			sql = (String) PersistenceMetadataCache.getInstance().get(descriptionFieldOwner);
+			if (StringUtils.isEmpty(sql)) {
+				Select select = new Select(session.getDialect());
+				select.addTableName(targetEntityCache.getTableName());
+				String tempWhere = "";
+				boolean appendOperator = false;
+				for (DescriptionColumn column : targetEntityCache.getPrimaryKeyColumns()) {
+					if (appendOperator)
+						select.and();
+					select.addCondition(column.getColumnName(), "=", ":P" + column.getColumnName());
+					params.add(new NamedParameter("P" + column.getColumnName(), columnKeyTarget.get(column
+							.getColumnName())));
+					appendOperator = true;
+				}
+				if (descriptionFieldOwner.hasOrderByClause())
+					select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
+				sql = select.toStatementString();
+				PersistenceMetadataCache.getInstance().put(descriptionFieldOwner, sql);
+			} else {
+				for (DescriptionColumn column : targetEntityCache.getPrimaryKeyColumns()) {
+					params.add(new NamedParameter("P" + column.getColumnName(), columnKeyTarget.get(column
+							.getColumnName())));
+				}
 			}
-			if (descriptionFieldOwner.hasOrderByClause())
-				select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
-			sql = select.toStatementString();
 		} else {
 			NamedParameterParserResult parserResult = NamedParameterStatement.parse(sql, null);
 			for (NamedParameter parameter : parserResult.getNamedParameters()) {
@@ -982,8 +1034,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		/*
 		 * Seleciona os dados
 		 */
-		result = getResultOneToLazyLoad(sql, params.toArray(new NamedParameter[] {}),
-				descriptionFieldOwner.getTargetEntity().getEntityClass(), transactionCache);
+		result = getResultOneToLazyLoad(sql, params.toArray(new NamedParameter[] {}), descriptionFieldOwner
+				.getTargetEntity().getEntityClass(), transactionCache);
 		return result;
 	}
 
@@ -1063,25 +1115,34 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
 
 		if (StringUtils.isEmpty(sql)) {
+			sql = (String) PersistenceMetadataCache.getInstance().get(descriptionFieldOwner);
+			if (StringUtils.isEmpty(sql)) {
+				Select select = new Select(session.getDialect());
+				select.addTableName(mappedByEntityCache.getTableName(), "TAB");
 
-			Select select = new Select(session.getDialect());
-			select.addTableName(mappedByEntityCache.getTableName(), "TAB");
-
-			boolean appendOperator = false;
-			if (mappedByDescriptionColumn != null) {
-				for (DescriptionColumn descriptionColumn : mappedByDescriptionColumn) {
-					if (appendOperator)
-						select.and();
-					select.addCondition("TAB." + descriptionColumn.getColumnName(), "=",
-							":P" + descriptionColumn.getColumnName());
-					params.add(new NamedParameter("P" + descriptionColumn.getColumnName(), columnKeyTarget
-							.get(descriptionColumn.getReferencedColumnName())));
-					appendOperator = true;
+				boolean appendOperator = false;
+				if (mappedByDescriptionColumn != null) {
+					for (DescriptionColumn descriptionColumn : mappedByDescriptionColumn) {
+						if (appendOperator)
+							select.and();
+						select.addCondition("TAB." + descriptionColumn.getColumnName(), "=",
+								":P" + descriptionColumn.getColumnName());
+						params.add(new NamedParameter("P" + descriptionColumn.getColumnName(), columnKeyTarget
+								.get(descriptionColumn.getReferencedColumnName())));
+						appendOperator = true;
+					}
+				}
+				if (descriptionFieldOwner.hasOrderByClause())
+					select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
+				sql = select.toStatementString();
+			} else {
+				if (mappedByDescriptionColumn != null) {
+					for (DescriptionColumn descriptionColumn : mappedByDescriptionColumn) {
+						params.add(new NamedParameter("P" + descriptionColumn.getColumnName(), columnKeyTarget
+								.get(descriptionColumn.getReferencedColumnName())));
+					}
 				}
 			}
-			if (descriptionFieldOwner.hasOrderByClause())
-				select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
-			sql = select.toStatementString();
 		} else {
 			NamedParameterParserResult parserResult = NamedParameterStatement.parse(sql, null);
 			for (NamedParameter parameter : parserResult.getNamedParameters()) {
@@ -1121,11 +1182,19 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + resultClass.getName()
 						+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 			}
-			SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer(session);
-			analyzer.analyze(sql, resultClass);
-			handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(),
-					analyzer.getColumnAliases(), transactionCache, false, null, firstResult, maxResults);
-			sql = analyzer.getParsedSQL();
+
+			SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance()
+					.get(sql);
+			if (analyzerResult == null) {
+				analyzerResult = new SQLQueryAnalyzer(session).analyze(sql, resultClass);
+				PersistenceMetadataCache.getInstance().put(sql, analyzerResult);
+			}
+
+			handler = session
+					.createNewEntityHandler(resultClass, analyzerResult.getExpressions(),
+							analyzerResult.getColumnAliases(), transactionCache, false, null, firstResult, maxResults,
+							readOnly);
+			sql = analyzerResult.getParsedSql();
 		}
 
 		List result = (List) session.getRunner().query(session.getConnection(), sql, handler, namedParameter, showSql,
@@ -1152,10 +1221,16 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 							+ resultClass.getName()
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 				}
-				SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer(session);
-				analyzer.analyze(sql, resultClass);
-				handler = session.createNewEntityHandler(resultClass, analyzer.getExpressions(),
-						analyzer.getColumnAliases(), transactionCache, false, null, firstResult, maxResults);
+
+				SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance()
+						.get(sql);
+				if (analyzerResult == null) {
+					analyzerResult = new SQLQueryAnalyzer(session).analyze(sql, resultClass);
+					PersistenceMetadataCache.getInstance().put(sql, analyzerResult);
+				}
+				sql = analyzerResult.getParsedSql();
+				handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressions(),
+						analyzerResult.getColumnAliases(), transactionCache, false, null, firstResult, maxResults, readOnly);
 			}
 
 			result = (List) session.getRunner().query(session.getConnection(), sql, handler, parameter, showSql,
@@ -1237,8 +1312,13 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
 		EntityCache entityCache = session.getEntityCacheManager().getEntityCache(getResultClass());
 		ResultSetHandler handler;
-		SQLQueryAnalyzer analyzer = new SQLQueryAnalyzer(session);
-		analyzer.analyze(sql, getResultClass());
+
+		SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance()
+				.get(sql);
+		if (analyzerResult == null) {
+			analyzerResult = new SQLQueryAnalyzer(session).analyze(sql, getResultClass());
+			PersistenceMetadataCache.getInstance().put(sql, analyzerResult);
+		}
 
 		SQLCache transactionCache = new SQLCache(DEFAULT_CACHE_SIZE);
 		try {
@@ -1251,21 +1331,21 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta. SQL-> "
 							+ sql);
 				}
-				handler = session.createNewEntityHandler(getResultClass(), analyzer.getExpressions(),
-						analyzer.getColumnAliases(), transactionCache, allowDuplicateObjects, null, firstResult,
-						maxResults);
+				handler = session.createNewEntityHandler(getResultClass(), analyzerResult.getExpressions(),
+						analyzerResult.getColumnAliases(), transactionCache, allowDuplicateObjects, null, firstResult,
+						maxResults, readOnly);
 			}
 
 			if (this.parameters.size() > 0)
-				result = session.getRunner().queryWithResultSet(session.getConnection(), analyzer.getParsedSQL(),
+				result = session.getRunner().queryWithResultSet(session.getConnection(), analyzerResult.getParsedSql(),
 						handler, parameters.values().toArray(), showSql, formatSql, timeOut, session.getListeners(),
 						session.clientId());
 			else if (this.namedParameters.size() > 0)
-				result = session.getRunner().queryWithResultSet(session.getConnection(), analyzer.getParsedSQL(),
+				result = session.getRunner().queryWithResultSet(session.getConnection(), analyzerResult.getParsedSql(),
 						handler, namedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql,
 						timeOut, session.getListeners(), session.clientId());
 			else
-				result = session.getRunner().queryWithResultSet(session.getConnection(), analyzer.getParsedSQL(),
+				result = session.getRunner().queryWithResultSet(session.getConnection(), analyzerResult.getParsedSql(),
 						handler, new NamedParameterParserResult[] {}, showSql, formatSql, timeOut,
 						session.getListeners(), session.clientId());
 
@@ -1287,9 +1367,9 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	@Override
 	public TypedSQLQuery<T> setParameters(Object parameters) throws Exception {
-		if (parameters==null)
+		if (parameters == null)
 			return this;
-		
+
 		if (parameters instanceof NamedParameter[]) {
 			setParameters((NamedParameter[]) parameters);
 		} else if (parameters instanceof Map) {
@@ -1340,6 +1420,12 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	@Override
 	public TypedSQLQuery<T> setFirstResult(int firstResult) {
 		this.firstResult = firstResult;
+		return this;
+	}
+
+	@Override
+	public TypedSQLQuery setReadOnly(boolean readOnlyObjects) {
+		this.readOnly = readOnlyObjects;
 		return this;
 	}
 

@@ -48,10 +48,11 @@ public class EntityHandler implements ResultSetHandler {
 	protected LazyLoadFactory proxyFactory;
 	protected boolean allowDuplicateObjects = false;
 	protected int firstResult, maxResults;
+	protected boolean readOnly = false;
 
 	public EntityHandler(LazyLoadFactory proxyFactory, Class<?> targetClass, EntityCacheManager entityCacheManager,
 			Map<String, String> expressions, Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases,
-			SQLSession session, Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults) {
+			SQLSession session, Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults, boolean readOnly) {
 		this.resultClass = targetClass;
 		this.session = session;
 		this.expressions = expressions;
@@ -61,13 +62,14 @@ public class EntityHandler implements ResultSetHandler {
 		this.columnAliases = columnAliases;
 		this.allowDuplicateObjects = allowDuplicateObjects;
 		this.firstResult = firstResult;
+		this.readOnly = readOnly;
 	}
 
 	public EntityHandler(LazyLoadFactory proxyFactory, Class<?> targetClazz, EntityCacheManager entityCacheManager,
 			SQLSession session, Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults) {
 		this(proxyFactory, targetClazz, entityCacheManager, new LinkedHashMap<String, String>(),
 				new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String>>(), session, transactionCache,
-				allowDuplicateObjects, firstResult, maxResults);
+				allowDuplicateObjects, firstResult, maxResults, false);
 	}
 
 	public Object handle(ResultSet resultSet) throws Exception {
@@ -173,7 +175,7 @@ public class EntityHandler implements ResultSetHandler {
 			}
 		}
 
-		entityManaged = session.getPersistenceContext().addEntityManaged(mainObject, false, false);
+		entityManaged = session.getPersistenceContext().addEntityManaged(mainObject, readOnly, false);
 
 		/*
 		 * Processa as expressões para gerar os fields do objeto

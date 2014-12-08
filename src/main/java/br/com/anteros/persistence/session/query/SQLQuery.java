@@ -50,6 +50,8 @@ public interface SQLQuery {
 	SQLQuery resultSetHandler(ResultSetHandler handler);
 
 	SQLQuery namedQuery(String name);
+	
+	SQLQuery setReadOnly(boolean readOnlyObjects);
 
 	SQLQuery clear();
 

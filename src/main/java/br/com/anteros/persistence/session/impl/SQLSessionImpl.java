@@ -314,10 +314,10 @@ public class SQLSessionImpl implements SQLSession {
 
 	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String, String> expressions,
 			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, Cache transactionCache,
-			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults) throws Exception {
+			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly) throws Exception {
 		errorIfClosed();
 		EntityHandler handler = new EntityHandler(lazyLoadFactory, resultClass, getEntityCacheManager(), expressions, columnAliases, this,
-				transactionCache, allowDuplicateObjects, firstResult, maxResults);
+				transactionCache, allowDuplicateObjects, firstResult, maxResults, readOnly);
 		handler.setObjectToRefresh(objectToRefresh);
 		return handler;
 	}
@@ -438,7 +438,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object id) throws Exception{
+	public <T> T find(Class<T> entityClass, Object id, boolean readOnly) throws Exception{
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache==null){
@@ -448,59 +448,61 @@ public class SQLSessionImpl implements SQLSession {
 			if (!((Identifier<?>)id).getClazz().equals(entityClass)){
 				throw new SQLSessionException("Objeto ID é do tipo Identifier porém de uma classe diferente da classe "+entityClass.getName()); 
 			} else
-				return find((Identifier<T>)id);
+				return find((Identifier<T>)id, readOnly);
 		}
 		Identifier<T> identifier = Identifier.create(this, entityClass);
 		identifier.setIdIfPossible(id);
-		return find(identifier);
+		return find(identifier, readOnly);
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object id, Map<String, Object> properties) throws Exception{
+	public <T> T find(Class<T> entityClass, Object id, Map<String, Object> properties, boolean readOnly) throws Exception{
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache==null){
 			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. "+entityClass.getName());
 		}
-		T result = find(entityClass,id);
+		T result = find(entityClass,id, readOnly);
 		entityCache.setObjectValues(result, properties);
 		return null;
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object id, LockModeType lockMode) throws Exception{
+	public <T> T find(Class<T> entityClass, Object id, LockModeType lockMode, boolean readOnly) throws Exception{
 		errorIfClosed();
 		throw new Exception("Método não implementado. Falta implementar Lock.");
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object id, LockModeType lockMode, Map<String, Object> properties) throws Exception{
+	public <T> T find(Class<T> entityClass, Object id, LockModeType lockMode, Map<String, Object> properties, boolean readOnly) throws Exception{
 		errorIfClosed();
 		throw new Exception("Método não implementado. Falta implementar Lock.");
 	}
 
 	@Override
-	public <T> T find(Identifier<T> id) throws Exception {
+	public <T> T find(Identifier<T> id, boolean readOnly) throws Exception {
 		errorIfClosed();
-		return (T) createQuery("").identifier(id).getSingleResult();
+		SQLQuery query = createQuery("");
+		query.setReadOnly(readOnly);
+		return (T) query.identifier(id).getSingleResult();
 	}
 
 	@Override
-	public <T> T find(Identifier<T> id, LockModeType lockMode) throws Exception{
+	public <T> T find(Identifier<T> id, LockModeType lockMode, boolean readOnly) throws Exception{
 		errorIfClosed();
 		throw new Exception("Método não implementado. Falta implementar Lock.");
 	}
 
 	@Override
-	public <T> T find(Identifier<T> id, Map<String, Object> properties) throws Exception{
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, boolean readOnly) throws Exception{
 		errorIfClosed();
-		T result = find(id);
+		T result = find(id, readOnly);
 		id.getEntityCache().setObjectValues(result,properties);
 		return null;
 	}
 
 	@Override
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode) throws Exception{
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode, boolean readOnly) throws Exception{
 		throw new Exception("Método não implementado. Falta implementar Lock.");
 	}
 
@@ -692,5 +694,48 @@ public class SQLSessionImpl implements SQLSession {
 	public StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name, Class<?> resultClass,
 			Object[] parameters) throws Exception{
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public <T> T find(Class<T> entityClass, Object primaryKey) throws Exception {
+		return find(entityClass, primaryKey, false);
+	}
+
+	@Override
+	public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties)
+			throws Exception {
+		return find(entityClass,primaryKey,properties,false);
+	}
+
+	@Override
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode)
+			throws Exception {
+		return find(entityClass,primaryKey,lockMode,false);
+	}
+
+	@Override
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties) throws Exception {
+		return find(entityClass,primaryKey,lockMode,properties,false);
+	}
+
+	@Override
+	public <T> T find(Identifier<T> id) throws Exception {
+		return find(id,false);
+	}
+
+	@Override
+	public <T> T find(Identifier<T> id, LockModeType lockMode) throws Exception {
+		return find(id,lockMode,false);
+	}
+
+	@Override
+	public <T> T find(Identifier<T> id, Map<String, Object> properties) throws Exception {
+		return find(id,properties,false);
+	}
+
+	@Override
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode)
+			throws Exception {
+		return find(id,properties,lockMode,false);
 	}
 }

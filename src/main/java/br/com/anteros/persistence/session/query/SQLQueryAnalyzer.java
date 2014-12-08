@@ -18,7 +18,6 @@ package br.com.anteros.persistence.session.query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -64,10 +63,12 @@ public class SQLQueryAnalyzer {
 		this.session = session;
 	}
 
-	public void analyze(String sql, Class<?> resultClass) throws SQLQueryAnalyzerException {
+	public SQLQueryAnalyzerResult analyze(String sql, Class<?> resultClass) throws SQLQueryAnalyzerException {
 		this.sql = sql;
 		this.resultClass = resultClass;
 		loadAliases();
+		SQLQueryAnalyzerResult result = new  SQLQueryAnalyzerResult(getParsedSQL(),aliases,expressions,columnAliases);
+		return result;
 	}
 
 	protected void loadAliases() throws SQLQueryAnalyzerException {
@@ -819,4 +820,5 @@ public class SQLQueryAnalyzer {
 		}
 		return adjustedName;
 	}
+	
 }

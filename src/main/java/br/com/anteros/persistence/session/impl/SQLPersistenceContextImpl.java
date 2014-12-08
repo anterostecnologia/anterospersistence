@@ -60,10 +60,13 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 			EntityCache entityCache = entityCacheManager.getEntityCache(value.getClass());
 			key = new EntityManaged(entityCache);
 			key.setStatus(readOnly ? EntityStatus.READ_ONLY : EntityStatus.MANAGED);
-			key.setFieldsForUpdate(entityCache.getAllFieldNames());
 			key.setNewEntity(newEntity);
-			for (DescriptionField descriptionField : entityCache.getDescriptionFields())
-				key.addLastValue(descriptionField.getFieldEntityValue(session, value));
+
+			if (!readOnly) {
+				key.setFieldsForUpdate(entityCache.getAllFieldNames());
+				for (DescriptionField descriptionField : entityCache.getDescriptionFields())
+					key.addLastValue(descriptionField.getFieldEntityValue(session, value));
+			}
 			entities.put(key, new WeakReference<Object>(value));
 			LOG.debug("Entity managed created");
 			// }

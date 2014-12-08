@@ -30,6 +30,8 @@ public interface TypedSQLQuery<X> extends SQLQuery {
 	TypedSQLQuery<X> namedQuery(String name);
 
 	TypedSQLQuery<X> clear();
+	
+	TypedSQLQuery<X> setReadOnly(boolean readOnlyObjects);
 
 	TypedSQLQuery<X> setParameters(Object parameters) throws Exception;
 
