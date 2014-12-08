@@ -11,6 +11,7 @@ import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityManaged;
 import br.com.anteros.persistence.metadata.FieldEntityValue;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
+import br.com.anteros.persistence.metadata.type.EntityStatus;
 import br.com.anteros.persistence.proxy.AnterosProxyLob;
 import br.com.anteros.persistence.proxy.AnterosProxyObject;
 import br.com.anteros.persistence.session.SQLSession;
@@ -68,17 +69,21 @@ public class NClobLazyLoadProxy implements InvocationHandler {
 		 * tenha sido buscado id no sql) adiciona o objeto no cache
 		 */
 		if (entityManaged != null) {
-			/*
-			 * Guarda o valor da chave do objeto result na lista de oldValues
-			 */
-			FieldEntityValue value = descriptionFieldOwner.getFieldEntityValue(session, owner, target);
-			entityManaged.addOriginalValue(value);
-			entityManaged.addLastValue(value);
-			/*
-			 * Adiciona o campo na lista de campos que poderão ser alterados. Se
-			 * o campo não for buscado no select não poderá ser alterado.
-			 */
-			entityManaged.getFieldsForUpdate().add(descriptionFieldOwner.getField().getName());
+			if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
+				/*
+				 * Guarda o valor da chave do objeto result na lista de
+				 * oldValues
+				 */
+				FieldEntityValue value = descriptionFieldOwner.getFieldEntityValue(session, owner, target);
+				entityManaged.addOriginalValue(value);
+				entityManaged.addLastValue(value);
+				/*
+				 * Adiciona o campo na lista de campos que poderão ser
+				 * alterados. Se o campo não for buscado no select não poderá
+				 * ser alterado.
+				 */
+				entityManaged.getFieldsForUpdate().add(descriptionFieldOwner.getField().getName());
+			}
 		}
 
 		initialized = true;

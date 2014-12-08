@@ -26,6 +26,7 @@ import br.com.anteros.persistence.metadata.EntityManaged;
 import br.com.anteros.persistence.metadata.FieldEntityValue;
 import br.com.anteros.persistence.metadata.annotation.type.ScopeType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
+import br.com.anteros.persistence.metadata.type.EntityStatus;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
 
@@ -42,8 +43,8 @@ public class JavassistLazyLoadInterceptor implements MethodHandler {
 	private Boolean initialized = Boolean.FALSE;
 	private Boolean processing = Boolean.FALSE;
 
-	public JavassistLazyLoadInterceptor(SQLSession session, EntityCache entityCache, Map<String, Object> columKeyValues,
-			Cache transactionCache, Object owner, DescriptionField descriptionField) {
+	public JavassistLazyLoadInterceptor(SQLSession session, EntityCache entityCache,
+			Map<String, Object> columKeyValues, Cache transactionCache, Object owner, DescriptionField descriptionField) {
 		this.session = session;
 		this.entityCache = entityCache;
 		this.columnKeyValuesTarget = columKeyValues;
@@ -55,21 +56,20 @@ public class JavassistLazyLoadInterceptor implements MethodHandler {
 	public Object invoke(final Object proxy, final Method thisMethod, final Method proceed, final Object[] args)
 			throws Throwable {
 		if (this.constructed) {
-			
-			if ("isInitialized".equals(thisMethod.getName())){
+
+			if ("isInitialized".equals(thisMethod.getName())) {
 				return isInitialized();
 			}
-			
+
 			if ("initialize".equals(thisMethod.getName())) {
 				getTargetObject();
 				return null;
 			}
-			
-			if ("initializeAndReturnObject".equals(thisMethod.getName())){
+
+			if ("initializeAndReturnObject".equals(thisMethod.getName())) {
 				return initializeAndReturnObject();
 			}
-			
-			
+
 			Object target = getTargetObject();
 			final Object returnValue;
 			try {
@@ -132,19 +132,21 @@ public class JavassistLazyLoadInterceptor implements MethodHandler {
 				 * que tenha sido buscado id no sql) adiciona o objeto no cache
 				 */
 				if (entityManaged != null) {
-					/*
-					 * Guarda o valor da chave do objeto result na lista de
-					 * oldValues
-					 */
-					FieldEntityValue value = descriptionFieldOwner.getFieldEntityValue(session, owner, target);
-					entityManaged.addOriginalValue(value);
-					entityManaged.addLastValue(value);
-					/*
-					 * Adiciona o campo na lista de campos que poderão ser
-					 * alterados. Se o campo não for buscado no select não
-					 * poderá ser alterado.
-					 */
-					entityManaged.getFieldsForUpdate().add(descriptionFieldOwner.getField().getName());
+					if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
+						/*
+						 * Guarda o valor da chave do objeto result na lista de
+						 * oldValues
+						 */
+						FieldEntityValue value = descriptionFieldOwner.getFieldEntityValue(session, owner, target);
+						entityManaged.addOriginalValue(value);
+						entityManaged.addLastValue(value);
+						/*
+						 * Adiciona o campo na lista de campos que poderão ser
+						 * alterados. Se o campo não for buscado no select não
+						 * poderá ser alterado.
+						 */
+						entityManaged.getFieldsForUpdate().add(descriptionFieldOwner.getField().getName());
+					}
 				}
 
 			} finally {

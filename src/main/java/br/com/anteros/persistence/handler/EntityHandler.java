@@ -23,6 +23,7 @@ import br.com.anteros.persistence.metadata.annotation.type.FetchType;
 import br.com.anteros.persistence.metadata.annotation.type.ScopeType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
+import br.com.anteros.persistence.metadata.type.EntityStatus;
 import br.com.anteros.persistence.proxy.LazyLoadFactory;
 import br.com.anteros.persistence.proxy.collection.DefaultSQLList;
 import br.com.anteros.persistence.proxy.collection.DefaultSQLSet;
@@ -52,7 +53,8 @@ public class EntityHandler implements ResultSetHandler {
 
 	public EntityHandler(LazyLoadFactory proxyFactory, Class<?> targetClass, EntityCacheManager entityCacheManager,
 			Map<String, String> expressions, Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases,
-			SQLSession session, Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults, boolean readOnly) {
+			SQLSession session, Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults,
+			boolean readOnly) {
 		this.resultClass = targetClass;
 		this.session = session;
 		this.expressions = expressions;
@@ -273,18 +275,22 @@ public class EntityHandler implements ResultSetHandler {
 			 * descriptionField.setObjectValue(targetObject, mainObject); } else
 			 */
 			descriptionField.setObjectValue(targetObject, value);
-			/*
-			 * Guarda o valor na lista de valores anteriores
-			 */
-			FieldEntityValue fieldEntityValue = descriptionField.getSimpleColumn().getFieldEntityValue(targetObject);
-			entityManaged.addOriginalValue(fieldEntityValue);
-			entityManaged.addLastValue(fieldEntityValue);
+			if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
+				/*
+				 * Guarda o valor na lista de valores anteriores
+				 */
+				FieldEntityValue fieldEntityValue = descriptionField.getSimpleColumn()
+						.getFieldEntityValue(targetObject);
+				entityManaged.addOriginalValue(fieldEntityValue);
+				entityManaged.addLastValue(fieldEntityValue);
 
-			/*
-			 * Adiciona o campo na lista de campos que poderão ser alterados. Se
-			 * o campo não for buscado no select não poderá ser alterado.
-			 */
-			entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
+				/*
+				 * Adiciona o campo na lista de campos que poderão ser
+				 * alterados. Se o campo não for buscado no select não poderá
+				 * ser alterado.
+				 */
+				entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
+			}
 
 			/*
 			 * Retorna o objeto com a expressão processada
@@ -614,8 +620,7 @@ public class EntityHandler implements ResultSetHandler {
 						process = false;
 					else if (descriptionField.isCollection() || descriptionField.isJoinTable()) {
 						process = true;
-					}
-					else if (descriptionField.isRelationShip()) {
+					} else if (descriptionField.isRelationShip()) {
 						/*
 						 * Processa se a chave estiver incompleta
 						 */
@@ -738,21 +743,24 @@ public class EntityHandler implements ResultSetHandler {
 							}
 
 							descriptionField.getField().set(targetObject, result);
-							FieldEntityValue fieldEntityValue = descriptionField.getFieldEntityValue(session,
-									targetObject);
-							entityManaged.addOriginalValue(fieldEntityValue);
-							entityManaged.addLastValue(fieldEntityValue);
-							entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
+							if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
+								FieldEntityValue fieldEntityValue = descriptionField.getFieldEntityValue(session,
+										targetObject);
+								entityManaged.addOriginalValue(fieldEntityValue);
+								entityManaged.addLastValue(fieldEntityValue);
+								entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
+							}
 						}
 					} else {
 						Object newObject = proxyFactory.createProxy(session, targetObject, descriptionField,
 								targetEntityCache, columnKeyValue, transactionCache);
 						descriptionField.getField().set(targetObject, newObject);
 
-						FieldEntityValue value = descriptionField.getFieldEntityValue(session,
-								targetObject);
-						entityManaged.addOriginalValue(value);
-						entityManaged.addLastValue(value);
+						if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
+							FieldEntityValue value = descriptionField.getFieldEntityValue(session, targetObject);
+							entityManaged.addOriginalValue(value);
+							entityManaged.addLastValue(value);
+						}
 					}
 				}
 			}
