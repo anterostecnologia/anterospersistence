@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -29,6 +30,7 @@ import br.com.anteros.persistence.proxy.collection.DefaultSQLList;
 import br.com.anteros.persistence.proxy.collection.DefaultSQLSet;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
+import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
 import br.com.anteros.persistence.util.AnterosPersistenceHelper;
 
@@ -50,6 +52,7 @@ public class EntityHandler implements ResultSetHandler {
 	protected boolean allowDuplicateObjects = false;
 	protected int firstResult, maxResults;
 	protected boolean readOnly = false;
+	protected Map<Object,String> aliasesCache = new HashMap<Object, String>();
 
 	public EntityHandler(LazyLoadFactory proxyFactory, Class<?> targetClass, EntityCacheManager entityCacheManager,
 			Map<String, String> expressions, Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases,
@@ -458,14 +461,15 @@ public class EntityHandler implements ResultSetHandler {
 	}
 
 	private String getAliasColumnName(EntityCache sourceEntityCache, String columnName) {
+		String result = aliasesCache.get(sourceEntityCache.getEntityClass().getName()+":"+columnName);
+		if (result !=null)
+			return result;
 		for (SQLQueryAnalyserAlias queryAnalyserAlias : columnAliases.keySet()) {
 			if (queryAnalyserAlias.getEntity().equals(sourceEntityCache)
 					|| (ReflectionUtils.isExtendsClass(queryAnalyserAlias.getEntity().getEntityClass(),
 							sourceEntityCache.getEntityClass()))) {
 				String alias = null;
-				Iterator<String> it = columnAliases.get(queryAnalyserAlias).keySet().iterator();
-				while (it.hasNext()) {
-					String column = it.next();
+				for (String column : columnAliases.get(queryAnalyserAlias).keySet()) {
 					if (column.equalsIgnoreCase(columnName)) {
 						alias = columnAliases.get(queryAnalyserAlias).get(column);
 						break;
@@ -477,23 +481,26 @@ public class EntityHandler implements ResultSetHandler {
 					if (splitAlias.length > 0)
 						alias = splitAlias[splitAlias.length - 1];
 				}
-				return (alias == null ? columnName : alias);
+				result = (alias == null ? columnName : alias);
+				aliasesCache.put(sourceEntityCache.getEntityClass().getName()+":"+columnName,result);
+				return result;
 			}
 		}
 		return columnName;
 	}
+	
 
 	private String getAliasColumnName(String sourceAlias, String columnName) {
+		String result = aliasesCache.get(sourceAlias+":"+columnName);
+		if (result !=null)
+			return result;
 		for (SQLQueryAnalyserAlias queryAnalyserAlias : columnAliases.keySet()) {
 			if (queryAnalyserAlias.getAlias().equals(sourceAlias)) {
 				String alias = null;
-				Iterator<String> it = columnAliases.get(queryAnalyserAlias).keySet().iterator();
-				while (it.hasNext()) {
-					String column = it.next();
+				for (String column : columnAliases.get(queryAnalyserAlias).keySet()){
 					if (column.equalsIgnoreCase(columnName)) {
 						alias = columnAliases.get(queryAnalyserAlias).get(column);
 						break;
-
 					}
 				}
 				if (alias != null) {
@@ -501,7 +508,9 @@ public class EntityHandler implements ResultSetHandler {
 					if (splitAlias.length > 1)
 						alias = splitAlias[1];
 				}
-				return (alias == null ? columnName : alias);
+				result = (alias == null ? columnName : alias);
+				aliasesCache.put(sourceAlias+":"+columnName,result);
+				return result;
 			}
 		}
 		return columnName;
@@ -738,7 +747,9 @@ public class EntityHandler implements ResultSetHandler {
 								fieldentEntityCache.setPrimaryKeyValue(result, assignedValue);
 								result = assignedValue;
 							} else {
-								result = session.createQuery("").loadData(targetEntityCache, targetObject,
+								SQLQuery query = session.createQuery("");
+								query.setReadOnly(readOnly);
+								result = query.loadData(targetEntityCache, targetObject,
 										descriptionField, columnKeyValue, transactionCache);
 							}
 
@@ -768,11 +779,17 @@ public class EntityHandler implements ResultSetHandler {
 	}
 
 	protected boolean existsExpressionForProcessing(EntityCache entityCache, String fieldName) {
+		String result = aliasesCache.get(entityCache.getEntityClass().getName()+":"+fieldName);
+		if (result!=null)
+			return true;
+		
 		for (String expression : expressions.keySet()) {
 			String[] tempExpression = expression.split("\\.");
 			if (tempExpression.length > 0) {
-				if (fieldName.equals(tempExpression[0]))
+				if (fieldName.equals(tempExpression[0])){
+					aliasesCache.put(entityCache.getEntityClass().getName()+":"+fieldName, "S");
 					return true;
+				}
 			}
 		}
 		return false;

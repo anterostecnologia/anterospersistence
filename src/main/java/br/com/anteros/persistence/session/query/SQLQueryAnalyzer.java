@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import br.com.anteros.core.utils.CompactHashSet;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
@@ -53,7 +54,7 @@ public class SQLQueryAnalyzer {
 	private SQLSession session;
 	private Class<?> resultClass;
 	private Set<SQLQueryAnalyserAlias> aliases;
-	private Set<SQLQueryAnalyserAlias> aliasesTemporary = new LinkedHashSet<SQLQueryAnalyserAlias>();
+	private Set<SQLQueryAnalyserAlias> aliasesTemporary = new CompactHashSet<SQLQueryAnalyserAlias>();
 	private Map<String, String> expressions;
 	private Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases = new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String>>();
 	private int numberOfColumn = 0;

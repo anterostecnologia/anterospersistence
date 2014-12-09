@@ -129,9 +129,13 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			}
 		}
 
-		NamedParameterParserResult parse = NamedParameterStatement.parse(sql, null);
+		NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache.getInstance().get("NamedParameters:"+sql);
+		if (parserResult == null) {
+			parserResult = NamedParameterStatement.parse(sql, null);
+			PersistenceMetadataCache.getInstance().put("NamedParameters:"+sql, parserResult);
+		}
 		paramCount = 0;
-		for (NamedParameter namedParameter : parse.getNamedParameters()) {
+		for (NamedParameter namedParameter : parserResult.getNamedParameters()) {
 			paramCount++;
 			namedParameters.put(paramCount, namedParameter);
 		}
@@ -1230,7 +1234,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				}
 				sql = analyzerResult.getParsedSql();
 				handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressions(),
-						analyzerResult.getColumnAliases(), transactionCache, false, null, firstResult, maxResults, readOnly);
+						analyzerResult.getColumnAliases(), transactionCache, false, null, firstResult, maxResults,
+						readOnly);
 			}
 
 			result = (List) session.getRunner().query(session.getConnection(), sql, handler, parameter, showSql,

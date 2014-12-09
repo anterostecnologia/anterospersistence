@@ -199,13 +199,14 @@ public class EntityCache {
 	}
 
 	public List<DescriptionColumn> getPrimaryKeyColumns() {
-		List<DescriptionColumn> result = new ArrayList<DescriptionColumn>();
-		for (DescriptionColumn column : columns) {
-			if (column.isPrimaryKey()) {
-				result.add(column);
-			}
-		}
-		return result;
+//		List<DescriptionColumn> result = new ArrayList<DescriptionColumn>();
+//		for (DescriptionColumn column : columns) {
+//			if (column.isPrimaryKey()) {
+//				result.add(column);
+//			}
+//		}
+//		return result;
+		return primaryKey;
 	}
 
 	public boolean hasDiscriminatorValue() {
