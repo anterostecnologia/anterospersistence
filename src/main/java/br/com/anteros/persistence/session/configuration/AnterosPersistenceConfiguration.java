@@ -27,6 +27,8 @@ import br.com.anteros.core.configuration.exception.AnterosConfigurationException
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.ResourceUtils;
 import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
+import br.com.anteros.persistence.metadata.accessor.impl.PropertyAcessorFactoryImpl;
 import br.com.anteros.persistence.metadata.configuration.ModelConfiguration;
 import br.com.anteros.persistence.sql.datasource.JDBCDataSource;
 import br.com.anteros.persistence.sql.datasource.JNDIDataSourceFactory;
@@ -107,6 +109,11 @@ public class AnterosPersistenceConfiguration extends AbstractPersistenceConfigur
 			}
 		}
 		return null;
+	}
+
+	@Override
+	public PropertyAccessorFactory getPropertyAccessorFactory() {
+		return new PropertyAcessorFactoryImpl();
 	}
 
 }

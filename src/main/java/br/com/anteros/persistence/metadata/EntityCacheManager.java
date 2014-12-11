@@ -35,6 +35,7 @@ import java.util.Set;
 
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
 import br.com.anteros.persistence.metadata.annotation.BooleanValue;
 import br.com.anteros.persistence.metadata.annotation.Cache;
 import br.com.anteros.persistence.metadata.annotation.Cascade;
@@ -130,6 +131,7 @@ public class EntityCacheManager {
 	private Map<Class<? extends Serializable>, EntityCache> entities = new LinkedHashMap<Class<? extends Serializable>, EntityCache>();
 	private boolean loaded = false;
 	private boolean validate = true;
+	private PropertyAccessorFactory propertyAccessorFactory;
 
 	public EntityCacheManager() {
 	}
@@ -139,7 +141,8 @@ public class EntityCacheManager {
 	 * 
 	 * param clazzes throws Exception
 	 */
-	public void load(List<Class<? extends Serializable>> clazzes, boolean validate) throws Exception {
+	public void load(List<Class<? extends Serializable>> clazzes, boolean validate, PropertyAccessorFactory propertyAccessorFactory) throws Exception {
+		this.propertyAccessorFactory = propertyAccessorFactory;
 		if (!isLoaded()) {
 			Collections.sort(clazzes, new DependencyComparator());
 
@@ -148,7 +151,7 @@ public class EntityCacheManager {
 				modelConfiguration.loadAnnotationsByClass(sourceClazz);
 			}
 			this.validate = validate;
-			load(modelConfiguration);
+			load(modelConfiguration, propertyAccessorFactory);
 		}
 	}
 
@@ -156,7 +159,8 @@ public class EntityCacheManager {
 	 * Método utilizado para ler as configurações das classes configuradas no
 	 * modelo. param modelConfiguration throws Exception
 	 */
-	public void load(ModelConfiguration modelConfiguration) throws Exception {
+	public void load(ModelConfiguration modelConfiguration, PropertyAccessorFactory propertyAccessorFactory) throws Exception {
+		this.propertyAccessorFactory = propertyAccessorFactory;
 		if (!isLoaded()) {
 
 			modelConfiguration.sortByDependency();
@@ -1435,6 +1439,8 @@ public class EntityCacheManager {
 	private void readElementCollectionConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache)
 			throws Exception {
 		DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
+		if (propertyAccessorFactory!=null)
+			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
 		descriptionField.setFetchMode(fieldConfiguration.getFetch().getMode());
 		descriptionField.setTableName(fieldConfiguration.getCollectionTable().getName());
 		descriptionField.setSchema(fieldConfiguration.getCollectionTable().getSchema());
@@ -1578,6 +1584,9 @@ public class EntityCacheManager {
 		}
 
 		DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
+		if (propertyAccessorFactory!=null)
+			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+
 		descriptionField.setFieldType(FieldType.JOIN_TABLE);
 		descriptionField.setTableName(tableName);
 		descriptionField.setComment(fieldConfiguration.getComment());
@@ -1717,6 +1726,9 @@ public class EntityCacheManager {
 			}
 
 			descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
+			if (propertyAccessorFactory!=null)
+				descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+
 			descriptionField.addDescriptionColumns(descriptionColumn);
 			descriptionField.setComment(fieldConfiguration.getComment());
 
@@ -1758,6 +1770,9 @@ public class EntityCacheManager {
 			 */
 			if (fieldConfiguration.isAnnotationPresent(ForeignKey.class)) {
 				descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
+				if (propertyAccessorFactory!=null)
+					descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+
 				descriptionField.setFieldType(FieldType.RELATIONSHIP);
 				descriptionField.setFetchType(fieldConfiguration.getForeignKey().getType());
 				descriptionField.setFetchMode(fieldConfiguration.getForeignKey().getMode());
@@ -1836,6 +1851,9 @@ public class EntityCacheManager {
 		}
 
 		DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
+		if (propertyAccessorFactory!=null)
+			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+
 		descriptionField.addDescriptionColumns(descriptionColumn);
 		descriptionField.setComment(fieldConfiguration.getComment());
 		readRemoteConfiguration(descriptionField, fieldConfiguration, entityCache);
@@ -2124,6 +2142,9 @@ public class EntityCacheManager {
 			}
 
 			DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
+			if (propertyAccessorFactory!=null)
+				descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+
 			descriptionField.setFieldType(FieldType.RELATIONSHIP);
 			descriptionField.setTargetClass(fieldConfiguration.getType());
 			descriptionField.setFetchType(fieldConfiguration.getForeignKey().getType());
@@ -2176,8 +2197,11 @@ public class EntityCacheManager {
 	}
 
 	private void readFetchConfigurations(EntityCache entityCache, FieldConfiguration fieldConfiguration)
-			throws EntityCacheException {
+			throws Exception {
 		DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
+		if (propertyAccessorFactory!=null)
+			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+
 		descriptionField.setFieldType(FieldType.RELATIONSHIP);
 		descriptionField.setFetchMode(fieldConfiguration.getFetch().getMode());
 		descriptionField.setComment(fieldConfiguration.getComment());

@@ -35,6 +35,7 @@ import br.com.anteros.persistence.metadata.EntityCacheException;
 import br.com.anteros.persistence.metadata.EntityManaged;
 import br.com.anteros.persistence.metadata.FieldEntityValue;
 import br.com.anteros.persistence.metadata.RandomAliasName;
+import br.com.anteros.persistence.metadata.accessor.PropertyAccessor;
 import br.com.anteros.persistence.metadata.annotation.type.CascadeType;
 import br.com.anteros.persistence.metadata.annotation.type.FetchMode;
 import br.com.anteros.persistence.metadata.annotation.type.FetchType;
@@ -87,6 +88,7 @@ public class DescriptionField {
 	private String[] exportColumns;
 	private String convert;
 	private String mapKeyConvert;
+	private PropertyAccessor propertyAccessor = null;
 
 	public DescriptionField(EntityCache entityCache, Field field) {
 		setField(field);
@@ -249,29 +251,33 @@ public class DescriptionField {
 	}
 
 	public Object getObjectValue(Object object) throws Exception {
-		return this.field.get(object);
+		if (propertyAccessor != null) {
+			return propertyAccessor.get(object);
+		} else {
+			return field.get(object);
+		}
 	}
 
 	public void setObjectValue(Object object, Object value) throws Exception {
 		Field field = this.getField();
 		try {
 			if ("".equals(value) && isEnumerated()) {
-				field.set(object, null);
+				setValue(object, null);
 			} else if (isEnumerated()) {
 				value = convertObjectToEnum(value);
-				field.set(object, value);
+				setValue(object, value);
 			} else if (isBoolean()) {
 				value = convertObjectToBoolean(value);
-				field.set(object, value);
+				setValue(object, value);
 			} else if (isRelationShip() || isCollectionEntity()) {
-				field.set(object, value);
+				setValue(object, value);
 			} else if ((value == null) || (value.getClass() == field.getType())) {
-				field.set(object, value);
+				setValue(object, value);
 			} else if ("".equals(value)
 					&& (ReflectionUtils.isExtendsClass(Number.class, field.getType())
 							|| (field.getType() == SQLiteDate.class) || (field.getType() == java.sql.Date.class) || (field
 							.getType() == Date.class))) {
-				field.set(object, null);
+				setValue(object, null);
 			} else if ((field.getType() == Date.class) && (value instanceof String)) {
 				setStringValueToDate(object, String.valueOf(value));
 			} else if ((field.getType() == java.sql.Date.class) && (value instanceof String)) {
@@ -280,13 +286,13 @@ public class DescriptionField {
 				if (isLob()) {
 					setBytesValueToLob(object, (byte[]) value);
 				} else if (field.getType() == String.class) {
-					field.set(object, new String((byte[]) value));
+					setValue(object, new String((byte[]) value));
 				} else
-					field.set(object, ObjectUtils.convert(value, field.getType()));
+					setValue(object, ObjectUtils.convert(value, field.getType()));
 			} else if ((value instanceof String) && (isLob())) {
 				setStringValueToLob(object, (String) value);
 			} else {
-				field.set(object, ObjectUtils.convert(value, field.getType()));
+				setValue(object, ObjectUtils.convert(value, field.getType()));
 			}
 		} catch (Exception ex) {
 			throw new EntityCacheException("Erro convertendo o valor do campo " + this.getName() + " valor=" + value
@@ -294,59 +300,66 @@ public class DescriptionField {
 		}
 	}
 
-	public void setStringValueToDateSQL(Object targetObject, String value) throws ParseException,
-			IllegalAccessException {
+	private void setValue(Object source, Object value) throws Exception {
+		if (propertyAccessor != null) {
+			propertyAccessor.set(source, value);
+		} else {
+			field.set(source, value);
+		}
+	}
+
+	public void setStringValueToDateSQL(Object targetObject, String value) throws Exception {
 		TemporalType temporalType = this.getSimpleColumn().getTemporalType();
 		if (temporalType == TemporalType.DATE) {
 			String datePattern = this.getSimpleColumn().getDatePattern() != "" ? this.getSimpleColumn()
 					.getDatePattern() : DatabaseDialect.DATE_PATTERN;
 			Date date = new SimpleDateFormat(datePattern).parse(value);
 			if (date != null)
-				field.set(targetObject, new java.sql.Date(date.getTime()));
+				setValue(targetObject, new java.sql.Date(date.getTime()));
 		} else if (temporalType == TemporalType.DATE_TIME) {
 			String dateTimePattern = !(this.getSimpleColumn().getDateTimePattern()).equals("") ? this.getSimpleColumn()
 					.getDateTimePattern() : DatabaseDialect.DATETIME_PATTERN;
 			Date date = new SimpleDateFormat(dateTimePattern).parse(value);
 			if (date != null)
-				field.set(targetObject, new java.sql.Date(date.getTime()));
+				setValue(targetObject, new java.sql.Date(date.getTime()));
 		}
 	}
 
-	public void setStringValueToDate(Object targetObject, String value) throws IllegalAccessException, ParseException {
+	public void setStringValueToDate(Object targetObject, String value) throws Exception {
 		if (value instanceof String) {
 			TemporalType temporalType = this.getSimpleColumn().getTemporalType();
 			if (temporalType == TemporalType.DATE) {
 				String datePattern = !(this.getSimpleColumn().getDatePattern()).equals("") ? this.getSimpleColumn()
 						.getDatePattern() : DatabaseDialect.DATE_PATTERN;
-				field.set(targetObject, new SimpleDateFormat(datePattern).parse(value));
+				setValue(targetObject, new SimpleDateFormat(datePattern).parse(value));
 			} else if (temporalType == TemporalType.DATE_TIME) {
 				String dateTimePattern = !("".equals(this.getSimpleColumn().getDateTimePattern())) ? this
 						.getSimpleColumn().getDateTimePattern() : DatabaseDialect.DATETIME_PATTERN;
-				field.set(targetObject, new SimpleDateFormat(dateTimePattern).parse(value));
+				setValue(targetObject, new SimpleDateFormat(dateTimePattern).parse(value));
 			}
 		}
 	}
 
-	public void setStringValueToLob(Object object, String value) throws IllegalAccessException {
+	public void setStringValueToLob(Object object, String value) throws Exception {
 		if (field.getType() == byte[].class)
-			field.set(object, ((String) value).getBytes());
+			setValue(object, ((String) value).getBytes());
 		else if (field.getType() == Byte[].class)
-			field.set(object, ObjectUtils.toByteArray(((String) value).getBytes()));
+			setValue(object, ObjectUtils.toByteArray(((String) value).getBytes()));
 		else if (field.getType() == char[].class)
-			field.set(object, ObjectUtils.toPrimitiveCharacterArray(((String) value).getBytes()));
+			setValue(object, ObjectUtils.toPrimitiveCharacterArray(((String) value).getBytes()));
 		else if (field.getType() == Character[].class)
-			field.set(object, ObjectUtils.toCharacterArray(((String) value).getBytes()));
+			setValue(object, ObjectUtils.toCharacterArray(((String) value).getBytes()));
 	}
 
-	public void setBytesValueToLob(Object targetObject, byte[] value) throws IllegalAccessException {
+	public void setBytesValueToLob(Object targetObject, byte[] value) throws Exception {
 		if (field.getType() == byte[].class)
-			field.set(targetObject, value);
+			setValue(targetObject, value);
 		else if (field.getType() == Byte[].class)
-			field.set(targetObject, ObjectUtils.toByteArray(value));
+			setValue(targetObject, ObjectUtils.toByteArray(value));
 		else if (field.getType() == char[].class)
-			field.set(targetObject, ObjectUtils.toPrimitiveCharacterArray(value));
+			setValue(targetObject, ObjectUtils.toPrimitiveCharacterArray(value));
 		else if (field.getType() == Character[].class)
-			field.set(targetObject, ObjectUtils.toCharacterArray(value));
+			setValue(targetObject, ObjectUtils.toCharacterArray(value));
 	}
 
 	public Object convertObjectToBoolean(Object value) {
@@ -1099,5 +1112,12 @@ public class DescriptionField {
 		return result;
 	}
 
-	
+	public PropertyAccessor getPropertyAccessor() {
+		return propertyAccessor;
+	}
+
+	public void setPropertyAccessor(PropertyAccessor propertyAccessor) {
+		this.propertyAccessor = propertyAccessor;
+	}
+
 }

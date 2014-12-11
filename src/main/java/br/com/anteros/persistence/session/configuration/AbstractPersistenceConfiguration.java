@@ -47,6 +47,7 @@ import br.com.anteros.core.scanner.ClassPathScanner;
 import br.com.anteros.core.utils.ResourceUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
+import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
 import br.com.anteros.persistence.metadata.annotation.Entity;
 import br.com.anteros.persistence.metadata.annotation.EnumValues;
 import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
@@ -230,9 +231,9 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 		Collections.sort(classes, new DependencyComparator());
 
 		if (modelConfiguration != null)
-			this.entityCacheManager.load(modelConfiguration);
+			this.entityCacheManager.load(modelConfiguration, getPropertyAccessorFactory());
 		else
-			this.entityCacheManager.load(classes, true);
+			this.entityCacheManager.load(classes, true, getPropertyAccessorFactory());
 		return this.entityCacheManager;
 	}
 
@@ -332,5 +333,8 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 			throw new AnterosConfigurationException("Impossível realizar a leitura do arquivo de configuração." + e);
 		}
 	}
+	
+	
+	public abstract PropertyAccessorFactory getPropertyAccessorFactory();
 
 }
