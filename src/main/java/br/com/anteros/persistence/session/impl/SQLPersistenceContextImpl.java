@@ -16,17 +16,14 @@
 
 package br.com.anteros.persistence.session.impl;
 
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
+import br.com.anteros.core.utils.AnterosWeakHashMap;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.EntityManaged;
@@ -39,7 +36,7 @@ import br.com.anteros.persistence.session.context.SQLPersistenceContext;
 
 public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 
-	private Map<EntityManaged, Reference<?>> entities = new HashMap<EntityManaged, Reference<?>>();
+	private Map<Object, EntityManaged> entities = new AnterosWeakHashMap<Object, EntityManaged>();
 	private EntityCacheManager entityCacheManager;
 	private SQLSession session;
 	private Cache cache;
@@ -53,69 +50,35 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 
 	public EntityManaged addEntityManaged(Object value, boolean readOnly, boolean newEntity) throws Exception {
 		LOG.debug("Add entity managed ");
-		EntityManaged key = getEntityManaged(value);
-		// synchronized (entities) {
-		if (key == null) {
+		EntityManaged entityManaged = getEntityManaged(value);
+		if (entityManaged == null) {
 			LOG.debug("Create new entity managed");
 			EntityCache entityCache = entityCacheManager.getEntityCache(value.getClass());
-			key = new EntityManaged(entityCache);
-			key.setStatus(readOnly ? EntityStatus.READ_ONLY : EntityStatus.MANAGED);
-			key.setNewEntity(newEntity);
+			entityManaged = new EntityManaged(entityCache);
+			entityManaged.setStatus(readOnly ? EntityStatus.READ_ONLY : EntityStatus.MANAGED);
+			entityManaged.setNewEntity(newEntity);
 
 			if (!readOnly) {
-				key.setFieldsForUpdate(entityCache.getAllFieldNames());
+				entityManaged.setFieldsForUpdate(entityCache.getAllFieldNames());
 				for (DescriptionField descriptionField : entityCache.getDescriptionFields())
-					key.addLastValue(descriptionField.getFieldEntityValue(session, value));
+					entityManaged.addLastValue(descriptionField.getFieldEntityValue(session, value));
 			}
-			entities.put(key, new WeakReference<Object>(value));
+			entities.put(value, entityManaged);
 			LOG.debug("Entity managed created");
-			// }
 		}
-		return key;
+		return entityManaged;
 	}
 
 	public EntityManaged getEntityManaged(Object key) {
-
-		EntityManaged em = null;
-		// synchronized (entities) {
-		LOG.debug("Get entity managed - total " + entities.size());
-		List<EntityManaged> keysToRemove = new ArrayList<EntityManaged>();
-		for (EntityManaged entityManaged : entities.keySet()) {
-			Reference<?> ref = entities.get(entityManaged);
-			if (ref.get() == null) {
-				LOG.debug("Add entity managed to remove ");
-				keysToRemove.add(entityManaged);
-				continue;
-			}
-			/*
-			 * Utiliza a função System.identityHashCode() para obter o hashCode
-			 * único do objeto e não chamar o hashCode() reescrito pelo usuário
-			 */
-			if (System.identityHashCode(key) == System.identityHashCode(ref.get())) {
-				em = entityManaged;
-			}
-		}
-
-		for (EntityManaged entityManaged : keysToRemove) {
-			entities.remove(entityManaged);
-		}
-		// }
-		LOG.debug("Entity managed returned");
-		return em;
+		return entities.get(key);
 	}
 
 	public void removeEntityManaged(Object key) {
-		// synchronized (entities) {
-		LOG.debug("Remove entity managed");
-		EntityManaged entity = getEntityManaged(key);
-		if (entity != null)
-			entities.remove(entity);
-		// }
+		entities.remove(key);
 	}
 
 	public boolean isExistsEntityManaged(Object key) {
-		EntityManaged entity = getEntityManaged(key);
-		return (entity != null);
+		return entities.containsKey(key);
 	}
 
 	public void onBeforeExecuteCommit(Connection connection) throws Exception {
@@ -128,14 +91,14 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 
 	public void onAfterExecuteCommit(Connection connection) throws Exception {
 		if (session.getConnection() == connection) {
-			for (EntityManaged entityManaged : entities.keySet())
+			for (EntityManaged entityManaged : entities.values())
 				entityManaged.commitValues();
 		}
 	}
 
 	public void onAfterExecuteRollback(Connection connection) throws Exception {
 		if (session.getConnection() == connection) {
-			for (EntityManaged entityManaged : entities.keySet())
+			for (EntityManaged entityManaged : entities.values())
 				entityManaged.resetValues();
 			removeNewEntities();
 		}
@@ -143,7 +106,7 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 
 	private void removeNewEntities() {
 		List<EntityManaged> entitiesToRemove = new ArrayList<EntityManaged>();
-		for (EntityManaged entityManaged : entities.keySet()) {
+		for (EntityManaged entityManaged : entities.values()) {
 			if (entityManaged.isNewEntity())
 				entitiesToRemove.add(entityManaged);
 		}
@@ -165,19 +128,16 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 
 	public EntityManaged createEmptyEntityManaged(Object key) {
 		EntityManaged em = new EntityManaged(entityCacheManager.getEntityCache(key.getClass()));
-		entities.put(em, new WeakReference<Object>(key));
+		entities.put(key, em);
 		return em;
 	}
 
 	public void evict(Class sourceClass) {
-		List<EntityManaged> keys = new ArrayList<EntityManaged>(entities.keySet());
-		Object obj = null;
-		for (EntityManaged entityManaged : keys) {
-			Reference<?> ref = entities.get(entityManaged);
-			obj = ref.get();
+		List<Object> keys = new ArrayList<Object>(entities.keySet());
+		for (Object obj : keys) {
 			if (obj != null) {
 				if (obj.getClass().equals(sourceClass)) {
-					entities.remove(entityManaged);
+					entities.remove(obj);
 				}
 			}
 		}
@@ -193,13 +153,11 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 
 	@Override
 	public void detach(Object entity) {
-		List<EntityManaged> keys = new ArrayList<EntityManaged>(entities.keySet());
-		for (EntityManaged entityManaged : keys) {
-			Reference<?> ref = entities.get(entityManaged);
-			Object obj = ref.get();
+		List<Object> keys = new ArrayList<Object>(entities.keySet());
+		for (Object obj : keys) {
 			if (obj != null) {
 				if (obj.equals(entity)) {
-					entities.remove(entityManaged);
+					entities.remove(obj);
 					break;
 				}
 			}
