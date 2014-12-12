@@ -58,6 +58,8 @@ public class PropertyAcessorFactoryImpl implements PropertyAccessorFactory {
 
 		final String className = String.format(classTemplate, clazz.getName(), field.getName());
 
+		pool.importPackage(clazz.getName());
+		
 		CtClass ctClass = pool.makeClass(className);
 		ctClass.addMethod(CtNewMethod.make(getMethod, ctClass));
 		ctClass.addMethod(CtNewMethod.make(setMethod, ctClass));

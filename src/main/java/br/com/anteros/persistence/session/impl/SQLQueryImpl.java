@@ -771,8 +771,9 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		 * Se o SQL não foi configurado no statement do field cria o select
 		 */
 		if (StringUtils.isEmpty(sql)) {
-			String sqlKey = "JOIN_TABLE_"+descriptionFieldOwner.getTargetEntity().getEntityClass().getName()+ "_"+descriptionFieldOwner.getField().getName();
+			String sqlKey = "JOIN_TABLE_"+descriptionFieldOwner.getEntityCache().getEntityClass().getName()+ "_"+descriptionFieldOwner.getField().getName();
 			sql = (String) PersistenceMetadataCache.getInstance().get(sqlKey);
+			
 			if (StringUtils.isEmpty(sql)) {
 				/*
 				 * Adiciona todas colunas da Entidade alvo
@@ -997,6 +998,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		if (StringUtils.isEmpty(sql)) {
 			String sqlKey = "FOREIGN_KEY_"+targetEntityCache.getEntityClass().getName()+ "_"+descriptionFieldOwner.getField().getName();
 			sql = (String) PersistenceMetadataCache.getInstance().get(sqlKey);
+
 			if (StringUtils.isEmpty(sql)) {
 				Select select = new Select(session.getDialect());
 				select.addTableName(targetEntityCache.getTableName());

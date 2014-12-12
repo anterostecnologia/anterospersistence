@@ -113,7 +113,8 @@ public class AnterosPersistenceConfiguration extends AbstractPersistenceConfigur
 
 	@Override
 	public PropertyAccessorFactory getPropertyAccessorFactory() {
-		return new PropertyAcessorFactoryImpl();
+//		return new PropertyAcessorFactoryImpl();
+		return null;
 	}
 
 }

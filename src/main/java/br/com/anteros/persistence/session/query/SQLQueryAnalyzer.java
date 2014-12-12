@@ -336,7 +336,7 @@ public class SQLQueryAnalyzer {
 		if (!isExistsSelectAsterisk(node)) {
 			for (SQLQueryAnalyserAlias alias : aliasesTemporary) {
 				if ((alias.getEntity() != null) && (alias.isUsedOnSelect())) {
-					List<DescriptionColumn> columns = alias.getEntity().getPrimaryKeyColumns();
+					List<DescriptionColumn> columns = new ArrayList<DescriptionColumn>(alias.getEntity().getPrimaryKeyColumns());
 					if (alias.getEntity().hasDiscriminatorColumn())
 						columns.add(alias.getEntity().getDiscriminatorColumn());
 					for (DescriptionColumn descriptionColumn : columns) {

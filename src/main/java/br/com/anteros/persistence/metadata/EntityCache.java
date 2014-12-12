@@ -17,6 +17,7 @@ package br.com.anteros.persistence.metadata;
 
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -148,8 +149,9 @@ public class EntityCache {
 	}
 
 	public void addDescriptionColumn(DescriptionColumn descriptionColumn) {
-		if (descriptionColumn.getColumnType() == ColumnType.PRIMARY_KEY || descriptionColumn.isCompositeId())
+		if (descriptionColumn.getColumnType() == ColumnType.PRIMARY_KEY || descriptionColumn.isCompositeId()) {
 			this.primaryKey.add(descriptionColumn);
+		}
 		else if (descriptionColumn.getColumnType() == ColumnType.DISCRIMINATOR)
 			this.discriminatorColumn = descriptionColumn;
 		this.columns.add(descriptionColumn);
@@ -183,7 +185,7 @@ public class EntityCache {
 	}
 
 	public List<DescriptionColumn> getCompositeKeys() {
-		return this.primaryKey;
+		return Collections.unmodifiableList(this.primaryKey);
 	}
 
 	public DescriptionColumn getDiscriminatorColumn() {
@@ -199,14 +201,7 @@ public class EntityCache {
 	}
 
 	public List<DescriptionColumn> getPrimaryKeyColumns() {
-//		List<DescriptionColumn> result = new ArrayList<DescriptionColumn>();
-//		for (DescriptionColumn column : columns) {
-//			if (column.isPrimaryKey()) {
-//				result.add(column);
-//			}
-//		}
-//		return result;
-		return primaryKey;
+		return  Collections.unmodifiableList(primaryKey);
 	}
 
 	public boolean hasDiscriminatorValue() {
