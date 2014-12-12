@@ -771,7 +771,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		 * Se o SQL não foi configurado no statement do field cria o select
 		 */
 		if (StringUtils.isEmpty(sql)) {
-			sql = (String) PersistenceMetadataCache.getInstance().get(descriptionFieldOwner);
+			String sqlKey = "JOIN_TABLE_"+descriptionFieldOwner.getTargetEntity().getEntityClass().getName()+ "_"+descriptionFieldOwner.getField().getName();
+			sql = (String) PersistenceMetadataCache.getInstance().get(sqlKey);
 			if (StringUtils.isEmpty(sql)) {
 				/*
 				 * Adiciona todas colunas da Entidade alvo
@@ -826,7 +827,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				}
 				sql = select.toStatementString();
 
-				PersistenceMetadataCache.getInstance().put(descriptionFieldOwner, sql);
+				PersistenceMetadataCache.getInstance().put(sqlKey, sql);
 			} else {
 				for (DescriptionColumn column : descriptionFieldOwner.getPrimaryKeys()) {
 					if (!column.isInversedJoinColumn()) {
@@ -868,7 +869,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
 		EntityCache mappedByEntityCache = descriptionFieldOwner.getTargetEntity();
 		if (descriptionFieldOwner.getFieldType() == FieldType.COLLECTION_TABLE) {
-			sql = (String) PersistenceMetadataCache.getInstance().get(descriptionFieldOwner);
+			String sqlKey = "COLLECTION_TABLE_"+descriptionFieldOwner.getEntityCache().getEntityClass().getName()+ "_"+descriptionFieldOwner.getField().getName();
+			sql = (String) PersistenceMetadataCache.getInstance().get(sqlKey);
 			if (StringUtils.isEmpty(sql)) {
 				Select select = new Select(session.getDialect());
 				select.addTableName(descriptionFieldOwner.getTableName());
@@ -889,7 +891,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 					select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
 
 				sql = select.toStatementString();
-				PersistenceMetadataCache.getInstance().put(descriptionFieldOwner, sql);
+				PersistenceMetadataCache.getInstance().put(sqlKey, sql);
 			} else {
 				for (DescriptionColumn descriptionColumn : mappedByEntityCache.getPrimaryKeyColumns()) {
 					String columnName = (descriptionColumn.getReferencedColumnName() == null
@@ -903,7 +905,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 					.resultSetHandler(new ElementCollectionHandler(descriptionFieldOwner)).getSingleResult();
 
 		} else if (descriptionFieldOwner.getFieldType() == FieldType.COLLECTION_MAP_TABLE) {
-			sql = (String) PersistenceMetadataCache.getInstance().get(descriptionFieldOwner);
+			String sqlKey = "COLLECTION_MAP_TABLE"+descriptionFieldOwner.getEntityCache().getEntityClass().getName()+ "_"+descriptionFieldOwner.getField().getName();
+			sql = (String) PersistenceMetadataCache.getInstance().get(sqlKey);
 			if (StringUtils.isEmpty(sql)) {
 				Select select = new Select(session.getDialect());
 				select.addTableName(descriptionFieldOwner.getTableName());
@@ -922,7 +925,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				if (descriptionFieldOwner.hasOrderByClause())
 					select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
 				sql = select.toStatementString();
-				PersistenceMetadataCache.getInstance().put(descriptionFieldOwner, sql);
+				PersistenceMetadataCache.getInstance().put(sqlKey, sql);
 			} else {
 				for (DescriptionColumn descriptionColumn : descriptionFieldOwner.getPrimaryKeys()) {
 					params.add(new NamedParameter("P" + descriptionColumn.getReferencedColumnName(), columnKeyTarget
@@ -992,7 +995,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
 
 		if (StringUtils.isEmpty(sql)) {
-			sql = (String) PersistenceMetadataCache.getInstance().get(descriptionFieldOwner);
+			String sqlKey = "FOREIGN_KEY_"+targetEntityCache.getEntityClass().getName()+ "_"+descriptionFieldOwner.getField().getName();
+			sql = (String) PersistenceMetadataCache.getInstance().get(sqlKey);
 			if (StringUtils.isEmpty(sql)) {
 				Select select = new Select(session.getDialect());
 				select.addTableName(targetEntityCache.getTableName());
@@ -1009,7 +1013,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				if (descriptionFieldOwner.hasOrderByClause())
 					select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
 				sql = select.toStatementString();
-				PersistenceMetadataCache.getInstance().put(descriptionFieldOwner, sql);
+				PersistenceMetadataCache.getInstance().put(sqlKey, sql);
 			} else {
 				for (DescriptionColumn column : targetEntityCache.getPrimaryKeyColumns()) {
 					params.add(new NamedParameter("P" + column.getColumnName(), columnKeyTarget.get(column
@@ -1119,7 +1123,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		ArrayList<NamedParameter> params = new ArrayList<NamedParameter>();
 
 		if (StringUtils.isEmpty(sql)) {
-			sql = (String) PersistenceMetadataCache.getInstance().get(descriptionFieldOwner);
+			String sqlKey = "MAPPED_BY_"+descriptionFieldOwner.getEntityCache().getEntityClass().getName()+ "_"+descriptionFieldOwner.getField().getName();
+			sql = (String) PersistenceMetadataCache.getInstance().get(sqlKey);
 			if (StringUtils.isEmpty(sql)) {
 				Select select = new Select(session.getDialect());
 				select.addTableName(mappedByEntityCache.getTableName(), "TAB");
@@ -1139,6 +1144,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				if (descriptionFieldOwner.hasOrderByClause())
 					select.setOrderByClause(descriptionFieldOwner.getOrderByClause());
 				sql = select.toStatementString();
+				PersistenceMetadataCache.getInstance().put(sqlKey, sql);
 			} else {
 				if (mappedByDescriptionColumn != null) {
 					for (DescriptionColumn descriptionColumn : mappedByDescriptionColumn) {
