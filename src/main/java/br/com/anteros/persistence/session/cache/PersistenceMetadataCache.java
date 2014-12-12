@@ -30,6 +30,9 @@ public class PersistenceMetadataCache implements Cache {
 		}
 
 		public void put(Object key, Object value) {
+			if (cache.containsKey(key)){
+				throw new RuntimeException("Chave já adicionada no cache de metadata. "+key);
+			}
 			put(key, value, 0);
 		}
 
