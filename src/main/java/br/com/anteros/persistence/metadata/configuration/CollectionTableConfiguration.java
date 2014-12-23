@@ -25,8 +25,9 @@ public class CollectionTableConfiguration {
 	private String schema = "";
 	private String catalog = "";
 
-	private JoinColumnConfiguration[] joinColumns;
-	private UniqueConstraintConfiguration[] uniqueConstraints;
+	private JoinColumnConfiguration[] joinColumns = 
+			{};
+	private UniqueConstraintConfiguration[] uniqueConstraints={};
 
 	public CollectionTableConfiguration() {
 	}

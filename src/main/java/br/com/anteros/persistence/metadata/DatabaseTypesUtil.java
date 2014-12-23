@@ -23,65 +23,59 @@ import br.com.anteros.persistence.metadata.annotation.Columns;
 import br.com.anteros.persistence.metadata.annotation.CompositeId;
 import br.com.anteros.persistence.metadata.annotation.ForeignKey;
 import br.com.anteros.persistence.metadata.annotation.Id;
+import br.com.anteros.persistence.metadata.configuration.ColumnConfiguration;
+import br.com.anteros.persistence.metadata.configuration.EntityConfiguration;
+import br.com.anteros.persistence.metadata.configuration.FieldConfiguration;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 
 public class DatabaseTypesUtil {
 	private DatabaseTypesUtil() {
 	}
 
-	public static void getSQLDataTypeFromField(Field field, String originalColumnName, DescriptionColumn column) {
-
-		Field originalField = getFieldByColumnName(field, originalColumnName, null);
-
-		Column annotation = originalField.getAnnotation(Column.class);
-
-		column.setLength(annotation.length());
-		column.setPrecision(annotation.precision());
-		column.setScale(annotation.scale());
-
-	}
-
-	public static void getSQLDataTypeFromFieldForeignKey(Field field, String originalColumnName,
+	public static void getSQLDataTypeFromField(FieldConfiguration field, String originalColumnName,
 			DescriptionColumn column) {
-		Field originalField = getFieldByColumnName(field, originalColumnName, null);
-		if (!originalField.isAnnotationPresent(Id.class) && !originalField.isAnnotationPresent(CompositeId.class)) {
-			throw new RuntimeException("Coluna " + originalColumnName + " não encontrado na classe "
-					+ field.getType().getSimpleName()+" ou a coluna encontrada não é um ID.");
+
+		FieldConfiguration originalField = getFieldByColumnName(field, originalColumnName, null);
+		if (originalField != null) {
+			ColumnConfiguration columnConfiguration = originalField.getColumnByName(originalColumnName);
+			column.setLength(columnConfiguration.getLength());
+			column.setPrecision(columnConfiguration.getPrecision());
+			column.setScale(columnConfiguration.getScale());
 		}
-		Column annotation = originalField.getAnnotation(Column.class);
-		column.setLength(annotation.length());
-		column.setPrecision(annotation.precision());
-		column.setScale(annotation.scale());
-	}
-
-	public static void getSQLDataTypeFromClass(Class<?> clazz, String originalColumnName, DescriptionColumn column) {
-
-		Field originalField = getFieldByColumnName(clazz, originalColumnName, null);
-
-		Column annotation = originalField.getAnnotation(Column.class);
-
-		column.setLength(annotation.length());
-		column.setPrecision(annotation.precision());
-		column.setScale(annotation.scale());
 
 	}
 
-	private static Field getFieldByColumnName(Field field, String originalColumnName, Field sourceField) {
-		return getFieldByColumnName(field.getType(), originalColumnName, sourceField);
+	public static void getSQLDataTypeFromFieldForeignKey(FieldConfiguration field, String originalColumnName,
+			DescriptionColumn column) {
+		FieldConfiguration originalField = getFieldByColumnName(field, originalColumnName, null);
+
+		if ((originalField == null)
+				|| (!originalField.isAnnotationPresent(Id.class) && !originalField
+						.isAnnotationPresent(CompositeId.class))) {
+			throw new RuntimeException("Coluna " + originalColumnName + " não encontrado na classe "
+					+ field.getType().getSimpleName() + " ou a coluna encontrada não é um ID.");
+		} else {
+			ColumnConfiguration columnConfiguration = originalField.getColumnByName(originalColumnName);
+			column.setLength(columnConfiguration.getLength());
+			column.setPrecision(columnConfiguration.getPrecision());
+			column.setScale(columnConfiguration.getScale());
+		}
 	}
 
-	private static Field getFieldByColumnName(Class<?> clazz, String originalColumnName, Field sourceField) {
-		Field[] fields = ReflectionUtils.getAllDeclaredFields(clazz);
+	private static FieldConfiguration getFieldByColumnName(FieldConfiguration field, String originalColumnName,
+			FieldConfiguration sourceField) {
+		EntityConfiguration entityConfiguration = field.getEntityConfigurationBySourceClass(field.getType());
+		return getFieldByColumnName(entityConfiguration, originalColumnName, sourceField);
+	}
 
-		for (Field field : fields) {
+	private static FieldConfiguration getFieldByColumnName(EntityConfiguration entityConfiguration,
+			String originalColumnName, FieldConfiguration sourceField) {
+		FieldConfiguration[] fields = entityConfiguration.getAllFields();
+
+		for (FieldConfiguration field : fields) {
 			if ((field.isAnnotationPresent(Column.class) || (field.isAnnotationPresent(Columns.class)))) {
-				Column[] columns = null;
-				if (field.isAnnotationPresent(Column.class))
-					columns = new Column[] { field.getAnnotation(Column.class) };
-				else
-					columns = field.getAnnotation(Columns.class).columns();
-				for (Column columnAnnotation : columns) {
-					if (originalColumnName.equals(columnAnnotation.name())) {
+				for (ColumnConfiguration columnConfiguration : field.getColumns()) {
+					if (originalColumnName.equals(columnConfiguration.getName())) {
 						if (sourceField != null) {
 							if (sourceField.getName().equals(field.getName()))
 								continue;
@@ -92,14 +86,16 @@ public class DatabaseTypesUtil {
 							 * caso seja ignora as fks quando buscar o field
 							 * para não entrar em loop
 							 */
-							if (clazz.getName().equals(field.getType().getName())) {
-								return getFieldByColumnName(field,
-										"".equals(columnAnnotation.inversedColumn()) ? columnAnnotation.name()
-												: columnAnnotation.inversedColumn(), field);
+							if (entityConfiguration.getSourceClazz().getName().equals(field.getType().getName())) {
+								return getFieldByColumnName(
+										field,
+										"".equals(columnConfiguration.getInversedColumn()) ? columnConfiguration
+												.getName() : columnConfiguration.getInversedColumn(), field);
 							} else
-								return getFieldByColumnName(field,
-										"".equals(columnAnnotation.inversedColumn()) ? columnAnnotation.name()
-												: columnAnnotation.inversedColumn(), null);
+								return getFieldByColumnName(
+										field,
+										"".equals(columnConfiguration.getInversedColumn()) ? columnConfiguration
+												.getName() : columnConfiguration.getInversedColumn(), null);
 						}
 						return field;
 					}
@@ -108,7 +104,7 @@ public class DatabaseTypesUtil {
 		}
 
 		throw new RuntimeException("Coluna " + originalColumnName + " não encontrado na classe "
-				+ clazz.getSimpleName());
+				+ entityConfiguration.getSourceClazz().getSimpleName());
 
 	}
 

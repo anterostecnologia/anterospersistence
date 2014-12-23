@@ -150,6 +150,7 @@ public class EntityCacheManager {
 			for (Class<? extends Serializable> sourceClazz : clazzes) {
 				modelConfiguration.loadAnnotationsByClass(sourceClazz);
 			}
+			modelConfiguration.createOmmitedOrDefaultSettings();
 			this.validate = validate;
 			load(modelConfiguration, propertyAccessorFactory);
 		}
@@ -636,7 +637,7 @@ public class EntityCacheManager {
 						throw new EntityCacheManagerException(
 								"Não foi possível ler as configurações ELEMENT COLLECTION do campo "
 										+ fieldConfiguration.getName() + " da classe "
-										+ entityCache.getEntityClass().getName());
+										+ entityCache.getEntityClass().getName()+" - "+e.getMessage());
 					}
 				} else
 					readFetchConfigurations(entityCache, fieldConfiguration);
@@ -2165,7 +2166,7 @@ public class EntityCacheManager {
 			descriptionColumn.setDescriptionField(descriptionField);
 			descriptionColumn.setIdSynchronism(fieldConfiguration.isAnnotationPresent(IdSynchronism.class));
 			try {
-				DatabaseTypesUtil.getSQLDataTypeFromFieldForeignKey(fieldConfiguration.getField(),
+				DatabaseTypesUtil.getSQLDataTypeFromFieldForeignKey(fieldConfiguration,
 						descriptionColumn.getReferencedColumnName(), descriptionColumn);
 			} catch (RuntimeException ex) {
 				throw new EntityCacheException(

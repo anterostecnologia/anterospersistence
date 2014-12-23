@@ -27,9 +27,9 @@ public class JoinTableConfiguration {
 	private String name;
 	private String schema = "";
 	private String catalog = "";
-	private JoinColumnConfiguration[] joinColumns;
-	private JoinColumnConfiguration[] inversedJoinColumns;
-	private UniqueConstraintConfiguration[] uniqueConstraints;
+	private JoinColumnConfiguration[] joinColumns={};
+	private JoinColumnConfiguration[] inversedJoinColumns={};
+	private UniqueConstraintConfiguration[] uniqueConstraints={};
 
 	public JoinTableConfiguration() {
 	}

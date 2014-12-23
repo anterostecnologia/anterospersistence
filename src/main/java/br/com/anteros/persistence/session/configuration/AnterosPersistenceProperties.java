@@ -68,6 +68,8 @@ public class AnterosPersistenceProperties {
 	public static final String DDL_DATABASE_OUTPUT = "database";
 
 	public static final String DDL_BOTH_OUTPUT = "both";
+	
+	public static final String DDL_DATABASE_IGNORE_EXCEPTION = "ddl-database-ignore-exception";
 
 	public static final String CREATE_TABLES_FILENAME = "create-tables-file-name";
 

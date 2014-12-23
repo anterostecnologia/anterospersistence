@@ -15,14 +15,27 @@
  ******************************************************************************/
 package br.com.anteros.persistence.metadata.configuration;
 
+import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Blob;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.swing.text.StyleContext.SmallAttributeSet;
+
+import br.com.anteros.core.converter.converters.DateConverter;
+import br.com.anteros.core.converter.converters.FileConverter;
+import br.com.anteros.core.converter.converters.SqlDateConverter;
+import br.com.anteros.core.converter.converters.SqlTimeConverter;
+import br.com.anteros.core.converter.converters.SqlTimestampConverter;
 import br.com.anteros.core.utils.Assert;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.annotation.BooleanValue;
@@ -125,6 +138,7 @@ public class FieldConfiguration {
 	}
 
 	public FieldConfiguration(EntityConfiguration entity, String name) {
+		this.entity = entity;
 		this.name = name;
 		this.field = ReflectionUtils.getFieldByName(entity.getSourceClazz(), name);
 		if (this.field != null)
@@ -133,6 +147,7 @@ public class FieldConfiguration {
 
 	public FieldConfiguration(EntityConfiguration entity, Field field) {
 		Assert.notNull(field, "Parâmetro field é obrigatório. Erro criando FieldConfiguration.");
+		this.entity = entity;
 		if (field != null)
 			this.name = field.getName();
 		this.field = field;
@@ -178,6 +193,11 @@ public class FieldConfiguration {
 	public FieldConfiguration column(ColumnConfiguration column) {
 		columns.add(column);
 		annotations.add(Column.class);
+		if (columns.size() > 1) {
+			annotations.remove(Column.class);
+			annotations.add(Columns.class);
+		}
+
 		return this;
 	}
 
@@ -350,6 +370,15 @@ public class FieldConfiguration {
 
 	public boolean isAnnotationPresent(Class annotationClass) {
 		return annotations.contains(annotationClass);
+	}
+
+	public boolean isAnnotationPresent(Class[] annotationClasses) {
+		for (Class c : annotationClasses) {
+			if (isAnnotationPresent(c)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
@@ -548,7 +577,8 @@ public class FieldConfiguration {
 				comment(((Comment) annotation).value());
 			} else if (annotation instanceof ExternalFile) {
 				externalFile(true);
-			} else if ((annotation instanceof Converters) || (annotation instanceof Converter) || (annotation instanceof Converter.List)) {
+			} else if ((annotation instanceof Converters) || (annotation instanceof Converter)
+					|| (annotation instanceof Converter.List)) {
 				Converter[] converts = null;
 				if (annotation instanceof Converters)
 					converts = ((Converters) annotation).value();
@@ -821,6 +851,32 @@ public class FieldConfiguration {
 		this.typeConverters = new TypeConverterConfiguration[] { typeConverter };
 		this.annotations.add(TypeConverters.class);
 		return this;
+	}
+
+	public boolean isSimpleField() {
+		return ReflectionUtils.isSimpleField(field);
+
+	}
+
+	public boolean isId() {
+		return isAnnotationPresent(Id.class);
+	}
+
+	public boolean isCompositeId() {
+		return isAnnotationPresent(CompositeId.class);
+	}
+	
+	public EntityConfiguration getEntityConfigurationBySourceClass(Class<?> sourceClazz) {
+		return entity.getEntityConfigurationBySourceClass(sourceClazz);
+	}
+	
+	public ColumnConfiguration getColumnByName(String columnName){
+		for (ColumnConfiguration column : columns){
+			if (column.getName().equals(columnName)){
+				return column;
+			}
+		}
+		return null;
 	}
 
 }

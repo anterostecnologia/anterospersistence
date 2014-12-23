@@ -13,9 +13,11 @@ public class PersistenceMetadataCache implements Cache {
 	    private static PersistenceMetadataCache metadataCache;
 	    
 	    public static PersistenceMetadataCache getInstance(){
-	    	if (metadataCache==null)
-	    		metadataCache = new PersistenceMetadataCache(10000);
-	    	return metadataCache;
+	    	synchronized (PersistenceMetadataCache.class) {
+	    		if (metadataCache==null)
+		    		metadataCache = new PersistenceMetadataCache(10000);
+		    	return metadataCache;	
+			}	    	
 	    }
 
 		private Map<Object, Object[]> cache;

@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -57,8 +58,8 @@ public class EntityConfiguration {
 
 	private Class<? extends Serializable> sourceClazz;
 	private List<FieldConfiguration> fields = new LinkedList<FieldConfiguration>();
-	private IndexConfiguration[] indexes;
-	private UniqueConstraintConfiguration[] uniqueConstraints;
+	private IndexConfiguration[] indexes = {};
+	private UniqueConstraintConfiguration[] uniqueConstraints = {};
 	private String tableName;
 	private Set<Class<? extends Annotation>> annotations = new HashSet<Class<? extends Annotation>>();
 	private InheritanceType inheritanceStrategy;
@@ -66,9 +67,9 @@ public class EntityConfiguration {
 	private int discriminatorColumnLength;
 	private DiscriminatorType discriminatorColumnType;
 	private String discriminatorValue;
-	private EnumValueConfiguration[] enumValues;
+	private EnumValueConfiguration[] enumValues={};
 	private ModelConfiguration model;
-	private NamedQueryConfiguration[] namedQueries;
+	private NamedQueryConfiguration[] namedQueries={};
 	private ScopeType scope = ScopeType.TRANSACTION;
 	private int maxTimeMemory = 0;
 	private SQLInsertConfiguration sqlInsert;
@@ -79,9 +80,9 @@ public class EntityConfiguration {
 	private String schema = "";
 	private String catalog = "";
 	private RemoteConfiguration remote;
-	private ConverterConfiguration[] converters;
-	private ObjectTypeConverterConfiguration[] objectTypeConverters;
-	private TypeConverterConfiguration[] typeConverters;
+	private ConverterConfiguration[] converters={};
+	private ObjectTypeConverterConfiguration[] objectTypeConverters={};
+	private TypeConverterConfiguration[] typeConverters={};
 
 	public EntityConfiguration(Class<? extends Serializable> sourceClazz, ModelConfiguration model) {
 		this.sourceClazz = sourceClazz;
@@ -190,6 +191,15 @@ public class EntityConfiguration {
 	public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
 		return annotations.contains(annotationClass);
 	}
+	
+	public boolean isAnnotationPresent(Class[] annotationClasses) {
+		for (Class c : annotationClasses) {
+			if (isAnnotationPresent(c)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	public String getDiscriminatorColumnName() {
 		return discriminatorColumnName;
@@ -208,7 +218,7 @@ public class EntityConfiguration {
 	}
 
 	public FieldConfiguration[] getAllFields() {
-		List<FieldConfiguration> allFields = new LinkedList<FieldConfiguration>();
+		Set<FieldConfiguration> allFields = new LinkedHashSet<FieldConfiguration>();
 		allFields.addAll(getFields());
 		Class<?> clazz = sourceClazz;
 		while ((clazz != null) && (clazz != Object.class)) {
@@ -559,6 +569,10 @@ public class EntityConfiguration {
 
 	public void setDiscriminatorColumnType(DiscriminatorType discriminatorColumnType) {
 		this.discriminatorColumnType = discriminatorColumnType;
+	}
+	
+	public EntityConfiguration getEntityConfigurationBySourceClass(Class<?> sourceClazz) {
+		return model.getEntityConfigurationBySourceClass(sourceClazz);
 	}
 
 }

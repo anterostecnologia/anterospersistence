@@ -17,11 +17,36 @@ package br.com.anteros.persistence.metadata.configuration;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import br.com.anteros.core.utils.ReflectionUtils;
+import br.com.anteros.persistence.metadata.annotation.BooleanValue;
+import br.com.anteros.persistence.metadata.annotation.CollectionTable;
+import br.com.anteros.persistence.metadata.annotation.Column;
+import br.com.anteros.persistence.metadata.annotation.Columns;
+import br.com.anteros.persistence.metadata.annotation.DiscriminatorColumn;
+import br.com.anteros.persistence.metadata.annotation.DiscriminatorValue;
+import br.com.anteros.persistence.metadata.annotation.Enumerated;
+import br.com.anteros.persistence.metadata.annotation.Fetch;
+import br.com.anteros.persistence.metadata.annotation.ForeignKey;
+import br.com.anteros.persistence.metadata.annotation.Inheritance;
+import br.com.anteros.persistence.metadata.annotation.JoinTable;
+import br.com.anteros.persistence.metadata.annotation.Lob;
+import br.com.anteros.persistence.metadata.annotation.MapKeyColumn;
+import br.com.anteros.persistence.metadata.annotation.Table;
+import br.com.anteros.persistence.metadata.annotation.Temporal;
+import br.com.anteros.persistence.metadata.annotation.Transient;
+import br.com.anteros.persistence.metadata.annotation.type.BooleanType;
+import br.com.anteros.persistence.metadata.annotation.type.DiscriminatorType;
+import br.com.anteros.persistence.metadata.annotation.type.EnumType;
+import br.com.anteros.persistence.metadata.annotation.type.FetchMode;
+import br.com.anteros.persistence.metadata.annotation.type.FetchType;
+import br.com.anteros.persistence.metadata.annotation.type.InheritanceType;
+import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
 import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
 
 public class ModelConfiguration {
@@ -58,6 +83,334 @@ public class ModelConfiguration {
 		for (Class<? extends Serializable> sourceClazz : clazzes)
 			newEntities.put(sourceClazz, entities.get(sourceClazz));
 		entities = newEntities;
+	}
+
+	public void createOmmitedOrDefaultSettings() {
+		sortByDependency();
+
+		for (Class<?> sourceClazz : getEntities().keySet()) {
+			EntityConfiguration entityConfiguration = getEntities().get(sourceClazz);
+			for (FieldConfiguration fieldConfiguration : entityConfiguration.getFields()) {
+
+				/*
+				 * Verifica configuração básica
+				 */
+				checkBasicConfigurations(fieldConfiguration);
+			}
+		}
+
+		for (Class<?> sourceClazz : getEntities().keySet()) {
+			EntityConfiguration entityConfiguration = getEntities().get(sourceClazz);
+
+			EntityConfiguration entityConfigurationBySuperClass = getEntityConfigurationBySourceClass(sourceClazz
+					.getSuperclass());
+			/*
+			 * Se não foi definido @Table e não é uma herança, define o padrão
+			 */
+			if (!entityConfiguration.isAnnotationPresent(new Class[] { Table.class })
+					&& (entityConfigurationBySuperClass == null)) {
+				entityConfiguration.table(entityConfiguration.getSourceClazz().getSimpleName());
+			}
+
+			/*
+			 * Se é uma classe abstrata e não foi definido @DiscriminatorColumn
+			 * define o padrão
+			 */
+			if (ReflectionUtils.isAbstractClass(entityConfiguration.getSourceClazz())
+					&& !entityConfiguration.isAnnotationPresent(DiscriminatorColumn.class)) {
+				entityConfiguration.discriminatorColumn("DTYPE", 31, DiscriminatorType.STRING);
+			}
+
+			/*
+			 * Se é uma classe abstrata e não foi definido @Inheritance define o
+			 * padrão
+			 */
+			if (ReflectionUtils.isAbstractClass(entityConfiguration.getSourceClazz())
+					&& !entityConfiguration.isAnnotationPresent(Inheritance.class)) {
+				entityConfiguration.inheritance(InheritanceType.SINGLE_TABLE);
+			}
+
+			/*
+			 * Se é uma classe herdada e não foi definido o @DiscriminatorValue
+			 */
+			if (!entityConfiguration.isAnnotationPresent(DiscriminatorValue.class)
+					&& (entityConfigurationBySuperClass != null)) {
+				entityConfiguration.discriminatorValue(sourceClazz.getSimpleName());
+			}
+
+			for (FieldConfiguration fieldConfiguration : entityConfiguration.getFields()) {
+
+				/*
+				 * Se não for um campo simples ou coleção/map pode ser uma chave
+				 * estrangeira (MANY_TO_ONE, ONE_TO_ONE)
+				 */
+				checkForeignKeyIsConfigured(fieldConfiguration);
+
+				/*
+				 * Se for uma coleção e não foi definido @Fetch Verifica se é um
+				 * relacionamento ONE_TO_MANY, MANY_TO_MANY ou
+				 * ELEMENT_COLLECTION
+				 */
+				checkCollectionIsConfigured(entityConfiguration, fieldConfiguration);
+
+				/*
+				 * Se for um map e não foi definido @Fetch Verifica se é um
+				 * relacionamento ELEMENT_COLLECTION
+				 */
+				checkMapIsConfigured(entityConfiguration, fieldConfiguration);
+			}
+		}
+	}
+
+	protected void checkForeignKeyHasColumns(FieldConfiguration fieldConfiguration) {
+		if (fieldConfiguration.isAnnotationPresent(ForeignKey.class)
+				&& ((!fieldConfiguration.isAnnotationPresent(new Class[] { Column.class, Columns.class,
+						Column.List.class })))) {
+			Class<?> fkClass = fieldConfiguration.getField().getType();
+			EntityConfiguration sourceConfiguration = getEntityConfigurationBySourceClass(fkClass);
+			if (sourceConfiguration != null) {
+				FieldConfiguration[] fieldConfigurations = sourceConfiguration.getAllFields();
+				for (FieldConfiguration fld : fieldConfigurations) {
+					/*
+					 * Se for chave primária usa colunas para a foreignkey
+					 * omitida
+					 */
+					if (fld.isId() || (fld.isCompositeId())) {
+						for (ColumnConfiguration column : fld.getColumns()) {
+							fieldConfiguration.column(column);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	protected void checkMapIsConfigured(EntityConfiguration entityConfiguration, FieldConfiguration fieldConfiguration) {
+		if (ReflectionUtils.isImplementsInterface(fieldConfiguration.getField().getType(), Map.class)
+				&& !fieldConfiguration.isAnnotationPresent(new Class[] { Transient.class })) {
+			if (!fieldConfiguration.isAnnotationPresent(Fetch.class)) {
+				fieldConfiguration.fetch(FetchType.LAZY, FetchMode.ELEMENT_COLLECTION, "", null, "");
+			}
+
+			if (!fieldConfiguration.isAnnotationPresent(new Class[] { Column.class, Columns.class })) {
+				fieldConfiguration.column(fieldConfiguration.getField().getName(), 255, 0, 0, true);
+			}
+
+			if (!fieldConfiguration.isAnnotationPresent(CollectionTable.class)) {
+				List<JoinColumnConfiguration> joinColumns = getJoinColumns(entityConfiguration);
+				fieldConfiguration.collectionTable(entityConfiguration.getTableName() + "_"
+						+ fieldConfiguration.getField().getName(),
+						joinColumns.toArray(new JoinColumnConfiguration[] {}));
+			}
+
+			if (!fieldConfiguration.isAnnotationPresent(MapKeyColumn.class)) {
+				fieldConfiguration.mapKeyColumn(fieldConfiguration.getField().getName() + "_KEY");
+			}
+		}
+	}
+
+	protected void checkCollectionIsConfigured(EntityConfiguration entityConfiguration,
+			FieldConfiguration fieldConfiguration) {
+		if (ReflectionUtils.isImplementsInterface(fieldConfiguration.getField().getType(), Collection.class)
+				&& !fieldConfiguration.isAnnotationPresent(new Class[] { Transient.class })) {
+			Class<?> genericType = ReflectionUtils.getGenericType(fieldConfiguration.getField());
+			/*
+			 * Se for um tipo simples então é um ELEMENT_COLLECTION
+			 */
+			if (ReflectionUtils.isSimple(genericType)) {
+				if (!fieldConfiguration.isAnnotationPresent(Fetch.class)) {
+					fieldConfiguration.fetch(FetchType.LAZY, FetchMode.ELEMENT_COLLECTION, "", null, "");
+				}
+
+				if (!fieldConfiguration.isAnnotationPresent(new Class[] { Column.class, Columns.class })) {
+					fieldConfiguration.column(fieldConfiguration.getField().getName(), 255, 0, 0, true);
+				}
+
+				if (!fieldConfiguration.isAnnotationPresent(new Class[] { CollectionTable.class })) {
+					List<JoinColumnConfiguration> joinColumns = getJoinColumns(entityConfiguration);
+					fieldConfiguration.collectionTable(entityConfiguration.getTableName() + "_"
+							+ fieldConfiguration.getField().getName(),
+							joinColumns.toArray(new JoinColumnConfiguration[] {}));
+				}
+			} else {
+				/*
+				 * Obtém a configuração do tipo de classe da coleção
+				 */
+				EntityConfiguration sourceConfiguration = getEntityConfigurationBySourceClass(genericType);
+				if (sourceConfiguration != null) {
+					FieldConfiguration fieldFound = findFieldCandidate(fieldConfiguration, genericType,
+							sourceConfiguration);
+
+					/*
+					 * Se encontrou o campo é um ONE_TO_MANY
+					 */
+					if (fieldFound != null) {
+						if (!fieldConfiguration.isAnnotationPresent(Fetch.class)) {
+							fieldConfiguration.fetch(FetchType.LAZY, FetchMode.ONE_TO_MANY, fieldFound.getField()
+									.getName(), genericType, "");
+						}
+					} else {
+						/*
+						 * Caso não tenha encontrado o campo assume MANY_TO_MANY
+						 */
+						if (!fieldConfiguration.isAnnotationPresent(Fetch.class)) {
+							fieldConfiguration.fetch(FetchType.LAZY, FetchMode.MANY_TO_MANY, "", genericType, "");
+						}
+
+						if (!fieldConfiguration.isAnnotationPresent(JoinTable.class)) {
+							List<JoinColumnConfiguration> entityJoinColumns = getJoinColumns(entityConfiguration);
+							List<JoinColumnConfiguration> sourceJoinColumns = getJoinColumns(sourceConfiguration);
+							entityJoinColumns.addAll(sourceJoinColumns);
+
+							fieldConfiguration.joinTable(entityConfiguration.getSourceClazz().getSimpleName() + "_"
+									+ sourceConfiguration.getSourceClazz().getSimpleName(),
+									entityJoinColumns.toArray(new JoinColumnConfiguration[] {}),
+									entityJoinColumns.toArray(new JoinColumnConfiguration[] {}));
+						}
+					}
+				}
+			}
+		}
+	}
+
+	protected List<JoinColumnConfiguration> getJoinColumns(EntityConfiguration entityConfiguration) {
+		List<JoinColumnConfiguration> joinColumns = new ArrayList<JoinColumnConfiguration>();
+		for (FieldConfiguration fc : entityConfiguration.getAllFields()) {
+			if (fc.isId()) {
+				String name = fc.getSimpleColumn().getName();
+				joinColumns.add(new JoinColumnConfiguration(entityConfiguration.getSourceClazz().getSimpleName()
+						+ "_ID", name));
+			} else if (fc.isCompositeId()) {
+				for (ColumnConfiguration cl : fc.getColumns()) {
+					joinColumns.add(new JoinColumnConfiguration(entityConfiguration.getSourceClazz().getSimpleName()
+							+ "_" + cl.getName(), cl.getName()));
+				}
+			}
+		}
+		return joinColumns;
+	}
+
+	protected void checkForeignKeyIsConfigured(FieldConfiguration fieldConfiguration) {
+		if (!fieldConfiguration.isSimpleField()
+				&& !ReflectionUtils.isImplementsInterface(fieldConfiguration.getField().getType(), new Class[] {
+						Collection.class, Map.class })
+				&& !fieldConfiguration.isAnnotationPresent(new Class[] { ForeignKey.class, Transient.class })) {
+			Class<?> fkClass = fieldConfiguration.getField().getType();
+			EntityConfiguration sourceConfiguration = getEntityConfigurationBySourceClass(fkClass);
+			/*
+			 * Se encontrou a configuração para a classe é uma chave estrangeira
+			 */
+			if (sourceConfiguration != null) {
+				fieldConfiguration.foreignKey();
+			}
+		}
+
+		/*
+		 * Se a anotação @ForeignKey estiver presente e foi omitido
+		 * 
+		 * @Column ou @Columns assume como default a(s) coluna(s) da classe
+		 * estrangeira
+		 */
+		checkForeignKeyHasColumns(fieldConfiguration);
+	}
+
+	protected void checkBasicConfigurations(FieldConfiguration fieldConfiguration) {
+		if (fieldConfiguration.isAnnotationPresent(new Class[] { Transient.class }))
+			return;
+
+		/*
+		 * Se não foi definido nome da coluna ou definido campo como transient e
+		 * não é uma coleção.
+		 */
+		if (!fieldConfiguration.isAnnotationPresent(new Class[] { Column.class, Columns.class })
+				&& (fieldConfiguration.isSimpleField())) {
+			fieldConfiguration.column(fieldConfiguration.getField().getName());
+		}
+
+		/*
+		 * Se o campo é boolean e não foi definido @BooleanValue
+		 */
+		if (((fieldConfiguration.getField().getType() == Boolean.class || fieldConfiguration.getField().getType() == boolean.class))
+				&& (!fieldConfiguration.isAnnotationPresent(BooleanValue.class))) {
+			fieldConfiguration.booleanValue("S", "N", BooleanType.STRING);
+		}
+
+		/*
+		 * Se o campo é um Enum e não foi definido @Enumerated
+		 */
+		if (Enum.class.isAssignableFrom(fieldConfiguration.getType())
+				&& (!fieldConfiguration.isAnnotationPresent(Enumerated.class))) {
+			fieldConfiguration.enumerated(EnumType.STRING);
+		}
+
+		/*
+		 * Se o campo é um Lob e não foi definido @Lob
+		 */
+		if (ReflectionUtils.isLobField(fieldConfiguration.getField())
+				&& !fieldConfiguration.isAnnotationPresent(Lob.class)) {
+			fieldConfiguration.lob(FetchType.LAZY);
+		}
+
+		/*
+		 * Se o cmapo é uma Data e não foi definido @Temporal
+		 */
+		if (ReflectionUtils.isDateTimeField(fieldConfiguration.getField())
+				&& !fieldConfiguration.isAnnotationPresent(Temporal.class)) {
+			fieldConfiguration.temporal(TemporalType.DATE);
+		}
+	}
+
+	protected FieldConfiguration findFieldCandidate(FieldConfiguration fieldConfiguration, Class<?> genericType,
+			EntityConfiguration sourceConfiguration) {
+		/*
+		 * Verifica se existe um campo na classe da coleção que seja do MESMO
+		 * TIPO da classe sendo analisada e que possa ter o nome do atributo
+		 * igual ao nome da classe
+		 */
+		FieldConfiguration fieldFound = null;
+		for (FieldConfiguration fc : sourceConfiguration.getAllFields()) {
+			if (sourceConfiguration.getSourceClazz() == genericType) {
+				if (fc.getField().getName().equalsIgnoreCase(fieldConfiguration.getField().getName())) {
+					fieldFound = fc;
+					break;
+				}
+			}
+		}
+
+		if (fieldFound == null) {
+			/*
+			 * Verifica se existe um campo na classe da coleção que seja HERANÇA
+			 * do tipo da classe sendo analisada e que possa ter o nome do
+			 * atributo igual ao nome da classe
+			 */
+			for (FieldConfiguration fc : sourceConfiguration.getAllFields()) {
+				if (ReflectionUtils.isExtendsClass(genericType, sourceConfiguration.getSourceClazz())) {
+					if (fc.getField().getName().equalsIgnoreCase(fieldConfiguration.getField().getName())) {
+						fieldFound = fc;
+						break;
+					}
+				}
+			}
+
+			if (fieldFound == null) {
+				/*
+				 * Verifica se existe um campo na classe da coleção que seja
+				 * MESMO TIPO ou HERANÇA da classe sendo analisada
+				 */
+				for (FieldConfiguration fc : sourceConfiguration.getAllFields()) {
+					if ((sourceConfiguration.getSourceClazz() == genericType)
+							|| (ReflectionUtils.isExtendsClass(genericType, sourceConfiguration.getSourceClazz()))) {
+						fieldFound = fc;
+						break;
+					}
+				}
+			}
+		}
+		return fieldFound;
+	}
+
+	public EntityConfiguration getEntityConfigurationBySourceClass(Class<?> sourceClazz) {
+		return getEntities().get(sourceClazz);
 	}
 
 }

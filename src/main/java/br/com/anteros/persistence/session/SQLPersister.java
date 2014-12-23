@@ -16,6 +16,7 @@
 package br.com.anteros.persistence.session;
 
 
+
 public interface SQLPersister {
 
 	public Object save(SQLSession session, Object object) throws Exception;
@@ -25,4 +26,6 @@ public interface SQLPersister {
 	public void remove(SQLSession session, Object[] objects) throws Exception;
 
 	public void save(SQLSession session, Class<?> clazz, String[] columns, String[] values) throws Exception;
+	
+	public SQLSessionValidatior getValidator();
 }

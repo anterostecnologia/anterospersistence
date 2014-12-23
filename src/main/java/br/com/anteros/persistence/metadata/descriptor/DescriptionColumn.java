@@ -547,7 +547,10 @@ public class DescriptionColumn {
 			}
 		} else if (this.isEnumerated()) {
 			return String.class;
+		} else if (this.isMapKeyColumn()){
+			return this.getElementCollectionType();
 		}
+			
 		return field.getType();
 	}
 

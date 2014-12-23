@@ -161,7 +161,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 										tableGeneratorSchema.setValueColumnName(((TableGenerator) generator)
 												.getValueColumnName());
 										sequences.add(tableGeneratorSchema);
-									} else if (generator instanceof IdentifierGenerator){
+									} else if (generator instanceof IdentifierGenerator) {
 										newColumn.setAutoIncrement(true);
 									}
 								}
@@ -387,7 +387,6 @@ public class SchemaManager implements Comparator<TableSchema> {
 		String tableName;
 		TableSchema table;
 		ColumnSchema newColumn;
-
 		for (DescriptionField descriptionField : entityCache.getDescriptionFields()) {
 			if (descriptionField.isCollectionMapTable() || descriptionField.isCollectionTable()
 					|| descriptionField.isJoinTable()) {
@@ -611,7 +610,8 @@ public class SchemaManager implements Comparator<TableSchema> {
 					+ (descriptionField.getFieldClass().isEnum() ? "(ENUM)" : "")
 					+ " não disponível para este banco de dados. Verifique o campo na classe "
 					+ descriptionField.getEntityCache().getEntityClass().getName()
-					+ " se o mesmo não é uma chave estrangeira ou se a classe do tipo "+descriptionField.getFieldClass().getName()+" possuí algum campo incorreto.");
+					+ " se o mesmo não é uma chave estrangeira ou se a classe do tipo "
+					+ descriptionField.getFieldClass().getName() + " possuí algum campo incorreto.");
 
 		if (dbType.isSizeAllowed() || dbType.isSizeRequired()) {
 			if (descriptionColumn.isBoolean()) {
@@ -671,7 +671,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 		if (descriptionField.hasGenerator()) {
 			newColumn.setSequenceName(descriptionField.getSequenceName());
 		}
-		
+
 		newColumn.setPrimaryKey(descriptionColumn.isPrimaryKey());
 		newColumn.setForeignKey(descriptionColumn.isForeignKey());
 
@@ -705,7 +705,6 @@ public class SchemaManager implements Comparator<TableSchema> {
 		}
 	}
 
-	
 	protected void finalize() throws Throwable {
 		this.closeDDLWriter();
 	}
@@ -1288,7 +1287,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 		 */
 		boolean writeCommentCreateTable = true;
 		for (TableSchema tableSchema : tables) {
-			//System.out.println("EXTENDENDO TABELA "+tableSchema.getName());
+			// System.out.println("EXTENDENDO TABELA "+tableSchema.getName());
 			if (!session.getDialect().checkTableExists(session.getConnection(), tableSchema.getName())) {
 				try {
 					/*
@@ -1302,15 +1301,16 @@ public class SchemaManager implements Comparator<TableSchema> {
 					}
 				}
 			} else {
-				//System.out.println("  BUSCANDO INDICES");
-				Map<String, IndexMetadata> allIndexes = session.getDialect().getAllIndexesByTable(session.getConnection(), tableSchema.getName());
-				//System.out.println("  BUSCOU INDICES");
-				
+				// System.out.println("  BUSCANDO INDICES");
+				Map<String, IndexMetadata> allIndexes = session.getDialect().getAllIndexesByTable(
+						session.getConnection(), tableSchema.getName());
+				// System.out.println("  BUSCOU INDICES");
+
 				/*
 				 * Verifica se a coluna existe na tabela. Se não existir
 				 * adiciona.
 				 */
-				//System.out.println("  BUSCANDO COLUNAS");
+				// System.out.println("  BUSCANDO COLUNAS");
 				String[] columnNames = session.getDialect().getColumnNamesFromTable(session.getConnection(),
 						tableSchema.getName());
 				for (ColumnSchema columnSchema : tableSchema.getColumns()) {
@@ -1340,14 +1340,15 @@ public class SchemaManager implements Comparator<TableSchema> {
 						}
 					}
 				}
-				//System.out.println("  VERIFICOU COLUNAS");
+				// System.out.println("  VERIFICOU COLUNAS");
 
 				/*
 				 * Verifica se existe o índice. Se não existir cria.
 				 */
 				for (IndexSchema indexSchema : tableSchema.getIndexes()) {
-					//System.out.println("  CHECANDO INDICE "+indexSchema.getName());
-					if (!checkIndexExists(indexSchema.getName(),indexSchema.getColumnNames().toArray(new String[]{}),allIndexes)) {
+					// System.out.println("  CHECANDO INDICE "+indexSchema.getName());
+					if (!checkIndexExists(indexSchema.getName(), indexSchema.getColumnNames().toArray(new String[] {}),
+							allIndexes)) {
 						try {
 							if (isWriteToDatabase()) {
 								indexSchema.createOnDatabase(session);
@@ -1365,19 +1366,21 @@ public class SchemaManager implements Comparator<TableSchema> {
 			}
 		}
 
-		//System.out.println("CONCLUÍU EXTEND TABELAS");
+		// System.out.println("CONCLUÍU EXTEND TABELAS");
 		/*
 		 * Verifica as constraints
 		 */
 		boolean writeCommentUniqueConstraint = true;
 		for (TableSchema tableSchema : tables) {
-			//System.out.println("VERIFICANDO UNIQUE CONSTRAINTS "+tableSchema.getName());
-			Map<String, IndexMetadata> allIndexes = session.getDialect().getAllIndexesByTable(session.getConnection(), tableSchema.getName());			
+			// System.out.println("VERIFICANDO UNIQUE CONSTRAINTS "+tableSchema.getName());
+			Map<String, IndexMetadata> allIndexes = session.getDialect().getAllIndexesByTable(session.getConnection(),
+					tableSchema.getName());
 			/*
 			 * Verifica se existe a chave única. Se não existir cria.
 			 */
 			for (UniqueKeySchema uniqueKeySchema : tableSchema.getUniqueKeys()) {
-				if (!checkUniqueKeyExists(uniqueKeySchema.getName(), uniqueKeySchema.getColumnNames().toArray(new String[]{}), allIndexes)) {
+				if (!checkUniqueKeyExists(uniqueKeySchema.getName(),
+						uniqueKeySchema.getColumnNames().toArray(new String[] {}), allIndexes)) {
 					if (!isWriteToDatabase() && writeCommentUniqueConstraint) {
 						createSchemaWriter
 								.write("/******************************************************************************/\n");
@@ -1404,9 +1407,10 @@ public class SchemaManager implements Comparator<TableSchema> {
 
 		boolean writeCommentForeignKey = true;
 		for (TableSchema tableSchema : tables) {
-			//System.out.println("VERIFICANDO FOREIGNKEY CONSTRAINTS "+tableSchema.getName());
-			Map<String, ForeignKeyMetadata> allFks = session.getDialect().getAllForeignKeysByTable(session.getConnection(), tableSchema.getName());
-			
+			// System.out.println("VERIFICANDO FOREIGNKEY CONSTRAINTS "+tableSchema.getName());
+			Map<String, ForeignKeyMetadata> allFks = session.getDialect().getAllForeignKeysByTable(
+					session.getConnection(), tableSchema.getName());
+
 			/*
 			 * Verifica se existe a chave estrangeira. Se não existir cria.
 			 */
@@ -1438,14 +1442,14 @@ public class SchemaManager implements Comparator<TableSchema> {
 			writeLineSeparator(createSchemaWriter);
 
 	}
-	
-	protected boolean checkIndexExists(String indexName, String[] columns, Map<String, IndexMetadata> indexes){
+
+	protected boolean checkIndexExists(String indexName, String[] columns, Map<String, IndexMetadata> indexes) {
 		if (indexes.containsKey(indexName.toLowerCase()))
 			return true;
 		if (indexes.containsKey(indexName.toUpperCase()))
 			return true;
 
-		IndexMetadata index=null;
+		IndexMetadata index = null;
 		for (String k : indexes.keySet()) {
 			index = indexes.get(k);
 			if (index.containsAllColumns(columns))
@@ -1453,14 +1457,14 @@ public class SchemaManager implements Comparator<TableSchema> {
 		}
 		return false;
 	}
-	
-	protected boolean checkUniqueKeyExists(String indexName, String[] columns, Map<String, IndexMetadata> indexes){
+
+	protected boolean checkUniqueKeyExists(String indexName, String[] columns, Map<String, IndexMetadata> indexes) {
 		if (indexes.containsKey(indexName.toLowerCase()))
 			return true;
 		if (indexes.containsKey(indexName.toUpperCase()))
 			return true;
 
-		IndexMetadata index=null;
+		IndexMetadata index = null;
 		for (String k : indexes.keySet()) {
 			index = indexes.get(k);
 			if (index.containsAllColumns(columns))
@@ -1468,14 +1472,14 @@ public class SchemaManager implements Comparator<TableSchema> {
 		}
 		return false;
 	}
-	
-	protected boolean checkForeignKeyExists(String indexName, String[] columns, Map<String, ForeignKeyMetadata> fks){
+
+	protected boolean checkForeignKeyExists(String indexName, String[] columns, Map<String, ForeignKeyMetadata> fks) {
 		if (fks.containsKey(indexName.toLowerCase()))
 			return true;
 		if (fks.containsKey(indexName.toUpperCase()))
 			return true;
 
-		ForeignKeyMetadata fk=null;
+		ForeignKeyMetadata fk = null;
 		for (String k : fks.keySet()) {
 			fk = fks.get(k);
 			if (fk.containsAllColumns(columns))
@@ -1873,7 +1877,6 @@ public class SchemaManager implements Comparator<TableSchema> {
 		return adjustedTableName;
 	}
 
-	
 	public int compare(TableSchema o1, TableSchema o2) {
 		if (o1 == null) {
 			if (o2 == null) {
@@ -1974,7 +1977,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 	public Set<TableSchema> getTables() {
 		return tables;
 	}
-	
+
 	public Set<ViewSchema> getViews() {
 		return views;
 	}
@@ -1982,28 +1985,28 @@ public class SchemaManager implements Comparator<TableSchema> {
 	public Set<GeneratorSchema> getSequences() {
 		return sequences;
 	}
-	
+
 	public Set<StoredProcedureSchema> getProcedures() {
 		return procedures;
 	}
-	
+
 	public Set<StoredFunctionSchema> getFunctions() {
 		return functions;
 	}
 
 	public StoredProcedureSchema getProcedure(String procedureName) {
-		if (procedures!=null){
-			for (StoredProcedureSchema procedure : procedures){
+		if (procedures != null) {
+			for (StoredProcedureSchema procedure : procedures) {
 				if (procedure.getName().equalsIgnoreCase(procedureName))
 					return procedure;
 			}
 		}
 		return null;
 	}
-	
+
 	public StoredFunctionSchema getFunction(String functionName) {
-		if (procedures!=null){
-			for (StoredFunctionSchema function : functions){
+		if (procedures != null) {
+			for (StoredFunctionSchema function : functions) {
 				if (function.getName().equalsIgnoreCase(functionName))
 					return function;
 			}

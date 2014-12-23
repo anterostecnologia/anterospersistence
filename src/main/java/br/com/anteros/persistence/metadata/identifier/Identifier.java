@@ -35,7 +35,7 @@ public class Identifier<T> implements Serializable {
 	private Class<T> clazz;
 	private Object owner;
 	private SQLSession session;
-	private EntityCache entityCache;
+	private transient EntityCache entityCache;
 	private boolean onlyRefreshOwner = false;
 
 	public static <T> Identifier<T> create(SQLSession session, Class<T> sourceClass) throws Exception {

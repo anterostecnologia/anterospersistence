@@ -192,6 +192,8 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 			try {
 				SchemaManager schemaManager = new SchemaManager(sessionForDDL, entityCacheManager,
 						createReferentialIntegrity);
+				
+				schemaManager.setIgnoreDatabaseException(Boolean.valueOf(configuration.getPropertyDef(AnterosPersistenceProperties.DDL_DATABASE_IGNORE_EXCEPTION, "false")));
 
 				beforeGenerateDDL(sessionForDDL);
 

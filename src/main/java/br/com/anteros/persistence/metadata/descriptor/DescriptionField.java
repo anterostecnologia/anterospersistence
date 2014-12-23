@@ -16,9 +16,6 @@
 package br.com.anteros.persistence.metadata.descriptor;
 
 import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -448,7 +445,7 @@ public class DescriptionField {
 		this.mappedBy = mappedBy;
 	}
 
-	public void addDescriptionColumns(DescriptionColumn descriptionColumn) throws Exception {
+	public void addDescriptionColumns(DescriptionColumn descriptionColumn) throws Exception {		
 		for (DescriptionColumn column : columns) {
 			if (column.getColumnName().equals(descriptionColumn.getColumnName())) {
 				throw new EntityCacheException("Coluna "
@@ -726,10 +723,7 @@ public class DescriptionField {
 	}
 
 	public boolean isNumber() {
-		return ((getField().getType() == Long.class) || (getField().getType() == Integer.class)
-				|| (getField().getType() == Float.class) || (getField().getType() == BigDecimal.class)
-				|| (getField().getType() == BigInteger.class) || (getField().getType() == Short.class) || (getField()
-				.getType() == Double.class));
+		return ReflectionUtils.isNumberField(field);
 	}
 
 	public DescriptionSQL getDescriptionSqlByType(SQLStatementType type) {

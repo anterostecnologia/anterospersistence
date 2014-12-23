@@ -224,7 +224,7 @@ public class SqlTokenizer implements Iterator<Token> {
 					sb.append(c);
 					this.scanner.next();
 					c = this.scanner.peek();
-				} while ((TokenUtil.isNameChar(c)) && (c != '￿'));
+				} while ((TokenUtil.isNameChar(c)) /*&& (c != '￿')*/);
 
 				String upper = sb.toString().toUpperCase();
 
