@@ -39,9 +39,20 @@ OK - Fazer LOB carregar com lazy
 
 - Implementar comandos sql para sugestão de indices
 
+- Implementar Integração com JAX-RS, JAXB, JEE, JERSEY
+
+- Implementar Integração Guice.
+
+- Implementar tela de Manutenção dos Objetos de Segurança na WEB.
+
+- Implementar Projetos de Exemplo usando HTML5/JavaScript, Angular, Vaadin, SpringMVC, VRaptor, Android, Delphi.
+
+- Implementar Ações que possam ser disparados via REST.
+
 OK - Implementar limit para trazer registros
    Obs: Implementado junto com DSL.
    
+- Implementar @AttributeOverride e @AttributeOverrides
 
 - Ver possibilidade de implementar @SecondaryTables, @SecondaryTable: Ver exemplo MovimentoEstoque x MovimentoEstoqueValor
  sendo que a segunda tabela seria a de valor.
@@ -134,10 +145,10 @@ public class Endereco {
 
 Leia mais em: Hibernate Mapping: Mapeando Relacionamentos entre Entidades http://www.devmedia.com.br/hibernate-mapping-mapeando-relacionamentos-entre-entidades/29445#ixzz3M9MyDt8O 
 
-- Gerar valores padrões para colunas de Entidades que não foram anotadas permitindo assim definir o mínimo possível de configurações para persistir um objeto. 
+OK - Gerar valores padrões para colunas de Entidades que não foram anotadas permitindo assim definir o mínimo possível de configurações para persistir um objeto. 
   Ex. Anotando apenas @Entity deveria conseguir salvar o objeto
 
- OK - Terminar validação das referencedColumn no cacheManager
+OK - Terminar validação das referencedColumn no cacheManager
  
  - Implementar métodos de callback:
     PrePersist: Disparado quandoumobjeto novo é persistido através da operação persist() ou merge()
@@ -169,30 +180,35 @@ OK - Implementar validação de campos requeridos em heranças das entidades no 
               
 BUGS:
 
+OK - Agora assume o padrão caso não seja informado.
 1) Tipo enum sem enumerated
 @Column(name="FINALIDADE", length=15, required=true)
 FinalidadeConta finalidadeConta;
 
 
+OK - Agora assume o padrão caso não seja informado.
 2) Entidade sem foreignkey
   * Usuario do sistema do colaborador
   */
  @Column(name = "ID_USUARIO_COLABORADOR", inversedColumn = "ID_SEGURANCA")
  private Usuario usuarioSistema;
  
+OK - Agora assume o padrão caso não seja informado. 
 @Column(name="ID_ESTRUTURACARGOITEMPAI")
 private EstruturaCargoItem cargoPai;
 
 
   * Tipo de Referência Comercial Ex.: Pessoal, Comercial e Banc ria
   */
- @Column(name = "TP_REFERENCIA_COMERCIAL", length = 15, required = true)
+OK - Agora assume o padrão caso não seja informado.
+@Column(name = "TP_REFERENCIA_COMERCIAL", length = 15, required = true)
  private TipoReferenciaComercial tipoReferenciaComercial;
  
+OK - Agora assume o padrão caso não seja informado.
 @Column(name = "ID_PESSOA_CLIENTE", inversedColumn = "ID_PESSOA", required = true)
  private Pessoa pessoaCliente;     
  
- 3) Gerando "default" errado quando o BooleanType é omitido.
+3) Gerando "default" errado quando o BooleanType é omitido.
  	@BooleanValue(trueValue = "S", falseValue = "N")
 	@Column(name = "BO_LIDO", required = true, defaultValue = "'N'")
 	private Boolean lido;         
