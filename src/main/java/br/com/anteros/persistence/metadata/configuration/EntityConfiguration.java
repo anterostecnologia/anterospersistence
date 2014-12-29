@@ -18,6 +18,7 @@ package br.com.anteros.persistence.metadata.configuration;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -67,9 +68,9 @@ public class EntityConfiguration {
 	private int discriminatorColumnLength;
 	private DiscriminatorType discriminatorColumnType;
 	private String discriminatorValue;
-	private EnumValueConfiguration[] enumValues={};
+	private EnumValueConfiguration[] enumValues = {};
 	private ModelConfiguration model;
-	private NamedQueryConfiguration[] namedQueries={};
+	private NamedQueryConfiguration[] namedQueries = {};
 	private ScopeType scope = ScopeType.TRANSACTION;
 	private int maxTimeMemory = 0;
 	private SQLInsertConfiguration sqlInsert;
@@ -80,9 +81,9 @@ public class EntityConfiguration {
 	private String schema = "";
 	private String catalog = "";
 	private RemoteConfiguration remote;
-	private ConverterConfiguration[] converters={};
-	private ObjectTypeConverterConfiguration[] objectTypeConverters={};
-	private TypeConverterConfiguration[] typeConverters={};
+	private ConverterConfiguration[] converters = {};
+	private ObjectTypeConverterConfiguration[] objectTypeConverters = {};
+	private TypeConverterConfiguration[] typeConverters = {};
 
 	public EntityConfiguration(Class<? extends Serializable> sourceClazz, ModelConfiguration model) {
 		this.sourceClazz = sourceClazz;
@@ -97,7 +98,7 @@ public class EntityConfiguration {
 	public FieldConfiguration addField(String fieldName) throws Exception {
 		for (FieldConfiguration field : fields) {
 			if (field.getName().equals(fieldName))
-				throw new ConfigurationException("Capo " + fieldName + " já adicionado na Entidade "
+				throw new ConfigurationException("Campo " + fieldName + " já adicionado na Entidade "
 						+ sourceClazz.getName());
 		}
 
@@ -191,7 +192,7 @@ public class EntityConfiguration {
 	public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
 		return annotations.contains(annotationClass);
 	}
-	
+
 	public boolean isAnnotationPresent(Class[] annotationClasses) {
 		for (Class c : annotationClasses) {
 			if (isAnnotationPresent(c)) {
@@ -350,9 +351,11 @@ public class EntityConfiguration {
 
 		Field[] fields = sourceClazz.getDeclaredFields();
 		for (Field field : fields) {
-			FieldConfiguration fieldConfiguration = new FieldConfiguration(this, field);
-			fieldConfiguration.loadAnnotations();
-			this.fields.add(fieldConfiguration);
+			if (!Modifier.isStatic(field.getModifiers())) {
+				FieldConfiguration fieldConfiguration = new FieldConfiguration(this, field);
+				fieldConfiguration.loadAnnotations();
+				this.fields.add(fieldConfiguration);
+			}
 		}
 
 	}
@@ -570,7 +573,7 @@ public class EntityConfiguration {
 	public void setDiscriminatorColumnType(DiscriminatorType discriminatorColumnType) {
 		this.discriminatorColumnType = discriminatorColumnType;
 	}
-	
+
 	public EntityConfiguration getEntityConfigurationBySourceClass(Class<?> sourceClazz) {
 		return model.getEntityConfigurationBySourceClass(sourceClazz);
 	}
