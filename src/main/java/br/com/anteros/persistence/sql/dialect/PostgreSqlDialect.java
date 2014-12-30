@@ -28,6 +28,7 @@ import java.text.MessageFormat;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.PostgresTemplates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
+import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 
 public class PostgreSqlDialect extends DatabaseDialect {
@@ -82,11 +83,6 @@ public class PostgreSqlDialect extends DatabaseDialect {
 		return " FOR UPDATE";
 	}
 
-	@Override
-	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name, Object[] inputParameters,
-			String[] outputParametersName, int[] outputTypes, int queryTimeOut, boolean showSql, String clientId) throws Exception {
-		return null;
-	}
 
 	@Override
 	public String name() {

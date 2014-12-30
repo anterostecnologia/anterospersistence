@@ -117,6 +117,7 @@ import br.com.anteros.persistence.metadata.descriptor.type.FieldType;
 import br.com.anteros.persistence.metadata.descriptor.type.SQLStatementType;
 import br.com.anteros.persistence.metadata.exception.EntityCacheManagerException;
 import br.com.anteros.persistence.parameter.NamedParameterParserResult;
+import br.com.anteros.persistence.session.cache.PersistenceMetadataCache;
 import br.com.anteros.persistence.sql.statement.NamedParameterStatement;
 import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 import br.com.anteros.synchronism.annotation.IdSynchronism;
@@ -196,9 +197,13 @@ public class EntityCacheManager {
 			 * colunas da classe.
 			 */
 			for (DescriptionSQL descriptionSQL : entityCache.getDescriptionSql().values()) {
-				NamedParameterParserResult result = NamedParameterStatement.parse(descriptionSQL.getSql(), null);
-				if (result != null) {
-					for (String param : result.getParsedParams().keySet()) {
+				NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache.getInstance().get("NamedParameters:"+descriptionSQL.getSql());
+				if (parserResult == null) {
+					parserResult = NamedParameterStatement.parse(descriptionSQL.getSql(), null);
+					PersistenceMetadataCache.getInstance().put("NamedParameters:"+descriptionSQL.getSql(), parserResult);
+				}
+				if (parserResult != null) {
+					for (String param : parserResult.getParsedParams().keySet()) {
 						if ((entityCache.getDescriptionColumnByName(param) == null)
 								&& (!descriptionSQL.getSuccessParameter().equalsIgnoreCase(param))
 								&& (descriptionSQL.getParametersId().get(param) == null))
@@ -234,9 +239,13 @@ public class EntityCacheManager {
 				 * na lista de colunas da classe do campo.
 				 */
 				for (DescriptionSQL descriptionSQL : descriptionField.getDescriptionSql().values()) {
-					NamedParameterParserResult result = NamedParameterStatement.parse(descriptionSQL.getSql(), null);
-					if (result != null) {
-						for (String param : result.getParsedParams().keySet()) {
+					NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache.getInstance().get("NamedParameters:"+descriptionSQL.getSql());
+					if (parserResult == null) {
+						parserResult = NamedParameterStatement.parse(descriptionSQL.getSql(), null);
+						PersistenceMetadataCache.getInstance().put("NamedParameters:"+descriptionSQL.getSql(), parserResult);
+					}
+					if (parserResult != null) {
+						for (String param : parserResult.getParsedParams().keySet()) {
 							if (entityCache.getDiscriminatorColumn() != null) {
 								if (entityCache.getDiscriminatorColumn().getColumnName().equalsIgnoreCase(param))
 									continue;

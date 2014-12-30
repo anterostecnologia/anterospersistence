@@ -30,6 +30,7 @@ import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.H2Templates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
+import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 
@@ -87,82 +88,6 @@ public class H2Dialect extends DatabaseDialect {
 	@Override
 	public String getSelectForUpdateString() {
 		return " FOR UPDATE";
-	}
-
-	@Override
-	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name,
-			Object[] inputParameters, String[] outputParametersName, int[] outputTypes, int queryTimeOut,
-			boolean showSql, String clientId) throws Exception {
-		int i;
-		int numberInputParameters = (inputParameters == null ? 0 : inputParameters.length);
-		StringBuffer sql = null;
-		if (type == CallableType.PROCEDURE) {
-			sql = new StringBuffer("{ call ");
-		} else {
-			sql = new StringBuffer("{? = call ");
-		}
-
-		sql.append(name).append("(");
-		boolean append = false;
-		if (inputParameters != null) {
-			for (i = 0; i < inputParameters.length; i++) {
-				if (append)
-					sql.append(", ");
-				sql.append("?");
-				append = true;
-			}
-		}
-
-		if (outputParametersName != null) {
-			if (type == CallableType.FUNCTION) {
-				for (i = 1; i < outputParametersName.length; i++) {
-					if (append)
-						sql.append(", ");
-					sql.append("?");
-					append = true;
-				}
-			} else {
-				for (i = 0; i < outputParametersName.length; i++) {
-					if (append)
-						sql.append(", ");
-					sql.append("?");
-					append = true;
-				}
-			}
-		}
-
-		sql.append(") }");
-
-		if (showSql) {
-			log.debug(AnterosPersistenceTranslate.getMessage(H2Dialect.class, "showSql", sql.toString(), clientId));
-			if (inputParameters != null) {
-				log.debug(AnterosPersistenceTranslate.getMessage(H2Dialect.class, "showSql1", clientId));
-				for (Object parameter : inputParameters)
-					log.debug("        " + parameter + " ##" + clientId);
-			}
-			if (outputParametersName != null) {
-				log.debug(AnterosPersistenceTranslate.getMessage(H2Dialect.class, "showSql2", clientId));
-				for (String opt : outputParametersName)
-					log.debug("        " + opt + " ##" + clientId);
-			}
-		}
-
-		CallableStatement call = (CallableStatement) connection.prepareCall(sql.toString());
-
-		if (type == CallableType.FUNCTION) {
-			if (outputTypes.length > 0)
-				call.registerOutParameter(1, outputTypes[0]);
-
-			for (i = 1; i < outputTypes.length; i++)
-				call.registerOutParameter(numberInputParameters + i + 2, outputTypes[i]);
-		} else {
-			for (i = 0; i < outputTypes.length; i++)
-				call.registerOutParameter(numberInputParameters + i + 1, outputTypes[i]);
-		}
-
-		if (inputParameters != null)
-			setParametersCallableStatement(call, type, inputParameters);
-		return call;
 	}
 
 	@Override

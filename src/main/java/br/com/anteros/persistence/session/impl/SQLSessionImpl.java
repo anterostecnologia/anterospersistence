@@ -29,12 +29,13 @@ import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.persistence.handler.EntityHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
+import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
 import br.com.anteros.persistence.parameter.NamedParameter;
-import br.com.anteros.persistence.proxy.LazyLoadFactory;
 import br.com.anteros.persistence.proxy.JavassistLazyLoadFactory;
+import br.com.anteros.persistence.proxy.LazyLoadFactory;
 import br.com.anteros.persistence.session.SQLPersister;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionFactory;
@@ -46,7 +47,6 @@ import br.com.anteros.persistence.session.lock.type.LockModeType;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
 import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
-import br.com.anteros.persistence.session.query.StoredProcedureSQLQuery;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
 import br.com.anteros.persistence.sql.command.CommandSQL;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
@@ -633,9 +633,9 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public StoredProcedureSQLQuery createStoredProcedureQuery(String procedureName) throws Exception{
+	public SQLQuery createStoredProcedureQuery(String procedureName, CallableType type) throws Exception{
 		errorIfClosed();
-		StoredProcedureSQLQuery result = new StoredProcedureSQLQueryImpl(this);
+		SQLQuery result = new StoredProcedureSQLQueryImpl(this, type);
 		result.procedureOrFunctionName(procedureName);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
@@ -643,9 +643,9 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public StoredProcedureSQLQuery createStoredProcedureQuery(String procedureName, Object parameters) throws Exception{
+	public SQLQuery createStoredProcedureQuery(String procedureName, CallableType type, Object parameters) throws Exception{
 		errorIfClosed();
-		StoredProcedureSQLQuery result = new StoredProcedureSQLQueryImpl(this);
+		SQLQuery result = new StoredProcedureSQLQueryImpl(this, type);
 		result.procedureOrFunctionName(procedureName);
 		result.setParameters(parameters);
 		result.timeOut(queryTimeout);
@@ -654,9 +654,9 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public StoredProcedureSQLQuery createStoredProcedureQuery(String procedureName, Class<?> resultClass) throws Exception{
+	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type,  Class<T> resultClass) throws Exception{
 		errorIfClosed();
-		StoredProcedureSQLQuery result = new StoredProcedureSQLQueryImpl(this, resultClass);
+		TypedSQLQuery<T> result = new StoredProcedureSQLQueryImpl(this, resultClass, type);
 		result.procedureOrFunctionName(procedureName);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
@@ -664,10 +664,10 @@ public class SQLSessionImpl implements SQLSession {
 	}
 	
 	@Override
-	public StoredProcedureSQLQuery createStoredProcedureQuery(String procedureName, Class<?> resultClass,
+	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type, Class<T> resultClass,
 			Object[] parameters) throws Exception {
 		errorIfClosed();
-		StoredProcedureSQLQuery result = new StoredProcedureSQLQueryImpl(this, resultClass);
+		TypedSQLQuery<T> result = new StoredProcedureSQLQueryImpl(this, resultClass, type);
 		result.procedureOrFunctionName(procedureName);
 		result.timeOut(queryTimeout);
 		result.setParameters(parameters);
@@ -675,23 +675,24 @@ public class SQLSessionImpl implements SQLSession {
 		return result;
 	}
 
+
 	@Override
-	public StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name) throws Exception{
+	public SQLQuery createStoredProcedureNamedQuery(String name) throws Exception{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name, Object parameters) throws Exception{
+	public SQLQuery createStoredProcedureNamedQuery(String name, Object parameters) throws Exception{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name, Class<?> resultClass) throws Exception{
+	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass) throws Exception{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name, Class<?> resultClass,
+	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass,
 			Object[] parameters) throws Exception{
 		throw new UnsupportedOperationException();
 	}
@@ -738,4 +739,6 @@ public class SQLSessionImpl implements SQLSession {
 			throws Exception {
 		return find(id,properties,lockMode,false);
 	}
+
+	
 }

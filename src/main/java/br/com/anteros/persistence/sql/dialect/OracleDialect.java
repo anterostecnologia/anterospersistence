@@ -40,7 +40,6 @@ import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.OracleTemplates;
-import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.schema.definition.ColumnSchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 
@@ -107,83 +106,7 @@ public class OracleDialect extends DatabaseDialect {
 		return " FOR UPDATE";
 	}
 
-	@Override
-	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name,
-			Object[] inputParameters, String[] outputParametersName, int[] outputTypes, int queryTimeOut,
-			boolean showSql, String clientId) throws Exception {
-		int i;
-		int numberInputParameters = (inputParameters == null ? 0 : inputParameters.length);
-		StringBuffer sql = null;
-		if (type == CallableType.PROCEDURE) {
-			sql = new StringBuffer("{ call ");
-		} else {
-			sql = new StringBuffer("{? = call ");
-		}
-
-		sql.append(name).append("(");
-		boolean append = false;
-		if (inputParameters != null) {
-			for (i = 0; i < inputParameters.length; i++) {
-				if (append)
-					sql.append(", ");
-				sql.append("?");
-				append = true;
-			}
-		}
-
-		if (outputParametersName != null) {
-			if (type == CallableType.FUNCTION) {
-				for (i = 1; i < outputParametersName.length; i++) {
-					if (append)
-						sql.append(", ");
-					sql.append("?");
-					append = true;
-				}
-			} else {
-				for (i = 0; i < outputParametersName.length; i++) {
-					if (append)
-						sql.append(", ");
-					sql.append("?");
-					append = true;
-				}
-			}
-		}
-
-		sql.append(") }");
-
-		if (showSql) {
-			log.debug("Sql-> " + sql.toString() + " ##" + clientId);
-			if (inputParameters != null) {
-				log.debug("      Input parameters->" + " ##" + clientId);
-				for (Object parameter : inputParameters)
-					log.debug("        " + parameter + " ##" + clientId);
-			}
-			if (outputParametersName != null) {
-				log.debug("      Output parameters->" + " ##" + clientId);
-				for (String opt : outputParametersName)
-					log.debug("        " + opt + " ##" + clientId);
-			}
-		}
-
-		CallableStatement call = (CallableStatement) connection.prepareCall(sql.toString());
-		if (queryTimeOut > 0)
-			call.setQueryTimeout(queryTimeOut);
-
-		if (type == CallableType.FUNCTION) {
-			if (outputTypes.length > 0)
-				call.registerOutParameter(1, outputTypes[0]);
-
-			for (i = 1; i < outputTypes.length; i++)
-				call.registerOutParameter(numberInputParameters + i + 2, outputTypes[i]);
-		} else {
-			for (i = 0; i < outputTypes.length; i++)
-				call.registerOutParameter(numberInputParameters + i + 1, outputTypes[i]);
-		}
-
-		if (inputParameters!=null)
-		setParametersCallableStatement(call, type, inputParameters);
-		return call;
-	}
+	
 
 	/*
 	 * public List<ProcedureMetadata> getNativeFunctions() throws Exception { //
@@ -354,7 +277,7 @@ public class OracleDialect extends DatabaseDialect {
 			stmt.close();
 		}
 	}
-	
+
 	@Override
 	public Map<String, IndexMetadata> getAllIndexesByTable(Connection conn, String tableName) throws Exception {
 		Map<String, IndexMetadata> indexes = new HashMap<String, IndexMetadata>();
@@ -365,15 +288,15 @@ public class OracleDialect extends DatabaseDialect {
 		try {
 			IndexMetadata index = null;
 			while (resultSet.next()) {
-				if (resultSet.getString("COLUMN_NAME") != null) {
-					if (indexes.containsKey(resultSet.getString("INDEX_NAME")))
-						index = indexes.get(resultSet.getString("INDEX_NAME"));
+				if (resultSet.getString(COLUMN_NAME) != null) {
+					if (indexes.containsKey(resultSet.getString(INDEX_NAME)))
+						index = indexes.get(resultSet.getString(INDEX_NAME));
 					else {
-						index = new IndexMetadata(resultSet.getString("INDEX_NAME"));
+						index = new IndexMetadata(resultSet.getString(INDEX_NAME));
 						indexes.put(index.indexName, index);
 					}
-					index.unique = ("UNIQUE".equals(resultSet.getString("UNIQUENESS")));
-					index.addColumn(resultSet.getString("COLUMN_NAME"));
+					index.unique = (UNIQUE.equals(resultSet.getString(UNIQUENESS)));
+					index.addColumn(resultSet.getString(COLUMN_NAME));
 				}
 			}
 		} finally {
@@ -394,15 +317,15 @@ public class OracleDialect extends DatabaseDialect {
 		try {
 			IndexMetadata index = null;
 			while (resultSet.next()) {
-				if (resultSet.getString("COLUMN_NAME") != null) {
-					if (indexes.containsKey(resultSet.getString("INDEX_NAME")))
-						index = indexes.get(resultSet.getString("INDEX_NAME"));
+				if (resultSet.getString(COLUMN_NAME) != null) {
+					if (indexes.containsKey(resultSet.getString(INDEX_NAME)))
+						index = indexes.get(resultSet.getString(INDEX_NAME));
 					else {
-						index = new IndexMetadata(resultSet.getString("INDEX_NAME"));
+						index = new IndexMetadata(resultSet.getString(INDEX_NAME));
 						indexes.put(index.indexName, index);
 					}
-					index.unique = ("UNIQUE".equals(resultSet.getString("UNIQUENESS")));
-					index.addColumn(resultSet.getString("COLUMN_NAME"));
+					index.unique = (UNIQUE.equals(resultSet.getString(UNIQUENESS)));
+					index.addColumn(resultSet.getString(COLUMN_NAME));
 				}
 			}
 		} finally {
@@ -473,19 +396,18 @@ public class OracleDialect extends DatabaseDialect {
 		ResultSet resultSet = statement
 				.executeQuery("SELECT A.CONSTRAINT_NAME, A.TABLE_NAME, A.COLUMN_NAME FROM USER_CONS_COLUMNS A  JOIN USER_CONSTRAINTS C ON A.OWNER = C.OWNER  AND A.CONSTRAINT_NAME = C.CONSTRAINT_NAME WHERE C.CONSTRAINT_TYPE = 'R' AND C.TABLE_NAME = '"
 						+ tableName.toUpperCase() + "'");
-		
-		
+
 		try {
 			ForeignKeyMetadata fk = null;
 			while (resultSet.next()) {
-				if (fks.containsKey(resultSet.getString("CONSTRAINT_NAME")))
-					fk = fks.get(resultSet.getString("CONSTRAINT_NAME"));
+				if (fks.containsKey(resultSet.getString(CONSTRAINT_NAME)))
+					fk = fks.get(resultSet.getString(CONSTRAINT_NAME));
 				else {
-					fk = new ForeignKeyMetadata(resultSet.getString("CONSTRAINT_NAME"));
+					fk = new ForeignKeyMetadata(resultSet.getString(CONSTRAINT_NAME));
 					fks.put(fk.fkName, fk);
 				}
 
-				fk.addColumn(resultSet.getString("COLUMN_NAME"));
+				fk.addColumn(resultSet.getString(COLUMN_NAME));
 			}
 		} finally {
 			if (resultSet != null)
@@ -494,13 +416,12 @@ public class OracleDialect extends DatabaseDialect {
 
 		return fks;
 	}
-	
 
 	@Override
 	public String getSchema(DatabaseMetaData metadata) throws Exception {
 		return metadata.getUserName();
 	}
-	
+
 	@Override
 	public Writer writeColumnDDLStatement(ColumnSchema columnSchema, Writer schemaWriter) throws Exception {
 		/*
@@ -533,7 +454,6 @@ public class OracleDialect extends DatabaseDialect {
 						schemaWriter.write("," + columnSchema.getSubSize());
 					schemaWriter.write(")");
 				}
-				
 
 				/*
 				 * Se suporta sequence como default value
@@ -577,7 +497,5 @@ public class OracleDialect extends DatabaseDialect {
 	public SQLTemplates getTemplateSQL() {
 		return new OracleTemplates();
 	}
-
-
 
 }

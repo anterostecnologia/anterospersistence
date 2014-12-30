@@ -24,6 +24,7 @@ import java.util.Set;
 
 import br.com.anteros.persistence.handler.EntityHandler;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
+import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
@@ -34,7 +35,6 @@ import br.com.anteros.persistence.session.lock.type.LockModeType;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
 import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
-import br.com.anteros.persistence.session.query.StoredProcedureSQLQuery;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
 import br.com.anteros.persistence.sql.command.CommandSQL;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
@@ -51,7 +51,8 @@ public interface SQLSession {
 
 	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode) throws Exception;
 
-	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties) throws Exception;
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties)
+			throws Exception;
 
 	public <T> T find(Identifier<T> id) throws Exception;
 
@@ -60,14 +61,17 @@ public interface SQLSession {
 	public <T> T find(Identifier<T> id, Map<String, Object> properties) throws Exception;
 
 	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode) throws Exception;
-	
+
 	public <T> T find(Class<T> entityClass, Object primaryKey, boolean readOnly) throws Exception;
 
-	public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties, boolean readOnly) throws Exception;
+	public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties, boolean readOnly)
+			throws Exception;
 
-	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, boolean readOnly) throws Exception;
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, boolean readOnly)
+			throws Exception;
 
-	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties, boolean readOnly) throws Exception;
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties,
+			boolean readOnly) throws Exception;
 
 	public <T> T find(Identifier<T> id, boolean readOnly) throws Exception;
 
@@ -75,20 +79,20 @@ public interface SQLSession {
 
 	public <T> T find(Identifier<T> id, Map<String, Object> properties, boolean readOnly) throws Exception;
 
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode, boolean readOnly) throws Exception;
-
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode, boolean readOnly)
+			throws Exception;
 
 	/*
 	 * Atualiza o objeto com dados do banco descartando alterações na transação
 	 * atual
 	 */
-	public void refresh(Object entity) throws Exception ;
+	public void refresh(Object entity) throws Exception;
 
-	public void refresh(Object entity, Map<String, Object> properties) throws Exception ;
+	public void refresh(Object entity, Map<String, Object> properties) throws Exception;
 
-	public void refresh(Object entity, LockModeType lockMode) throws Exception ;
+	public void refresh(Object entity, LockModeType lockMode) throws Exception;
 
-	public void refresh(Object entity, LockModeType lockMode, Map<String, Object> properties) throws Exception ;
+	public void refresh(Object entity, LockModeType lockMode, Map<String, Object> properties) throws Exception;
 
 	/*
 	 * Bloqueia o objeto
@@ -142,7 +146,7 @@ public interface SQLSession {
 	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass) throws Exception;
 
 	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, Object parameters) throws Exception;
-	
+
 	/*
 	 * Cria uma query nomeada
 	 */
@@ -157,26 +161,27 @@ public interface SQLSession {
 	/*
 	 * Cria uma query stored procedure
 	 */
-	public StoredProcedureSQLQuery createStoredProcedureQuery(String procedureName) throws Exception;
+	public SQLQuery createStoredProcedureQuery(String procedureName, CallableType type) throws Exception;
 
-	public StoredProcedureSQLQuery createStoredProcedureQuery(String procedureName, Object parameters) throws Exception;
+	public SQLQuery createStoredProcedureQuery(String procedureName, CallableType type, Object parameters) throws Exception;
 
-	public StoredProcedureSQLQuery createStoredProcedureQuery(String procedureName, Class<?> resultClass) throws Exception;
+	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type, Class<T> resultClass) throws Exception;
 
-	public StoredProcedureSQLQuery createStoredProcedureQuery(String procedureName, Class<?> resultClass,
+	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type, Class<T> resultClass,
 			Object[] parameters) throws Exception;
 
 	/*
 	 * Cria uma query stored procedure nomeada
 	 */
-	public  StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name) throws Exception;
+	public SQLQuery createStoredProcedureNamedQuery(String name) throws Exception;
 
-	public  StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name, Object parameters) throws Exception;
+	public SQLQuery createStoredProcedureNamedQuery(String name, Object parameters) throws Exception;
 
-	public  StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name, Class<?> resultClass) throws Exception;
+	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass) throws Exception;
 
-	public StoredProcedureSQLQuery createStoredProcedureNamedQuery(String name, Class<?> resultClass,
-			Object[] parameters) throws Exception;
+	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass, Object[] parameters)
+			throws Exception;
+	
 
 	public Object save(Object object) throws Exception;
 
@@ -254,7 +259,8 @@ public interface SQLSession {
 
 	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String, String> expressions,
 			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, Cache transactionCache,
-			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly) throws Exception;
+			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly)
+			throws Exception;
 
 	public boolean isProxyObject(Object object) throws Exception;
 
@@ -279,5 +285,5 @@ public interface SQLSession {
 	public void clear() throws Exception;
 
 	public void executeDDL(String ddl) throws Exception;
-	
+
 }

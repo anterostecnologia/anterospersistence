@@ -69,8 +69,7 @@ public class InsertCommandSQL extends CommandSQL {
 				try {
 					result = queryRunner.executeProcedure(session, session.getDialect(),
 							descriptionSQL.getCallableType(), descriptionSQL.getSql(),
-							descriptionSQL.getInputParameters(namedParameters),
-							descriptionSQL.getOutputParameters(namedParameters), showSql, 0, session.clientId());
+							namedParameters.toArray(new NamedParameter[]{}),showSql, 0, session.clientId());
 					/*
 					 * Verifica se houve sucesso na execução
 					 */

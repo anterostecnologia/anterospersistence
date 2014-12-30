@@ -52,7 +52,7 @@ OK - Fazer LOB carregar com lazy
 OK - Implementar limit para trazer registros
    Obs: Implementado junto com DSL.
    
-- Implementar @AttributeOverride e @AttributeOverrides
+- Implementar anotações @Embeddable, @Embedded, @AttributeOverride e @AttributeOverrides.
 
 - Ver possibilidade de implementar @SecondaryTables, @SecondaryTable: Ver exemplo MovimentoEstoque x MovimentoEstoqueValor
  sendo que a segunda tabela seria a de valor.
@@ -126,7 +126,7 @@ OK - Fazer Refresh na Session para permitir atualizar o objeto pela chave primá
                 .withRenderSchema(false)
         );
 
-- Implementar anotações @Embeddable, @Embedded, @AttributeOverride e @AttributeOverrides.
+
   
 
 @Entity 

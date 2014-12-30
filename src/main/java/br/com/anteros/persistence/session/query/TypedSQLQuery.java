@@ -10,6 +10,7 @@ import java.util.Map;
 import br.com.anteros.persistence.handler.ResultSetHandler;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.parameter.NamedParameter;
+import br.com.anteros.persistence.session.ProcedureResult;
 import br.com.anteros.persistence.session.SQLSessionResult;
 import br.com.anteros.persistence.session.lock.type.LockModeType;
 
@@ -118,5 +119,9 @@ public interface TypedSQLQuery<X> extends SQLQuery {
 	TypedSQLQuery<X> setMaxResults(int maxResults);
 
 	TypedSQLQuery<X> setFirstResult(int firstResult);
+	
+	public TypedSQLQuery<X>  procedureOrFunctionName(String procedureName);
+
+	public TypedSQLQuery<X>  namedStoredProcedureQuery(String name);
 
 }

@@ -24,9 +24,11 @@ import java.util.Map;
 
 import br.com.anteros.persistence.handler.ResultSetHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
+import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.parameter.NamedParameter;
+import br.com.anteros.persistence.session.ProcedureResult;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionResult;
 import br.com.anteros.persistence.session.cache.Cache;
@@ -50,7 +52,7 @@ public interface SQLQuery {
 	SQLQuery resultSetHandler(ResultSetHandler handler);
 
 	SQLQuery namedQuery(String name);
-	
+
 	SQLQuery setReadOnly(boolean readOnlyObjects);
 
 	SQLQuery clear();
@@ -145,5 +147,15 @@ public interface SQLQuery {
 	SQLQuery setMaxResults(int max);
 
 	SQLQuery setFirstResult(int first);
+
+	public SQLQuery procedureOrFunctionName(String procedureName);
+
+	public Object getOutputParameterValue(int position);
+
+	public Object getOutputParameterValue(String parameterName);
+
+	public ProcedureResult execute() throws Exception;
+
+	public SQLQuery namedStoredProcedureQuery(String name);
 
 }

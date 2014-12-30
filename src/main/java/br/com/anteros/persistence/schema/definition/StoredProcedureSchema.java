@@ -28,7 +28,7 @@ import br.com.anteros.persistence.session.SQLSession;
 
 public class StoredProcedureSchema extends ObjectSchema {
 
-	protected final Set<StoredParameterSchema> parameters = new HashSet<StoredParameterSchema>();
+	protected final Set<StoredParameterSchema> parameters = new LinkedHashSet<StoredParameterSchema>();
 	protected final List<String> statements = new ArrayList<String>();
 	protected final Set<ColumnSchema> variables = new LinkedHashSet<ColumnSchema>();
 

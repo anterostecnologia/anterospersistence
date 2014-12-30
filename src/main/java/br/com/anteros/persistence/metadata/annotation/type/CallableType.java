@@ -18,5 +18,6 @@ package br.com.anteros.persistence.metadata.annotation.type;
 public enum CallableType {
 
 	PROCEDURE,
-	FUNCTION;
+	FUNCTION,
+	NONE;
 }

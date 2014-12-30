@@ -23,6 +23,10 @@ import java.util.Map;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.type.SQLStatementType;
 import br.com.anteros.persistence.parameter.NamedParameter;
+import br.com.anteros.persistence.parameter.NamedParameterParserResult;
+import br.com.anteros.persistence.parameter.OutputNamedParameter;
+import br.com.anteros.persistence.schema.definition.type.StoredParameterType;
+import br.com.anteros.persistence.session.cache.PersistenceMetadataCache;
 import br.com.anteros.persistence.sql.statement.NamedParameterStatement;
 
 public class DescriptionSQL {
@@ -111,10 +115,29 @@ public class DescriptionSQL {
 
 	public String[] getParametersName() {
 		List<String> result = new ArrayList<String>();
-		for (String parameter : NamedParameterStatement.parse(sql, null).getParsedParams().keySet()) {
-			result.add(parameter);
+		for (NamedParameter parameter : getParameters()) {
+			result.add(parameter.getName());
 		}
 		return result.toArray(new String[] {});
+	}
+
+	public NamedParameter[] getParameters() {
+		List<NamedParameter> result = new ArrayList<NamedParameter>();
+		NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache.getInstance()
+				.get("NamedParameters:" + sql);
+		if (parserResult == null) {
+			parserResult = NamedParameterStatement.parse(sql, null);
+			PersistenceMetadataCache.getInstance().put("NamedParameters:" + sql, parserResult);
+		}
+
+		for (NamedParameter parameter : parserResult.getNamedParameters()) {
+			if ((getSuccessParameter() != null) && (parameter.getName().equalsIgnoreCase(getSuccessParameter()))) {
+				result.add(new OutputNamedParameter(parameter.getName(), StoredParameterType.OUT));
+			} else {
+				result.add(parameter);
+			}
+		}
+		return result.toArray(new NamedParameter[] {});
 	}
 
 	public NamedParameter[] processParameters(List<NamedParameter> namedParameters) {
@@ -130,39 +153,33 @@ public class DescriptionSQL {
 		return result.toArray(new NamedParameter[] {});
 	}
 
-	public Object[] getInputParameters(List<NamedParameter> namedParameters) {
-		List<Object> result = new ArrayList<Object>();
+	public NamedParameter[] getInputParameters(List<NamedParameter> namedParameters) {
+		List<NamedParameter> result = new ArrayList<NamedParameter>();
 		if (callable) {
-			String[] parsedParameters = getParametersName();
-			NamedParameter namedParam;
-			for (String parameter : parsedParameters) {
-				if ((!parameter.equals(successParameter)) && (parametersId.get(parameter) == null)) {
-					namedParam = NamedParameter.getNamedParameterByName(namedParameters, parameter);
-					if (namedParam != null)
-						result.add(namedParam.getValue());
-				}
-			}
-		}
-		return result.toArray(new Object[] {});
-	}
-
-	public String[] getOutputParameters(List<NamedParameter> namedParameters) {
-		List<Object> result = new ArrayList<Object>();
-		if (callable) {
-			String[] parsedParameters = getParametersName();
-			NamedParameter namedParam;
-			for (String parameter : parsedParameters) {
-				if ((parameter.equals(successParameter)) || (parametersId.get(parameter) != null)) {
+			for (NamedParameter parameter : getParameters()) {
+				if (!(parameter instanceof OutputNamedParameter)) {
 					result.add(parameter);
 				}
 			}
 		}
-		return result.toArray(new String[] {});
+		return result.toArray(new NamedParameter[] {});
 	}
-	
-	public String getParameterIdByColumnName(String columnName){
-		for (String s : parametersId.keySet()){
-			if (columnName.equals(parametersId.get(s))){
+
+	public NamedParameter[] getOutputParameters(List<NamedParameter> namedParameters) {
+		List<NamedParameter> result = new ArrayList<NamedParameter>();
+		if (callable) {
+			for (NamedParameter parameter : getParameters()) {
+				if (parameter instanceof OutputNamedParameter) {
+					result.add(parameter);
+				}
+			}
+		}
+		return result.toArray(new NamedParameter[] {});
+	}
+
+	public String getParameterIdByColumnName(String columnName) {
+		for (String s : parametersId.keySet()) {
+			if (columnName.equals(parametersId.get(s))) {
 				return s;
 			}
 		}

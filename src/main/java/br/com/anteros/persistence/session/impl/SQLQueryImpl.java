@@ -51,6 +51,7 @@ import br.com.anteros.persistence.parameter.NamedParameterParserResult;
 import br.com.anteros.persistence.proxy.collection.DefaultSQLList;
 import br.com.anteros.persistence.proxy.collection.DefaultSQLMap;
 import br.com.anteros.persistence.proxy.collection.DefaultSQLSet;
+import br.com.anteros.persistence.session.ProcedureResult;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionResult;
 import br.com.anteros.persistence.session.cache.Cache;
@@ -838,7 +839,11 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				}
 			}
 		} else {
-			NamedParameterParserResult parserResult = NamedParameterStatement.parse(sql, null);
+			NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache.getInstance().get("NamedParameters:"+sql);
+			if (parserResult == null) {
+				parserResult = NamedParameterStatement.parse(sql, null);
+				PersistenceMetadataCache.getInstance().put("NamedParameters:"+sql, parserResult);
+			}
 			for (NamedParameter parameter : parserResult.getNamedParameters()) {
 				Object value = columnKeyTarget.get(parameter.getName());
 				if (value == null) {
@@ -1023,7 +1028,11 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				}
 			}
 		} else {
-			NamedParameterParserResult parserResult = NamedParameterStatement.parse(sql, null);
+			NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache.getInstance().get("NamedParameters:"+sql);
+			if (parserResult == null) {
+				parserResult = NamedParameterStatement.parse(sql, null);
+				PersistenceMetadataCache.getInstance().put("NamedParameters:"+sql, parserResult);
+			}
 			for (NamedParameter parameter : parserResult.getNamedParameters()) {
 				Object value = columnKeyTarget.get(parameter.getName());
 				if (value == null) {
@@ -1156,7 +1165,11 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				}
 			}
 		} else {
-			NamedParameterParserResult parserResult = NamedParameterStatement.parse(sql, null);
+			NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache.getInstance().get("NamedParameters:"+sql);
+			if (parserResult == null) {
+				parserResult = NamedParameterStatement.parse(sql, null);
+				PersistenceMetadataCache.getInstance().put("NamedParameters:"+sql, parserResult);
+			}
 			for (NamedParameter parameter : parserResult.getNamedParameters()) {
 				Object value = columnKeyTarget.get(parameter.getName());
 				if (value == null) {
@@ -1440,6 +1453,31 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	public TypedSQLQuery setReadOnly(boolean readOnlyObjects) {
 		this.readOnly = readOnlyObjects;
 		return this;
+	}
+
+	@Override
+	public Object getOutputParameterValue(int position) {
+		throw new SQLQueryException("Método somente usado em Procedimentos/Funções.");
+	}
+
+	@Override
+	public Object getOutputParameterValue(String parameterName) {
+		throw new SQLQueryException("Método somente usado em Procedimentos/Funções.");
+	}
+
+	@Override
+	public ProcedureResult execute() throws Exception {
+		throw new SQLQueryException("Método somente usado em Procedimentos/Funções.");
+	}
+
+	@Override
+	public TypedSQLQuery<T> procedureOrFunctionName(String procedureName) {
+		throw new SQLQueryException("Método somente usado em Procedimentos/Funções.");
+	}
+
+	@Override
+	public TypedSQLQuery<T> namedStoredProcedureQuery(String name) {
+		throw new SQLQueryException("Método somente usado em Procedimentos/Funções.");
 	}
 
 }

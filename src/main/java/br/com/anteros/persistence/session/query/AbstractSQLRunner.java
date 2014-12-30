@@ -14,7 +14,7 @@
  * limitations under the License.
  ******************************************************************************/
 package br.com.anteros.persistence.session.query;
-
+ 
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -335,14 +335,11 @@ public abstract class AbstractSQLRunner {
 			List<SQLSessionListener> listeners, String clientId) throws Exception;
 
 	public abstract Object queryProcedure(SQLSession session, DatabaseDialect dialect, CallableType type, String name,
-			ResultSetHandler resultSetHandler, Object[] inputParameters, String[] outputParametersName,
+			ResultSetHandler resultSetHandler, NamedParameter[] parameters, 
 			boolean showSql, int timeOut, String clientId) throws Exception;
 
-	public abstract int[] getOutputSqlTypesByProcedure(Connection connection, DatabaseDialect dialect,
-			String procedureName) throws Exception;
-
-	public abstract ProcedureResult executeProcedure(SQLSession session, DatabaseDialect dialect, CallableType type,
-			String name, Object[] inputParameters, String[] outputParametersName, boolean showSql, int timeOut,
+		public abstract ProcedureResult executeProcedure(SQLSession session, DatabaseDialect dialect, CallableType type,
+			String name, NamedParameter[] parameters, boolean showSql, int timeOut,
 			String clientId) throws Exception;
 
 	public abstract Object query(Connection conn, String sql, ResultSetHandler resultSetHandler, boolean showSql,

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
 import br.com.anteros.persistence.parameter.type.EnumeratedFormatSQL;
+import br.com.anteros.persistence.schema.definition.type.StoredParameterType;
 
 
 public class NamedParameterList extends ArrayList<NamedParameter> {
@@ -42,6 +43,18 @@ public class NamedParameterList extends ArrayList<NamedParameter> {
 
 	public NamedParameterList addEnumeratedParameter(String name, Enum<?>[] value, EnumeratedFormatSQL format) {
 		this.add(new EnumeratedParameter(name, value, format));
+		return this;
+	}
+	
+	public NamedParameterList addOutputParameter(String name) {
+		this.add(new OutputNamedParameter(name, StoredParameterType.OUT));
+		return this;
+	}
+	
+	public NamedParameterList addInputOutputParameter(String name, Object value) {
+		OutputNamedParameter parameter = new OutputNamedParameter(name, StoredParameterType.OUT);
+		parameter.setValue(value);
+		this.add(parameter);
 		return this;
 	}
 

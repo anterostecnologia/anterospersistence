@@ -24,10 +24,11 @@ import java.sql.SQLException;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.SQLiteTemplates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
+import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 
 public class SQLiteDialect extends DatabaseDialect {
-	
+
 	public SQLiteDialect() {
 		super();
 		initializeTypes();
@@ -92,13 +93,6 @@ public class SQLiteDialect extends DatabaseDialect {
 	}
 
 	@Override
-	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name, Object[] inputParameters,
-			String[] outputParametersName, int[] outputTypes, int queryTimeOut, boolean showSql, String clientId) throws Exception {
-		return null;
-	}
-
-
-	@Override
 	public boolean supportInCondition() {
 		return true;
 	}
@@ -157,48 +151,47 @@ public class SQLiteDialect extends DatabaseDialect {
 	public String getUniqueKeyDeletionString() {
 		return "DROP INDEX IF EXISTS ";
 	}
-	
+
 	@Override
 	public boolean requiresUniqueConstraintCreationOnTableCreate() {
 		return true;
 	}
-	
+
 	@Override
 	public boolean requiresForeignKeyConstraintCreationOnTableCreate() {
 		return true;
 	}
-	
+
 	@Override
-	public boolean  supportsDropForeignKeyConstraints(){
+	public boolean supportsDropForeignKeyConstraints() {
 		return false;
 	}
-	
+
 	@Override
 	protected String getDropIndexString() {
 		return "DROP INDEX IF EXISTS";
 	}
-	
 
 	@Override
 	public String getCreateTableString() {
 		return "CREATE TABLE";
 	}
-	
+
 	@Override
 	public String getDropTableString() {
 		return "DROP TABLE IF EXISTS";
 	}
-	
+
 	@Override
 	public String getNoWaitString() {
 		return "";
 	}
-	
+
 	@Override
 	public String getSelectForUpdateNoWaitString() {
 		return "";
 	}
-	
+
 	@Override
 	public String getSelectForUpdateOfString() {
 		return "";

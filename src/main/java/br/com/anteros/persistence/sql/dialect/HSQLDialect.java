@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.HSQLDBTemplates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
+import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 
 public class HSQLDialect extends DatabaseDialect {
@@ -81,13 +82,6 @@ public class HSQLDialect extends DatabaseDialect {
 	public String getSelectForUpdateString() {
 		return "";
 	}
-
-	@Override
-	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name, Object[] inputParameters,
-			String[] outputParametersName, int[] outputTypes, int queryTimeOut, boolean showSql, String clientId) throws Exception {
-		return null;
-	}
-
 	
 	@Override
 	public Blob createTemporaryBlob(Connection connection, byte[] bytes) throws Exception {

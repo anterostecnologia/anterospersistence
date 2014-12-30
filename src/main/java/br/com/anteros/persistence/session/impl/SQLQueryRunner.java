@@ -17,27 +17,35 @@ package br.com.anteros.persistence.session.impl;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import br.com.anteros.core.utils.SQLFormatter;
 import br.com.anteros.persistence.handler.ResultSetHandler;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
 import br.com.anteros.persistence.parameter.NamedParameter;
+import br.com.anteros.persistence.parameter.OutputNamedParameter;
 import br.com.anteros.persistence.parameter.SubstitutedParameter;
+import br.com.anteros.persistence.schema.definition.ObjectSchema;
+import br.com.anteros.persistence.schema.definition.StoredFunctionSchema;
+import br.com.anteros.persistence.schema.definition.StoredParameterSchema;
+import br.com.anteros.persistence.schema.definition.StoredProcedureSchema;
+import br.com.anteros.persistence.schema.definition.type.StoredParameterType;
 import br.com.anteros.persistence.session.ProcedureResult;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionListener;
 import br.com.anteros.persistence.session.SQLSessionResult;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
+import br.com.anteros.persistence.session.query.SQLQueryException;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.sql.statement.NamedParameterStatement;
 
@@ -241,18 +249,17 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 	}
 
 	public Object queryProcedure(SQLSession session, DatabaseDialect dialect, CallableType type, String name,
-			ResultSetHandler resultSetHandler, Object[] inputParameters, String[] outputParametersName,
-			boolean showSql, int timeOut, String clientId) throws Exception {
+			ResultSetHandler resultSetHandler, NamedParameter[] parameters, boolean showSql, int timeOut,
+			String clientId) throws Exception {
 		CallableStatement statement = null;
 		ResultSet resultSet = null;
 		Object result = null;
 		try {
 			String[] split = name.split("\\(");
-
-			statement = dialect.prepareCallableStatement(session.getConnection(), type, split[0], inputParameters,
-					outputParametersName,
-					getOutputSqlTypesByProcedure(session.getConnection(), session.getDialect(), split[0]), timeOut,
-					showSql, clientId);
+			List<NamedParameter> newParameters = adjustNamedParametersStoredProcedure(session, split[0], parameters,
+					type);
+			statement = dialect.prepareCallableStatement(session.getConnection(), type, split[0],
+					newParameters.toArray(new NamedParameter[] {}), timeOut, showSql, clientId);
 
 			if (type == CallableType.FUNCTION) {
 				if (statement.execute()) {
@@ -281,50 +288,74 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		return result;
 	}
 
-	public int[] getOutputSqlTypesByProcedure(Connection connection, DatabaseDialect dialect, String procedureName)
-			throws Exception {
-		int[] resultInt = cacheOutputTypes.get(procedureName);
-		if (resultInt == null) {
-			DatabaseMetaData metadata = connection.getMetaData();
-			ResultSet resultSet = metadata.getProcedureColumns(dialect.getDefaultCatalog(), dialect.getDefaultSchema(),
-					procedureName, null);
-			List<Integer> result = new ArrayList<Integer>();
-			int parameterType;
-			if ((resultSet != null) && (resultSet.next())) {
-				do {
-					parameterType = resultSet.getShort("COLUMN_TYPE");
-					if ((parameterType >= 3) && (parameterType <= 4))
-						result.add(resultSet.getInt("DATA_TYPE"));
-				} while (resultSet.next());
-				close(resultSet);
-			}
-			resultInt = new int[result.size()];
-			for (int i = 0; i < result.size(); i++)
-				resultInt[i] = result.get(i).intValue();
-			cacheOutputTypes.put(procedureName, resultInt);
+	protected List<NamedParameter> adjustNamedParametersStoredProcedure(SQLSession session, String spName,
+			NamedParameter[] parameters, CallableType type) throws Exception {
+		Set<StoredProcedureSchema> storedProcedures = null;
+		if (type == CallableType.FUNCTION) {
+			storedProcedures = new LinkedHashSet<StoredProcedureSchema>(session.getDialect().getStoredFunctions(
+					session.getConnection(), spName, true));
+		} else {
+			storedProcedures = session.getDialect().getStoredProcedures(session.getConnection(), spName, true);
 		}
-		return resultInt;
+
+		if (storedProcedures.size() == 0) {
+			throw new SQLQueryException("Procedimento/função " + spName + " não encontrado.");
+		}
+		StoredProcedureSchema storedProcedure = storedProcedures.iterator().next();
+		List<NamedParameter> newParameters = new ArrayList<NamedParameter>();
+
+		int size = (parameters ==null?0:parameters.length);
+		if (type==CallableType.FUNCTION)
+			size++;
+		
+		if (((parameters == null) && (storedProcedure.getParameters().size() > 1))
+				|| ((storedProcedure.getParameters().size() != size))) {
+			throw new SQLQueryException("Número de parâmetros informados para execução do procedimento/função "
+					+ spName + " incorretos.");
+		}
+
+		for (StoredParameterSchema p : storedProcedure.getParameters()) {
+			if ((p.getParameterType() == StoredParameterType.RETURN_VALUE)
+					|| (p.getParameterType() == StoredParameterType.RETURN_RESULTSET)) {
+				newParameters.add(new OutputNamedParameter("RESULT", p.getParameterType(), p.getDataTypeSql()));
+			} else {
+				NamedParameter namedParameter = NamedParameter.getNamedParameterByName(parameters, p.getName());
+				if (namedParameter == null) {
+					throw new SQLQueryException("Parâmetro " + p.getName()
+							+ " não encontrado na lista de parâmetros informados para execução do procedimento/função "
+							+ spName);
+				}
+				if (((p.getParameterType() == StoredParameterType.OUT) || (p.getParameterType() == StoredParameterType.IN_OUT))
+						&& !(namedParameter instanceof OutputNamedParameter)) {
+					throw new SQLQueryException(
+							"Parâmetro "
+									+ p.getName()
+									+ " é um parâmetro de saída. Use OuputNamedParameter para parâmetros deste tipo. Procedimento/função "
+									+ spName);
+				}
+
+				if (namedParameter instanceof OutputNamedParameter) {
+					((OutputNamedParameter) namedParameter).setDataTypeSql(p.getDataTypeSql());
+				}
+
+				newParameters.add(namedParameter);
+			}
+		}
+		return newParameters;
 	}
 
 	public ProcedureResult executeProcedure(SQLSession session, DatabaseDialect dialect, CallableType type,
-			String name, Object[] inputParameters, String[] outputParametersName, boolean showSql, int timeOut,
-			String clientId) throws Exception {
+			String name, NamedParameter[] parameters, boolean showSql, int timeOut, String clientId) throws Exception {
 		CallableStatement statement = null;
 		ProcedureResult result = new ProcedureResult();
-		if (type == CallableType.FUNCTION) {
-			if ((outputParametersName != null) && (outputParametersName.length > 0))
-				log.error("Para executar a FUNCTION " + name + " não informe nenhum parâmetro de saída(output)."
-						+ " ##" + clientId);
-			throw new SQLException("Para executar a FUNCTION " + name
-					+ " não informe nenhum parâmetro de saída(output).");
-		}
 		try {
 			String[] split = name.split("\\(");
 			log.debug("Preparando CallableStatement " + split[0] + " ##" + clientId);
-			statement = dialect.prepareCallableStatement(session.getConnection(), type, split[0], inputParameters,
-					outputParametersName,
-					getOutputSqlTypesByProcedure(session.getConnection(), session.getDialect(), split[0]), timeOut,
-					showSql, clientId);
+			List<NamedParameter> newParameters = adjustNamedParametersStoredProcedure(session, split[0], parameters,
+					type);
+
+			statement = dialect.prepareCallableStatement(session.getConnection(), type, split[0],
+					newParameters.toArray(new NamedParameter[] {}), timeOut, showSql, clientId);
 
 			if (type == CallableType.FUNCTION) {
 				if (statement.execute()) {
@@ -336,17 +367,12 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 				statement.execute();
 				result.setResultSet(statement.getResultSet());
 			}
-			if (outputParametersName != null) {
-				int outCount = inputParameters.length + 1;
-				if (type == CallableType.FUNCTION)
-					result.getOutputParameters().put("RESULT", statement.getObject(1));
-				if (outputParametersName.length > 0) {
-					int i = 0;
-					if (type == CallableType.FUNCTION)
+			if (NamedParameter.hasOutputParameters(newParameters)) {
+				int i = 1;
+				for (NamedParameter p : newParameters) {
+					if (p instanceof OutputNamedParameter) {
+						result.getOutputParameters().put(p.getName(), statement.getObject(i));
 						i++;
-					for (; i < outputParametersName.length; i++) {
-						result.getOutputParameters().put(outputParametersName[i], statement.getObject(outCount));
-						outCount++;
 					}
 				}
 			}

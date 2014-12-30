@@ -166,10 +166,24 @@ public class NamedParameter {
 		}
 		return result;
 	}
+	
+	public static NamedParameter[] toArray(List<NamedParameter> parameters){
+		if (parameters==null)
+			return null;
+		return parameters.toArray(new NamedParameter[]{});
+	}
 
-	public static NamedParameter getNamedParameterByName(List<NamedParameter> parameters, String name) {
+	public static NamedParameter getNamedParameterByName(Collection<NamedParameter> parameters, String name) {
 		for (NamedParameter param : parameters) {
-			if (param.getName().equals(name))
+			if (param.getName().equalsIgnoreCase(name))
+				return param;
+		}
+		return null;
+	}
+	
+	public static NamedParameter getNamedParameterByName(NamedParameter[] parameters, String name) {
+		for (NamedParameter param : parameters) {
+			if (param.getName().equalsIgnoreCase(name))
 				return param;
 		}
 		return null;
@@ -190,6 +204,29 @@ public class NamedParameter {
 
 		return result.toArray(new NamedParameter[] {});
 	}
+	
+	public static boolean hasOutputParameters(NamedParameter[] parameters){
+		if (parameters ==null)
+			return false;
+		
+		for (NamedParameter parameter : parameters){
+			if (parameter instanceof OutputNamedParameter)
+				return true;
+		}
+		return false;
+	}
+	
+	public static boolean hasOutputParameters(Collection<NamedParameter> parameters){
+		if (parameters ==null)
+			return false;
+		
+		for (NamedParameter parameter : parameters){
+			if (parameter instanceof OutputNamedParameter)
+				return true;
+		}
+		return false;
+	}
+
 
 	public TemporalType getTemporalType() {
 		return temporalType;
@@ -222,6 +259,28 @@ public class NamedParameter {
 		} else if (!name.equals(other.name))
 			return false;
 		return true;
+	}
+
+	public static int countOutputParameters(NamedParameter[] parameters){
+		if (parameters ==null)
+			return 0;
+		int result = 0;
+		for (NamedParameter parameter : parameters){
+			if (parameter instanceof OutputNamedParameter)
+				result++;
+		}
+		return result;
+	}
+	
+	public static int countOutputParameters(Collection<NamedParameter> parameters){
+		if (parameters ==null)
+			return 0;
+		int result = 0;
+		for (NamedParameter parameter : parameters){
+			if (parameter instanceof OutputNamedParameter)
+				result++;
+		}
+		return result;
 	}
 
 }
