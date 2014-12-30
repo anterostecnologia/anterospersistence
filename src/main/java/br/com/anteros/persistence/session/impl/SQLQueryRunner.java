@@ -372,8 +372,8 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 				for (NamedParameter p : newParameters) {
 					if (p instanceof OutputNamedParameter) {
 						result.getOutputParameters().put(p.getName(), statement.getObject(i));
-						i++;
 					}
+					i++;
 				}
 			}
 
