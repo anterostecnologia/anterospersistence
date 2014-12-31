@@ -118,6 +118,10 @@ import br.com.anteros.persistence.metadata.descriptor.type.SQLStatementType;
 import br.com.anteros.persistence.metadata.exception.EntityCacheManagerException;
 import br.com.anteros.persistence.parameter.NamedParameterParserResult;
 import br.com.anteros.persistence.session.cache.PersistenceMetadataCache;
+import br.com.anteros.persistence.session.query.SQLQueryAnalyzer;
+import br.com.anteros.persistence.session.query.SQLQueryAnalyzerException;
+import br.com.anteros.persistence.session.query.SQLQueryAnalyzerResult;
+import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.sql.statement.NamedParameterStatement;
 import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 import br.com.anteros.synchronism.annotation.IdSynchronism;
@@ -133,6 +137,7 @@ public class EntityCacheManager {
 	private boolean loaded = false;
 	private boolean validate = true;
 	private PropertyAccessorFactory propertyAccessorFactory;
+	private DatabaseDialect databaseDialect;
 
 	public EntityCacheManager() {
 	}
@@ -142,7 +147,8 @@ public class EntityCacheManager {
 	 * 
 	 * param clazzes throws Exception
 	 */
-	public void load(List<Class<? extends Serializable>> clazzes, boolean validate, PropertyAccessorFactory propertyAccessorFactory) throws Exception {
+	public void load(List<Class<? extends Serializable>> clazzes, boolean validate,
+			PropertyAccessorFactory propertyAccessorFactory, DatabaseDialect databaseDialect) throws Exception {
 		this.propertyAccessorFactory = propertyAccessorFactory;
 		if (!isLoaded()) {
 			Collections.sort(clazzes, new DependencyComparator());
@@ -153,7 +159,7 @@ public class EntityCacheManager {
 			}
 			modelConfiguration.createOmmitedOrDefaultSettings();
 			this.validate = validate;
-			load(modelConfiguration, propertyAccessorFactory);
+			load(modelConfiguration, propertyAccessorFactory, databaseDialect);
 		}
 	}
 
@@ -161,8 +167,10 @@ public class EntityCacheManager {
 	 * Método utilizado para ler as configurações das classes configuradas no
 	 * modelo. param modelConfiguration throws Exception
 	 */
-	public void load(ModelConfiguration modelConfiguration, PropertyAccessorFactory propertyAccessorFactory) throws Exception {
+	public void load(ModelConfiguration modelConfiguration, PropertyAccessorFactory propertyAccessorFactory,
+			DatabaseDialect databaseDialect) throws Exception {
 		this.propertyAccessorFactory = propertyAccessorFactory;
+		this.databaseDialect = databaseDialect;
 		if (!isLoaded()) {
 
 			modelConfiguration.sortByDependency();
@@ -183,7 +191,25 @@ public class EntityCacheManager {
 			if (validate)
 				validateAfterLoadConfigurations();
 
+			analyzeNamedQueries();
+
 			this.loaded = true;
+		}
+	}
+
+	private void analyzeNamedQueries() throws SQLQueryAnalyzerException {
+		for (EntityCache entityCache : entities.values()) {
+			if (entityCache.hasNamedQueries()) {
+				for (DescriptionNamedQuery namedQuery : entityCache.getDescriptionNamedQueries()) {
+					SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache
+							.getInstance().get(namedQuery.getResultClass().getName()+":"+namedQuery.getQuery());
+					if (analyzerResult == null) {
+						analyzerResult = new SQLQueryAnalyzer(this, databaseDialect).analyze(namedQuery.getQuery(),
+								namedQuery.getResultClass());
+						PersistenceMetadataCache.getInstance().put(namedQuery.getResultClass().getName()+":"+namedQuery.getQuery(), analyzerResult);
+					}
+				}
+			}
 		}
 	}
 
@@ -197,10 +223,12 @@ public class EntityCacheManager {
 			 * colunas da classe.
 			 */
 			for (DescriptionSQL descriptionSQL : entityCache.getDescriptionSql().values()) {
-				NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache.getInstance().get("NamedParameters:"+descriptionSQL.getSql());
+				NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache
+						.getInstance().get("NamedParameters:" + descriptionSQL.getSql());
 				if (parserResult == null) {
 					parserResult = NamedParameterStatement.parse(descriptionSQL.getSql(), null);
-					PersistenceMetadataCache.getInstance().put("NamedParameters:"+descriptionSQL.getSql(), parserResult);
+					PersistenceMetadataCache.getInstance().put("NamedParameters:" + descriptionSQL.getSql(),
+							parserResult);
 				}
 				if (parserResult != null) {
 					for (String param : parserResult.getParsedParams().keySet()) {
@@ -239,10 +267,12 @@ public class EntityCacheManager {
 				 * na lista de colunas da classe do campo.
 				 */
 				for (DescriptionSQL descriptionSQL : descriptionField.getDescriptionSql().values()) {
-					NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache.getInstance().get("NamedParameters:"+descriptionSQL.getSql());
+					NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache
+							.getInstance().get("NamedParameters:" + descriptionSQL.getSql());
 					if (parserResult == null) {
 						parserResult = NamedParameterStatement.parse(descriptionSQL.getSql(), null);
-						PersistenceMetadataCache.getInstance().put("NamedParameters:"+descriptionSQL.getSql(), parserResult);
+						PersistenceMetadataCache.getInstance().put("NamedParameters:" + descriptionSQL.getSql(),
+								parserResult);
 					}
 					if (parserResult != null) {
 						for (String param : parserResult.getParsedParams().keySet()) {
@@ -646,7 +676,7 @@ public class EntityCacheManager {
 						throw new EntityCacheManagerException(
 								"Não foi possível ler as configurações ELEMENT COLLECTION do campo "
 										+ fieldConfiguration.getName() + " da classe "
-										+ entityCache.getEntityClass().getName()+" - "+e.getMessage());
+										+ entityCache.getEntityClass().getName() + " - " + e.getMessage());
 					}
 				} else
 					readFetchConfigurations(entityCache, fieldConfiguration);
@@ -1435,6 +1465,11 @@ public class EntityCacheManager {
 				namedQuery = new DescriptionNamedQuery();
 				namedQuery.setName(nq.getName());
 				namedQuery.setQuery(nq.getQuery());
+				namedQuery.setCallableType(nq.getCallableType());
+				if ((nq.getResultClass() == null) || (nq.getResultClass() == Object.class))
+					namedQuery.setResultClass(entityCache.getEntityClass());
+				else
+					namedQuery.setResultClass(nq.getResultClass());
 				entityCache.addNamedQuery(namedQuery);
 			}
 		}
@@ -1449,8 +1484,9 @@ public class EntityCacheManager {
 	private void readElementCollectionConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache)
 			throws Exception {
 		DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
-		if (propertyAccessorFactory!=null)
-			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+		if (propertyAccessorFactory != null)
+			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(),
+					fieldConfiguration.getField()));
 		descriptionField.setFetchMode(fieldConfiguration.getFetch().getMode());
 		descriptionField.setTableName(fieldConfiguration.getCollectionTable().getName());
 		descriptionField.setSchema(fieldConfiguration.getCollectionTable().getSchema());
@@ -1594,8 +1630,9 @@ public class EntityCacheManager {
 		}
 
 		DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
-		if (propertyAccessorFactory!=null)
-			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+		if (propertyAccessorFactory != null)
+			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(),
+					fieldConfiguration.getField()));
 
 		descriptionField.setFieldType(FieldType.JOIN_TABLE);
 		descriptionField.setTableName(tableName);
@@ -1736,8 +1773,9 @@ public class EntityCacheManager {
 			}
 
 			descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
-			if (propertyAccessorFactory!=null)
-				descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+			if (propertyAccessorFactory != null)
+				descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(
+						entityCache.getEntityClass(), fieldConfiguration.getField()));
 
 			descriptionField.addDescriptionColumns(descriptionColumn);
 			descriptionField.setComment(fieldConfiguration.getComment());
@@ -1780,8 +1818,9 @@ public class EntityCacheManager {
 			 */
 			if (fieldConfiguration.isAnnotationPresent(ForeignKey.class)) {
 				descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
-				if (propertyAccessorFactory!=null)
-					descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+				if (propertyAccessorFactory != null)
+					descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(
+							entityCache.getEntityClass(), fieldConfiguration.getField()));
 
 				descriptionField.setFieldType(FieldType.RELATIONSHIP);
 				descriptionField.setFetchType(fieldConfiguration.getForeignKey().getType());
@@ -1804,12 +1843,11 @@ public class EntityCacheManager {
 				descComposite.setCompositeId(fieldConfiguration.isAnnotationPresent(CompositeId.class));
 				descComposite.setColumnDefinition(columnConfiguration.getColumnDefinition());
 
-				if ((fieldConfiguration.isAnnotationPresent(CompositeId.class)) || (fieldConfiguration.isAnnotationPresent(Id.class))) {
+				if ((fieldConfiguration.isAnnotationPresent(CompositeId.class))
+						|| (fieldConfiguration.isAnnotationPresent(Id.class))) {
 					descComposite.setColumnType(ColumnType.PRIMARY_KEY);
 					descComposite.setRequired(true);
 				}
-				
-				
 
 				if (fieldConfiguration.isAnnotationPresent(ForeignKey.class)) {
 					descComposite.setForeignKey(true);
@@ -1861,8 +1899,9 @@ public class EntityCacheManager {
 		}
 
 		DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
-		if (propertyAccessorFactory!=null)
-			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+		if (propertyAccessorFactory != null)
+			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(),
+					fieldConfiguration.getField()));
 
 		descriptionField.addDescriptionColumns(descriptionColumn);
 		descriptionField.setComment(fieldConfiguration.getComment());
@@ -1897,7 +1936,7 @@ public class EntityCacheManager {
 		/*
 		 * Se possuir Lob
 		 */
-		if (fieldConfiguration.isAnnotationPresent(Lob.class)){
+		if (fieldConfiguration.isAnnotationPresent(Lob.class)) {
 			descriptionColumn.setLob(true);
 			descriptionField.setFetchType(fieldConfiguration.getFetch().getType());
 		}
@@ -2152,8 +2191,9 @@ public class EntityCacheManager {
 			}
 
 			DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
-			if (propertyAccessorFactory!=null)
-				descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+			if (propertyAccessorFactory != null)
+				descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(
+						entityCache.getEntityClass(), fieldConfiguration.getField()));
 
 			descriptionField.setFieldType(FieldType.RELATIONSHIP);
 			descriptionField.setTargetClass(fieldConfiguration.getType());
@@ -2209,8 +2249,9 @@ public class EntityCacheManager {
 	private void readFetchConfigurations(EntityCache entityCache, FieldConfiguration fieldConfiguration)
 			throws Exception {
 		DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
-		if (propertyAccessorFactory!=null)
-			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
+		if (propertyAccessorFactory != null)
+			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(),
+					fieldConfiguration.getField()));
 
 		descriptionField.setFieldType(FieldType.RELATIONSHIP);
 		descriptionField.setFetchMode(fieldConfiguration.getFetch().getMode());

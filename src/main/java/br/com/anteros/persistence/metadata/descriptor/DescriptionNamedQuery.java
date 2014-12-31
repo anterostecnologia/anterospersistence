@@ -15,13 +15,16 @@
  ******************************************************************************/
 package br.com.anteros.persistence.metadata.descriptor;
 
+import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.session.lock.type.LockModeType;
 
 public class DescriptionNamedQuery {
 
 	private String name;
 	private String query;
+	private CallableType callableType;
 	private LockModeType lockModeType;
+	private Class<?> resultClass;
 
 	public DescriptionNamedQuery() {
 	}
@@ -48,6 +51,22 @@ public class DescriptionNamedQuery {
 
 	public void setLockModeType(LockModeType lockModeType) {
 		this.lockModeType = lockModeType;
+	}
+
+	public CallableType getCallableType() {
+		return callableType;
+	}
+
+	public void setCallableType(CallableType callableType) {
+		this.callableType = callableType;
+	}
+
+	public Class<?> getResultClass() {
+		return resultClass;
+	}
+
+	public void setResultClass(Class<?> resultClass) {
+		this.resultClass = resultClass;
 	}
 
 }

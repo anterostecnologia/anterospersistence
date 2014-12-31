@@ -55,6 +55,7 @@ import br.com.anteros.persistence.metadata.configuration.ModelConfiguration;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.exception.SQLSessionFactoryException;
 import br.com.anteros.persistence.session.impl.SQLSessionFactoryImpl;
+import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 
 @Root(name = "anteros-configuration")
@@ -219,21 +220,21 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 		if (dataSource == null)
 			throw new AnterosConfigurationException(AnterosPersistenceTranslate.getMessage(this.getClass(),
 					"datasourceNotConfigured"));
-		loadEntities();
 		SQLSessionFactoryImpl sessionFactory = new SQLSessionFactoryImpl(entityCacheManager, dataSource,
 				this.getSessionFactoryConfiguration());
+		loadEntities(sessionFactory.getDialect());		
 		sessionFactory.generateDDL();
 		return sessionFactory;
 	}
 
-	public EntityCacheManager loadEntities() throws Exception {
+	public EntityCacheManager loadEntities(DatabaseDialect databaseDialect) throws Exception {
 		List<Class<? extends Serializable>> classes = getSessionFactoryConfiguration().getClasses();
 		Collections.sort(classes, new DependencyComparator());
 
 		if (modelConfiguration != null)
-			this.entityCacheManager.load(modelConfiguration, getPropertyAccessorFactory());
+			this.entityCacheManager.load(modelConfiguration, getPropertyAccessorFactory(), databaseDialect);
 		else
-			this.entityCacheManager.load(classes, true, getPropertyAccessorFactory());
+			this.entityCacheManager.load(classes, true, getPropertyAccessorFactory(), databaseDialect);
 		return this.entityCacheManager;
 	}
 

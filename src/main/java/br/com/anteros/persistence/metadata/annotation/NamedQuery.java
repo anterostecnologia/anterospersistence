@@ -26,6 +26,17 @@ import java.lang.annotation.Target;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.session.lock.type.LockModeType;
 
+/*
+ * 
+ * A consulta nomeada é uma consulta definida estaticamente com uma string de consulta imutável predefinida.  Usando consultas estáticas em vez de consultas dinâmicas 
+ * podemos melhorar a organização do código, separando as sequências de consulta SQL a partir do código Java. 
+ * Ela também reforça o uso da consulta com parâmetros em vez de incorporar literais de forma dinâmica na consulta o que resulta em consultas mais eficientes.
+ * 
+ * Consultas nomeadas têm duas pequenas vantagens:
+ * - sua sintaxe é verificada quando a fábrica de sessão é criada, fazendo com que o aplicativo venha a 
+ *   falhar rapidamente em caso de um erro (o que provavelmente indica que sua aplicação carece de alguns testes de unidade)
+ * - elas podem ser acessadas ​​e utilizadas a partir de vários lugares 
+ */
 @Target(value = ElementType.TYPE)
 @Retention(value = RetentionPolicy.RUNTIME)
 public @interface NamedQuery {
@@ -34,6 +45,7 @@ public @interface NamedQuery {
 	String query();
 	CallableType callableType() default CallableType.NONE;
 	LockModeType lockMode() default LockModeType.NONE;
+	Class<?> resultClass() default Object.class;
 	
 	/**
 	 * Defines several {@code @NamedQuery} annotations on the same element.

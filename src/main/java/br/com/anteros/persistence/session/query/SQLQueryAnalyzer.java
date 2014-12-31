@@ -28,10 +28,12 @@ import br.com.anteros.core.utils.CompactHashSet;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
+import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.annotation.type.FetchType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.session.SQLSession;
+import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.sql.format.SqlFormatRule;
 import br.com.anteros.persistence.sql.parser.INode;
 import br.com.anteros.persistence.sql.parser.Node;
@@ -51,7 +53,8 @@ import br.com.anteros.persistence.sql.parser.node.ValueNode;
 public class SQLQueryAnalyzer {
 
 	private String sql;
-	private SQLSession session;
+	private EntityCacheManager entityCacheManager;
+	private DatabaseDialect databaseDialect;
 	private Class<?> resultClass;
 	private Set<SQLQueryAnalyserAlias> aliases;
 	private Set<SQLQueryAnalyserAlias> aliasesTemporary = new CompactHashSet<SQLQueryAnalyserAlias>();
@@ -60,8 +63,9 @@ public class SQLQueryAnalyzer {
 	private int numberOfColumn = 0;
 	private Set<String> usedAliases = new HashSet<String>();
 
-	public SQLQueryAnalyzer(SQLSession session) {
-		this.session = session;
+	public SQLQueryAnalyzer(EntityCacheManager entityCacheManager, DatabaseDialect databaseDialect) {
+		this.entityCacheManager = entityCacheManager;
+		this.databaseDialect = databaseDialect;
 	}
 
 	public SQLQueryAnalyzerResult analyze(String sql, Class<?> resultClass) throws SQLQueryAnalyzerException {
@@ -133,7 +137,7 @@ public class SQLQueryAnalyzer {
 
 					EntityCache caches[] = { aliasOwner.getEntity() };
 					if (aliasOwner.getEntity().isAbstractClass())
-						caches = session.getEntityCacheManager().getEntitiesBySuperClass(aliasOwner.getEntity());
+						caches = entityCacheManager.getEntitiesBySuperClass(aliasOwner.getEntity());
 					boolean found = false;
 					for (EntityCache cache : caches) {
 						DescriptionField descriptionField = cache.getDescriptionFieldUsesColumns(aliasChild.getEntity()
@@ -241,7 +245,7 @@ public class SQLQueryAnalyzer {
 													+ resultClass.getName());
 
 								if (alias.getEntity().isAbstractClass())
-									caches = session.getEntityCacheManager().getEntitiesBySuperClassIncluding(
+									caches = entityCacheManager.getEntitiesBySuperClassIncluding(
 											alias.getEntity());
 
 								for (EntityCache cache : caches) {
@@ -477,7 +481,7 @@ public class SQLQueryAnalyzer {
 				FromNode from = (FromNode) selectChild;
 				for (Object fromChild : from.getChildren()) {
 					if (fromChild instanceof TableNode) {
-						EntityCache entityCache = session.getEntityCacheManager().getEntityCacheByTableName(
+						EntityCache entityCache = entityCacheManager.getEntityCacheByTableName(
 								((TableNode) fromChild).getName());
 						if (entityCache != null) {
 							SQLQueryAnalyserAlias alias = new SQLQueryAnalyserAlias();
@@ -544,7 +548,7 @@ public class SQLQueryAnalyzer {
 
 					EntityCache caches[] = { alias.getEntity() };
 					if (alias.getEntity().isAbstractClass())
-						caches = session.getEntityCacheManager().getEntitiesBySuperClassIncluding(alias.getEntity());
+						caches = entityCacheManager.getEntitiesBySuperClassIncluding(alias.getEntity());
 
 					for (EntityCache cache : caches) {
 						DescriptionColumn descriptionColumn = cache.getDescriptionColumnByName(columnName);
@@ -609,7 +613,7 @@ public class SQLQueryAnalyzer {
 
 						EntityCache caches[] = { aliasSideB.getEntity() };
 						if (aliasSideB.getEntity().isAbstractClass())
-							caches = session.getEntityCacheManager().getEntitiesBySuperClass(aliasSideB.getEntity());
+							caches = entityCacheManager.getEntitiesBySuperClass(aliasSideB.getEntity());
 						for (EntityCache cache : caches) {
 							DescriptionField descriptionField = cache.getDescriptionFieldUsesColumns(aliasSideA
 									.getEntity().getEntityClass(), columnNames);
@@ -786,7 +790,7 @@ public class SQLQueryAnalyzer {
 	}
 
 	public String adpatAliasColumnName(String aliasColumnNamePrefix) {
-		int maximumNameLength = session.getDialect().getMaxColumnNameSize() - 8;
+		int maximumNameLength = databaseDialect.getMaxColumnNameSize() - 8;
 		String result = adjustName(aliasColumnNamePrefix);
 
 		if (result.length() > maximumNameLength) {

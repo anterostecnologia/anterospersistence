@@ -54,7 +54,7 @@ import br.com.anteros.persistence.transaction.Transaction;
 import br.com.anteros.persistence.transaction.TransactionFactory;
 
 public class SQLSessionImpl implements SQLSession {
-	
+
 	private static Logger LOG = LoggerProvider.getInstance().getLogger(SQLSession.class);
 
 	public static int FIRST_RECORD = 0;
@@ -209,7 +209,7 @@ public class SQLSessionImpl implements SQLSession {
 			commandQueue.clear();
 		}
 		connection.close();
-		LOG.debug("Fechou session "+this);
+		LOG.debug("Fechou session " + this);
 	}
 
 	public void onBeforeExecuteCommit(Connection connection) throws Exception {
@@ -314,10 +314,11 @@ public class SQLSessionImpl implements SQLSession {
 
 	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String, String> expressions,
 			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, Cache transactionCache,
-			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly) throws Exception {
+			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly)
+			throws Exception {
 		errorIfClosed();
-		EntityHandler handler = new EntityHandler(lazyLoadFactory, resultClass, getEntityCacheManager(), expressions, columnAliases, this,
-				transactionCache, allowDuplicateObjects, firstResult, maxResults, readOnly);
+		EntityHandler handler = new EntityHandler(lazyLoadFactory, resultClass, getEntityCacheManager(), expressions,
+				columnAliases, this, transactionCache, allowDuplicateObjects, firstResult, maxResults, readOnly);
 		handler.setObjectToRefresh(objectToRefresh);
 		return handler;
 	}
@@ -355,7 +356,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void lockAll(Object... entities) {
-		errorIfClosed();		
+		errorIfClosed();
 	}
 
 	public boolean isProxyObject(Object object) throws Exception {
@@ -438,17 +439,19 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object id, boolean readOnly) throws Exception{
+	public <T> T find(Class<T> entityClass, Object id, boolean readOnly) throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
-		if (entityCache==null){
-			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. "+entityClass.getName());
+		if (entityCache == null) {
+			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. "
+					+ entityClass.getName());
 		}
-		if (id instanceof Identifier){
-			if (!((Identifier<?>)id).getClazz().equals(entityClass)){
-				throw new SQLSessionException("Objeto ID é do tipo Identifier porém de uma classe diferente da classe "+entityClass.getName()); 
+		if (id instanceof Identifier) {
+			if (!((Identifier<?>) id).getClazz().equals(entityClass)) {
+				throw new SQLSessionException("Objeto ID é do tipo Identifier porém de uma classe diferente da classe "
+						+ entityClass.getName());
 			} else
-				return find((Identifier<T>)id, readOnly);
+				return find((Identifier<T>) id, readOnly);
 		}
 		Identifier<T> identifier = Identifier.create(this, entityClass);
 		identifier.setIdIfPossible(id);
@@ -456,25 +459,28 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object id, Map<String, Object> properties, boolean readOnly) throws Exception{
+	public <T> T find(Class<T> entityClass, Object id, Map<String, Object> properties, boolean readOnly)
+			throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
-		if (entityCache==null){
-			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. "+entityClass.getName());
+		if (entityCache == null) {
+			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. "
+					+ entityClass.getName());
 		}
-		T result = find(entityClass,id, readOnly);
+		T result = find(entityClass, id, readOnly);
 		entityCache.setObjectValues(result, properties);
 		return null;
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object id, LockModeType lockMode, boolean readOnly) throws Exception{
+	public <T> T find(Class<T> entityClass, Object id, LockModeType lockMode, boolean readOnly) throws Exception {
 		errorIfClosed();
 		throw new Exception("Método não implementado. Falta implementar Lock.");
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object id, LockModeType lockMode, Map<String, Object> properties, boolean readOnly) throws Exception{
+	public <T> T find(Class<T> entityClass, Object id, LockModeType lockMode, Map<String, Object> properties,
+			boolean readOnly) throws Exception {
 		errorIfClosed();
 		throw new Exception("Método não implementado. Falta implementar Lock.");
 	}
@@ -488,62 +494,65 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> T find(Identifier<T> id, LockModeType lockMode, boolean readOnly) throws Exception{
+	public <T> T find(Identifier<T> id, LockModeType lockMode, boolean readOnly) throws Exception {
 		errorIfClosed();
 		throw new Exception("Método não implementado. Falta implementar Lock.");
 	}
 
 	@Override
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, boolean readOnly) throws Exception{
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, boolean readOnly) throws Exception {
 		errorIfClosed();
 		T result = find(id, readOnly);
-		id.getEntityCache().setObjectValues(result,properties);
+		id.getEntityCache().setObjectValues(result, properties);
 		return null;
 	}
 
 	@Override
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode, boolean readOnly) throws Exception{
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode, boolean readOnly)
+			throws Exception {
 		throw new Exception("Método não implementado. Falta implementar Lock.");
 	}
 
 	@Override
 	public void refresh(Object entity) throws Exception {
 		errorIfClosed();
-		if (entity==null)
+		if (entity == null)
 			return;
 
 		persistenceContext.detach(entity);
 		EntityCache entityCache = entityCacheManager.getEntityCache(entity.getClass());
-		if (entityCache==null){
-			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. "+entity.getClass().getName());
-		}		
-		Identifier<Object> identifier = Identifier.create(this, entity, true);
-		find(identifier);
-	}
-
-	@Override
-	public void refresh(Object entity, Map<String, Object> properties) throws Exception  {
-		errorIfClosed();
-		if (entity==null)
-			return;
-
-		persistenceContext.detach(entity);
-		EntityCache entityCache = entityCacheManager.getEntityCache(entity.getClass());
-		if (entityCache==null){
-			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. "+entity.getClass().getName());
+		if (entityCache == null) {
+			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. "
+					+ entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
 		find(identifier);
 	}
 
 	@Override
-	public void refresh(Object entity, LockModeType lockMode) throws Exception  {
+	public void refresh(Object entity, Map<String, Object> properties) throws Exception {
+		errorIfClosed();
+		if (entity == null)
+			return;
+
+		persistenceContext.detach(entity);
+		EntityCache entityCache = entityCacheManager.getEntityCache(entity.getClass());
+		if (entityCache == null) {
+			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. "
+					+ entity.getClass().getName());
+		}
+		Identifier<Object> identifier = Identifier.create(this, entity, true);
+		find(identifier);
+	}
+
+	@Override
+	public void refresh(Object entity, LockModeType lockMode) throws Exception {
 		errorIfClosed();
 		throw new RuntimeException("Método não implementado. Falta implementar Lock.");
 	}
 
 	@Override
-	public void refresh(Object entity, LockModeType lockMode, Map<String, Object> properties) throws Exception  {
+	public void refresh(Object entity, LockModeType lockMode, Map<String, Object> properties) throws Exception {
 		errorIfClosed();
 		throw new RuntimeException("Método não implementado. Falta implementar Lock.");
 	}
@@ -551,14 +560,14 @@ public class SQLSessionImpl implements SQLSession {
 	@Override
 	public void detach(Object entity) {
 		errorIfClosed();
-		if (entity==null)
+		if (entity == null)
 			return;
 
 		persistenceContext.detach(entity);
 	}
 
 	@Override
-	public SQLQuery createQuery(String sql) throws Exception{
+	public SQLQuery createQuery(String sql) throws Exception {
 		errorIfClosed();
 		SQLQuery result = new SQLQueryImpl(this);
 		result.timeOut(queryTimeout);
@@ -568,7 +577,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public SQLQuery createQuery(String sql, Object parameters) throws Exception{
+	public SQLQuery createQuery(String sql, Object parameters) throws Exception {
 		errorIfClosed();
 		SQLQuery result = new SQLQueryImpl(this);
 		result.sql(sql);
@@ -579,7 +588,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass) throws Exception{
+	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass) throws Exception {
 		errorIfClosed();
 		TypedSQLQuery<T> result = new SQLQueryImpl<T>(this, resultClass);
 		result.sql(sql);
@@ -589,7 +598,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, Object parameters) throws Exception{
+	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, Object parameters) throws Exception {
 		errorIfClosed();
 		TypedSQLQuery<T> result = new SQLQueryImpl<T>(this, resultClass);
 		result.timeOut(queryTimeout);
@@ -600,13 +609,30 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public SQLQuery createNamedQuery(String name) throws Exception{
+	public SQLQuery createNamedQuery(String name) throws Exception {
+		System.out.println(getCallingMethod());
+		System.out.println(getCallingThisMethod());
 		errorIfClosed();
 		SQLQuery result = new SQLQueryImpl(this);
 		result.namedQuery(name);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
 		return result;
+	}
+
+	public static String getCallingMethod() {
+		StackTraceElement[] elements = new Throwable().getStackTrace();
+		System.out.println("-----------------------");
+		for (StackTraceElement element : elements) {
+			System.out.println(element);
+		}
+		System.out.println("-----------------------");
+		return elements.length > 1 ? elements[1].getMethodName() : null;
+	}
+
+	public static String getCallingThisMethod() {
+		StackTraceElement[] elements = new Throwable().getStackTrace();
+		return elements.length > 0 ? elements[0].getMethodName() : null;
 	}
 
 	@Override
@@ -614,26 +640,26 @@ public class SQLSessionImpl implements SQLSession {
 		errorIfClosed();
 		SQLQuery result = new SQLQueryImpl(this);
 		result.namedQuery(name);
-		result.setParameters(parameters);		
+		result.setParameters(parameters);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
 		return result;
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass) throws Exception{
+	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass) throws Exception {
 		errorIfClosed();
 		return new SQLQueryImpl<T>(this).resultClass(resultClass).timeOut(queryTimeout).namedQuery(name);
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters) throws Exception{
+	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters) throws Exception {
 		errorIfClosed();
 		return new SQLQueryImpl<T>(this).resultClass(resultClass).namedQuery(name).setParameters(parameters);
 	}
 
 	@Override
-	public SQLQuery createStoredProcedureQuery(String procedureName, CallableType type) throws Exception{
+	public SQLQuery createStoredProcedureQuery(String procedureName, CallableType type) throws Exception {
 		errorIfClosed();
 		SQLQuery result = new StoredProcedureSQLQueryImpl(this, type);
 		result.procedureOrFunctionName(procedureName);
@@ -643,7 +669,8 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public SQLQuery createStoredProcedureQuery(String procedureName, CallableType type, Object parameters) throws Exception{
+	public SQLQuery createStoredProcedureQuery(String procedureName, CallableType type, Object parameters)
+			throws Exception {
 		errorIfClosed();
 		SQLQuery result = new StoredProcedureSQLQueryImpl(this, type);
 		result.procedureOrFunctionName(procedureName);
@@ -654,7 +681,8 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type,  Class<T> resultClass) throws Exception{
+	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type, Class<T> resultClass)
+			throws Exception {
 		errorIfClosed();
 		TypedSQLQuery<T> result = new StoredProcedureSQLQueryImpl(this, resultClass, type);
 		result.procedureOrFunctionName(procedureName);
@@ -662,10 +690,10 @@ public class SQLSessionImpl implements SQLSession {
 		result.showSql(showSql);
 		return result;
 	}
-	
+
 	@Override
-	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type, Class<T> resultClass,
-			Object[] parameters) throws Exception {
+	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type,
+			Class<T> resultClass, Object[] parameters) throws Exception {
 		errorIfClosed();
 		TypedSQLQuery<T> result = new StoredProcedureSQLQueryImpl(this, resultClass, type);
 		result.procedureOrFunctionName(procedureName);
@@ -675,25 +703,24 @@ public class SQLSessionImpl implements SQLSession {
 		return result;
 	}
 
-
 	@Override
-	public SQLQuery createStoredProcedureNamedQuery(String name) throws Exception{
+	public SQLQuery createStoredProcedureNamedQuery(String name) throws Exception {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public SQLQuery createStoredProcedureNamedQuery(String name, Object parameters) throws Exception{
+	public SQLQuery createStoredProcedureNamedQuery(String name, Object parameters) throws Exception {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass) throws Exception{
+	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass) throws Exception {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass,
-			Object[] parameters) throws Exception{
+	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass, Object[] parameters)
+			throws Exception {
 		throw new UnsupportedOperationException();
 	}
 
@@ -703,42 +730,39 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties)
-			throws Exception {
-		return find(entityClass,primaryKey,properties,false);
+	public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties) throws Exception {
+		return find(entityClass, primaryKey, properties, false);
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode)
-			throws Exception {
-		return find(entityClass,primaryKey,lockMode,false);
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode) throws Exception {
+		return find(entityClass, primaryKey, lockMode, false);
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties) throws Exception {
-		return find(entityClass,primaryKey,lockMode,properties,false);
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties)
+			throws Exception {
+		return find(entityClass, primaryKey, lockMode, properties, false);
 	}
 
 	@Override
 	public <T> T find(Identifier<T> id) throws Exception {
-		return find(id,false);
+		return find(id, false);
 	}
 
 	@Override
 	public <T> T find(Identifier<T> id, LockModeType lockMode) throws Exception {
-		return find(id,lockMode,false);
+		return find(id, lockMode, false);
 	}
 
 	@Override
 	public <T> T find(Identifier<T> id, Map<String, Object> properties) throws Exception {
-		return find(id,properties,false);
+		return find(id, properties, false);
 	}
 
 	@Override
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode)
-			throws Exception {
-		return find(id,properties,lockMode,false);
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode) throws Exception {
+		return find(id, properties, lockMode, false);
 	}
 
-	
 }

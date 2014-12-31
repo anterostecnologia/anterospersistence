@@ -16,13 +16,16 @@
 package br.com.anteros.persistence.metadata.configuration;
 
 import br.com.anteros.persistence.metadata.annotation.NamedQuery;
+import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.session.lock.type.LockModeType;
 
 public class NamedQueryConfiguration {
 
 	private String name;
 	private String query;
+	private CallableType callableType;
 	private LockModeType lockMode;
+	private Class<?> resultClass;
 
 	public NamedQueryConfiguration() {
 
@@ -34,9 +37,18 @@ public class NamedQueryConfiguration {
 		this.lockMode(namedQuery.lockMode());
 	}
 
-	public NamedQueryConfiguration(String name, String query) {
+	public NamedQueryConfiguration(String name, String query, Class<?> resultClass) {
 		this.name = name;
 		this.query = query;
+		this.callableType = CallableType.NONE;
+		this.resultClass = resultClass;
+	}
+	
+	public NamedQueryConfiguration(String name, String query, Class<?> resultClass, CallableType callableType) {
+		this.name = name;
+		this.query = query;
+		this.callableType = callableType;
+		this.resultClass = resultClass;
 	}
 
 	public String getName() {
@@ -63,6 +75,24 @@ public class NamedQueryConfiguration {
 
 	public NamedQueryConfiguration lockMode(LockModeType lockMode) {
 		this.lockMode = lockMode;
+		return this;
+	}
+
+	public CallableType getCallableType() {
+		return callableType;
+	}
+
+	public NamedQueryConfiguration callableType(CallableType callableType) {
+		this.callableType = callableType;
+		return this;
+	}
+
+	public Class<?> getResultClass() {
+		return resultClass;
+	}
+
+	public NamedQueryConfiguration resultClass(Class<?> resultClass) {
+		this.resultClass = resultClass;
 		return this;
 	}
 
