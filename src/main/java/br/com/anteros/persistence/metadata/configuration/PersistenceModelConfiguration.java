@@ -49,7 +49,7 @@ import br.com.anteros.persistence.metadata.annotation.type.InheritanceType;
 import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
 import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
 
-public class ModelConfiguration {
+public class PersistenceModelConfiguration {
 
 	private Map<Class<? extends Serializable>, EntityConfiguration> entities = new LinkedHashMap<Class<? extends Serializable>, EntityConfiguration>();
 

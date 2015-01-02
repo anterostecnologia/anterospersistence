@@ -1665,7 +1665,7 @@ public abstract class DatabaseDialect {
 						parameterSchema.setParameterType(StoredParameterType.OUT);
 						break;
 					case DatabaseMetaData.procedureColumnInOut:
-						parameterSchema.setParameterType(StoredParameterType.IN);
+						parameterSchema.setParameterType(StoredParameterType.IN_OUT);
 						break;
 					case DatabaseMetaData.procedureColumnReturn:
 						parameterSchema.setParameterType(StoredParameterType.RETURN_VALUE);

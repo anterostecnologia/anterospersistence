@@ -94,7 +94,7 @@ import br.com.anteros.persistence.metadata.configuration.FieldConfiguration;
 import br.com.anteros.persistence.metadata.configuration.IndexConfiguration;
 import br.com.anteros.persistence.metadata.configuration.JoinColumnConfiguration;
 import br.com.anteros.persistence.metadata.configuration.JoinTableConfiguration;
-import br.com.anteros.persistence.metadata.configuration.ModelConfiguration;
+import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
 import br.com.anteros.persistence.metadata.configuration.NamedQueryConfiguration;
 import br.com.anteros.persistence.metadata.configuration.ObjectTypeConverterConfiguration;
 import br.com.anteros.persistence.metadata.configuration.RemoteParamConfiguration;
@@ -153,7 +153,7 @@ public class EntityCacheManager {
 		if (!isLoaded()) {
 			Collections.sort(clazzes, new DependencyComparator());
 
-			ModelConfiguration modelConfiguration = new ModelConfiguration();
+			PersistenceModelConfiguration modelConfiguration = new PersistenceModelConfiguration();
 			for (Class<? extends Serializable> sourceClazz : clazzes) {
 				modelConfiguration.loadAnnotationsByClass(sourceClazz);
 			}
@@ -167,7 +167,7 @@ public class EntityCacheManager {
 	 * Método utilizado para ler as configurações das classes configuradas no
 	 * modelo. param modelConfiguration throws Exception
 	 */
-	public void load(ModelConfiguration modelConfiguration, PropertyAccessorFactory propertyAccessorFactory,
+	public void load(PersistenceModelConfiguration modelConfiguration, PropertyAccessorFactory propertyAccessorFactory,
 			DatabaseDialect databaseDialect) throws Exception {
 		this.propertyAccessorFactory = propertyAccessorFactory;
 		this.databaseDialect = databaseDialect;
@@ -331,7 +331,7 @@ public class EntityCacheManager {
 		return loaded;
 	}
 
-	private void loadConfigurationsSuperClass(EntityCache entityCache, ModelConfiguration modelConfiguration)
+	private void loadConfigurationsSuperClass(EntityCache entityCache, PersistenceModelConfiguration modelConfiguration)
 			throws Exception {
 		Class<?> sourceClazz = entityCache.getEntityClass();
 		EntityCache cacheSuper;
@@ -1749,7 +1749,7 @@ public class EntityCacheManager {
 	 * 
 	 */
 	private void readCompositeIdConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache,
-			ModelConfiguration model) throws Exception {
+			PersistenceModelConfiguration model) throws Exception {
 		DescriptionField descriptionField = null;
 		if (fieldConfiguration.isAnnotationPresent(Column.class)) {
 			ColumnConfiguration columnConfiguration = fieldConfiguration.getColumns().iterator().next();
@@ -1872,7 +1872,7 @@ public class EntityCacheManager {
 	 * 
 	 */
 	private void readColumnConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache,
-			ModelConfiguration model) throws Exception {
+			PersistenceModelConfiguration model) throws Exception {
 		String columnName = fieldConfiguration.getName().toLowerCase();
 		String inversedColumn = columnName;
 
@@ -2012,7 +2012,7 @@ public class EntityCacheManager {
 	}
 
 	public void readEnumeratedConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache,
-			ModelConfiguration model, DescriptionColumn descriptionColumn) throws EntityCacheException {
+			PersistenceModelConfiguration model, DescriptionColumn descriptionColumn) throws EntityCacheException {
 		if (fieldConfiguration.isAnnotationPresent(Enumerated.class)) {
 			Map<String, String> enumValues = new HashMap<String, String>();
 
@@ -2159,7 +2159,7 @@ public class EntityCacheManager {
 	 * throws Exception
 	 */
 	private void readForeignKeyConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache,
-			ModelConfiguration model) throws Exception {
+			PersistenceModelConfiguration model) throws Exception {
 		try {
 			DescriptionColumn descriptionColumn = new DescriptionColumn(entityCache, fieldConfiguration.getField());
 			descriptionColumn.setColumnName(fieldConfiguration.getName().toLowerCase());
@@ -2339,7 +2339,7 @@ public class EntityCacheManager {
 		entities.put(clazz, cache);
 	}
 
-	private FieldConfiguration getIdFieldConfiguration(Class<?> clazz, ModelConfiguration model) {
+	private FieldConfiguration getIdFieldConfiguration(Class<?> clazz, PersistenceModelConfiguration model) {
 		EntityConfiguration entityConfiguration = model.getEntities().get(clazz);
 		if (entityConfiguration == null)
 			return null;

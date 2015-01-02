@@ -1216,25 +1216,25 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			Cache transactionCache) throws Exception {
 
 		ResultSetHandler handler;
-		EntityCache entityCache = session.getEntityCacheManager().getEntityCache(getResultClass());
+		EntityCache entityCache = session.getEntityCacheManager().getEntityCache(resultClass);
 
 		if (entityCache == null)
-			handler = new BeanHandler(getResultClass());
+			handler = new BeanHandler(resultClass);
 		else {
 			if (sql.toLowerCase().indexOf(" " + entityCache.getTableName().toLowerCase()) < 0) {
-				throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + getResultClass().getName()
+				throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + resultClass.getName()
 						+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 			}
 
 			SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance()
-					.get(getResultClass().getName()+":"+sql);
+					.get(resultClass.getName()+":"+sql);
 			if (analyzerResult == null) {
-				analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect()).analyze(sql, getResultClass());
-				PersistenceMetadataCache.getInstance().put(getResultClass().getName()+":"+sql, analyzerResult);
+				analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect()).analyze(sql, resultClass);
+				PersistenceMetadataCache.getInstance().put(resultClass.getName()+":"+sql, analyzerResult);
 			}
 
 			handler = session
-					.createNewEntityHandler(getResultClass(), analyzerResult.getExpressions(),
+					.createNewEntityHandler(resultClass, analyzerResult.getExpressions(),
 							analyzerResult.getColumnAliases(), transactionCache, false, null, firstResult, maxResults,
 							readOnly);
 			sql = analyzerResult.getParsedSql();
@@ -1269,7 +1269,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 						.get(getResultClass().getName()+":"+sql);
 				if (analyzerResult == null) {
 					analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect()).analyze(sql, resultClass);
-					PersistenceMetadataCache.getInstance().put(getResultClass().getName()+":"+sql, analyzerResult);
+					PersistenceMetadataCache.getInstance().put(resultClass.getName()+":"+sql, analyzerResult);
 				}
 				sql = analyzerResult.getParsedSql();
 				handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressions(),

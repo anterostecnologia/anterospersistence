@@ -51,7 +51,7 @@ import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
 import br.com.anteros.persistence.metadata.annotation.Entity;
 import br.com.anteros.persistence.metadata.annotation.EnumValues;
 import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
-import br.com.anteros.persistence.metadata.configuration.ModelConfiguration;
+import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.exception.SQLSessionFactoryException;
 import br.com.anteros.persistence.session.impl.SQLSessionFactoryImpl;
@@ -70,7 +70,7 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 	@Transient
 	protected DataSource dataSource;
 	@Transient
-	protected ModelConfiguration modelConfiguration;
+	protected PersistenceModelConfiguration modelConfiguration;
 
 	public AbstractPersistenceConfiguration() {
 		entityCacheManager = new EntityCacheManager();
@@ -81,12 +81,12 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 		this.dataSource = dataSource;
 	}
 
-	public AbstractPersistenceConfiguration(ModelConfiguration modelConfiguration) {
+	public AbstractPersistenceConfiguration(PersistenceModelConfiguration modelConfiguration) {
 		this();
 		this.modelConfiguration = modelConfiguration;
 	}
 
-	public AbstractPersistenceConfiguration(DataSource dataSource, ModelConfiguration modelConfiguration) {
+	public AbstractPersistenceConfiguration(DataSource dataSource, PersistenceModelConfiguration modelConfiguration) {
 		super();
 		this.dataSource = dataSource;
 		this.modelConfiguration = modelConfiguration;
@@ -290,7 +290,7 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 		return this;
 	}
 
-	public AbstractPersistenceConfiguration modelConfiguration(ModelConfiguration modelConfiguration) {
+	public AbstractPersistenceConfiguration modelConfiguration(PersistenceModelConfiguration modelConfiguration) {
 		this.modelConfiguration = modelConfiguration;
 		return this;
 	}

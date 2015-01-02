@@ -115,7 +115,7 @@ OK - Fazer Refresh na Session para permitir atualizar o objeto pela chave primá
 
 - Estratégia Herança Table per Class
 
-- Fazer opção de alterar configurações de um dialeto tipo:
+OK - Não vai ser feito - Fazer opção de alterar configurações de um dialeto tipo:
    final DSLContext dsl = DSL.using(
             connection,
             SQLDialect.MYSQL,
@@ -212,3 +212,8 @@ OK - Agora assume o padrão caso não seja informado.
  	@BooleanValue(trueValue = "S", falseValue = "N")
 	@Column(name = "BO_LIDO", required = true, defaultValue = "'N'")
 	private Boolean lido;         
+	
+	
+	
+	
+	

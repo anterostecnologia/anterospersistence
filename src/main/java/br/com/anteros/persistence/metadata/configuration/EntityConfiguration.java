@@ -69,7 +69,7 @@ public class EntityConfiguration {
 	private DiscriminatorType discriminatorColumnType;
 	private String discriminatorValue;
 	private EnumValueConfiguration[] enumValues = {};
-	private ModelConfiguration model;
+	private PersistenceModelConfiguration model;
 	private NamedQueryConfiguration[] namedQueries = {};
 	private ScopeType scope = ScopeType.TRANSACTION;
 	private int maxTimeMemory = 0;
@@ -85,7 +85,7 @@ public class EntityConfiguration {
 	private ObjectTypeConverterConfiguration[] objectTypeConverters = {};
 	private TypeConverterConfiguration[] typeConverters = {};
 
-	public EntityConfiguration(Class<? extends Serializable> sourceClazz, ModelConfiguration model) {
+	public EntityConfiguration(Class<? extends Serializable> sourceClazz, PersistenceModelConfiguration model) {
 		this.sourceClazz = sourceClazz;
 		this.model = model;
 		annotations.add(Entity.class);
@@ -233,7 +233,7 @@ public class EntityConfiguration {
 		return allFields.toArray(new FieldConfiguration[] {});
 	}
 
-	public ModelConfiguration getModel() {
+	public PersistenceModelConfiguration getModel() {
 		return model;
 	}
 
