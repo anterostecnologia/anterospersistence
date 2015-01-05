@@ -331,6 +331,9 @@ public class EntityHandler implements ResultSetHandler {
 						if (newObject == null) {
 							newObject = concreteEntityCache.getEntityClass().newInstance();
 							addObjectToCache(concreteEntityCache, newObject, uniqueId);
+							
+							if (targetObject instanceof Collection)
+								((Collection) targetObject).add(newObject);
 						}
 					} catch (Exception e) {
 						throw new EntityHandlerException("Para que seja criado o objeto da "
@@ -351,6 +354,9 @@ public class EntityHandler implements ResultSetHandler {
 						if (newObject == null) {
 							newObject = entityCacheTemp.getEntityClass().newInstance();
 							addObjectToCache(entityCacheTemp, newObject, uniqueId);
+							
+							if (targetObject instanceof Collection)
+								((Collection) targetObject).add(newObject);
 						}
 						session.getPersistenceContext().addEntityManaged(newObject, true, false);
 					} else {
@@ -443,9 +449,6 @@ public class EntityHandler implements ResultSetHandler {
 					aliasPath.substring(aliasPath.indexOf(".") + 1, aliasPath.length()));
 			if (!handlerResult.modified)
 				return new EntityHandlerResult(targetObject);
-
-			if (targetObject instanceof Collection)
-				((Collection) targetObject).add(newObject);
 
 			value = handlerResult.value;
 		}
