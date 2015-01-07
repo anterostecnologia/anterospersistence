@@ -266,7 +266,7 @@ public class DescriptionColumn {
 
 	@Override
 	public String toString() {
-		return new StringBuffer("Entity=").append((entityCache == null ? "" : entityCache.getClass().getSimpleName())).append(" columnName=")
+		return new StringBuilder("Entity=").append((entityCache == null ? "" : entityCache.getClass().getSimpleName())).append(" columnName=")
 				.append(columnName).append(" compositeId=").append(compositeId).append(" referencedColumnName=").append(referencedColumnName)
 				.append(" isPrimaryKey=").append(isPrimaryKey()).append(" isForeignKey=").append(isForeignKey()).append(" isDiscriminatorColumn=")
 				.append(isDiscriminatorColumn()).append(" isNoneColumn=").append(isNoneColumn()).append(" targetClass=")

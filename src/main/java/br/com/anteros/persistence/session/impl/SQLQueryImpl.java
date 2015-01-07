@@ -621,7 +621,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		Object result = null;
 		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
 
-		StringBuffer sb = new StringBuffer("");
+		StringBuilder sb = new StringBuilder("");
 		boolean keyIsNull = false;
 		for (String key : columnKeyTarget.keySet()) {
 			if (columnKeyTarget.get(key) == null)
@@ -965,7 +965,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		/*
 		 * Pega o SQL
 		 */
-		StringBuffer select = new StringBuffer("");
+		StringBuilder select = new StringBuilder("");
 		select.append(descFieldOwner.getStatement());
 		/*
 		 * Faz o parse dos parâmetros x fields do objeto atual setando os

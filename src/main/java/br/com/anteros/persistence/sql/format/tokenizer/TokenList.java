@@ -100,7 +100,7 @@ public class TokenList extends LinkedList<Token>
 
   public String toString()
   {
-    StringBuffer buffer = new StringBuffer();
+	  StringBuilder buffer = new StringBuilder();
     buffer.append("[TokenList:");
 
     buffer.append(" modCount: ");

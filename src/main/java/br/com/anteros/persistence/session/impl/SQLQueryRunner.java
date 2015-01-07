@@ -692,7 +692,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		System.out.println("Sql-> " + sqlFormatted + " ##" + clientId);
 
 		if ((parameters != null) && (parameters.length > 0)) {
-			StringBuffer sb = new StringBuffer("Parameters -> ");
+			StringBuilder sb = new StringBuilder("Parameters -> ");
 			boolean append = false;
 			for (Object p : parameters) {
 				if (append)
@@ -713,7 +713,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		String sqlFormatted = (formatSql == true ? SQLFormatter.format(sql) : sql);
 		System.out.println("Sql-> " + sqlFormatted + " ##" + clientId);
 		if ((parameters != null) && (parameters.length > 0)) {
-			StringBuffer sb = new StringBuffer("Parâmetros -> ");
+			StringBuilder sb = new StringBuilder("Parâmetros -> ");
 			boolean append = false;
 			for (NamedParameter p : parameters) {
 				if (append)
@@ -735,7 +735,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		String sqlFormatted = (formatSql == true ? SQLFormatter.format(sql) : sql);
 		System.out.println("Sql-> " + sqlFormatted + " ##" + clientId);
 		if ((parameters != null) && (parameters.size() > 0)) {
-			StringBuffer sb = new StringBuffer("Parâmetros -> ");
+			StringBuilder sb = new StringBuilder("Parâmetros -> ");
 			boolean append = false;
 			for (String param : parameters.keySet()) {
 				if (append)

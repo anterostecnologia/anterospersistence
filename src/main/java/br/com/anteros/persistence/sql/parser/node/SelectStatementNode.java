@@ -30,7 +30,7 @@ public class SelectStatementNode extends StatementNode {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(name);
 
 		if (getAliasName() != null) {

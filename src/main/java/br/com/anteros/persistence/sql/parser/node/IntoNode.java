@@ -48,7 +48,7 @@ public class IntoNode extends KeywordNode {
 	}
 	
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(name);
 		if (isIntoOutfileCause) {
 			sb.append(" ");

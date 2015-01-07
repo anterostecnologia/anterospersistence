@@ -54,7 +54,7 @@ public class TableGenerator implements IdentifierGenerator {
 		this.initialValue = initialValue;
 
 		if (this.tableName.indexOf('.') < 0) {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			if ((this.catalog != null) && ("".equals(this.catalog)))
 				sb.append(session.getDialect().quote(this.catalog)).append(".");
 			if ((this.schema != null) && ("".equals(this.schema)))

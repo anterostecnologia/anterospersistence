@@ -29,7 +29,7 @@ public class ExpressionNode extends AliasNode {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(name);
 		if (hasAlias()) {
 			sb.append(" ");

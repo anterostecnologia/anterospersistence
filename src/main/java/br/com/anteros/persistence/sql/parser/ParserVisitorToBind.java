@@ -54,7 +54,7 @@ public class ParserVisitorToBind implements IVisitor {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (list != null) {
 			int i = 0;
 			for (Iterator<INode> iterator = list.iterator(); iterator.hasNext();) {

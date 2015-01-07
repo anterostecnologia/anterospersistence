@@ -1326,12 +1326,12 @@ public abstract class DatabaseDialect {
 
 	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name,
 			NamedParameter[] parameters, int queryTimeOut, boolean showSql, String clientId) throws Exception {
-		StringBuffer sql = null;
+		StringBuilder sql = null;
 		int index = 0;
 		if (type == CallableType.PROCEDURE) {
-			sql = new StringBuffer("{ call ");
+			sql = new StringBuilder("{ call ");
 		} else {
-			sql = new StringBuffer("{? = call ");
+			sql = new StringBuilder("{? = call ");
 			index = 1;
 		}
 

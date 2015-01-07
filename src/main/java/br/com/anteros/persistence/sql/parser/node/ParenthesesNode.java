@@ -34,7 +34,7 @@ public class ParenthesesNode extends AliasNode {
 		return "()";
 	}
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (getAliasName() != null) {
 			sb.append(getAliasName());
 		}

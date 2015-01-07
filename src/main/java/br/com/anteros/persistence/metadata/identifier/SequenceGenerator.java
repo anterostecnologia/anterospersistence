@@ -48,7 +48,7 @@ public class SequenceGenerator implements IdentifierGenerator {
 		this.type = type;
 		this.initialValue = initialValue;
 		if (this.sequenceName.indexOf('.') < 0) {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			if ((this.catalogName != null) && (!"".equals(this.catalogName)))
 				sb.append(session.getDialect().quote(this.catalogName)).append(".");
 			if ((this.schemaName != null) && (!"".equals(this.schemaName)))

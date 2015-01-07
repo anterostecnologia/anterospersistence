@@ -29,7 +29,7 @@ public class LoopException extends ParserException {
 	}
 
 	public String getMessage() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(message);
 		sb.append(" Max same word is ");
 		sb.append(maxLoop);

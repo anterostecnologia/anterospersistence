@@ -126,7 +126,7 @@ public abstract class CommandSQL {
 	}
 
 	public String getObjectId() throws Exception {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (entityCache != null) {
 			Map<String, Object> primaryKey = session.getIdentifier(targetObject).getColumns();
 			for (String key : primaryKey.keySet())

@@ -181,7 +181,7 @@ public class Identifier<T> implements Serializable {
 	}
 
 	public String getUniqueId() throws Exception {
-		StringBuffer sb = new StringBuffer("");
+		StringBuilder sb = new StringBuilder("");
 		Map<String, Object> primaryKey = new TreeMap<String, Object>(this.getColumns());
 		for (String key : primaryKey.keySet()) {
 			if (!"".equals(sb.toString()))
@@ -219,7 +219,7 @@ public class Identifier<T> implements Serializable {
 
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer("");
+		StringBuilder sb = new StringBuilder("");
 		Map<String, Object> primaryKey;
 		try {
 			primaryKey = getColumns();

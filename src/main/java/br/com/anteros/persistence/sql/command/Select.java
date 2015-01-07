@@ -149,7 +149,7 @@ public class Select {
 	}
 
 	public String toStatementString() {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		if (StringUtils.isNotEmpty(comment)) {
 			buf.append("/* ").append(comment).append(" */ ");
 		}
@@ -225,7 +225,7 @@ public class Select {
 	}
 
 	public String toWhereClause() {
-		StringBuffer buf = new StringBuffer(whereTokens.size() * 5);
+		StringBuilder buf = new StringBuilder(whereTokens.size() * 5);
 		Iterator iter = whereTokens.iterator();
 		while (iter.hasNext()) {
 			buf.append(iter.next());

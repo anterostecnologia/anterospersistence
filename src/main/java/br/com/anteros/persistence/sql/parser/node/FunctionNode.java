@@ -26,7 +26,7 @@ public class FunctionNode extends AliasNode {
 
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(name);
 		if (getAliasName() != null) {
 			sb.append(" AS ");
@@ -40,7 +40,7 @@ public class FunctionNode extends AliasNode {
 	}
 
 	public String getName() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(name);
 		return sb.toString();
 	}

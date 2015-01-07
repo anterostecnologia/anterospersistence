@@ -36,7 +36,7 @@ public class UnionNode extends KeywordNode {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(getNodeClassName());
 		if (isAll) {
 			sb.append(" All");

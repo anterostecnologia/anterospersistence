@@ -36,7 +36,7 @@ public final class URLEncoder {
      * @return
      */
     public static String encodeURL(String s) {
-        StringBuffer sbuf = new StringBuffer();
+        StringBuilder sbuf = new StringBuilder();
         int len = s.length();
         for (int i = 0; i < len; i++) {
             int ch = s.charAt(i);

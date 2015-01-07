@@ -37,7 +37,7 @@ public class OutfileNode extends KeywordNode {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(name);
 		if (getFilePath() != null) {
 			sb.append(" \"");

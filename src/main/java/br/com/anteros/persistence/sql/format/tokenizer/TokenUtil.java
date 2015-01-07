@@ -147,7 +147,7 @@ public class TokenUtil
     Arrays.sort(SQL_SEPARATE);
     Arrays.sort(NEW_LINE_CHAR);
 
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     for (int i = 0; i < NEW_LINES.length; i++) {
       if (i != 0)
         sb.append('|');
@@ -158,7 +158,7 @@ public class TokenUtil
 
   private static String getCharTable(String[] strs)
   {
-    StringBuffer sb = new StringBuffer();
+	  StringBuilder sb = new StringBuilder();
     for (int i = 0; i < strs.length; i++) {
       String str = strs[i];
       int len = strs[i].length();

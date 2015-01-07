@@ -1789,12 +1789,12 @@ public class SqlParser implements ISqlParser {
 	}
 
 	public String dump(INode node) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		dump(sb, node, "");
 		return sb.toString();
 	}
 
-	protected void dump(StringBuffer sb, INode node, String pre) {
+	protected void dump(StringBuilder sb, INode node, String pre) {
 
 		if (node instanceof InnerAliasNode) {
 		}
@@ -1815,13 +1815,13 @@ public class SqlParser implements ISqlParser {
 	}
 
 	public String dumpXml(INode node) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>");
 		dumpXml(sb, node, "");
 		return sb.toString();
 	}
 
-	protected void dumpXml(StringBuffer sb, INode node, String pre) {
+	protected void dumpXml(StringBuilder sb, INode node, String pre) {
 
 		if (node instanceof InnerAliasNode) {
 		}
@@ -1850,7 +1850,7 @@ public class SqlParser implements ISqlParser {
 		if (strSrc == null || (nLen = strSrc.length()) <= 0)
 			return "";
 
-		StringBuffer sbEnc = new StringBuffer(nLen * 2);
+		StringBuilder sbEnc = new StringBuilder(nLen * 2);
 
 		for (int i = 0; i < nLen; i++) {
 			char c;

@@ -298,7 +298,7 @@ public class EntityCache {
 	}
 
 	public String getCacheUniqueId(Object object) throws Exception {
-		StringBuffer sb = new StringBuffer("");
+		StringBuilder sb = new StringBuilder("");
 		Map<String, Object> columns = new TreeMap<String, Object>();
 		for (DescriptionColumn column : primaryKey)
 			columns.put(column.getColumnName(), column.getDescriptionField().getObjectValue(object));

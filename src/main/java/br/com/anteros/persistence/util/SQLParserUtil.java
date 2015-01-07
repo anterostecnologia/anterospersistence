@@ -66,7 +66,7 @@ public final class SQLParserUtil {
 	public static Set<String> getTableNames(String sql, DatabaseDialect dialect) throws Exception {
 		Set<String> result = new LinkedHashSet<String>();
 		String newSql = sql.replaceAll("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)","");
-		String symbols = new StringBuffer().append("=><!+-*/()',|&`").append(WHITESPACE).append(dialect.getOpenQuote())
+		String symbols = new StringBuilder().append("=><!+-*/()',|&`").append(WHITESPACE).append(dialect.getOpenQuote())
 				.append(dialect.getCloseQuote()).toString();
 		StringTokenizer tokens = new StringTokenizer(newSql, symbols, true);
 

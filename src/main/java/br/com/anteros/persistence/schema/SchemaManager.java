@@ -1843,7 +1843,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 	 * @return Nome ajustado
 	 */
 	protected String adjustColumnName(String columnName) {
-		StringBuffer buff = new StringBuffer();
+		StringBuilder buff = new StringBuilder();
 		for (int i = 0; i < columnName.length(); i++) {
 			char c = columnName.charAt(i);
 			if (c != ' ' && c != '\"' && c != '`') {
@@ -1865,7 +1865,7 @@ public class SchemaManager implements Comparator<TableSchema> {
 		String adjustedTableName = tableName;
 		if (adjustedTableName.indexOf(' ') != -1 || adjustedTableName.indexOf('\"') != -1
 				|| adjustedTableName.indexOf('`') != -1) {
-			StringBuffer buff = new StringBuffer();
+			StringBuilder buff = new StringBuilder();
 			for (int i = 0; i < tableName.length(); i++) {
 				char c = tableName.charAt(i);
 				if (c != ' ' && c != '\"' && c != '`') {

@@ -143,16 +143,16 @@ public class AnterosClob implements Clob {
 
 		final int dlen = data.length();
 		final int ipos = (int) (pos - 1);
-		StringBuffer sb;
+		StringBuilder sb;
 
 		if (ipos > dlen - len) {
-			sb = new StringBuffer(ipos + len);
+			sb = new StringBuilder(ipos + len);
 			sb.append(data.substring(0, ipos));
 			data = null;
 			sb.append(str.substring(offset, offset + len));
 			str = null;
 		} else {
-			sb = new StringBuffer(data);
+			sb = new StringBuilder(data);
 			data = null;
 			for (int i = ipos, j = 0; j < len; i++, j++) {
 				sb.setCharAt(i, str.charAt(offset + j));

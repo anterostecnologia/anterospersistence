@@ -95,7 +95,7 @@ public class SqlTokenizer implements Iterator<Token> {
 			x += skipCount;
 			int incY = 0;
 
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 
 			int index = this.scanner.getCurrent();
 			int type = -1;
@@ -370,7 +370,7 @@ public class SqlTokenizer implements Iterator<Token> {
 			Token next3 = this.getTokenList().getToken(next3Index);
 
 			if ((next3 != null) && (next3.getType() == 10) && (next2 != null) && (next2.getType() == 10)) {
-				StringBuffer sb4 = new StringBuffer();
+				StringBuilder sb4 = new StringBuilder();
 				sb4.append(current.getCustom()).append(' ');
 				sb4.append(next1.getCustom()).append(' ');
 				sb4.append(next2.getCustom()).append(' ');
@@ -387,7 +387,7 @@ public class SqlTokenizer implements Iterator<Token> {
 			}
 
 			if ((next2 != null) && (next2.getType() == 10)) {
-				StringBuffer sb3 = new StringBuffer();
+				StringBuilder sb3 = new StringBuilder();
 				sb3.append(current.getCustom()).append(' ');
 				sb3.append(next1.getCustom()).append(' ');
 				sb3.append(next2.getCustom());
@@ -403,7 +403,7 @@ public class SqlTokenizer implements Iterator<Token> {
 
 			}
 
-			StringBuffer sb2 = new StringBuffer();
+			StringBuilder sb2 = new StringBuilder();
 			sb2.append(current.getCustom()).append(' ');
 			sb2.append(next1.getCustom());
 

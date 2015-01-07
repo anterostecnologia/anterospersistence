@@ -32,7 +32,7 @@ public class ParserVisitorPrint implements IVisitor {
 	
 	private static Logger LOG = LoggerProvider.getInstance().getLogger(ParserVisitorPrint.class.getName());
 
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder();
 
 	boolean isShowAs = false;
 

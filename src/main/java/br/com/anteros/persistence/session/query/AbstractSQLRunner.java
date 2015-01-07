@@ -204,7 +204,7 @@ public abstract class AbstractSQLRunner {
 		if (causeMessage == null) {
 			causeMessage = "";
 		}
-		StringBuffer msg = new StringBuffer(causeMessage);
+		StringBuilder msg = new StringBuilder(causeMessage);
 
 		if ("".equals(sql)) {
 			msg.append(" Query: ").append(sql);
@@ -230,7 +230,7 @@ public abstract class AbstractSQLRunner {
 		if (causeMessage == null) {
 			causeMessage = "";
 		}
-		StringBuffer msg = new StringBuffer(causeMessage);
+		StringBuilder msg = new StringBuilder(causeMessage);
 
 		msg.append(" Query: ");
 		msg.append(sql);
@@ -260,7 +260,7 @@ public abstract class AbstractSQLRunner {
 		if (causeMessage == null) {
 			causeMessage = "";
 		}
-		StringBuffer msg = new StringBuffer(causeMessage);
+		StringBuilder msg = new StringBuilder(causeMessage);
 
 		msg.append(" Query: ");
 		msg.append(sql);

@@ -39,7 +39,7 @@ public class ColumnNode extends AliasNode {
 	}
 
 	public void addConcat(String token, int _offset, int _length){
-		StringBuffer sb = new StringBuffer(columnName).append(token);
+		StringBuilder sb = new StringBuilder(columnName).append(token);
 		parse(sb.toString());
 
 		int lastOffset = this.offset + this.length;
@@ -51,7 +51,7 @@ public class ColumnNode extends AliasNode {
 
 	// for Oracle "(+)"
 	public void addOuterJoin(String token, int _offset, int _length){
-		StringBuffer sb = new StringBuffer(columnName).append(token);
+		StringBuilder sb = new StringBuilder(columnName).append(token);
 		parse(sb.toString());
 
 		int lastOffset = this.offset + this.length;
@@ -62,7 +62,7 @@ public class ColumnNode extends AliasNode {
 	}
 
 	public void addColumn(String token, int _offset, int _length){
-		StringBuffer sb = new StringBuffer(columnName).append(token);
+		StringBuilder sb = new StringBuilder(columnName).append(token);
 		parse(sb.toString());
 
 		int lastOffset = this.offset + this.length;
@@ -94,7 +94,7 @@ public class ColumnNode extends AliasNode {
 		}
 	}
 	public String getName() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (schemaName != null) {
 			sb.append(schemaName);
 			sb.append(".");
@@ -109,7 +109,7 @@ public class ColumnNode extends AliasNode {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(getName());
 
 		if(hasAlias()){

@@ -18,6 +18,7 @@ package br.com.anteros.persistence.session.query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -32,7 +33,6 @@ import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.annotation.type.FetchType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
-import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.sql.format.SqlFormatRule;
 import br.com.anteros.persistence.sql.parser.INode;
@@ -58,7 +58,7 @@ public class SQLQueryAnalyzer {
 	private Class<?> resultClass;
 	private Set<SQLQueryAnalyserAlias> aliases;
 	private Set<SQLQueryAnalyserAlias> aliasesTemporary = new CompactHashSet<SQLQueryAnalyserAlias>();
-	private Map<String, String> expressions;
+	private Map<String[], String[]> expressions;
 	private Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases = new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String>>();
 	private int numberOfColumn = 0;
 	private Set<String> usedAliases = new HashSet<String>();
@@ -101,25 +101,25 @@ public class SQLQueryAnalyzer {
 
 			buildExpressionsAndColumnAliases(firstSelectStatement);
 
-			// System.out.println(sql);
-			//
-			// System.out.println("--------------------EXPRESSIONS-------------------------------");
-			// Iterator<String> iterator = expressions.keySet().iterator();
-			// while (iterator.hasNext()) {
-			// String k = iterator.next();
-			// String v = expressions.get(k);
-			// System.out.println(k + " = " + v);
-			// }
-			// System.out.println("--------------------COLUMN ALIASES----------------------------");
-			// for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
-			// System.out.println("ALIAS-> " + a.getAlias() + " path " +
-			// a.getAliasPath());
-			// System.out.println("    ----------------------------------");
-			// for (String k : columnAliases.get(a).keySet()) {
-			// System.out.println("    " + k + " = " +
-			// columnAliases.get(a).get(k));
-			// }
-			// }
+//			 System.out.println(sql);
+//			
+//			 System.out.println("--------------------EXPRESSIONS-------------------------------");
+//			 Iterator<String> iterator = expressions.keySet().iterator();
+//			 while (iterator.hasNext()) {
+//			 String k = iterator.next();
+//			 String v = expressions.get(k);
+//			 System.out.println(k + " = " + v);
+//			 }
+//			 System.out.println("--------------------COLUMN ALIASES----------------------------");
+//			 for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
+//			 System.out.println("ALIAS-> " + a.getAlias() + " path " +
+//			 a.getAliasPath());
+//			 System.out.println("    ----------------------------------");
+//			 for (String k : columnAliases.get(a).keySet()) {
+//			 System.out.println("    " + k + " = " +
+//			 columnAliases.get(a).get(k));
+//			 }
+//			 }
 
 		}
 	}
@@ -533,7 +533,7 @@ public class SQLQueryAnalyzer {
 			throws SQLQueryAnalyzerException {
 		columnAliases.clear();
 		INode[] columns = ParserUtil.findChildren(selectStatement, ColumnNode.class.getSimpleName());
-		expressions = new LinkedHashMap<String, String>();
+		expressions = new LinkedHashMap<String[], String[]>();
 		for (INode column : columns) {
 			if (column.getParent() instanceof SelectNode) {
 				String tableName = ((ColumnNode) column).getTableName();
@@ -570,8 +570,8 @@ public class SQLQueryAnalyzer {
 							String path = alias.getPath();
 							if (!path.equals(""))
 								path += ".";
-							expressions.put(path + descriptionColumn.getDescriptionField().getName(),
-									((alias.getAliasPath()).equals("") ? "" : alias.getAliasPath() + ".") + aliasName);
+							expressions.put((path + descriptionColumn.getDescriptionField().getName()).split("\\."),
+									(((alias.getAliasPath()).equals("") ? "" : alias.getAliasPath() + ".") + aliasName).split("\\."));
 						} else {
 							if (!((cache.getDiscriminatorColumn() != null) && (cache.getDiscriminatorColumn()
 									.getColumnName().equalsIgnoreCase(columnName))))
@@ -679,7 +679,7 @@ public class SQLQueryAnalyzer {
 
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (SQLQueryAnalyserAlias alias : aliases) {
 			sb.append("\nalias=").append(alias.getAlias()).append(" [");
 			sb.append(" ").append(alias.getEntity().toString());
@@ -689,11 +689,11 @@ public class SQLQueryAnalyzer {
 		return sb.toString();
 	}
 
-	public Map<String, String> getExpressions() {
+	public Map<String[], String[]> getExpressions() {
 		return expressions;
 	}
 
-	public void setExpressions(Map<String, String> expressions) {
+	public void setExpressions(Map<String[], String[]> expressions) {
 		this.expressions = expressions;
 	}
 
@@ -703,7 +703,7 @@ public class SQLQueryAnalyzer {
 
 	protected SQLQueryAnalyserAlias getAliasByName(String name) {
 		for (SQLQueryAnalyserAlias al : aliasesTemporary) {
-			if (al.getAlias().equals(name))
+			if (al.getAlias().equalsIgnoreCase(name))
 				return al;
 		}
 		return null;
@@ -814,7 +814,7 @@ public class SQLQueryAnalyzer {
 	protected String adjustName(String name) {
 		String adjustedName = name;
 		if (adjustedName.indexOf(' ') != -1 || adjustedName.indexOf('\"') != -1 || adjustedName.indexOf('`') != -1) {
-			StringBuffer buff = new StringBuffer();
+			StringBuilder buff = new StringBuilder();
 			for (int i = 0; i < name.length(); i++) {
 				char c = name.charAt(i);
 				if (c != ' ' && c != '\"' && c != '`') {

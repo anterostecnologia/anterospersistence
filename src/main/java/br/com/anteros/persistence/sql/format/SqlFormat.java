@@ -48,7 +48,7 @@ public class SqlFormat implements ISqlFormat {
 	public String unFormat(String sql) {
 		this.setTokenizer(new SqlTokenizer(sql, this.rule));
 
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		int beforeType = 0;
 
 		for (Iterator<Token> it = this.getTokenizer(); it.hasNext();) {
@@ -142,7 +142,7 @@ public class SqlFormat implements ISqlFormat {
 
 		int initIndent = offset == 0 ? 0 : (offset - 1) / this.rule.getIndentString().length() + 1;
 
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		int indent = initIndent;
 		boolean isBetween = false;
 		boolean isOnUsing = false;
@@ -364,7 +364,7 @@ public class SqlFormat implements ISqlFormat {
 		return sb.toString().trim();
 	}
 
-	private StringBuffer append(StringBuffer sb, Token token, int indent) {
+	private StringBuilder append(StringBuilder sb, Token token, int indent) {
 		int type = token.getType();
 
 		if ((type == 60) && (this.rule.isRemoveComment()))
@@ -432,7 +432,7 @@ public class SqlFormat implements ISqlFormat {
 		return sb;
 	}
 
-	private StringBuffer newLine(StringBuffer sb) {
+	private StringBuilder newLine(StringBuilder sb) {
 		int start = sb.length() - this.rule.getOutNewLineCodeStr().length();
 		if (start < 0) {
 			return sb.append(this.rule.getOutNewLineCodeStr());
@@ -442,7 +442,7 @@ public class SqlFormat implements ISqlFormat {
 		return sb.append(this.rule.getOutNewLineCodeStr());
 	}
 
-	private StringBuffer indent(StringBuffer sb, int indent) {
+	private StringBuilder indent(StringBuilder sb, int indent) {
 		if (indent <= 0) {
 			return sb;
 		}
@@ -510,7 +510,7 @@ public class SqlFormat implements ISqlFormat {
 		return str;
 	}
 
-	private int getLineLength(StringBuffer sb) {
+	private int getLineLength(StringBuilder sb) {
 		if (sb == null) {
 			return 0;
 		}
@@ -556,7 +556,7 @@ public class SqlFormat implements ISqlFormat {
 	}
 
 	private String formatMultiComment(String str, int indent, boolean isHeadLine) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (!isHeadLine) {
 			newLine(sb);
 			indent(sb, indent);

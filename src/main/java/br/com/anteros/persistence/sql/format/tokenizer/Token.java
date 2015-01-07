@@ -215,7 +215,7 @@ public class Token
 
   public String toString()
   {
-    StringBuffer buffer = new StringBuffer();
+	  StringBuilder buffer = new StringBuilder();
     buffer.append("[Token:");
     buffer.append(" original: ");
     buffer.append(TokenUtil.debugString(this.original));

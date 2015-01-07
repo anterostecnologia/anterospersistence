@@ -25,7 +25,7 @@ public class UnexpectedTokenException extends ParserException {
 	}
 
 	public String getMessage() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(message);
 		sb.append("\"");
 		sb.append(target);

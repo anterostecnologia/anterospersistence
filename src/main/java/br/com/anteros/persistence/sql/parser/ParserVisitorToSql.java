@@ -33,7 +33,7 @@ public class ParserVisitorToSql implements IVisitor {
 	
 	private static Logger LOG = LoggerProvider.getInstance().getLogger(ParserVisitorToSql.class.getName());
 
-	StringBuffer sb = new StringBuffer();
+	StringBuilder sb = new StringBuilder();
 
 	boolean isShowAs = false;
 

@@ -312,7 +312,7 @@ public class SQLSessionImpl implements SQLSession {
 		getRunner().executeDDL(getConnection(), ddl, showSql, formatSql, "");
 	}
 
-	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String, String> expressions,
+	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String[], String[]> expressions,
 			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, Cache transactionCache,
 			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly)
 			throws Exception {
@@ -610,29 +610,12 @@ public class SQLSessionImpl implements SQLSession {
 
 	@Override
 	public SQLQuery createNamedQuery(String name) throws Exception {
-		System.out.println(getCallingMethod());
-		System.out.println(getCallingThisMethod());
 		errorIfClosed();
 		SQLQuery result = new SQLQueryImpl(this);
 		result.namedQuery(name);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
 		return result;
-	}
-
-	public static String getCallingMethod() {
-		StackTraceElement[] elements = new Throwable().getStackTrace();
-		System.out.println("-----------------------");
-		for (StackTraceElement element : elements) {
-			System.out.println(element);
-		}
-		System.out.println("-----------------------");
-		return elements.length > 1 ? elements[1].getMethodName() : null;
-	}
-
-	public static String getCallingThisMethod() {
-		StackTraceElement[] elements = new Throwable().getStackTrace();
-		return elements.length > 0 ? elements[0].getMethodName() : null;
 	}
 
 	@Override

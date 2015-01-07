@@ -49,7 +49,7 @@ public class ParserException extends RuntimeException {
 	}
 
 	public String getMessage() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(message);
 		sb.append("\"");
 		sb.append(target);

@@ -41,7 +41,7 @@ public class TargetNode extends Node {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (schemaName != null) {
 			sb.append(schemaName);
 			sb.append(".");

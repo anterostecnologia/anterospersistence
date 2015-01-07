@@ -42,7 +42,7 @@ public class SQLQueryAnalyserAlias {
 
 	@Override
 	public String toString() {
-		return new StringBuffer(alias).append(" = ").append((owner == null ? "" : owner.toString())).toString();
+		return new StringBuilder(alias).append(" = ").append((owner == null ? "" : owner.toString())).toString();
 	}
 
 	public String getPath() {

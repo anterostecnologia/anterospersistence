@@ -23,7 +23,7 @@ public class ExceptionHandler
   public static void handleException(String message, Token token)
     throws SqlFormatException
   {
-    StringBuffer sb = new StringBuffer();
+	  StringBuilder sb = new StringBuilder();
     sb.append(message);
     sb.append(":\n");
     sb.append(token.toString());

@@ -66,7 +66,7 @@ public class NamedParameterStatement {
 	public static final NamedParameterParserResult parse(String query, NamedParameter[] substitutedParams) {
 		NamedParameterParserResult result = new NamedParameterParserResult();
 		int length = query.length();
-		StringBuffer parsedQuery = new StringBuffer();
+		StringBuilder parsedQuery = new StringBuilder();
 		boolean inSingleQuote = false;
 		boolean inDoubleQuote = false;
 		int index = 1;

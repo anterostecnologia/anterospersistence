@@ -145,7 +145,7 @@ public class FieldEntityValue implements Comparable<FieldEntityValue> {
 
 	@Override
 	public String toString() {
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 		result.append(name).append(" tipo->").append((value instanceof FieldEntityValue[] ? "COLLECTION" : "SIMPLE")).append(" valor->");
 		if (value instanceof FieldEntityValue[]) {
 			result.append("{");
