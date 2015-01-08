@@ -441,7 +441,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			PersistenceMetadataCache.getInstance().put(getResultClass().getName()+":"+sql, analyzerResult);
 		}
 
-		SQLCache transactionCache = new SQLCache(DEFAULT_CACHE_SIZE);
+		SQLCache transactionCache = new SQLCache();
 
 		try {
 			if (entityCache == null)
@@ -473,6 +473,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				amountOfInstantiatedObjects=handler.getAmountOfInstantiatedObjects();
 		} finally {
 			transactionCache.clear();
+			transactionCache = null;
 			session.getPersistenceContext().clearCache();
 		}
 		return result;
@@ -1373,7 +1374,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			PersistenceMetadataCache.getInstance().put(getResultClass().getName()+":"+sql, analyzerResult);
 		}
 
-		SQLCache transactionCache = new SQLCache(DEFAULT_CACHE_SIZE);
+		SQLCache transactionCache = new SQLCache();
 		try {
 			if (entityCache == null)
 				handler = new BeanHandler(getResultClass());
@@ -1406,6 +1407,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				amountOfInstantiatedObjects = handler.getAmountOfInstantiatedObjects();
 		} finally {
 			transactionCache.clear();
+			transactionCache = null;
 			session.getPersistenceContext().clearCache();
 		}
 		return result;

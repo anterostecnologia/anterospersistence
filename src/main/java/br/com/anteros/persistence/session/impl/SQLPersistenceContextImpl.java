@@ -45,7 +45,7 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 	public SQLPersistenceContextImpl(SQLSession session, EntityCacheManager entityCacheManager, int cacheSize) {
 		this.entityCacheManager = entityCacheManager;
 		this.session = session;
-		this.cache = new SQLCache(cacheSize);
+		this.cache = new SQLCache();
 	}
 
 	public EntityManaged addEntityManaged(Object value, boolean readOnly, boolean newEntity) throws Exception {

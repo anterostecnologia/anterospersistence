@@ -37,6 +37,8 @@ import br.com.anteros.persistence.session.lock.type.LockModeType;
 @SuppressWarnings("rawtypes")
 public interface SQLQuery {
 
+	public static boolean READ_ONLY = true;
+	
 	SQLQuery identifier(Identifier<?> identifier);
 
 	SQLSession getSession();

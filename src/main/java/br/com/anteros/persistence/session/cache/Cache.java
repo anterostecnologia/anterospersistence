@@ -25,7 +25,6 @@ public interface Cache {
 	public Object get(Object key);
 	public boolean remove(Object key);
 	public Object removeAndGet(Object key);
-	public Map getAll(Collection collection);
 	public void clear();
 
 }
