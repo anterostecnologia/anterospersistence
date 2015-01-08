@@ -59,7 +59,7 @@ public class SQLQueryAnalyzer {
 	private Set<SQLQueryAnalyserAlias> aliases;
 	private Set<SQLQueryAnalyserAlias> aliasesTemporary = new CompactHashSet<SQLQueryAnalyserAlias>();
 	private Map<String[], String[]> expressions;
-	private Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases = new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String>>();
+	private Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases = new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String[]>>();
 	private int numberOfColumn = 0;
 	private Set<String> usedAliases = new HashSet<String>();
 
@@ -555,10 +555,10 @@ public class SQLQueryAnalyzer {
 						if (descriptionColumn == null)
 							continue;
 						if (!columnAliases.containsKey(alias)) {
-							columnAliases.put(alias, new HashMap<String, String>());
+							columnAliases.put(alias, new HashMap<String, String[]>());
 						}
 
-						columnAliases.get(alias).put(columnName, alias.getAlias() + "." + aliasName);
+						columnAliases.get(alias).put(columnName, (alias.getAlias() + "." + aliasName).split("\\."));
 
 						if (descriptionColumn.hasDescriptionField()) {
 							if (descriptionColumn.getDescriptionField().isCollection()
@@ -785,7 +785,7 @@ public class SQLQueryAnalyzer {
 
 	}
 
-	public Map<SQLQueryAnalyserAlias, Map<String, String>> getColumnAliases() {
+	public Map<SQLQueryAnalyserAlias, Map<String, String[]>> getColumnAliases() {
 		return columnAliases;
 	}
 

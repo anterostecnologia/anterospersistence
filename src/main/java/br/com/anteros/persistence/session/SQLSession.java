@@ -258,7 +258,7 @@ public interface SQLSession {
 	public void disableLockMode() throws Exception;
 
 	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String[], String[]> expressions,
-			Map<SQLQueryAnalyserAlias, Map<String, String>> columnAliases, Cache transactionCache,
+			Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, Cache transactionCache,
 			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly)
 			throws Exception;
 
