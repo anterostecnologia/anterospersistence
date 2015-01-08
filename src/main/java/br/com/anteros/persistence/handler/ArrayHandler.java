@@ -38,4 +38,9 @@ public class ArrayHandler implements ResultSetHandler {
         return rs.next() ? this.convert.toArray(rs) : null;
     }
 
+	@Override
+	public int getAmountOfInstantiatedObjects() {
+		return 0;
+	}
+
 }

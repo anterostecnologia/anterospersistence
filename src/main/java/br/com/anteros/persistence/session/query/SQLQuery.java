@@ -157,5 +157,7 @@ public interface SQLQuery {
 	public ProcedureResult execute() throws Exception;
 
 	public SQLQuery namedStoredProcedureQuery(String name);
+	
+	public int getAmountOfInstantiatedObjects();
 
 }

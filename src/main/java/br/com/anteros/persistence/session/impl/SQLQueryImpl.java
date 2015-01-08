@@ -92,6 +92,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	private int firstResult;
 	private int maxResults;
 	private boolean readOnly = false;
+	private int amountOfInstantiatedObjects = 0;
 
 	public SQLQueryImpl(SQLSession session) {
 		this.session = session;
@@ -468,6 +469,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				result = (List) session.getRunner().query(session.getConnection(), analyzerResult.getParsedSql(),
 						handler, showSql, formatSql, timeOut, session.getListeners(), session.clientId());
 
+			if (handler!=null)
+				amountOfInstantiatedObjects=handler.getAmountOfInstantiatedObjects();
 		} finally {
 			transactionCache.clear();
 			session.getPersistenceContext().clearCache();
@@ -1243,6 +1246,9 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		List result = (List) session.getRunner().query(session.getConnection(), sql, handler, namedParameter, showSql,
 				formatSql, 0, session.getListeners(), session.clientId());
 
+		if (handler!=null)
+			amountOfInstantiatedObjects=handler.getAmountOfInstantiatedObjects();
+		
 		if (result == null)
 			return Collections.EMPTY_LIST;
 
@@ -1279,6 +1285,9 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 			result = (List) session.getRunner().query(session.getConnection(), sql, handler, parameter, showSql,
 					formatSql, 0, session.getListeners(), session.clientId());
+			
+			if (handler!=null)
+				amountOfInstantiatedObjects=handler.getAmountOfInstantiatedObjects();
 		} finally {
 		}
 
@@ -1393,6 +1402,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 						handler, new NamedParameterParserResult[] {}, showSql, formatSql, timeOut,
 						session.getListeners(), session.clientId());
 
+			if (handler!=null)
+				amountOfInstantiatedObjects = handler.getAmountOfInstantiatedObjects();
 		} finally {
 			transactionCache.clear();
 			session.getPersistenceContext().clearCache();
@@ -1496,6 +1507,11 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	@Override
 	public TypedSQLQuery<T> namedStoredProcedureQuery(String name) {
 		throw new SQLQueryException("Método somente usado em Procedimentos/Funções.");
+	}
+
+	@Override
+	public int getAmountOfInstantiatedObjects() {
+		return amountOfInstantiatedObjects;
 	}
 
 }

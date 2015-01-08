@@ -36,4 +36,9 @@ public class BeanArrayListHandler extends AbstractListHandler<Object> {
 	protected Object handleRow(ResultSet rs) throws SQLException {
 		return this.convert.toBean(rs, clazz);
 	}
+
+	@Override
+	public int getAmountOfInstantiatedObjects() {
+		return 0;
+	}
 }

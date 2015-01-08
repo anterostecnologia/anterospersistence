@@ -31,6 +31,7 @@ OK - Fazer LOB carregar com lazy
 - Possibilidade de trabalhar as classes do Joda Time
 
 - Forma de fazer paginação de objetos
+
 - Internacionalização de Log's
 
 - Permitir consultas com Query By Example
@@ -53,6 +54,9 @@ OK - Implementar limit para trazer registros
    Obs: Implementado junto com DSL.
    
 - Implementar anotações @Embeddable, @Embedded, @AttributeOverride e @AttributeOverrides.
+  Ver link http://www.concretepage.com/hibernate/example-embeddedid-hibernate
+           http://www.java2s.com/Tutorial/Java/0355__JPA/AttributeOverridesForEmbeddableID.htm
+           http://www.programmingforfuture.com/2013/02/attributeoverrides-annotation-in.html
 
 - Ver possibilidade de implementar @SecondaryTables, @SecondaryTable: Ver exemplo MovimentoEstoque x MovimentoEstoqueValor
  sendo que a segunda tabela seria a de valor.
@@ -114,6 +118,7 @@ OK - Fazer Refresh na Session para permitir atualizar o objeto pela chave primá
 - Criar eventos para permitir integração com view no caso aplicações desktop
 
 - Estratégia Herança Table per Class
+  ver link http://www.devmedia.com.br/tipos-de-heranca-no-hibernate/28641
 
 OK - Não vai ser feito - Fazer opção de alterar configurações de um dialeto tipo:
    final DSLContext dsl = DSL.using(
@@ -175,7 +180,7 @@ OK - Implementar validação de campos requeridos em heranças das entidades no 
 - Não permitir 2 entidades com mesmo nome de tabela         
 
 - Concluir implementação MappedSuperClass     
-              
+  ver link http://www.concretepage.com/hibernate/example-mappedsuperclass-hibernate            
               
               
 BUGS:

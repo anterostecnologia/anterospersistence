@@ -54,6 +54,7 @@ public class EntityHandler implements ResultSetHandler {
 	protected Map<Object, String> aliasesCache = new HashMap<Object, String>();
 	private Map<String, Integer> cacheAliasIndex = new HashMap<String, Integer>();
 	private boolean isIncompleteKey;
+	private int amountOfInstantiatedObjects = 0;
 
 	public EntityHandler(LazyLoadFactory proxyFactory, Class<?> targetClass, EntityCacheManager entityCacheManager,
 			Map<String[], String[]> expressions, Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases,
@@ -97,6 +98,7 @@ public class EntityHandler implements ResultSetHandler {
 			 */
 			int numberOfRow = 0;
 			int numberOfRecords = 0;
+			amountOfInstantiatedObjects=0;
 			if (resultSet.next()) {
 				/*
 				 * Faz o loop para processar os registros do ResultSet
@@ -174,6 +176,7 @@ public class EntityHandler implements ResultSetHandler {
 			mainObject = getObjectFromCache(entityCache, uniqueId, transactionCache);
 			if (mainObject == null) {
 				mainObject = targetClass.newInstance();
+				amountOfInstantiatedObjects++;
 				result.add(mainObject);
 			} else {
 				if (allowDuplicateObjects)
@@ -199,9 +202,9 @@ public class EntityHandler implements ResultSetHandler {
 				if ((value instanceof Date) || (value instanceof java.sql.Date))
 					value = resultSet.getTimestamp(columnName);
 
-				if (targetClass.getSimpleName().equals("TabelaPrecoItem"))
-					processExpression2(mainObject, targetClass, expression, 0, value, resultSet, aliasPathWithColumn);
-				else
+//				if (targetClass.getSimpleName().equals("TabelaPrecoItem"))
+//					processExpression2(mainObject, targetClass, expression, 0, value, resultSet, aliasPathWithColumn);
+//				else
 					processExpression(mainObject, targetClass, expression, 0, value, resultSet, aliasPathWithColumn);
 			} catch (SQLException ex) {
 				throw new EntityHandlerException("Erro processando expressão " + expression + " na classe "
@@ -322,6 +325,7 @@ public class EntityHandler implements ResultSetHandler {
 						newObject = getObjectFromCache(concreteEntityCache, uniqueId, transactionCache);
 						if (newObject == null) {
 							newObject = concreteEntityCache.getEntityClass().newInstance();
+							amountOfInstantiatedObjects++;
 							addObjectToCache(concreteEntityCache, newObject, uniqueId);
 
 							if (targetObject instanceof Collection)
@@ -345,6 +349,7 @@ public class EntityHandler implements ResultSetHandler {
 						newObject = getObjectFromCache(entityCacheTemp, uniqueId, transactionCache);
 						if (newObject == null) {
 							newObject = entityCacheTemp.getEntityClass().newInstance();
+							amountOfInstantiatedObjects++;
 							addObjectToCache(entityCacheTemp, newObject, uniqueId);
 
 							if (targetObject instanceof Collection)
@@ -353,6 +358,7 @@ public class EntityHandler implements ResultSetHandler {
 						session.getPersistenceContext().addEntityManaged(newObject, true, false);
 					} else {
 						newObject = descriptionField.getTargetClass().newInstance();
+						amountOfInstantiatedObjects++;
 						/*
 						 * Adiciona o campo na lista de campos que poderão ser
 						 * alterados. Se o campo não for buscado no select não
@@ -387,6 +393,7 @@ public class EntityHandler implements ResultSetHandler {
 							newObject = getObjectFromCache(concreteEntityCache, uniqueId, transactionCache);
 							if (newObject == null) {
 								newObject = concreteEntityCache.getEntityClass().newInstance();
+								amountOfInstantiatedObjects++;
 								addObjectToCache(concreteEntityCache, newObject, uniqueId);
 							}
 						} catch (Exception e) {
@@ -405,11 +412,13 @@ public class EntityHandler implements ResultSetHandler {
 							newObject = getObjectFromCache(entityCacheTemp, uniqueId, transactionCache);
 							if (newObject == null) {
 								newObject = entityCacheTemp.getEntityClass().newInstance();
+								amountOfInstantiatedObjects++;
 								addObjectToCache(entityCacheTemp, newObject, uniqueId);
 							}
 							session.getPersistenceContext().addEntityManaged(newObject, true, false);
 						} else {
 							newObject = descriptionField.getField().getType().newInstance();
+							amountOfInstantiatedObjects++;
 							/*
 							 * Adiciona o campo na lista de campos que poderão
 							 * ser alterados. Se o campo não for buscado no
@@ -540,6 +549,7 @@ public class EntityHandler implements ResultSetHandler {
 							newObject = getObjectFromCache(concreteEntityCache, uniqueId, transactionCache);
 							if (newObject == null) {
 								newObject = concreteEntityCache.getEntityClass().newInstance();
+								amountOfInstantiatedObjects++;
 								addObjectToCache(concreteEntityCache, newObject, uniqueId);
 
 								if (_targetObject instanceof Collection)
@@ -564,6 +574,7 @@ public class EntityHandler implements ResultSetHandler {
 							newObject = getObjectFromCache(entityCacheTemp, uniqueId, transactionCache);
 							if (newObject == null) {
 								newObject = entityCacheTemp.getEntityClass().newInstance();
+								amountOfInstantiatedObjects++;
 								addObjectToCache(entityCacheTemp, newObject, uniqueId);
 
 								if (_targetObject instanceof Collection)
@@ -572,6 +583,7 @@ public class EntityHandler implements ResultSetHandler {
 							session.getPersistenceContext().addEntityManaged(newObject, true, false);
 						} else {
 							newObject = descriptionField.getTargetClass().newInstance();
+							amountOfInstantiatedObjects++;
 							/*
 							 * Adiciona o campo na lista de campos que poderão
 							 * ser alterados. Se o campo não for buscado no
@@ -605,6 +617,7 @@ public class EntityHandler implements ResultSetHandler {
 								newObject = getObjectFromCache(concreteEntityCache, uniqueId, transactionCache);
 								if (newObject == null) {
 									newObject = concreteEntityCache.getEntityClass().newInstance();
+									amountOfInstantiatedObjects++;
 									addObjectToCache(concreteEntityCache, newObject, uniqueId);
 								}
 							} catch (Exception e) {
@@ -623,11 +636,13 @@ public class EntityHandler implements ResultSetHandler {
 								newObject = getObjectFromCache(entityCacheTemp, uniqueId, transactionCache);
 								if (newObject == null) {
 									newObject = entityCacheTemp.getEntityClass().newInstance();
+									amountOfInstantiatedObjects++;
 									addObjectToCache(entityCacheTemp, newObject, uniqueId);
 								}
 								session.getPersistenceContext().addEntityManaged(newObject, true, false);
 							} else {
 								newObject = descriptionField.getField().getType().newInstance();
+								amountOfInstantiatedObjects++;
 								/*
 								 * Adiciona o campo na lista de campos que
 								 * poderão ser alterados. Se o campo não for
@@ -862,9 +877,12 @@ public class EntityHandler implements ResultSetHandler {
 									}
 									String uniqueId = sb.toString();
 									transactionCache.remove(uniqueId);
-									result = session.createQuery("").loadData(targetEntityCache, targetObject,
+									SQLQuery query = session.createQuery("");
+									result = query.loadData(targetEntityCache, targetObject,
 											descriptionField, columnKeyValue, transactionCache);
 
+									amountOfInstantiatedObjects += query.getAmountOfInstantiatedObjects();
+									
 									EntityCache fieldentEntityCache = session.getEntityCacheManager().getEntityCache(
 											descriptionField.getFieldClass());
 									fieldentEntityCache.setPrimaryKeyValue(result, assignedValue);
@@ -874,6 +892,7 @@ public class EntityHandler implements ResultSetHandler {
 									query.setReadOnly(readOnly);
 									result = query.loadData(targetEntityCache, targetObject,
 											descriptionField, columnKeyValue, transactionCache);
+									amountOfInstantiatedObjects += query.getAmountOfInstantiatedObjects();
 								}
 
 								descriptionField.getField().set(targetObject, result);
@@ -890,6 +909,7 @@ public class EntityHandler implements ResultSetHandler {
 									targetEntityCache, columnKeyValue, transactionCache);
 							descriptionField.getField().set(targetObject, newObject);
 
+							amountOfInstantiatedObjects++;
 							if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
 								FieldEntityValue value = descriptionField.getFieldEntityValue(session, targetObject);
 								entityManaged.addOriginalValue(value);
@@ -1059,6 +1079,10 @@ public class EntityHandler implements ResultSetHandler {
 					+ " difere da classe de resultado " + resultClass);
 		}
 		this.objectToRefresh = objectToRefresh;
+	}
+
+	public int getAmountOfInstantiatedObjects() {
+		return amountOfInstantiatedObjects;
 	}
 
 }
