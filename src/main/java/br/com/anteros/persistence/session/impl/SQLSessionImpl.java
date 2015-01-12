@@ -574,6 +574,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.timeOut(queryTimeout);
 		result.sql(sql);
 		result.showSql(showSql);
+		result.formatSql(formatSql);
 		return result;
 	}
 
@@ -585,6 +586,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.setParameters(parameters);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
+		result.formatSql(formatSql);
 		return result;
 	}
 
@@ -595,6 +597,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.sql(sql);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
+		result.formatSql(formatSql);
 		return result;
 	}
 
@@ -605,6 +608,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.timeOut(queryTimeout);
 		result.sql(sql);
 		result.showSql(showSql);
+		result.formatSql(formatSql);
 		result.setParameters(parameters);
 		return result;
 	}
@@ -616,6 +620,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.namedQuery(name);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
+		result.formatSql(formatSql);
 		return result;
 	}
 
@@ -627,19 +632,20 @@ public class SQLSessionImpl implements SQLSession {
 		result.setParameters(parameters);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
+		result.formatSql(formatSql);
 		return result;
 	}
 
 	@Override
 	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass) throws Exception {
 		errorIfClosed();
-		return new SQLQueryImpl<T>(this).resultClass(resultClass).timeOut(queryTimeout).namedQuery(name);
+		return new SQLQueryImpl<T>(this).resultClass(resultClass).timeOut(queryTimeout).namedQuery(name).showSql(showSql).formatSql(formatSql);
 	}
 
 	@Override
 	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters) throws Exception {
 		errorIfClosed();
-		return new SQLQueryImpl<T>(this).resultClass(resultClass).namedQuery(name).setParameters(parameters);
+		return new SQLQueryImpl<T>(this).resultClass(resultClass).namedQuery(name).setParameters(parameters).showSql(showSql).formatSql(formatSql);
 	}
 
 	@Override
@@ -649,6 +655,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.procedureOrFunctionName(procedureName);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
+		result.formatSql(formatSql);
 		return result;
 	}
 
@@ -661,6 +668,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.setParameters(parameters);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
+		result.formatSql(formatSql);
 		return result;
 	}
 
@@ -672,6 +680,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.procedureOrFunctionName(procedureName);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
+		result.formatSql(formatSql);
 		return result;
 	}
 
@@ -684,6 +693,7 @@ public class SQLSessionImpl implements SQLSession {
 		result.timeOut(queryTimeout);
 		result.setParameters(parameters);
 		result.showSql(showSql);
+		result.formatSql(formatSql);
 		return result;
 	}
 
