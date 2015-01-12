@@ -28,6 +28,4 @@ public interface ResultSetHandler {
 	 * 
 	 */
 	public abstract Object handle(ResultSet resultSet) throws Exception;
-	
-	public int getAmountOfInstantiatedObjects();
 }

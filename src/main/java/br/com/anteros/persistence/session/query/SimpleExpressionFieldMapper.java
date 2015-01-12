@@ -10,6 +10,12 @@ import br.com.anteros.persistence.metadata.type.EntityStatus;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
 
+/**
+ * Classe responsável por atribuir os valores dos campos simples ao objeto alvo.
+ * 
+ * @author edson
+ *
+ */
 public class SimpleExpressionFieldMapper extends ExpressionFieldMapper {
 
 	public SimpleExpressionFieldMapper(EntityCache targetEntityCache, DescriptionField descriptionField, String aliasColumnName) {
@@ -19,7 +25,13 @@ public class SimpleExpressionFieldMapper extends ExpressionFieldMapper {
 	@Override
 	public void execute(SQLSession session, ResultSet resultSet, EntityManaged entityManaged, Object targetObject, Cache transactionCache)
 			throws Exception {
+		/*
+		 * Obtém o valor da coluna no resultSet.
+		 */
 		Object value = getValueByColumnName(resultSet);
+		/*
+		 * Atribui o valor no field do objeto alvo.
+		 */
 		descriptionField.setObjectValue(targetObject, value);
 		if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
 			/*

@@ -37,8 +37,4 @@ public class BeanArrayListHandler extends AbstractListHandler<Object> {
 		return this.convert.toBean(rs, clazz);
 	}
 
-	@Override
-	public int getAmountOfInstantiatedObjects() {
-		return 0;
-	}
 }

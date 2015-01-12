@@ -52,9 +52,4 @@ public class ElementCollectionHandler implements ResultSetHandler {
 		return collectionResult;
 	}
 
-	@Override
-	public int getAmountOfInstantiatedObjects() {
-		return 0;
-	}
-
 }

@@ -17,6 +17,13 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
 
+/**
+ * Classe que representa uma expressão a ser processada para criação de um campo no objeto. Usado pela classe EntityHandler
+ * para processar o ResultSet e criar os objetos correspondentes a classe de resultado.
+ * 
+ * @author edson
+ *
+ */
 public abstract class ExpressionFieldMapper {
 
 	protected EntityCache targetEntityCache;
@@ -31,6 +38,15 @@ public abstract class ExpressionFieldMapper {
 		this.aliasColumnName = aliasColumnName;
 	}
 
+	/**
+	 * Método responsável pela execução da criação do objeto e atribuição ao campo do objeto alvo.
+	 * @param session Sessão
+	 * @param resultSet ResultSet contendo os dados do SQL
+	 * @param entityManaged Entidade sendo gerenciada
+	 * @param targetObject Objeto alvo
+	 * @param transactionCache Cache de objetos na transação(execução do SQL).
+	 * @throws Exception
+	 */
 	public abstract void execute(SQLSession session, ResultSet resultSet, EntityManaged entityManaged, Object targetObject, Cache transactionCache) throws Exception;
 
 
@@ -69,6 +85,11 @@ public abstract class ExpressionFieldMapper {
 		return this;
 	}
 
+	/**
+	 * Retorna o objeto ExpressionFieldMapper filho correspodente ao nome do campo informado.
+	 * @param name Nome do campo
+	 * @return Objeto ExpressionFieldMapper correspondente ao campo ou nulo caso não exista.
+	 */
 	public ExpressionFieldMapper getExpressionFieldByName(String name) {
 		for (ExpressionFieldMapper child : children){
 			if (child.getDescriptionField().getField().getName().equalsIgnoreCase(name)){
@@ -87,9 +108,19 @@ public abstract class ExpressionFieldMapper {
 		return sb.toString();
 	}
 	
+	/**
+	 * Com base nos atributos da expressão retorna o valor correspondente a coluna no ResultSet.
+	 * 
+	 * @param resultSet
+	 * @return
+	 * @throws EntityHandlerException
+	 */
 	protected Object getValueByColumnName(ResultSet resultSet) throws EntityHandlerException {
 		try {
 			Object value = resultSet.getObject(aliasColumnName);
+			/*
+			 * Tratamento diferenciado para os tipos de data.
+			 */
 			if ((value instanceof Date) || (value instanceof java.sql.Date))
 				value = resultSet.getTimestamp(aliasColumnName);
 			return value;
@@ -100,6 +131,14 @@ public abstract class ExpressionFieldMapper {
 		}
 	}
 
+	/**
+	 * Busca um objeto no cache usando a Entidade e a chave para localização.
+	 * @param session Sessão
+	 * @param targetEntityCache Entidade
+	 * @param uniqueId Chave primária do objeto
+	 * @param transactionCache Cache da transação
+	 * @return Objeto correspondente a entidade e chave informada ou nulo caso não exista no cache.
+	 */
 	protected Object getObjectFromCache(SQLSession session, EntityCache targetEntityCache, String uniqueId, Cache transactionCache) {
 		Object result = null;
 		/*
@@ -131,6 +170,14 @@ public abstract class ExpressionFieldMapper {
 	}
 	
 
+	/**
+	 * Adiciona o objeto criado no cache da transação ou do contexto.
+	 * @param session Sessão
+	 * @param entityCache Entidade
+	 * @param targetObject Objeto a ser adicionado no cache
+	 * @param uniqueId Chave do objeto
+	 * @param transactionCache Cache de transação
+	 */
 	protected void addObjectToCache(SQLSession session, EntityCache entityCache, Object targetObject, String uniqueId, Cache transactionCache) {
 		/*
 		 * Adiciona o objeto no Cache da sessão ou da transação para evitar

@@ -2,7 +2,6 @@ package br.com.anteros.persistence.session.query;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
 
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.handler.EntityHandlerException;
@@ -12,6 +11,12 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
 
+/**
+ * Classe responsável por criar um Entidade com base nos dados da expressão e atribuir ao objeto alvo.
+ * 
+ * @author edson
+ *
+ */
 public class EntityExpressionFieldMapper extends ExpressionFieldMapper {
 
 	private String aliasTable;
@@ -32,23 +37,56 @@ public class EntityExpressionFieldMapper extends ExpressionFieldMapper {
 	public void execute(SQLSession session, ResultSet resultSet, EntityManaged entityManaged, Object targetObject, Cache transactionCache)
 			throws Exception {
 		Object newObject = null;
+		/*
+		 * Se o campo do objeto alvo ainda não foi inicializado
+		 */
 		if (descriptionField.isNull(targetObject)) {
+			/*
+			 * Se for um campo abstrato
+			 */
 			if (isAbstract) {
 				try {
+					/*
+					 * Pega o valor da coluna no resultSet relativo ao discriminatorColumn o que é necessário para
+					 * determinar qual classe concreta será instanciada
+					 */
 					String discriminatorValue = resultSet.getString(aliasDiscriminatorColumnName);
 
+					/*
+					 * Se não encontrou o valor não cria o objeto e retorna
+					 */
 					if (discriminatorValue == null)
 						return;
 
+					/*
+					 * Se encontrou o valor do discriminator busca a classe concreta referente ao valor.
+					 */
 					EntityCache concreteEntityCache = session.getEntityCacheManager().getEntityCache(descriptionField.getField().getType(),
 							discriminatorValue);
+					/*
+					 * Busca os valores da chave do objeto no resultSet.
+					 */
 					String uniqueId = getUniqueId(resultSet);
+					/*
+					 * Caso não encontre não cria o objeto e retorna
+					 */
 					if (uniqueId == null)
 						return;
 
+					/*
+					 * Busca o objeto no cache da transação SQL.
+					 */
 					newObject = getObjectFromCache(session, concreteEntityCache, uniqueId, transactionCache);
+					/*
+					 * Se não encontrou instancia um novo objeto
+					 */
 					if (newObject == null) {
 						newObject = concreteEntityCache.getEntityClass().newInstance();
+						/*
+						 * Adiciona o objeto instanciado no cache com sua chave única para ser usado quando houver
+						 * necessidade em outro ponto da árvore do objeto principal evitando assim criar objetos
+						 * repetidos para a mesma chave.
+						 */
 						addObjectToCache(session, concreteEntityCache, newObject, uniqueId, transactionCache);
 					}
 				} catch (Exception e) {
@@ -58,16 +96,33 @@ public class EntityExpressionFieldMapper extends ExpressionFieldMapper {
 				}
 
 			} else {
+				/*
+				 * Busca os valores da chave do objeto no resultSet.
+				 */
 				String uniqueId = getUniqueId(resultSet);
+				/*
+				 * Caso não encontre não cria o objeto e retorna
+				 */
 				if (uniqueId == null)
 					return;
+				/*
+				 * Busca o objeto no cache da transação SQL.
+				 */
 				newObject = getObjectFromCache(session, targetEntityCache, uniqueId, transactionCache);
 				if (newObject == null) {
 					newObject = targetEntityCache.getEntityClass().newInstance();
+					/*
+					 * Adiciona o objeto instanciado no cache com sua chave única para ser usado quando houver
+					 * necessidade em outro ponto da árvore do objeto principal evitando assim criar objetos repetidos
+					 * para a mesma chave.
+					 */
 					addObjectToCache(session, targetEntityCache, newObject, uniqueId, transactionCache);
 				}
-				session.getPersistenceContext().addEntityManaged(newObject, true, false);
 			}
+			/*
+			 * Adiciona o objeto na lista de entidades gerenciadas pelo contexto da sessão porém como somente leitura
+			 */
+			session.getPersistenceContext().addEntityManaged(newObject, true, false);
 		} else {
 			/*
 			 * Caso já tenha sido criado pega o objeto do field
@@ -80,28 +135,53 @@ public class EntityExpressionFieldMapper extends ExpressionFieldMapper {
 			entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
 		}
 
+		/*
+		 * Executa lista de expressões filhas para atribuir os valores ao novo objeto e assim sucessivamente até
+		 * terminar a árvore de expressões.
+		 */
 		for (ExpressionFieldMapper expField : children) {
 			expField.execute(session, resultSet, entityManaged, newObject, transactionCache);
 		}
 
-		if (!(targetObject instanceof Collection))
-			descriptionField.setObjectValue(targetObject, newObject);
+		/*
+		 * Atribui o novo objeto ao campo do objeto alvo.
+		 */
+		descriptionField.setObjectValue(targetObject, newObject);
 	}
 
+	/**
+	 * Retorna a chave única do objeto buscando os valores no resultSet.
+	 * @param resultSet Resultado do SQL
+	 * @return Chave única
+	 * @throws SQLException
+	 */
 	protected String getUniqueId(ResultSet resultSet) throws SQLException {
 		int index;
 		StringBuilder uniqueIdTemp = new StringBuilder("");
 		boolean appendSeparator = false;
 		for (String aliasColumnName : aliasPrimaryKeyColumns) {
+			/*
+			 * Busca indice da coluna dentro do resultSet
+			 */
 			index = resultSet.findColumn(aliasColumnName);
 			if (index < 0) {
+				/*
+				 * Esta exception não deverá ocorrer nunca pois as colunas estão sendo parseadas pela análise do SQL.
+				 * Se isto ocorrer pode ser um erro na análise.
+				 */
 				throw new SQLException("NÃO ACHOU COLUNA " + aliasColumnName);
 			}
+			/*
+			 * Concatena o valor da coluna na chave do objeto
+			 */
 			if (appendSeparator)
 				uniqueIdTemp.append("_");
 			uniqueIdTemp.append(resultSet.getObject(index));
 			appendSeparator = true;
 		}
+		/*
+		 * Retorna o chave única. Se for uma string "null" retorna como nula
+		 */
 		String result = uniqueIdTemp.toString();
 		if (result.equals("null"))
 			return null;

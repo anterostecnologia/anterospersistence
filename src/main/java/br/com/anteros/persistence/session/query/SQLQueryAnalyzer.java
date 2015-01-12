@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -65,7 +64,6 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 	private DatabaseDialect databaseDialect;
 	private Class<?> resultClass;
 	private Set<SQLQueryAnalyserAlias> aliases;
-	private Map<String[], String[]> expressions;
 	private List<ExpressionFieldMapper> expressionsFieldMapper = new ArrayList<ExpressionFieldMapper>();
 	private Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases = new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String[]>>();
 	private int numberOfColumn = 0;
@@ -78,7 +76,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 
 	/**
 	 * Analisa um SQL validando se sua estrutura permite montar objetos para classe de resultado. Monta uma lista de
-	 * expressões que serão utilizadas na montagem dos objetos.
+	 * expressões que serão utilizadas na montagem dos objetos pelo EntityHandler.
 	 * 
 	 * @param sql
 	 *            SQL a ser analisado
@@ -97,7 +95,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		/*
 		 * Cria retorno da análise do SQL.
 		 */
-		SQLQueryAnalyzerResult result = new SQLQueryAnalyzerResult(getParsedSQL(), aliases, expressionsFieldMapper, expressions, columnAliases);
+		SQLQueryAnalyzerResult result = new SQLQueryAnalyzerResult(getParsedSQL(), aliases, expressionsFieldMapper, columnAliases);
 		return result;
 	}
 
@@ -165,25 +163,18 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			 */
 			buildExpressionsAndColumnAliases(firstSelectStatement);
 
-			//System.out.println(sql);
-			//
-			// System.out.println("--------------------EXPRESSIONS-------------------------------");
-			// Iterator<String> iterator = expressions.keySet().iterator();
-			// while (iterator.hasNext()) {
-			// String k = iterator.next();
-			// String v = expressions.get(k);
-			// System.out.println(k + " = " + v);
-			// }
-			// System.out.println("--------------------COLUMN ALIASES----------------------------");
-			// for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
-			// System.out.println("ALIAS-> " + a.getAlias() + " path " +
-			// a.getAliasPath());
-			// System.out.println("    ----------------------------------");
-			// for (String k : columnAliases.get(a).keySet()) {
-			// System.out.println("    " + k + " = " +
-			// columnAliases.get(a).get(k));
-			// }
-			// }
+//			System.out.println(sql);
+//			System.out.println("--------------------EXPRESSIONS-------------------------------");
+//			for (ExpressionFieldMapper expField : expressionsFieldMapper)
+//				System.out.println(expField);
+//			System.out.println("--------------------COLUMN ALIASES----------------------------");
+//			for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
+//				System.out.println("ALIAS-> " + a.getAlias() + " path " + a.getAliasPath());
+//				System.out.println("    ----------------------------------");
+//				for (String k : columnAliases.get(a).keySet()) {
+//					System.out.println("    " + k + " = " + columnAliases.get(a).get(k));
+//				}
+//			}
 
 		}
 	}
@@ -895,48 +886,86 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 	}
 
 	/**
+	 * Monta a lista de expressões e aliases das colunas que serão usados na montagem dos objetos pelo EntityHandler.
 	 * 
-	 * @param selectStatement
+	 * @param selectStatement Select
 	 * @throws SQLQueryAnalyzerException
 	 */
 	private void buildExpressionsAndColumnAliases(SelectStatementNode selectStatement) throws SQLQueryAnalyzerException {
+		/*
+		 * Limpa a lista de aliases das colunas
+		 */
 		columnAliases.clear();
+		/*
+		 * Busca todos os nós do tipo ColumnNode
+		 */
 		INode[] columns = ParserUtil.findChildren(selectStatement, ColumnNode.class.getSimpleName());
-		expressions = new TreeMap<String[], String[]>(this);
+		/*
+		 * Cria lista temporária de expressões no formato String para facilitar a criação das expressões no 
+		 * formato ExpressionFieldMapper
+		 */
+		Map<String[], String[]> expressions = new TreeMap<String[], String[]>(this);
 		for (INode column : columns) {
 			if (column.getParent() instanceof SelectNode) {
+				/*
+				 * Pega nome da tabela, da coluna e alias da coluna
+				 */
 				String tableName = ((ColumnNode) column).getTableName();
 				String columnName = ((ColumnNode) column).getColumnName();
 				String aliasName = ((ColumnNode) column).getColumnName();
 				if (((ColumnNode) column).hasAlias()) {
 					aliasName = ((ColumnNode) column).getAliasName();
 				}
+				/*
+				 * Busca o objeto SQLQueryAnalyserAlias correspondente ao tableName da coluna 
+				 */
 				SQLQueryAnalyserAlias alias = getAlias(tableName);
 				if (alias != null) {
+					/*
+					 * Pega a Entidade mapeada para o alias
+					 */
 					EntityCache caches[] = { alias.getEntity() };
+					/*
+					 * Se for abstrata pega as entidades concretas + abstrata para obter as colunas
+					 */
 					if (alias.getEntity().isAbstractClass())
 						caches = entityCacheManager.getEntitiesBySuperClassIncluding(alias.getEntity());
 
 					for (EntityCache cache : caches) {
+						/*
+						 * Busca o descriptionColumn correspondente ao nome da coluna
+						 */
 						DescriptionColumn descriptionColumn = cache.getDescriptionColumnByName(columnName);
 						if (descriptionColumn == null)
 							continue;
+						/*
+						 * Adiciona na lista aliases das colunas
+						 */
 						if (!columnAliases.containsKey(alias)) {
 							columnAliases.put(alias, new HashMap<String, String[]>());
 						}
-
 						columnAliases.get(alias).put(columnName, (alias.getAlias() + "." + aliasName).split("\\."));
 
+						/*
+						 * Se a coluna tem um descriptionField e o campo é uma coleção, função ou relacionamento não gera uma expressão
+						 */
 						if (descriptionColumn.hasDescriptionField()) {
 							if (descriptionColumn.getDescriptionField().isCollection()
 									|| (descriptionColumn.getDescriptionField().isJoinTable() || (descriptionColumn.getDescriptionField()
 											.isRelationShip())))
 								continue;
 						}
+						/*
+						 * Se encontrou o descriptionColumn e não é do tipo discriminatorColumn
+						 * cria uma expressão.
+						 */
 						if ((descriptionColumn != null) && (!descriptionColumn.isDiscriminatorColumn())) {
 							String path = alias.getPath();
 							if (!path.equals(""))
 								path += ".";
+							/*
+							 * Adiciona expressão formato de String[] para evitar fazer split posteriormente.
+							 */
 							expressions.put((path + descriptionColumn.getDescriptionField().getName()).split("\\."),
 									(((alias.getAliasPath()).equals("") ? "" : alias.getAliasPath() + ".") + aliasName).split("\\."));
 						} else {
@@ -951,11 +980,24 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			}
 		}
 
+		/*
+		 * Com base na lista de expressões gerados no código acima no formato String[]
+		 * gera as expressões no formato ExpressionFieldMapper que serão usadas pelo EntityHandler 
+		 * para criar os objetos da classe de resultado.
+		 */
 		for (String[] expression : expressions.keySet()) {
+			/*
+			 * Chama o método que cria a expressão. 
+			 */
 			makeExpressionFieldMapper(null, resultClass, expression, 0, expressions.get(expression));
 		}
 	}
 
+	/**
+	 * Retorna um objeto ExpressionFieldMapper baseado no nome do campo.
+	 * @param fieldName Nome do campo
+	 * @return Objeto ExpressionFieldMapper correspondente ao nome.
+	 */
 	private ExpressionFieldMapper getExpressionFieldByName(String fieldName) {
 		for (ExpressionFieldMapper expressionField : expressionsFieldMapper) {
 			if (expressionField.getDescriptionField().getField().getName().equalsIgnoreCase(fieldName)) {
@@ -965,6 +1007,14 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		return null;
 	}
 
+	/**
+	 * Cria uma expressão do tipo ExpressionFieldMapper baseado na expressão formato String[] parseada do sql.
+	 * @param owner Expressão pai
+	 * @param targetClass Classe alvo
+	 * @param expression Expressão no formato String[] correspondente ao caminho na árvore do objeto.
+	 * @param position Posição inicial dentro da expressão.
+	 * @param aliasPathWithColumn Expressão no formato String[] correspodente aos aliases no sql.
+	 */
 	private void makeExpressionFieldMapper(ExpressionFieldMapper owner, Class<?> targetClass, String[] expression, int position,
 			String[] aliasPathWithColumn) {
 
@@ -982,6 +1032,10 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		if (descriptionField == null)
 			return;
 
+		/*
+		 * Se a posição passada for a última da lista de expressões isto corresponde a um campo 
+		 * simples a ser atribuido ao objeto alvo. Criamos aqui um SimpleExpressionFieldMapper que irá fazer isto.
+		 */
 		if (position == expression.length - 1) {
 			if (owner != null)
 				owner.addChild(new SimpleExpressionFieldMapper(entityCache, descriptionField, alias));
@@ -995,12 +1049,25 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 				expressionField = getExpressionFieldByName(descriptionField.getField().getName());
 			}
 			if (expressionField == null) {
+				/*
+				 * Se o campo for uma coleção criamos aqui um CollectionExpressionFieldMapper que irá cria 
+				 * a mesma e atribuir ao objeto alvo.
+				 */
 				if (descriptionField.isCollectionEntity()) {
 					EntityCache fieldEntityCache = entityCacheManager.getEntityCache(descriptionField.getTargetClass());
 					String discriminatorColumnName = "";
+					/*
+					 * Se a classe alvo da coleção for abstrata guardamos o nome da coluna correspondente ao
+					 * discriminatorColumn no ResultSet para ser usado posteriormente para saber qual instância
+					 * concreta do objeto deverá ser criada.
+					 */
 					if (ReflectionUtils.isAbstractClass(descriptionField.getTargetClass())) {
 						discriminatorColumnName = getAliasColumnName(fieldEntityCache, fieldEntityCache.getDiscriminatorColumn().getColumnName());
 					}
+					/*
+					 * Armazenamos também o nome das colunas no ResultSet que formam a chave do objeto
+					 * para facilitar a busca da chave posteriormente e verificar se devemos criar o objeto
+					 */
 					List<String> aliasPrimaryKeyColumns = new ArrayList<String>();
 					for (DescriptionColumn column : fieldEntityCache.getPrimaryKeyColumns()) {
 						if (alias != null) {
@@ -1014,9 +1081,18 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 				} else {
 					EntityCache fieldEntityCache = entityCacheManager.getEntityCache(descriptionField.getField().getType());
 					String discriminatorColumnName = "";
+					/*
+					 * Se a classe da entidade for abstrata guardamos o nome da coluna correspondente ao
+					 * discriminatorColumn no ResultSet para ser usado posteriormente para saber qual instância
+					 * concreta do objeto deverá ser criada.
+					 */
 					if (ReflectionUtils.isAbstractClass(descriptionField.getTargetClass())) {
 						discriminatorColumnName = getAliasColumnName(fieldEntityCache, fieldEntityCache.getDiscriminatorColumn().getColumnName());
 					}
+					/*
+					 * Armazenamos também o nome das colunas no ResultSet que formam a chave do objeto
+					 * para facilitar a busca da chave posteriormente e verificar se devemos criar o objeto
+					 */
 					List<String> aliasPrimaryKeyColumns = new ArrayList<String>();
 					for (DescriptionColumn column : fieldEntityCache.getPrimaryKeyColumns()) {
 						if (alias != null) {
@@ -1029,18 +1105,36 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 					expressionField = new EntityExpressionFieldMapper(fieldEntityCache, descriptionField, alias, discriminatorColumnName,
 							aliasPrimaryKeyColumns.toArray(new String[] {}));
 				}
+				/*
+				 * Se foi informado o ExpressionFieldMapper então a nova expressão será filha da expressão pai formando assim uma árvore de expressões.
+				 */
 				if (owner != null) {
 					owner.addChild(expressionField);
 				} else {
+					/*
+					 * Sem um pai a expressão é adicionada na lista primária de expressões(primeiro nível).
+					 */
 					expressionsFieldMapper.add(expressionField);
 				}
 			}
+			/*
+			 * Incrementa a posição para processar próxima expressão
+			 */
 			position++;
+			/*
+			 * Chama o método novamente fazendo assim recursivamente o processamento das expressões. Na nova chamada o
+			 * a expressão criada será o pai da próxima expressão.
+			 */
 			makeExpressionFieldMapper(expressionField, expressionField.getTargetEntityCache().getEntityClass(), expression, position,
 					aliasPathWithColumn);
 		}
 	}
 
+	/**
+	 * Retorna o objeto SQLQueryAnalyserAlias correspondente ao alias informado.
+	 * @param alias Nome do alias da tabela.
+	 * @return SQLQueryAnalyserAlias correspodente a tabela.
+	 */
 	protected SQLQueryAnalyserAlias getAlias(String alias) {
 		for (SQLQueryAnalyserAlias a : aliases) {
 			if (a.getAlias().equalsIgnoreCase(alias))
@@ -1049,6 +1143,12 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		return null;
 	}
 
+	/**
+	 * Retorna o nome do alias da coluna usada no SQL.
+	 * @param sourceAlias Alias da tabela
+	 * @param columnName Nome da coluna
+	 * @return Alias da coluna
+	 */
 	private String getAliasColumnName(String sourceAlias, String columnName) {
 		String result = null;
 		for (SQLQueryAnalyserAlias queryAnalyserAlias : columnAliases.keySet()) {
@@ -1067,6 +1167,12 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		return columnName;
 	}
 
+	/**
+	 * Retorna o alias da coluna usada no SQL.
+	 * @param sourceEntityCache Entidade correspondente ao alias da tabela
+	 * @param columnName Nome da coluna
+	 * @return Alias da coluna
+	 */
 	private String getAliasColumnName(EntityCache sourceEntityCache, String columnName) {
 		String result = null;
 		for (SQLQueryAnalyserAlias queryAnalyserAlias : columnAliases.keySet()) {
@@ -1087,52 +1193,43 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		return columnName;
 	}
 
-	protected void findOwnerByAlias(INode node, SQLQueryAnalyserAlias aliasSideA) throws SQLQueryAnalyzerException {
-		EntityCache entityCache = aliasSideA.getEntity();
-		/*
-		 * Se for a mesma classe ou herança de resultClass não precisa path retorna ""
-		 */
-		if ((entityCache == null) || (entityCache.getEntityClass() == resultClass)
-				|| (ReflectionUtils.isExtendsClass(resultClass, entityCache.getEntityClass())))
-			return;
-
-		List<String> columnNames = null;
-		for (SQLQueryAnalyserAlias aliasSideB : aliases) {
-			if (aliasSideB != aliasSideA) {
-				columnNames = getColumnNameEqualsAliases(node, aliasSideA, aliasSideB);
-				if (columnNames.size() > 0) {
-					if (aliasSideB.getEntity() != null) {
-
-						EntityCache caches[] = { aliasSideB.getEntity() };
-						if (aliasSideB.getEntity().isAbstractClass())
-							caches = entityCacheManager.getEntitiesBySuperClass(aliasSideB.getEntity());
-						for (EntityCache cache : caches) {
-							DescriptionField descriptionField = cache.getDescriptionFieldUsesColumns(aliasSideA.getEntity().getEntityClass(),
-									columnNames);
-							if (descriptionField != null) {
-								aliasSideA.setOwner(new SQLQueryAnalyserOwner(aliasSideB, aliasSideB.getEntity(), descriptionField));
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	private List<String> getColumnNameEqualsAliases(INode node, SQLQueryAnalyserAlias sourceAlias, SQLQueryAnalyserAlias targetAlias)
+	/**
+	 * Retorna uma lista com os nomes das colunas que são iguais a dois aliases. Usado para detectar o relacionamento das entidades no SQL.
+	 * @param selectStatement Select
+	 * @param sourceAlias Alias de origem
+	 * @param targetAlias Alias de destino
+	 * @return Lista com nomes das colunas
+	 * @throws SQLQueryAnalyzerException
+	 */
+	private List<String> getColumnNameEqualsAliases(SelectStatementNode selectStatement, SQLQueryAnalyserAlias sourceAlias, SQLQueryAnalyserAlias targetAlias)
 			throws SQLQueryAnalyzerException {
 		List<String> result = new ArrayList<String>();
-		INode[] expressions = ParserUtil.findChildren(node, OperatorNode.class.getSimpleName());
+		/*
+		 * Busca nós no select que são do tipo OperatorNode (operadores). Isto irá retornar operadores usados no Where ou Join.
+		 */
+		INode[] expressions = ParserUtil.findChildren(selectStatement, OperatorNode.class.getSimpleName());
 		for (INode expression : expressions) {
 			OperatorNode operator = (OperatorNode) expression;
+			/*
+			 * Se o operador for um "=" (igual)
+			 */
 			if ("=".equals(operator.getName())) {
+				/*
+				 * Se a esquerda e a direita do operador for uma coluna e não um valor é possível
+				 * que seja um relacionamento(junção) entre entidades.
+				 */
 				if ((operator.getChild(0) instanceof ColumnNode) && (operator.getChild(1) instanceof ColumnNode)
 						&& !(operator.getChild(0) instanceof ValueNode) && !(operator.getChild(1) instanceof ValueNode)) {
+					/*
+					 * Se a esquerda ou a direita do operador não for um parâmetro
+					 */
 					if (!((operator.getChild(0) instanceof BindNode) || (operator.getChild(1) instanceof BindNode))) {
 						ColumnNode columnLeft = (ColumnNode) operator.getChild(0);
 						ColumnNode columnRight = (ColumnNode) operator.getChild(1);
 
+						/*
+						 * Pega nome da tabela e coluna da esquerda
+						 */
 						String tn = columnLeft.getTableName();
 						String cn = columnLeft.getColumnName();
 						if ((tn == null) || ("".equals(tn))) {
@@ -1143,6 +1240,9 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 											+ resultClass.getName());
 						}
 
+						/*
+						 * Pega nome da tabela e coluna da direita
+						 */
 						tn = columnRight.getTableName();
 						cn = columnRight.getColumnName();
 						if ((tn == null) || ("".equals(tn))) {
@@ -1153,7 +1253,14 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 											+ resultClass.getName());
 						}
 
+						/*
+						 * Se a coluna da esquerda e direita tiverem o alias da tabela.
+						 */
 						if ((columnRight.getTableName() != null) && (columnLeft.getTableName() != null)) {
+							/*
+							 * Se encontrar uma igualdade nos nomes da tabela e coluna adiciona na lista. Verificação
+							 * da esquerda pra direita e da direita pra esquerda (bidirecional).
+							 */
 							if ((columnLeft.getTableName().equalsIgnoreCase(sourceAlias.getAlias()) && (columnRight.getTableName()
 									.equalsIgnoreCase(targetAlias.getAlias()))))
 								result.add(columnRight.getColumnName());
@@ -1180,19 +1287,18 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		return sb.toString();
 	}
 
-	public Map<String[], String[]> getExpressions() {
-		return expressions;
-	}
-
-	public void setExpressions(Map<String[], String[]> expressions) {
-		this.expressions = expressions;
-	}
 
 	public String getParsedSQL() {
 		return sql;
 	}
 
-	protected SQLQueryAnalyserAlias getAliasByName(Set<SQLQueryAnalyserAlias> aliases, String name) {
+	/**
+	 * Retorna o objeto SQLQueryAnalyserAlias correspondente ao nome do alias.
+	 * @param aliases Lista de aliases
+	 * @param name Nome do alias
+	 * @return SQLQueryAnalyserAlias correspondente ao alias
+	 */
+	private SQLQueryAnalyserAlias getAliasByName(Set<SQLQueryAnalyserAlias> aliases, String name) {
 		for (SQLQueryAnalyserAlias alias : aliases) {
 			if (alias.getAlias().equalsIgnoreCase(name))
 				return alias;
@@ -1204,6 +1310,11 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		return columnAliases;
 	}
 
+	/**
+	 * Ajusta o nome do alias gerado para a coluna para não ultrapassar o máximo de caracteres permitido pelo dialeto do banco de dados.
+	 * @param aliasColumnNamePrefix Prefixo do nome da coluna
+	 * @return
+	 */
 	private String adpatAliasColumnName(String aliasColumnNamePrefix) {
 		int maximumNameLength = databaseDialect.getMaxColumnNameSize() - 8;
 		String result = adjustName(aliasColumnNamePrefix);
@@ -1226,6 +1337,11 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		return result;
 	}
 
+	/**
+	 * Ajusta o nome da coluna gerado
+	 * @param name Nome da coluna
+	 * @return Nome ajustado.
+	 */
 	private String adjustName(String name) {
 		String adjustedName = name;
 		if (adjustedName.indexOf(' ') != -1 || adjustedName.indexOf('\"') != -1 || adjustedName.indexOf('`') != -1) {

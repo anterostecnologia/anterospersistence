@@ -37,9 +37,4 @@ public class BeanHandler implements ResultSetHandler{
         return rs.next() ? this.convert.toBean(rs, this.type) : null;
     }
 
-	@Override
-	public int getAmountOfInstantiatedObjects() {
-		return 0;
-	}
-
 }

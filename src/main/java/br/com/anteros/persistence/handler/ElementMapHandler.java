@@ -72,9 +72,4 @@ public class ElementMapHandler implements ResultSetHandler {
 		return mapResult;
 	}
 
-	@Override
-	public int getAmountOfInstantiatedObjects() {
-		return 0;
-	}
-
 }
