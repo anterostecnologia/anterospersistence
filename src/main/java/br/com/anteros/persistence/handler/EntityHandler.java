@@ -804,7 +804,7 @@ public class EntityHandler implements ResultSetHandler {
 
 		public EntityHandlerResult(boolean modified, Object value) {
 			this.value = value;
-			this.modified = modified;
+			this.modified = modified; 
 		}
 	}
 
