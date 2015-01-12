@@ -452,7 +452,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 							+ getResultClass().getName()
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 				}
-				handler = session.createNewEntityHandler(getResultClass(), analyzerResult.getExpressions(),
+				handler = session.createNewEntityHandler(getResultClass(), analyzerResult.getExpressionsFieldMapper(), analyzerResult.getExpressions(),
 						analyzerResult.getColumnAliases(), transactionCache, allowDuplicateObjects, objectToRefresh,
 						firstResult, maxResults, readOnly);
 			}
@@ -1238,7 +1238,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			}
 
 			handler = session
-					.createNewEntityHandler(resultClass, analyzerResult.getExpressions(),
+					.createNewEntityHandler(resultClass, analyzerResult.getExpressionsFieldMapper(), analyzerResult.getExpressions(),
 							analyzerResult.getColumnAliases(), transactionCache, false, null, firstResult, maxResults,
 							readOnly);
 			sql = analyzerResult.getParsedSql();
@@ -1279,7 +1279,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 					PersistenceMetadataCache.getInstance().put(resultClass.getName()+":"+sql, analyzerResult);
 				}
 				sql = analyzerResult.getParsedSql();
-				handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressions(),
+				handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressionsFieldMapper(),analyzerResult.getExpressions(),
 						analyzerResult.getColumnAliases(), transactionCache, false, null, firstResult, maxResults,
 						readOnly);
 			}
@@ -1385,7 +1385,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta. SQL-> "
 							+ sql);
 				}
-				handler = session.createNewEntityHandler(getResultClass(), analyzerResult.getExpressions(),
+				handler = session.createNewEntityHandler(getResultClass(), analyzerResult.getExpressionsFieldMapper(),analyzerResult.getExpressions(),
 						analyzerResult.getColumnAliases(), transactionCache, allowDuplicateObjects, null, firstResult,
 						maxResults, readOnly);
 			}

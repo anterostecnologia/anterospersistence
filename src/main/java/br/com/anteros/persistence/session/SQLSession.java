@@ -33,6 +33,7 @@ import br.com.anteros.persistence.session.cache.Cache;
 import br.com.anteros.persistence.session.context.SQLPersistenceContext;
 import br.com.anteros.persistence.session.lock.type.LockModeType;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
+import br.com.anteros.persistence.session.query.ExpressionFieldMapper;
 import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
@@ -257,7 +258,7 @@ public interface SQLSession {
 
 	public void disableLockMode() throws Exception;
 
-	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String[], String[]> expressions,
+	public EntityHandler createNewEntityHandler(Class<?> resultClass, List<ExpressionFieldMapper> expressionsFieldMapper, Map<String[], String[]> expressions,
 			Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, Cache transactionCache,
 			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly)
 			throws Exception;

@@ -876,7 +876,6 @@ public class EntityCache {
 	public boolean isIncompletePrimaryKeyValue(Object source) throws Exception {
 		if (source==null)
 			return true;
-		
 		for (DescriptionField descriptionField : this.getPrimaryKeyFields()){
 			if (descriptionField.getObjectValue(source)==null)
 				return true;

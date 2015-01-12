@@ -3,8 +3,6 @@ package br.com.anteros.persistence.handler;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -29,6 +27,7 @@ import br.com.anteros.persistence.proxy.collection.DefaultSQLList;
 import br.com.anteros.persistence.proxy.collection.DefaultSQLSet;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
+import br.com.anteros.persistence.session.query.ExpressionFieldMapper;
 import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
 import br.com.anteros.persistence.util.AnterosPersistenceHelper;
@@ -55,11 +54,12 @@ public class EntityHandler implements ResultSetHandler {
 	private Map<String, Integer> cacheAliasIndex = new HashMap<String, Integer>();
 	private boolean isIncompleteKey;
 	private int amountOfInstantiatedObjects = 0;
+	private List<ExpressionFieldMapper> expressionsFieldMapper;
 
 	public EntityHandler(LazyLoadFactory proxyFactory, Class<?> targetClass, EntityCacheManager entityCacheManager,
-			Map<String[], String[]> expressions, Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases,
-			SQLSession session, Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults,
-			boolean readOnly) {
+			List<ExpressionFieldMapper> expressionsFieldMapper, Map<String[], String[]> expressions,
+			Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, SQLSession session, Cache transactionCache,
+			boolean allowDuplicateObjects, int firstResult, int maxResults, boolean readOnly) {
 		this.resultClass = targetClass;
 		this.session = session;
 		this.expressions = expressions;
@@ -70,13 +70,14 @@ public class EntityHandler implements ResultSetHandler {
 		this.allowDuplicateObjects = allowDuplicateObjects;
 		this.firstResult = firstResult;
 		this.readOnly = readOnly;
+		this.expressionsFieldMapper = expressionsFieldMapper;
 	}
 
-	public EntityHandler(LazyLoadFactory proxyFactory, Class<?> targetClazz, EntityCacheManager entityCacheManager,
-			SQLSession session, Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults) {
-		this(proxyFactory, targetClazz, entityCacheManager, new LinkedHashMap<String[], String[]>(),
-				new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String[]>>(), session, transactionCache,
-				allowDuplicateObjects, firstResult, maxResults, false);
+	public EntityHandler(LazyLoadFactory proxyFactory, Class<?> targetClazz, EntityCacheManager entityCacheManager, SQLSession session,
+			Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults) {
+		this(proxyFactory, targetClazz, entityCacheManager, new ArrayList<ExpressionFieldMapper>(), new LinkedHashMap<String[], String[]>(),
+				new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String[]>>(), session, transactionCache, allowDuplicateObjects, firstResult,
+				maxResults, false);
 	}
 
 	public Object handle(ResultSet resultSet) throws Exception {
@@ -98,7 +99,7 @@ public class EntityHandler implements ResultSetHandler {
 			 */
 			int numberOfRow = 0;
 			int numberOfRecords = 0;
-			amountOfInstantiatedObjects=0;
+			amountOfInstantiatedObjects = 0;
 			if (resultSet.next()) {
 				/*
 				 * Faz o loop para processar os registros do ResultSet
@@ -107,23 +108,21 @@ public class EntityHandler implements ResultSetHandler {
 					if (numberOfRow >= firstResult) {
 						if ((maxResults == 0) || (numberOfRecords < maxResults)) {
 							/*
-							 * Se a classe passada para o handler for uma
-							 * entidade abstrata localiza no entityCache a
+							 * Se a classe passada para o handler for uma entidade abstrata localiza no entityCache a
 							 * classe correspondente ao discriminator colum
 							 */
 
 							Class<?> targetResultClass = resultClass;
 							EntityCache entityCache = entityCacheManager.getEntityCache(resultClass);
 							try {
-								if (entityCache.hasDiscriminatorColumn()
-										&& ReflectionUtils.isAbstractClass(entityCache.getEntityClass())) {
-									String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache
-											.getDiscriminatorColumn().getColumnName()));
+								if (entityCache.hasDiscriminatorColumn() && ReflectionUtils.isAbstractClass(entityCache.getEntityClass())) {
+									String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache.getDiscriminatorColumn()
+											.getColumnName()));
 									entityCache = entityCacheManager.getEntityCache(resultClass, dsValue);
 									targetResultClass = entityCache.getEntityClass();
 								} else if (entityCache.hasDiscriminatorColumn()) {
-									String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache
-											.getDiscriminatorColumn().getColumnName()));
+									String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache.getDiscriminatorColumn()
+											.getColumnName()));
 									if (!entityCache.getDiscriminatorValue().equals(dsValue)) {
 										continue;
 									}
@@ -135,9 +134,8 @@ public class EntityHandler implements ResultSetHandler {
 												+ " será necessário adicionar no sql a coluna "
 												+ entityCache.getDiscriminatorColumn().getColumnName()
 												+ " que informe que tipo de classe será usada para instanciar o objeto. Verifique também se o discriminator value "
-												+ resultSet.getString(getAliasColumnName(entityCache, entityCache
-														.getDiscriminatorColumn().getColumnName()))
-												+ " é o mesmo que está configurado na classe herdada.");
+												+ resultSet.getString(getAliasColumnName(entityCache, entityCache.getDiscriminatorColumn()
+														.getColumnName())) + " é o mesmo que está configurado na classe herdada.");
 							}
 							if (result == null)
 								result = new ArrayList<Object>();
@@ -153,8 +151,7 @@ public class EntityHandler implements ResultSetHandler {
 				} while (resultSet.next());
 			}
 		} catch (SQLException ex) {
-			throw new EntityHandlerException("Erro processando handler para criação da classe " + resultClass.getName()
-					+ ". " + ex.getMessage());
+			throw new EntityHandlerException("Erro processando handler para criação da classe " + resultClass.getName() + ". " + ex.getMessage());
 		}
 
 		return result;
@@ -189,46 +186,47 @@ public class EntityHandler implements ResultSetHandler {
 		/*
 		 * Processa as expressões para gerar os fields do objeto
 		 */
-		for (String[] expression : expressions.keySet()) {
-			String[] aliasPathWithColumn = expressions.get(expression);
-
-			String columnName = "";
-			if (aliasPathWithColumn.length >= 1) {
-				columnName = aliasPathWithColumn[aliasPathWithColumn.length - 1];
-			}
-
-			try {
-				Object value = resultSet.getObject(columnName);
-				if ((value instanceof Date) || (value instanceof java.sql.Date))
-					value = resultSet.getTimestamp(columnName);
-
-//				if (targetClass.getSimpleName().equals("TabelaPrecoItem"))
-//					processExpression2(mainObject, targetClass, expression, 0, value, resultSet, aliasPathWithColumn);
-//				else
-					processExpression(mainObject, targetClass, expression, 0, value, resultSet, aliasPathWithColumn);
-			} catch (SQLException ex) {
-				throw new EntityHandlerException("Erro processando expressão " + expression + " na classe "
-						+ targetClass.getName() + " coluna " + columnName + ". " + ex.getMessage());
-			}
-
-		}
+		for (ExpressionFieldMapper expression : expressionsFieldMapper) {
+			expression.execute(session, resultSet, entityManaged, mainObject, transactionCache);
+		}	
+		
+		
+//		for (String[] expression : expressions.keySet()) {
+//			String[] aliasPathWithColumn = expressions.get(expression);
+//
+//			String columnName = "";
+//			if (aliasPathWithColumn.length >= 1) {
+//				columnName = aliasPathWithColumn[aliasPathWithColumn.length - 1];
+//			}
+//
+//			try {
+//				Object value = resultSet.getObject(columnName);
+//				if ((value instanceof Date) || (value instanceof java.sql.Date))
+//					value = resultSet.getTimestamp(columnName);
+//
+//				processExpression(mainObject, targetClass, expression, 0, value, resultSet, aliasPathWithColumn);
+//			} catch (SQLException ex) {
+//				throw new EntityHandlerException("Erro processando expressão " + expression + " na classe " + targetClass.getName() + " coluna "
+//						+ columnName + ". " + ex.getMessage());
+//			}
+//
+//		}
 
 		/*
-		 * Adiciona o objeto no Cache da sessão ou da transação para evitar
-		 * buscar o objeto novamente no mesmo processamento
+		 * Adiciona o objeto no Cache da sessão ou da transação para evitar buscar o objeto novamente no mesmo
+		 * processamento
 		 */
 
 		addObjectToCache(entityCache, mainObject, entityCache.getCacheUniqueId(mainObject));
 
 		/*
-		 * Preenche a árvore do objeto considerando as estratégias configuradas
-		 * em cada field com ForeignKey e Fetch
+		 * Preenche a árvore do objeto considerando as estratégias configuradas em cada field com ForeignKey e Fetch
 		 */
 		loadCollectionsRelationShipAndLob(mainObject, entityCache, resultSet);
 
 		if (entityCache.isVersioned()) {
-			entityManaged.setOriginalVersion(ObjectUtils.cloneObject(ReflectionUtils.getFieldValueByName(mainObject,
-					entityCache.getVersionColumn().getField().getName())));
+			entityManaged.setOriginalVersion(ObjectUtils.cloneObject(ReflectionUtils.getFieldValueByName(mainObject, entityCache.getVersionColumn()
+					.getField().getName())));
 			entityManaged.setOldVersion(entityManaged.getOriginalVersion());
 			entityManaged.setCurrentVersion(entityManaged.getOriginalVersion());
 		}
@@ -236,445 +234,215 @@ public class EntityHandler implements ResultSetHandler {
 		return mainObject;
 	}
 
-	protected EntityHandlerResult processExpression(Object targetObject, Class<?> targetClass, String[] expression,
-			int position,
-			Object value, ResultSet resultSet, String[] aliasPath) throws Exception {
-
-		/*
-		 * Busca a EntityCache da classe
-		 */
-		EntityCache entityCache = entityCacheManager.getEntityCache(targetClass);
-
-		Object newObject = null;
-
-		/*
-		 * Pega a primeira parte da expressão onde será iniciado o processamento
-		 */
-		String targetField = expression[position];
-		String alias = aliasPath[position];
-
-		/*
-		 * Pega o DescriptionColumn do field alvo
-		 */
-		DescriptionField descriptionField = entityCache.getDescriptionField(targetField);
-
-		/*
-		 * Se não encontrar o field
-		 */
-		if (descriptionField == null)
-			return new EntityHandlerResult(targetObject);
-
-		/*
-		 * Se a expressão for apenas um objeto seta o valor no field
-		 */
-		if (position == expression.length - 1) {
-			/*
-			 * if (descriptionField.getFieldClass() == resultClass) {
-			 * descriptionField.setObjectValue(targetObject, mainObject); } else
-			 */
-			descriptionField.setObjectValue(targetObject, value);
-			if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
-				/*
-				 * Guarda o valor na lista de valores anteriores
-				 */
-				FieldEntityValue fieldEntityValue = descriptionField.getSimpleColumn()
-						.getFieldEntityValue(targetObject);
-				entityManaged.addOriginalValue(fieldEntityValue);
-				entityManaged.addLastValue(fieldEntityValue);
-
-				/*
-				 * Adiciona o campo na lista de campos que poderão ser
-				 * alterados. Se o campo não for buscado no select não poderá
-				 * ser alterado.
-				 */
-				entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
-			}
-
-			/*
-			 * Retorna o objeto com a expressão processada
-			 */
-			return new EntityHandlerResult(value != null, targetObject);
-		} else {
-			Object oldTargetObject = targetObject;
-			if (descriptionField.isCollectionEntity()) {
-				targetObject = descriptionField.getObjectValue(targetObject);
-				if (targetObject == null) {
-					if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), Set.class)) {
-						targetObject = new DefaultSQLSet();
-						descriptionField.setObjectValue(oldTargetObject, targetObject);
-					} else if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), List.class)) {
-						targetObject = new DefaultSQLList();
-						descriptionField.setObjectValue(oldTargetObject, targetObject);
-					}
-				}
-
-				if (ReflectionUtils.isAbstractClass(descriptionField.getTargetClass())) {
-					EntityCache tempEntityCache = entityCacheManager.getEntityCache(descriptionField.getTargetClass());
-					try {
-						String discriminator = resultSet.getString(getAliasColumnName(tempEntityCache, tempEntityCache
-								.getDiscriminatorColumn().getColumnName()));
-
-						EntityCache concreteEntityCache = entityCacheManager.getEntityCache(
-								descriptionField.getTargetClass(), discriminator);
-
-						String uniqueId = getUniqueId(resultSet, tempEntityCache, alias);
-
-						if (uniqueId == null)
-							return new EntityHandlerResult(targetObject);
-
-						newObject = getObjectFromCache(concreteEntityCache, uniqueId, transactionCache);
-						if (newObject == null) {
-							newObject = concreteEntityCache.getEntityClass().newInstance();
-							amountOfInstantiatedObjects++;
-							addObjectToCache(concreteEntityCache, newObject, uniqueId);
-
-							if (targetObject instanceof Collection)
-								((Collection) targetObject).add(newObject);
-						}
-					} catch (Exception e) {
-						throw new EntityHandlerException("Para que seja criado o objeto da "
-								+ descriptionField.getTargetClass().getName()
-								+ " será necessário adicionar no sql a coluna "
-								+ tempEntityCache.getDiscriminatorColumn().getColumnName()
-								+ " que informe que tipo de classe será usada para instanciar o objeto.");
-					}
-
-				} else {
-					EntityCache entityCacheTemp = entityCacheManager.getEntityCache(descriptionField.getTargetClass());
-					if (entityCacheTemp != null) {
-						String uniqueId = getUniqueId(resultSet, entityCacheTemp, alias);
-						if (uniqueId == null)
-							return new EntityHandlerResult(targetObject);
-
-						newObject = getObjectFromCache(entityCacheTemp, uniqueId, transactionCache);
-						if (newObject == null) {
-							newObject = entityCacheTemp.getEntityClass().newInstance();
-							amountOfInstantiatedObjects++;
-							addObjectToCache(entityCacheTemp, newObject, uniqueId);
-
-							if (targetObject instanceof Collection)
-								((Collection) targetObject).add(newObject);
-						}
-						session.getPersistenceContext().addEntityManaged(newObject, true, false);
-					} else {
-						newObject = descriptionField.getTargetClass().newInstance();
-						amountOfInstantiatedObjects++;
-						/*
-						 * Adiciona o campo na lista de campos que poderão ser
-						 * alterados. Se o campo não for buscado no select não
-						 * poderá ser alterado.
-						 */
-						entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
-					}
-
-				}
-
-			} else {
-				/*
-				 * Se o objeto for nulo instância o objeto
-				 */
-				if (descriptionField.isNull(targetObject)) {
-					if (ReflectionUtils.isAbstractClass(descriptionField.getField().getType())) {
-						EntityCache tempEntityCache = entityCacheManager.getEntityCache(descriptionField.getField()
-								.getType());
-						try {
-							String discriminator = resultSet.getString(getAliasColumnName(alias, tempEntityCache
-									.getDiscriminatorColumn().getColumnName()));
-
-							if (discriminator == null)
-								return new EntityHandlerResult(targetObject);
-
-							EntityCache concreteEntityCache = entityCacheManager.getEntityCache(descriptionField
-									.getField().getType(), discriminator);
-							String uniqueId = getUniqueId(resultSet, tempEntityCache, alias);
-							if (uniqueId == null)
-								return new EntityHandlerResult(targetObject);
-
-							newObject = getObjectFromCache(concreteEntityCache, uniqueId, transactionCache);
-							if (newObject == null) {
-								newObject = concreteEntityCache.getEntityClass().newInstance();
-								amountOfInstantiatedObjects++;
-								addObjectToCache(concreteEntityCache, newObject, uniqueId);
-							}
-						} catch (Exception e) {
-							throw new EntityHandlerException("Para que seja criado o objeto da "
-									+ descriptionField.getField().getType()
-									+ " será necessário adicionar no sql a coluna "
-									+ tempEntityCache.getDiscriminatorColumn().getColumnName()
-									+ " que informe que tipo de classe será usada para instanciar o objeto.");
-						}
-
-					} else {
-						EntityCache entityCacheTemp = entityCacheManager.getEntityCache(descriptionField.getField()
-								.getType());
-						if (entityCacheTemp != null) {
-							String uniqueId = getUniqueId(resultSet, entityCacheTemp, alias);
-							newObject = getObjectFromCache(entityCacheTemp, uniqueId, transactionCache);
-							if (newObject == null) {
-								newObject = entityCacheTemp.getEntityClass().newInstance();
-								amountOfInstantiatedObjects++;
-								addObjectToCache(entityCacheTemp, newObject, uniqueId);
-							}
-							session.getPersistenceContext().addEntityManaged(newObject, true, false);
-						} else {
-							newObject = descriptionField.getField().getType().newInstance();
-							amountOfInstantiatedObjects++;
-							/*
-							 * Adiciona o campo na lista de campos que poderão
-							 * ser alterados. Se o campo não for buscado no
-							 * select não poderá ser alterado.
-							 */
-							entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
-						}
-
-					}
-				} else {
-					/*
-					 * Caso já tenha sido criado pega o objeto do field
-					 */
-					newObject = descriptionField.getObjectValue(targetObject);
-					/*
-					 * Adiciona o campo na lista de campos que poderão ser
-					 * alterados. Se o campo não for buscado no select não
-					 * poderá ser alterado.
-					 */
-					entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
-				}
-			}
-
-			/*
-			 * Processa o restante da expressão usando recursividade
-			 */
-			position++;
-			EntityHandlerResult handlerResult = processExpression(newObject, newObject.getClass(),
-					expression, position, value, resultSet, aliasPath);
-			if (!handlerResult.modified)
-				return new EntityHandlerResult(targetObject);
-
-			value = handlerResult.value;
-		}
-		/*
-		 * Seta o valor processado da expressão no field do objeto
-		 */
-		if (!(targetObject instanceof Collection))
-			descriptionField.setObjectValue(targetObject, value);
-		/*
-		 * Retorna o objeto com as expressões processadas
-		 */
-		return new EntityHandlerResult(targetObject);
-	}
-
-	protected void processExpression2(Object targetObject, Class<?> targetClass, String[] expression, int position,
-			Object value, ResultSet resultSet, String[] aliasPath) throws Exception {
-
-		Object newObject = null;
-		Object _targetObject = targetObject;
-		Class<?> _targetClass = targetClass;
-
-		for (int i = 0; i < expression.length; i++) {
-			String targetField = expression[i];
-			String alias = aliasPath[i];
-
-			/*
-			 * Busca a EntityCache da classe
-			 */
-			EntityCache entityCache = entityCacheManager.getEntityCache(_targetClass);
-
-			/*
-			 * Pega o DescriptionColumn do field alvo
-			 */
-			DescriptionField descriptionField = entityCache.getDescriptionField(targetField);
-
-			/*
-			 * Se não encontrar o field
-			 */
-			if (descriptionField == null)
-				return;
-
-			if (i == expression.length - 1) {
-				/*
-				 * if (descriptionField.getFieldClass() == resultClass) {
-				 * descriptionField.setObjectValue(targetObject, mainObject); }
-				 * else
-				 */
-				descriptionField.setObjectValue(_targetObject, value);
-				if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
-					/*
-					 * Guarda o valor na lista de valores anteriores
-					 */
-					FieldEntityValue fieldEntityValue = descriptionField.getSimpleColumn()
-							.getFieldEntityValue(_targetObject);
-					entityManaged.addOriginalValue(fieldEntityValue);
-					entityManaged.addLastValue(fieldEntityValue);
-
-					/*
-					 * Adiciona o campo na lista de campos que poderão ser
-					 * alterados. Se o campo não for buscado no select não
-					 * poderá ser alterado.
-					 */
-					entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
-				}
-			} else {
-
-				Object oldTargetObject = _targetObject;
-				if (descriptionField.isCollectionEntity()) {
-					_targetObject = descriptionField.getObjectValue(_targetObject);
-					if (_targetObject == null) {
-						if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), Set.class)) {
-							_targetObject = new DefaultSQLSet();
-							descriptionField.setObjectValue(oldTargetObject, _targetObject);
-						} else if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(),
-								List.class)) {
-							_targetObject = new DefaultSQLList();
-							descriptionField.setObjectValue(oldTargetObject, _targetObject);
-						}
-					}
-
-					if (ReflectionUtils.isAbstractClass(descriptionField.getTargetClass())) {
-						EntityCache tempEntityCache = entityCacheManager.getEntityCache(descriptionField
-								.getTargetClass());
-						try {
-							String discriminator = resultSet.getString(getAliasColumnName(tempEntityCache,
-									tempEntityCache
-											.getDiscriminatorColumn().getColumnName()));
-
-							EntityCache concreteEntityCache = entityCacheManager.getEntityCache(
-									descriptionField.getTargetClass(), discriminator);
-
-							String uniqueId = getUniqueId(resultSet, tempEntityCache, alias);
-
-							if (uniqueId == null)
-								return;
-
-							newObject = getObjectFromCache(concreteEntityCache, uniqueId, transactionCache);
-							if (newObject == null) {
-								newObject = concreteEntityCache.getEntityClass().newInstance();
-								amountOfInstantiatedObjects++;
-								addObjectToCache(concreteEntityCache, newObject, uniqueId);
-
-								if (_targetObject instanceof Collection)
-									((Collection) _targetObject).add(newObject);
-							}
-						} catch (Exception e) {
-							throw new EntityHandlerException("Para que seja criado o objeto da "
-									+ descriptionField.getTargetClass().getName()
-									+ " será necessário adicionar no sql a coluna "
-									+ tempEntityCache.getDiscriminatorColumn().getColumnName()
-									+ " que informe que tipo de classe será usada para instanciar o objeto.");
-						}
-
-					} else {
-						EntityCache entityCacheTemp = entityCacheManager.getEntityCache(descriptionField
-								.getTargetClass());
-						if (entityCacheTemp != null) {
-							String uniqueId = getUniqueId(resultSet, entityCacheTemp, alias);
-							if (uniqueId == null)
-								return;
-
-							newObject = getObjectFromCache(entityCacheTemp, uniqueId, transactionCache);
-							if (newObject == null) {
-								newObject = entityCacheTemp.getEntityClass().newInstance();
-								amountOfInstantiatedObjects++;
-								addObjectToCache(entityCacheTemp, newObject, uniqueId);
-
-								if (_targetObject instanceof Collection)
-									((Collection) _targetObject).add(newObject);
-							}
-							session.getPersistenceContext().addEntityManaged(newObject, true, false);
-						} else {
-							newObject = descriptionField.getTargetClass().newInstance();
-							amountOfInstantiatedObjects++;
-							/*
-							 * Adiciona o campo na lista de campos que poderão
-							 * ser alterados. Se o campo não for buscado no
-							 * select não poderá ser alterado.
-							 */
-							entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
-						}
-
-					}
-
-				} else {
-					/*
-					 * Se o objeto for nulo instância o objeto
-					 */
-					if (descriptionField.isNull(_targetObject)) {
-						if (ReflectionUtils.isAbstractClass(descriptionField.getField().getType())) {
-							EntityCache tempEntityCache = entityCacheManager.getEntityCache(descriptionField.getField()
-									.getType());
-							try {
-								String discriminator = resultSet.getString(getAliasColumnName(alias, tempEntityCache
-										.getDiscriminatorColumn().getColumnName()));
-
-								if (discriminator == null)
-									return;
-
-								EntityCache concreteEntityCache = entityCacheManager.getEntityCache(descriptionField
-										.getField().getType(), discriminator);
-								String uniqueId = getUniqueId(resultSet, tempEntityCache, alias);
-								if (uniqueId == null)
-									return;
-								newObject = getObjectFromCache(concreteEntityCache, uniqueId, transactionCache);
-								if (newObject == null) {
-									newObject = concreteEntityCache.getEntityClass().newInstance();
-									amountOfInstantiatedObjects++;
-									addObjectToCache(concreteEntityCache, newObject, uniqueId);
-								}
-							} catch (Exception e) {
-								throw new EntityHandlerException("Para que seja criado o objeto da "
-										+ descriptionField.getField().getType()
-										+ " será necessário adicionar no sql a coluna "
-										+ tempEntityCache.getDiscriminatorColumn().getColumnName()
-										+ " que informe que tipo de classe será usada para instanciar o objeto.");
-							}
-
-						} else {
-							EntityCache entityCacheTemp = entityCacheManager.getEntityCache(descriptionField.getField()
-									.getType());
-							if (entityCacheTemp != null) {
-								String uniqueId = getUniqueId(resultSet, entityCacheTemp, alias);
-								newObject = getObjectFromCache(entityCacheTemp, uniqueId, transactionCache);
-								if (newObject == null) {
-									newObject = entityCacheTemp.getEntityClass().newInstance();
-									amountOfInstantiatedObjects++;
-									addObjectToCache(entityCacheTemp, newObject, uniqueId);
-								}
-								session.getPersistenceContext().addEntityManaged(newObject, true, false);
-							} else {
-								newObject = descriptionField.getField().getType().newInstance();
-								amountOfInstantiatedObjects++;
-								/*
-								 * Adiciona o campo na lista de campos que
-								 * poderão ser alterados. Se o campo não for
-								 * buscado no select não poderá ser alterado.
-								 */
-								entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
-							}
-
-						}
-					} else {
-						/*
-						 * Caso já tenha sido criado pega o objeto do field
-						 */
-						newObject = descriptionField.getObjectValue(_targetObject);
-						/*
-						 * Adiciona o campo na lista de campos que poderão ser
-						 * alterados. Se o campo não for buscado no select não
-						 * poderá ser alterado.
-						 */
-						entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
-					}
-				}
-
-				if (!(_targetObject instanceof Collection))
-					descriptionField.setObjectValue(_targetObject, newObject);
-
-				_targetObject = newObject;
-				_targetClass = newObject.getClass();
-
-			}
-		}
-	}
+//	protected EntityHandlerResult processExpression(Object targetObject, Class<?> targetClass, String[] expression, int position, Object value,
+//			ResultSet resultSet, String[] aliasPath) throws Exception {
+//
+//		/*
+//		 * Busca a EntityCache da classe
+//		 */
+//		EntityCache entityCache = entityCacheManager.getEntityCache(targetClass);
+//
+//		Object newObject = null;
+//
+//		/*
+//		 * Pega a primeira parte da expressão onde será iniciado o processamento
+//		 */
+//		String targetField = expression[position];
+//		String alias = aliasPath[position];
+//
+//		/*
+//		 * Pega o DescriptionColumn do field alvo
+//		 */
+//		DescriptionField descriptionField = entityCache.getDescriptionField(targetField);
+//
+//		/*
+//		 * Se não encontrar o field
+//		 */
+//		if (descriptionField == null)
+//			return new EntityHandlerResult(targetObject);
+//
+//		/*
+//		 * Se a expressão for apenas um objeto seta o valor no field
+//		 */
+//		if (position == expression.length - 1) {
+//
+//			descriptionField.setObjectValue(targetObject, value);
+//			if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
+//				/*
+//				 * Guarda o valor na lista de valores anteriores
+//				 */
+//				FieldEntityValue fieldEntityValue = descriptionField.getSimpleColumn().getFieldEntityValue(targetObject);
+//				entityManaged.addOriginalValue(fieldEntityValue);
+//				entityManaged.addLastValue(fieldEntityValue);
+//
+//				/*
+//				 * Adiciona o campo na lista de campos que poderão ser alterados. Se o campo não for buscado no select
+//				 * não poderá ser alterado.
+//				 */
+//				entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
+//			}
+//
+//			/*
+//			 * Retorna o objeto com a expressão processada
+//			 */
+//			return new EntityHandlerResult(value != null, targetObject);
+//		} else {
+//			Object oldTargetObject = targetObject;
+//			if (descriptionField.isCollectionEntity()) {
+//				targetObject = descriptionField.getObjectValue(targetObject);
+//				if (targetObject == null) {
+//					if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), Set.class)) {
+//						targetObject = new DefaultSQLSet();
+//						descriptionField.setObjectValue(oldTargetObject, targetObject);
+//					} else if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), List.class)) {
+//						targetObject = new DefaultSQLList();
+//						descriptionField.setObjectValue(oldTargetObject, targetObject);
+//					}
+//				}
+//
+//				if (ReflectionUtils.isAbstractClass(descriptionField.getTargetClass())) {
+//					EntityCache tempEntityCache = entityCacheManager.getEntityCache(descriptionField.getTargetClass());
+//					try {
+//						String discriminator = resultSet.getString(getAliasColumnName(tempEntityCache, tempEntityCache.getDiscriminatorColumn()
+//								.getColumnName()));
+//
+//						EntityCache concreteEntityCache = entityCacheManager.getEntityCache(descriptionField.getTargetClass(), discriminator);
+//
+//						String uniqueId = getUniqueId(resultSet, tempEntityCache, alias);
+//
+//						if (uniqueId == null)
+//							return new EntityHandlerResult(targetObject);
+//
+//						newObject = getObjectFromCache(concreteEntityCache, uniqueId, transactionCache);
+//						if (newObject == null) {
+//							newObject = concreteEntityCache.getEntityClass().newInstance();
+//							amountOfInstantiatedObjects++;
+//							addObjectToCache(concreteEntityCache, newObject, uniqueId);
+//
+//							if (targetObject instanceof Collection)
+//								((Collection) targetObject).add(newObject);
+//						}
+//					} catch (Exception e) {
+//						throw new EntityHandlerException("Para que seja criado o objeto da " + descriptionField.getTargetClass().getName()
+//								+ " será necessário adicionar no sql a coluna " + tempEntityCache.getDiscriminatorColumn().getColumnName()
+//								+ " que informe que tipo de classe será usada para instanciar o objeto.");
+//					}
+//
+//				} else {
+//					EntityCache entityCacheTemp = entityCacheManager.getEntityCache(descriptionField.getTargetClass());
+//					if (entityCacheTemp != null) {
+//						String uniqueId = getUniqueId(resultSet, entityCacheTemp, alias);
+//						if (uniqueId == null)
+//							return new EntityHandlerResult(targetObject);
+//
+//						newObject = getObjectFromCache(entityCacheTemp, uniqueId, transactionCache);
+//						if (newObject == null) {
+//							newObject = entityCacheTemp.getEntityClass().newInstance();
+//							amountOfInstantiatedObjects++;
+//							addObjectToCache(entityCacheTemp, newObject, uniqueId);
+//
+//							if (targetObject instanceof Collection)
+//								((Collection) targetObject).add(newObject);
+//						}
+//						session.getPersistenceContext().addEntityManaged(newObject, true, false);
+//					} else {
+//						newObject = descriptionField.getTargetClass().newInstance();
+//						amountOfInstantiatedObjects++;
+//						/*
+//						 * Adiciona o campo na lista de campos que poderão ser alterados. Se o campo não for buscado no
+//						 * select não poderá ser alterado.
+//						 */
+//						entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
+//					}
+//
+//				}
+//
+//			} else {
+//				/*
+//				 * Se o objeto for nulo instância o objeto
+//				 */
+//				if (descriptionField.isNull(targetObject)) {
+//					if (ReflectionUtils.isAbstractClass(descriptionField.getField().getType())) {
+//						EntityCache tempEntityCache = entityCacheManager.getEntityCache(descriptionField.getField().getType());
+//						try {
+//							String discriminator = resultSet.getString(getAliasColumnName(alias, tempEntityCache.getDiscriminatorColumn()
+//									.getColumnName()));
+//
+//							if (discriminator == null)
+//								return new EntityHandlerResult(targetObject);
+//
+//							EntityCache concreteEntityCache = entityCacheManager.getEntityCache(descriptionField.getField().getType(), discriminator);
+//							String uniqueId = getUniqueId(resultSet, tempEntityCache, alias);
+//							if (uniqueId == null)
+//								return new EntityHandlerResult(targetObject);
+//
+//							newObject = getObjectFromCache(concreteEntityCache, uniqueId, transactionCache);
+//							if (newObject == null) {
+//								newObject = concreteEntityCache.getEntityClass().newInstance();
+//								amountOfInstantiatedObjects++;
+//								addObjectToCache(concreteEntityCache, newObject, uniqueId);
+//							}
+//						} catch (Exception e) {
+//							throw new EntityHandlerException("Para que seja criado o objeto da " + descriptionField.getField().getType()
+//									+ " será necessário adicionar no sql a coluna " + tempEntityCache.getDiscriminatorColumn().getColumnName()
+//									+ " que informe que tipo de classe será usada para instanciar o objeto.");
+//						}
+//
+//					} else {
+//						EntityCache entityCacheTemp = entityCacheManager.getEntityCache(descriptionField.getField().getType());
+//						if (entityCacheTemp != null) {
+//							String uniqueId = getUniqueId(resultSet, entityCacheTemp, alias);
+//							newObject = getObjectFromCache(entityCacheTemp, uniqueId, transactionCache);
+//							if (newObject == null) {
+//								newObject = entityCacheTemp.getEntityClass().newInstance();
+//								amountOfInstantiatedObjects++;
+//								addObjectToCache(entityCacheTemp, newObject, uniqueId);
+//							}
+//							session.getPersistenceContext().addEntityManaged(newObject, true, false);
+//						} else {
+//							newObject = descriptionField.getField().getType().newInstance();
+//							amountOfInstantiatedObjects++;
+//							/*
+//							 * Adiciona o campo na lista de campos que poderão ser alterados. Se o campo não for buscado
+//							 * no select não poderá ser alterado.
+//							 */
+//							entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
+//						}
+//
+//					}
+//				} else {
+//					/*
+//					 * Caso já tenha sido criado pega o objeto do field
+//					 */
+//					newObject = descriptionField.getObjectValue(targetObject);
+//					/*
+//					 * Adiciona o campo na lista de campos que poderão ser alterados. Se o campo não for buscado no
+//					 * select não poderá ser alterado.
+//					 */
+//					entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
+//				}
+//			}
+//
+//			/*
+//			 * Processa o restante da expressão usando recursividade
+//			 */
+//			position++;
+//			EntityHandlerResult handlerResult = processExpression(newObject, newObject.getClass(), expression, position, value, resultSet, aliasPath);
+//			if (!handlerResult.modified)
+//				return new EntityHandlerResult(targetObject);
+//
+//			value = handlerResult.value;
+//		}
+//		/*
+//		 * Seta o valor processado da expressão no field do objeto
+//		 */
+//		if (!(targetObject instanceof Collection))
+//			descriptionField.setObjectValue(targetObject, value);
+//		/*
+//		 * Retorna o objeto com as expressões processadas
+//		 */
+//		return new EntityHandlerResult(targetObject);
+//	}
 
 	private String getAliasColumnName(EntityCache sourceEntityCache, String columnName) {
 		String result = aliasesCache.get(sourceEntityCache.getEntityClass().getName() + ":" + columnName);
@@ -682,8 +450,7 @@ public class EntityHandler implements ResultSetHandler {
 			return result;
 		for (SQLQueryAnalyserAlias queryAnalyserAlias : columnAliases.keySet()) {
 			if (queryAnalyserAlias.getEntity().equals(sourceEntityCache)
-					|| (ReflectionUtils.isExtendsClass(queryAnalyserAlias.getEntity().getEntityClass(),
-							sourceEntityCache.getEntityClass()))) {
+					|| (ReflectionUtils.isExtendsClass(queryAnalyserAlias.getEntity().getEntityClass(), sourceEntityCache.getEntityClass()))) {
 				String[] alias = null;
 				for (String column : columnAliases.get(queryAnalyserAlias).keySet()) {
 					if (column.equalsIgnoreCase(columnName)) {
@@ -714,7 +481,7 @@ public class EntityHandler implements ResultSetHandler {
 						break;
 					}
 				}
-				
+
 				result = (alias == null || alias.length <= 1 ? columnName : alias[1]);
 				aliasesCache.put(sourceAlias + ":" + columnName, result);
 				return result;
@@ -725,15 +492,14 @@ public class EntityHandler implements ResultSetHandler {
 
 	protected void addObjectToCache(EntityCache entityCache, Object targetObject, String uniqueId) {
 		/*
-		 * Adiciona o objeto no Cache da sessão ou da transação para evitar
-		 * buscar o objeto novamente no mesmo processamento
+		 * Adiciona o objeto no Cache da sessão ou da transação para evitar buscar o objeto novamente no mesmo
+		 * processamento
 		 */
 		if ((entityCache.getCacheScope().equals(ScopeType.TRANSACTION)) && (transactionCache != null)) {
-			transactionCache.put(entityCache.getEntityClass().getName() + "_" + uniqueId, targetObject,
-					entityCache.getMaxTimeCache());
+			transactionCache.put(entityCache.getEntityClass().getName() + "_" + uniqueId, targetObject, entityCache.getMaxTimeCache());
 		} else {
-			session.getPersistenceContext().addObjectToCache(entityCache.getEntityClass().getName() + "_" + uniqueId,
-					targetObject, entityCache.getMaxTimeCache());
+			session.getPersistenceContext().addObjectToCache(entityCache.getEntityClass().getName() + "_" + uniqueId, targetObject,
+					entityCache.getMaxTimeCache());
 		}
 	}
 
@@ -756,9 +522,8 @@ public class EntityHandler implements ResultSetHandler {
 				cacheAliasIndex.put(aliasColumnName, index);
 			}
 			/*
-			 * Se a coluna não foi adicionada no sql é porque o objeto é parcial
-			 * e provalmente o usuário não quer todos os valores. Sendo assim
-			 * cria um novo objeto pois no cache não vai ter o que ele precisa.
+			 * Se a coluna não foi adicionada no sql é porque o objeto é parcial e provalmente o usuário não quer todos
+			 * os valores. Sendo assim cria um novo objeto pois no cache não vai ter o que ele precisa.
 			 */
 			if (index < 0) {
 				throw new SQLException("NÃO ACHOU COLUNA " + column.getColumnName());
@@ -778,8 +543,8 @@ public class EntityHandler implements ResultSetHandler {
 		Object result = null;
 
 		/*
-		 * Se a classe for abstrata pega todas as implementações não abstratas e
-		 * verifica se existe um objeto da classe + ID no entityCache
+		 * Se a classe for abstrata pega todas as implementações não abstratas e verifica se existe um objeto da classe
+		 * + ID no entityCache
 		 */
 		if (ReflectionUtils.isAbstractClass(targetEntityCache.getEntityClass())) {
 			EntityCache[] entitiesCache = session.getEntityCacheManager().getEntitiesBySuperClass(targetEntityCache);
@@ -787,8 +552,7 @@ public class EntityHandler implements ResultSetHandler {
 				result = transactionCache.get(entityCache.getEntityClass().getName() + "_" + uniqueId);
 				if (result != null)
 					break;
-				result = session.getPersistenceContext().getObjectFromCache(
-						entityCache.getEntityClass().getName() + "_" + uniqueId);
+				result = session.getPersistenceContext().getObjectFromCache(entityCache.getEntityClass().getName() + "_" + uniqueId);
 				if (result != null)
 					break;
 			}
@@ -799,56 +563,47 @@ public class EntityHandler implements ResultSetHandler {
 			result = transactionCache.get(targetEntityCache.getEntityClass().getName() + "_" + uniqueId);
 
 			if (result == null)
-				result = session.getPersistenceContext().getObjectFromCache(
-						targetEntityCache.getEntityClass().getName() + "_" + uniqueId);
+				result = session.getPersistenceContext().getObjectFromCache(targetEntityCache.getEntityClass().getName() + "_" + uniqueId);
 		}
 		return result;
 	}
 
-	protected void loadCollectionsRelationShipAndLob(Object targetObject, EntityCache entityCache, ResultSet resultSet)
-			throws Exception {
+	protected void loadCollectionsRelationShipAndLob(Object targetObject, EntityCache entityCache, ResultSet resultSet) throws Exception {
 		/*
-		 * Faz um loop nos fields que tenham sido configuradas com ForeignKey,
-		 * Lob e Fetch
+		 * Faz um loop nos fields que tenham sido configuradas com ForeignKey, Lob e Fetch
 		 */
 		for (DescriptionField descriptionField : entityCache.getDescriptionFields()) {
 			/*
-			 * Gera o valor do field somente se o usuário não incluiu a
-			 * expressão manualmente no sql. Se ele adicionou a expressão será
-			 * criado o objeto e alimentado apenas com os dados da expressão no
-			 * método processExpression
+			 * Gera o valor do field somente se o usuário não incluiu a expressão manualmente no sql. Se ele adicionou a
+			 * expressão será criado o objeto e alimentado apenas com os dados da expressão no método processExpression
 			 */
-			if (descriptionField.isCollection() || descriptionField.isJoinTable() || descriptionField.isRelationShip()
-					|| descriptionField.isLob()) {
+			if (descriptionField.isCollection() || descriptionField.isJoinTable() || descriptionField.isRelationShip() || descriptionField.isLob()) {
 				Object assignedValue = descriptionField.getObjectValue(targetObject);
 
 				/*
-				 * Verifica se há necessidade de processar o field. Se o field
-				 * possuir uma expressão ou já tiver um valor não é necessário
-				 * processá-lo. Caso o valor seja uma chave e estiver
-				 * incompleta, irá buscar o objeto novamente.
+				 * Verifica se há necessidade de processar o field. Se o field possuir uma expressão ou já tiver um
+				 * valor não é necessário processá-lo. Caso o valor seja uma chave e estiver incompleta, irá buscar o
+				 * objeto novamente.
 				 */
 				if (checkNeedsProcessDescriptionField(entityCache, descriptionField, assignedValue)) {
-					EntityCache targetEntityCache = getTargetEntityCacheByDescriptionField(entityCache,
-							descriptionField);
+					EntityCache targetEntityCache = getTargetEntityCacheByDescriptionField(entityCache, descriptionField);
 
-					Map<String, Object> columnKeyValue = getColumnKeyValue(targetObject, entityCache, resultSet,
-							descriptionField, isIncompleteKey);
+					Map<String, Object> columnKeyValue = getColumnKeyValue(targetObject, entityCache, resultSet, descriptionField, isIncompleteKey);
 
 					/*
-					 * Se não foi possível obter a chave do field no resultSet é
-					 * porque o usuário não quer que este field seja carregado.
+					 * Se não foi possível obter a chave do field no resultSet é porque o usuário não quer que este
+					 * field seja carregado.
 					 */
 					if (columnKeyValue != null) {
 
 						/*
-						 * Se a estratégia for EAGER busca os dados do field, se
-						 * for LAZY cria um proxy.
+						 * Se a estratégia for EAGER busca os dados do field, se for LAZY cria um proxy.
 						 */
 						FetchType fetchType = descriptionField.getFetchType();
 						/*
-						 * Se estiver no android e não for uma coleção então
-						 * assume EAGER
+						 * Se estiver no android e não for uma coleção então assume EAGER pois no Android não é possível
+						 * usar ferramentas de manipulação de bytecode e assim não é possível implementar lazy em alguns
+						 * casos.
 						 */
 						if (AnterosPersistenceHelper.androidIsPresent() && !(descriptionField.isCollection()))
 							fetchType = FetchType.EAGER;
@@ -858,9 +613,8 @@ public class EntityHandler implements ResultSetHandler {
 							fetchType = descriptionField.getFetchType();
 
 						/*
-						 * Somente busca relacionamentos pois LOB já é criado
-						 * junto com os demais campos. Somente cria o LOB se for
-						 * LAZY. Ai cria como um proxy.
+						 * Somente busca relacionamentos pois LOB já é criado junto com os demais campos. Somente cria o
+						 * LOB se for LAZY. Ai cria como um proxy.
 						 */
 						if (fetchType == FetchType.EAGER) {
 							if (!descriptionField.isLob()) {
@@ -878,35 +632,32 @@ public class EntityHandler implements ResultSetHandler {
 									String uniqueId = sb.toString();
 									transactionCache.remove(uniqueId);
 									SQLQuery query = session.createQuery("");
-									result = query.loadData(targetEntityCache, targetObject,
-											descriptionField, columnKeyValue, transactionCache);
+									result = query.loadData(targetEntityCache, targetObject, descriptionField, columnKeyValue, transactionCache);
 
 									amountOfInstantiatedObjects += query.getAmountOfInstantiatedObjects();
-									
-									EntityCache fieldentEntityCache = session.getEntityCacheManager().getEntityCache(
-											descriptionField.getFieldClass());
+
+									EntityCache fieldentEntityCache = session.getEntityCacheManager()
+											.getEntityCache(descriptionField.getFieldClass());
 									fieldentEntityCache.setPrimaryKeyValue(result, assignedValue);
 									result = assignedValue;
 								} else {
 									SQLQuery query = session.createQuery("");
 									query.setReadOnly(readOnly);
-									result = query.loadData(targetEntityCache, targetObject,
-											descriptionField, columnKeyValue, transactionCache);
+									result = query.loadData(targetEntityCache, targetObject, descriptionField, columnKeyValue, transactionCache);
 									amountOfInstantiatedObjects += query.getAmountOfInstantiatedObjects();
 								}
 
 								descriptionField.getField().set(targetObject, result);
 								if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
-									FieldEntityValue fieldEntityValue = descriptionField.getFieldEntityValue(session,
-											targetObject);
+									FieldEntityValue fieldEntityValue = descriptionField.getFieldEntityValue(session, targetObject);
 									entityManaged.addOriginalValue(fieldEntityValue);
 									entityManaged.addLastValue(fieldEntityValue);
 									entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
 								}
 							}
 						} else { // Lazy
-							Object newObject = proxyFactory.createProxy(session, targetObject, descriptionField,
-									targetEntityCache, columnKeyValue, transactionCache);
+							Object newObject = proxyFactory.createProxy(session, targetObject, descriptionField, targetEntityCache, columnKeyValue,
+									transactionCache);
 							descriptionField.getField().set(targetObject, newObject);
 
 							amountOfInstantiatedObjects++;
@@ -922,20 +673,17 @@ public class EntityHandler implements ResultSetHandler {
 		}
 	}
 
-	private boolean checkNeedsProcessDescriptionField(EntityCache entityCache, DescriptionField descriptionField,
-			Object assignedValue) throws Exception {
+	private boolean checkNeedsProcessDescriptionField(EntityCache entityCache, DescriptionField descriptionField, Object assignedValue)
+			throws Exception {
 		Boolean process = (assignedValue == null);
-		Boolean existsExpression = existsExpressionForProcessing(entityCache, descriptionField.getField()
-				.getName());
+		Boolean existsExpression = existsExpressionForProcessing(entityCache, descriptionField.getField().getName());
 		isIncompleteKey = false;
 
 		if (assignedValue != null) {
 			/*
-			 * Processa se for uma collection que não seja herança de
-			 * DefaultSQLList our DefaultSQLSet
+			 * Processa se for uma collection que não seja herança de DefaultSQLList our DefaultSQLSet
 			 */
-			if (descriptionField.isCollection()
-					&& ((assignedValue instanceof DefaultSQLList) || (assignedValue instanceof DefaultSQLSet)))
+			if (descriptionField.isCollection() && ((assignedValue instanceof DefaultSQLList) || (assignedValue instanceof DefaultSQLSet)))
 				process = false;
 			else if (descriptionField.isCollection() || descriptionField.isJoinTable()) {
 				process = true;
@@ -943,8 +691,7 @@ public class EntityHandler implements ResultSetHandler {
 				/*
 				 * Processa se a chave estiver incompleta
 				 */
-				EntityCache fieldentEntityCache = session.getEntityCacheManager().getEntityCache(
-						descriptionField.getFieldClass());
+				EntityCache fieldentEntityCache = session.getEntityCacheManager().getEntityCache(descriptionField.getFieldClass());
 				if (fieldentEntityCache != null) {
 					isIncompleteKey = fieldentEntityCache.isIncompletePrimaryKeyValue(assignedValue);
 					if (!isIncompleteKey) {
@@ -961,8 +708,8 @@ public class EntityHandler implements ResultSetHandler {
 		return process && !existsExpression;
 	}
 
-	private EntityCache getTargetEntityCacheByDescriptionField(EntityCache entityCache,
-			DescriptionField descriptionField) throws EntityHandlerException {
+	private EntityCache getTargetEntityCacheByDescriptionField(EntityCache entityCache, DescriptionField descriptionField)
+			throws EntityHandlerException {
 		EntityCache targetEntityCache = null;
 		if (descriptionField.isLob()) {
 			targetEntityCache = entityCache;
@@ -972,16 +719,13 @@ public class EntityHandler implements ResultSetHandler {
 			 */
 
 			if (!descriptionField.isElementCollection() && !descriptionField.isJoinTable()) {
-				targetEntityCache = entityCacheManager.getEntityCache(descriptionField.getTargetEntity()
-						.getEntityClass());
+				targetEntityCache = entityCacheManager.getEntityCache(descriptionField.getTargetEntity().getEntityClass());
 
 				if (targetEntityCache == null)
-					throw new EntityHandlerException(
-							"Para que seja criado o objeto da classe "
-									+ descriptionField.getTargetEntity().getEntityClass().getName()
-									+ " é preciso adicionar a Entity relacionada à classe na configuração da sessão. "
-									+ (descriptionField.getDescriptionColumns() == null ? "" : "Coluna(s) "
-											+ descriptionField));
+					throw new EntityHandlerException("Para que seja criado o objeto da classe "
+							+ descriptionField.getTargetEntity().getEntityClass().getName()
+							+ " é preciso adicionar a Entity relacionada à classe na configuração da sessão. "
+							+ (descriptionField.getDescriptionColumns() == null ? "" : "Coluna(s) " + descriptionField));
 			}
 		}
 		return targetEntityCache;
@@ -991,9 +735,8 @@ public class EntityHandler implements ResultSetHandler {
 			DescriptionField descriptionField, Boolean isIncompleteKey) throws EntityHandlerException {
 
 		/*
-		 * Se o DescriptionField for um FK guarda o valor da coluna. Apenas
-		 * monta o objeto da chave estrangeira caso o usuário tenha incluido as
-		 * colunas da chave no SQL.
+		 * Se o DescriptionField for um FK guarda o valor da coluna. Apenas monta o objeto da chave estrangeira caso o
+		 * usuário tenha incluido as colunas da chave no SQL.
 		 */
 		String columnName = "";
 		try {
@@ -1002,15 +745,13 @@ public class EntityHandler implements ResultSetHandler {
 				for (DescriptionColumn descriptionColumn : descriptionField.getDescriptionColumns()) {
 					if (descriptionColumn.isForeignKey() && !descriptionColumn.isInversedJoinColumn()) {
 						columnName = descriptionColumn.getColumnName();
-						String aliasColumnName = getAliasColumnName(entityCache,
-								descriptionColumn.getColumnName());
-
+						String aliasColumnName = getAliasColumnName(entityCache, descriptionColumn.getColumnName());
+						
 						int index = resultSet.findColumn(aliasColumnName);
 						if (index < 0) {
 							return null;
 						}
-						columnKeyValue.put(descriptionColumn.getReferencedColumnName(),
-								resultSet.getObject(aliasColumnName));
+						columnKeyValue.put(descriptionColumn.getReferencedColumnName(), resultSet.getObject(aliasColumnName));
 
 					}
 				}
@@ -1022,16 +763,13 @@ public class EntityHandler implements ResultSetHandler {
 			return columnKeyValue;
 		} catch (Exception ex) {
 			/*
-			 * Se não for um DescriptionField do tipo COLLECTION_TABLE, continua
-			 * iteracao do proximo field.
+			 * Se não for um DescriptionField do tipo COLLECTION_TABLE, continua iteracao do proximo field.
 			 */
-			if (!descriptionField.isElementCollection() && !descriptionField.isJoinTable()
-					&& isIncompleteKey) {
+			if (!descriptionField.isElementCollection() && !descriptionField.isJoinTable() && isIncompleteKey) {
 				throw new EntityHandlerException("Para que seja criado o objeto do tipo "
-						+ descriptionField.getTargetEntity().getEntityClass().getSimpleName()
-						+ " que será atribuído ao campo " + descriptionField.getField().getName()
-						+ " na classe " + entityCache.getEntityClass() + " é preciso adicionar a coluna "
-						+ columnName + " da tabela " + entityCache.getTableName() + " no sql. ");
+						+ descriptionField.getTargetEntity().getEntityClass().getSimpleName() + " que será atribuído ao campo "
+						+ descriptionField.getField().getName() + " na classe " + entityCache.getEntityClass() + " é preciso adicionar a coluna "
+						+ columnName + " da tabela " + entityCache.getTableName() + " no sql. Erro "+ex.getMessage());
 			}
 		}
 		return null;
@@ -1075,8 +813,8 @@ public class EntityHandler implements ResultSetHandler {
 			return;
 
 		if (!(objectToRefresh.getClass().equals(resultClass))) {
-			throw new EntityHandlerException("Classe do objeto para refresh " + objectToRefresh.getClass()
-					+ " difere da classe de resultado " + resultClass);
+			throw new EntityHandlerException("Classe do objeto para refresh " + objectToRefresh.getClass() + " difere da classe de resultado "
+					+ resultClass);
 		}
 		this.objectToRefresh = objectToRefresh;
 	}

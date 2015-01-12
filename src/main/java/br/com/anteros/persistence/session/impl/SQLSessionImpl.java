@@ -45,6 +45,7 @@ import br.com.anteros.persistence.session.context.SQLPersistenceContext;
 import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.session.lock.type.LockModeType;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
+import br.com.anteros.persistence.session.query.ExpressionFieldMapper;
 import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
@@ -312,12 +313,12 @@ public class SQLSessionImpl implements SQLSession {
 		getRunner().executeDDL(getConnection(), ddl, showSql, formatSql, "");
 	}
 
-	public EntityHandler createNewEntityHandler(Class<?> resultClass, Map<String[], String[]> expressions,
+	public EntityHandler createNewEntityHandler(Class<?> resultClass, List<ExpressionFieldMapper> expressionsFieldMapper, Map<String[], String[]> expressions,
 			Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, Cache transactionCache,
 			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly)
 			throws Exception {
 		errorIfClosed();
-		EntityHandler handler = new EntityHandler(lazyLoadFactory, resultClass, getEntityCacheManager(), expressions,
+		EntityHandler handler = new EntityHandler(lazyLoadFactory, resultClass, getEntityCacheManager(), expressionsFieldMapper, expressions,
 				columnAliases, this, transactionCache, allowDuplicateObjects, firstResult, maxResults, readOnly);
 		handler.setObjectToRefresh(objectToRefresh);
 		return handler;
