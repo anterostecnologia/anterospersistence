@@ -42,7 +42,7 @@ public class SQLPersistenceContextImpl implements SQLPersistenceContext {
 	private Cache cache;
 	private static Logger LOG = LoggerProvider.getInstance().getLogger(SQLPersistenceContext.class);
 
-	public SQLPersistenceContextImpl(SQLSession session, EntityCacheManager entityCacheManager, int cacheSize) {
+	public SQLPersistenceContextImpl(SQLSession session, EntityCacheManager entityCacheManager) {
 		this.entityCacheManager = entityCacheManager;
 		this.session = session;
 		this.cache = new SQLCache();

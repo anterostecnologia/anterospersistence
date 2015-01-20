@@ -22,7 +22,7 @@ import br.com.anteros.persistence.session.cache.Cache;
  * para processar o ResultSet e criar os objetos correspondentes a classe de resultado.
  * 
  * @author edson
- *
+ * @see EntityHandler
  */
 public abstract class ExpressionFieldMapper {
 
@@ -86,7 +86,7 @@ public abstract class ExpressionFieldMapper {
 	}
 
 	/**
-	 * Retorna o objeto ExpressionFieldMapper filho correspodente ao nome do campo informado.
+	 * Retorna o objeto ExpressionFieldMapper filho correspondente ao nome do campo informado.
 	 * @param name Nome do campo
 	 * @return Objeto ExpressionFieldMapper correspondente ao campo ou nulo caso não exista.
 	 */

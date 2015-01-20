@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
  * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  * 
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  ******************************************************************************/
 package br.com.anteros.persistence.sql.dialect;
 
@@ -54,6 +51,9 @@ import br.com.anteros.persistence.schema.definition.TableSchema;
 import br.com.anteros.persistence.schema.definition.UniqueKeySchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 import br.com.anteros.persistence.schema.definition.type.StoredParameterType;
+import br.com.anteros.persistence.session.exception.SQLSessionException;
+import br.com.anteros.persistence.session.lock.LockMode;
+import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.sql.binder.DateParameterBinding;
 import br.com.anteros.persistence.sql.binder.LobParameterBinding;
 import br.com.anteros.persistence.sql.binder.ParameterBinding;
@@ -61,15 +61,15 @@ import br.com.anteros.persistence.sql.binder.ParameterBinding;
 public abstract class DatabaseDialect {
 
 	protected final String CLIENT_INFO = "ClientInfo";
-	
+
 	public static final String CONSTRAINT_NAME = "CONSTRAINT_NAME";
-	
+
 	public static final String UNIQUENESS = "UNIQUENESS";
 
 	public static final String INDEX_NAME = "INDEX_NAME";
-	
+
 	public static final String UNIQUE = "UNIQUE";
-	
+
 	private static Logger log = LoggerProvider.getInstance().getLogger(OracleDialect.class.getName());
 
 	private HashMap<Integer, String> jdbcTypes;
@@ -220,8 +220,7 @@ public abstract class DatabaseDialect {
 		return javaTypes.get(javaType);
 	}
 
-	protected void setParametersCallableStatement(CallableStatement call, CallableType type, NamedParameter[] parameters)
-			throws Exception {
+	protected void setParametersCallableStatement(CallableStatement call, CallableType type, NamedParameter[] parameters) throws Exception {
 		int index = 0;
 		for (NamedParameter parameter : parameters) {
 			index++;
@@ -231,15 +230,13 @@ public abstract class DatabaseDialect {
 			}
 			if (parameter.getValue() instanceof LobParameterBinding) {
 				if (((LobParameterBinding) parameter.getValue()).getType() == Types.BLOB) {
-					Blob blob = createTemporaryBlob(call.getConnection(),
-							(byte[]) (((LobParameterBinding) parameter.getValue()).getValue()));
+					Blob blob = createTemporaryBlob(call.getConnection(), (byte[]) (((LobParameterBinding) parameter.getValue()).getValue()));
 					if (blob != null)
 						call.setBlob(index, blob);
 					else
 						call.setObject(index, parameter.getValue());
 				} else if (((LobParameterBinding) parameter.getValue()).getType() == Types.CLOB) {
-					Clob clob = createTemporaryClob(call.getConnection(),
-							(byte[]) (((LobParameterBinding) parameter.getValue()).getValue()));
+					Clob clob = createTemporaryClob(call.getConnection(), (byte[]) (((LobParameterBinding) parameter.getValue()).getValue()));
 					if (clob != null)
 						call.setClob(index, clob);
 					else
@@ -314,8 +311,7 @@ public abstract class DatabaseDialect {
 			}
 		}
 		/*
-		 * Adiciona a chave primária caso o banco de dados suporte chave
-		 * primária na criação da tabela
+		 * Adiciona a chave primária caso o banco de dados suporte chave primária na criação da tabela
 		 */
 
 		if (tableSchema.getPrimaryKey() != null) {
@@ -326,8 +322,7 @@ public abstract class DatabaseDialect {
 			}
 		}
 		/*
-		 * Adiciona as constraints únicas caso o banco não suporte criar usando
-		 * ALTER TABLE ADD CONSTRAINT
+		 * Adiciona as constraints únicas caso o banco não suporte criar usando ALTER TABLE ADD CONSTRAINT
 		 */
 		if (requiresUniqueConstraintCreationOnTableCreate()) {
 			if (supportsUniqueKeyConstraints()) {
@@ -340,8 +335,7 @@ public abstract class DatabaseDialect {
 		}
 
 		/*
-		 * Adiciona as constraints ForeignKey caso o banco não suporte criar
-		 * usando ALTER TABLE ADD CONSTRAINT
+		 * Adiciona as constraints ForeignKey caso o banco não suporte criar usando ALTER TABLE ADD CONSTRAINT
 		 */
 		if (requiresForeignKeyConstraintCreationOnTableCreate()) {
 			if (supportsForeignKeyConstraints()) {
@@ -401,8 +395,7 @@ public abstract class DatabaseDialect {
 			schemaWriter.write(columnSchema.getColumnDefinition());
 		} else {
 
-			if (columnSchema.isAutoIncrement() && supportsIdentity() && !useColumnDefinitionForIdentity()
-					&& !columnSchema.hasSequenceName()) {
+			if (columnSchema.isAutoIncrement() && supportsIdentity() && !useColumnDefinitionForIdentity() && !columnSchema.hasSequenceName()) {
 				writeColumnIdentityClauseDDLStatement(schemaWriter);
 			} else {
 				/*
@@ -511,8 +504,7 @@ public abstract class DatabaseDialect {
 		return schemaWriter;
 	}
 
-	public Writer writeCreateSequenceDDLStatement(SequenceGeneratorSchema sequenceGeneratorSchema, Writer schemaWriter)
-			throws IOException {
+	public Writer writeCreateSequenceDDLStatement(SequenceGeneratorSchema sequenceGeneratorSchema, Writer schemaWriter) throws IOException {
 		schemaWriter.write(getCreateSequenceString() + " ");
 		schemaWriter.write(sequenceGeneratorSchema.getName());
 		if (sequenceGeneratorSchema.getIncrementSize() != 1) {
@@ -530,8 +522,7 @@ public abstract class DatabaseDialect {
 		return schemaWriter;
 	}
 
-	public Writer writeDropSequenceDDLStatement(SequenceGeneratorSchema sequenceGeneratorSchema, Writer schemaWriter)
-			throws IOException {
+	public Writer writeDropSequenceDDLStatement(SequenceGeneratorSchema sequenceGeneratorSchema, Writer schemaWriter) throws IOException {
 		schemaWriter.write(getDropSequenceString() + " " + sequenceGeneratorSchema.getName());
 		return schemaWriter;
 	}
@@ -586,8 +577,7 @@ public abstract class DatabaseDialect {
 		return schemaWriter;
 	}
 
-	public Writer writeAddPrimaryKeyDDLStatement(PrimaryKeySchema primaryKeySchema, Writer schemaWriter)
-			throws Exception {
+	public Writer writeAddPrimaryKeyDDLStatement(PrimaryKeySchema primaryKeySchema, Writer schemaWriter) throws Exception {
 		schemaWriter.write("ALTER TABLE " + getQuoted(primaryKeySchema.getTable().getName()));
 		schemaWriter.write(" ADD CONSTRAINT " + getQuoted(primaryKeySchema.getName()));
 
@@ -595,8 +585,7 @@ public abstract class DatabaseDialect {
 		return schemaWriter;
 	}
 
-	public void writePrimaryKeyConstraintDDLStatement(PrimaryKeySchema primaryKeySchema, Writer schemaWriter)
-			throws IOException {
+	public void writePrimaryKeyConstraintDDLStatement(PrimaryKeySchema primaryKeySchema, Writer schemaWriter) throws IOException {
 		schemaWriter.write(" PRIMARY KEY (");
 		boolean appendDelimiter = false;
 		for (ColumnSchema column : primaryKeySchema.getColumns()) {
@@ -623,8 +612,7 @@ public abstract class DatabaseDialect {
 	 *            Objeto de saida para o DDL
 	 * @return
 	 */
-	public Writer writeAddForeignKeyDDLStatement(ForeignKeySchema foreignKeySchema, Writer schemaWriter)
-			throws Exception {
+	public Writer writeAddForeignKeyDDLStatement(ForeignKeySchema foreignKeySchema, Writer schemaWriter) throws Exception {
 		schemaWriter.write("ALTER TABLE " + getQuoted(foreignKeySchema.getTable().getName()));
 		schemaWriter.write(" ADD CONSTRAINT " + getQuoted(foreignKeySchema.getName()));
 
@@ -632,8 +620,7 @@ public abstract class DatabaseDialect {
 		return schemaWriter;
 	}
 
-	public void writeForeignKeyConstraintDDLStatement(ForeignKeySchema foreignKeySchema, Writer schemaWriter)
-			throws IOException {
+	public void writeForeignKeyConstraintDDLStatement(ForeignKeySchema foreignKeySchema, Writer schemaWriter) throws IOException {
 		schemaWriter.write(" FOREIGN KEY (");
 		boolean appendDelimiter = false;
 		for (ColumnSchema column : foreignKeySchema.getColumns()) {
@@ -659,8 +646,7 @@ public abstract class DatabaseDialect {
 		}
 	}
 
-	public Writer writeDropForeignKeyDDLStatement(ForeignKeySchema foreignKeySchema, Writer schemaWriter)
-			throws IOException {
+	public Writer writeDropForeignKeyDDLStatement(ForeignKeySchema foreignKeySchema, Writer schemaWriter) throws IOException {
 		schemaWriter.write("ALTER TABLE " + foreignKeySchema.getTable().getName());
 		schemaWriter.write(getForeignKeyDeletionString() + foreignKeySchema.getName());
 		return schemaWriter;
@@ -683,8 +669,7 @@ public abstract class DatabaseDialect {
 		return writeUniqueKeyDDLStatement(uniqueKeySchema, schemaWriter);
 	}
 
-	public Writer writeDropUniqueKeyDDLStatement(UniqueKeySchema uniqueKeySchema, Writer schemaWriter)
-			throws IOException {
+	public Writer writeDropUniqueKeyDDLStatement(UniqueKeySchema uniqueKeySchema, Writer schemaWriter) throws IOException {
 		schemaWriter.write("ALTER TABLE " + uniqueKeySchema.getTable().getName());
 		schemaWriter.write(getUniqueKeyDeletionString() + uniqueKeySchema.getName());
 		return schemaWriter;
@@ -705,10 +690,8 @@ public abstract class DatabaseDialect {
 
 	public boolean checkTableExists(Connection conn, String tableName) throws SQLException, Exception {
 		DatabaseMetaData metaData = conn.getMetaData();
-		ResultSet resultSet = metaData.getTables(
-				(getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-				(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName,
-				new String[] { "TABLE" });
+		ResultSet resultSet = metaData.getTables((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+				(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName, new String[] { "TABLE" });
 		try {
 			if (resultSet.next()) {
 				return true;
@@ -716,16 +699,14 @@ public abstract class DatabaseDialect {
 			resultSet.close();
 
 			resultSet = metaData.getTables((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(),
-					new String[] { "TABLE" });
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(), new String[] { "TABLE" });
 			if (resultSet.next()) {
 				return true;
 			}
 			resultSet.close();
 
 			resultSet = metaData.getTables((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(),
-					new String[] { "TABLE" });
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(), new String[] { "TABLE" });
 			if (resultSet.next()) {
 				return true;
 			}
@@ -739,10 +720,8 @@ public abstract class DatabaseDialect {
 
 	public boolean checkSequenceExists(Connection conn, String sequenceName) throws SQLException, Exception {
 		DatabaseMetaData metaData = conn.getMetaData();
-		ResultSet resultSet = metaData.getTables(
-				(getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-				(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), sequenceName,
-				new String[] { "SEQUENCE" });
+		ResultSet resultSet = metaData.getTables((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+				(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), sequenceName, new String[] { "SEQUENCE" });
 		try {
 			if (resultSet.next()) {
 				return true;
@@ -750,8 +729,7 @@ public abstract class DatabaseDialect {
 			resultSet.close();
 
 			resultSet = metaData.getTables((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
-					sequenceName.toUpperCase(), new String[] { "SEQUENCE" });
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), sequenceName.toUpperCase(), new String[] { "SEQUENCE" });
 			if (resultSet.next()) {
 				return true;
 			}
@@ -759,8 +737,7 @@ public abstract class DatabaseDialect {
 			resultSet.close();
 
 			resultSet = metaData.getTables((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
-					sequenceName.toLowerCase(), new String[] { "SEQUENCE" });
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), sequenceName.toLowerCase(), new String[] { "SEQUENCE" });
 			if (resultSet.next()) {
 				return true;
 			}
@@ -772,12 +749,10 @@ public abstract class DatabaseDialect {
 		return false;
 	}
 
-	public boolean checkTableAndColumnExists(Connection conn, String tableName, String columnName) throws SQLException,
-			Exception {
+	public boolean checkTableAndColumnExists(Connection conn, String tableName, String columnName) throws SQLException, Exception {
 		DatabaseMetaData metaData = conn.getMetaData();
-		ResultSet resultSet = metaData.getColumns((getDefaultCatalog() == null ? conn.getCatalog()
-				: getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
-				tableName, columnName.toLowerCase());
+		ResultSet resultSet = metaData.getColumns((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+				(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName, columnName.toLowerCase());
 		try {
 			if (resultSet.next()) {
 				return true;
@@ -785,8 +760,7 @@ public abstract class DatabaseDialect {
 			resultSet.close();
 
 			resultSet = metaData.getColumns((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(),
-					columnName.toUpperCase());
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(), columnName.toUpperCase());
 			if (resultSet.next()) {
 				return true;
 			}
@@ -794,8 +768,7 @@ public abstract class DatabaseDialect {
 			resultSet.close();
 
 			resultSet = metaData.getColumns((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(),
-					columnName.toUpperCase());
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(), columnName.toUpperCase());
 			if (resultSet.next()) {
 				return true;
 			}
@@ -806,13 +779,11 @@ public abstract class DatabaseDialect {
 		return false;
 	}
 
-	public boolean checkForeignKeyExistsByName(Connection conn, String tableName, String foreignKeyName)
-			throws Exception {
+	public boolean checkForeignKeyExistsByName(Connection conn, String tableName, String foreignKeyName) throws Exception {
 		DatabaseMetaData metaData = conn.getMetaData();
 
-		ResultSet resultSet = metaData.getImportedKeys((getDefaultCatalog() == null ? conn.getCatalog()
-				: getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
-				tableName);
+		ResultSet resultSet = metaData.getImportedKeys((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+				(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName);
 		try {
 			if ((resultSet != null) && (resultSet.next())) {
 				do {
@@ -825,8 +796,7 @@ public abstract class DatabaseDialect {
 
 			resultSet.close();
 
-			resultSet = metaData.getImportedKeys(
-					(getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+			resultSet = metaData.getImportedKeys((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
 					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase());
 			if ((resultSet != null) && (resultSet.next())) {
 				do {
@@ -838,8 +808,7 @@ public abstract class DatabaseDialect {
 
 			resultSet.close();
 
-			resultSet = metaData.getImportedKeys(
-					(getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+			resultSet = metaData.getImportedKeys((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
 					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase());
 			if ((resultSet != null) && (resultSet.next())) {
 				do {
@@ -859,9 +828,8 @@ public abstract class DatabaseDialect {
 	public Map<String, ForeignKeyMetadata> getAllForeignKeysByTable(Connection conn, String tableName) throws Exception {
 		DatabaseMetaData metaData = conn.getMetaData();
 		Map<String, ForeignKeyMetadata> fks = new HashMap<String, ForeignKeyMetadata>();
-		ResultSet resultSet = metaData.getImportedKeys((getDefaultCatalog() == null ? conn.getCatalog()
-				: getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
-				tableName);
+		ResultSet resultSet = metaData.getImportedKeys((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+				(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName);
 		ForeignKeyMetadata fk = null;
 		boolean found = false;
 		while (resultSet.next()) {
@@ -878,8 +846,7 @@ public abstract class DatabaseDialect {
 		resultSet.close();
 
 		if (!found) {
-			resultSet = metaData.getImportedKeys(
-					(getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+			resultSet = metaData.getImportedKeys((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
 					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase());
 			while (resultSet.next()) {
 				if (fks.containsKey(resultSet.getString("FK_NAME")))
@@ -897,8 +864,7 @@ public abstract class DatabaseDialect {
 		resultSet.close();
 
 		if (!found) {
-			resultSet = metaData.getImportedKeys(
-					(getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+			resultSet = metaData.getImportedKeys((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
 					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase());
 			while (resultSet.next()) {
 				if (fks.containsKey(resultSet.getString("FK_NAME")))
@@ -919,9 +885,8 @@ public abstract class DatabaseDialect {
 	public boolean checkIndexExistsByName(Connection conn, String tableName, String indexName) throws Exception {
 		DatabaseMetaData metaData = conn.getMetaData();
 
-		ResultSet resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog()
-				: getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
-				tableName, false, false);
+		ResultSet resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+				(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName, false, false);
 		try {
 			if ((resultSet != null) && (resultSet.next())) {
 				do {
@@ -935,8 +900,7 @@ public abstract class DatabaseDialect {
 			resultSet.close();
 
 			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(),
-					false, false);
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(), false, false);
 			if ((resultSet != null) && (resultSet.next())) {
 				do {
 					if (indexName.equalsIgnoreCase(resultSet.getString("INDEX_NAME"))) {
@@ -948,8 +912,7 @@ public abstract class DatabaseDialect {
 			resultSet.close();
 
 			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(),
-					false, false);
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(), false, false);
 			if ((resultSet != null) && (resultSet.next())) {
 				do {
 					if (indexName.equalsIgnoreCase(resultSet.getString("INDEX_NAME"))) {
@@ -968,9 +931,8 @@ public abstract class DatabaseDialect {
 		Map<String, IndexMetadata> indexes = new HashMap<String, IndexMetadata>();
 		DatabaseMetaData metaData = conn.getMetaData();
 
-		ResultSet resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog()
-				: getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
-				tableName, false, false);
+		ResultSet resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+				(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName, false, false);
 		IndexMetadata index = null;
 		boolean found = false;
 		while (resultSet.next()) {
@@ -989,8 +951,7 @@ public abstract class DatabaseDialect {
 		resultSet.close();
 		if (!found) {
 			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(),
-					false, false);
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(), false, false);
 			while (resultSet.next()) {
 				if (resultSet.getString("COLUMN_NAME") != null) {
 					if (indexes.containsKey(resultSet.getString("INDEX_NAME")))
@@ -1009,8 +970,7 @@ public abstract class DatabaseDialect {
 
 		if (!found) {
 			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(),
-					false, false);
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(), false, false);
 			while (resultSet.next()) {
 				if (resultSet.getString("COLUMN_NAME") != null) {
 					if (indexes.containsKey(resultSet.getString("INDEX_NAME")))
@@ -1032,9 +992,8 @@ public abstract class DatabaseDialect {
 		Map<String, IndexMetadata> indexes = new HashMap<String, IndexMetadata>();
 		DatabaseMetaData metaData = conn.getMetaData();
 
-		ResultSet resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog()
-				: getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
-				tableName, true, false);
+		ResultSet resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+				(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName, true, false);
 		IndexMetadata index = null;
 		boolean found = false;
 		while (resultSet.next()) {
@@ -1054,8 +1013,7 @@ public abstract class DatabaseDialect {
 
 		if (!found) {
 			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(),
-					true, false);
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(), true, false);
 			while (resultSet.next()) {
 				if ((resultSet.getString("COLUMN_NAME") != null) && (!resultSet.getBoolean("NON_UNIQUE"))) {
 					if (indexes.containsKey(resultSet.getString("INDEX_NAME")))
@@ -1074,8 +1032,7 @@ public abstract class DatabaseDialect {
 
 		if (!found) {
 			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(),
-					true, false);
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(), true, false);
 			while (resultSet.next()) {
 				if ((resultSet.getString("COLUMN_NAME") != null) && (!resultSet.getBoolean("NON_UNIQUE"))) {
 					if (indexes.containsKey(resultSet.getString("INDEX_NAME")))
@@ -1097,9 +1054,8 @@ public abstract class DatabaseDialect {
 	public boolean checkUniqueKeyExists(Connection conn, String tableName, String uniqueKeyName) throws Exception {
 		DatabaseMetaData metaData = conn.getMetaData();
 
-		ResultSet resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog()
-				: getDefaultCatalog()), (getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
-				tableName, true, false);
+		ResultSet resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+				(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName, true, false);
 		try {
 			if ((resultSet != null) && (resultSet.next())) {
 				do {
@@ -1112,8 +1068,7 @@ public abstract class DatabaseDialect {
 			resultSet.close();
 
 			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(),
-					true, false);
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(), true, false);
 			if ((resultSet != null) && (resultSet.next())) {
 				do {
 					if (uniqueKeyName.equalsIgnoreCase(resultSet.getString("INDEX_NAME")))
@@ -1124,8 +1079,7 @@ public abstract class DatabaseDialect {
 			resultSet.close();
 
 			resultSet = metaData.getIndexInfo((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(),
-					true, false);
+					(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(), true, false);
 			if ((resultSet != null) && (resultSet.next())) {
 				do {
 					if (uniqueKeyName.equalsIgnoreCase(resultSet.getString("INDEX_NAME")))
@@ -1143,8 +1097,7 @@ public abstract class DatabaseDialect {
 		List<String> result = new ArrayList<String>();
 
 		DatabaseMetaData metaData = conn.getMetaData();
-		ResultSet columns = conn.getMetaData().getColumns(
-				(getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+		ResultSet columns = conn.getMetaData().getColumns((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
 				(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName, "%");
 		try {
 			if ((columns != null) && (columns.next())) {
@@ -1154,10 +1107,8 @@ public abstract class DatabaseDialect {
 			} else {
 				if (columns != null)
 					columns.close();
-				columns = conn.getMetaData().getColumns(
-						(getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-						(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
-						tableName.toUpperCase(), "%");
+				columns = conn.getMetaData().getColumns((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+						(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toUpperCase(), "%");
 				if ((columns != null) && (columns.next())) {
 					do {
 						result.add(columns.getString("COLUMN_NAME"));
@@ -1165,10 +1116,8 @@ public abstract class DatabaseDialect {
 				} else {
 					if (columns != null)
 						columns.close();
-					columns = conn.getMetaData().getColumns(
-							(getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
-							(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()),
-							tableName.toLowerCase(), "%");
+					columns = conn.getMetaData().getColumns((getDefaultCatalog() == null ? conn.getCatalog() : getDefaultCatalog()),
+							(getDefaultSchema() == null ? getSchema(metaData) : getDefaultSchema()), tableName.toLowerCase(), "%");
 					if ((columns != null) && (columns.next())) {
 						do {
 							result.add(columns.getString("COLUMN_NAME"));
@@ -1324,8 +1273,8 @@ public abstract class DatabaseDialect {
 		return false;
 	}
 
-	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name,
-			NamedParameter[] parameters, int queryTimeOut, boolean showSql, String clientId) throws Exception {
+	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name, NamedParameter[] parameters,
+			int queryTimeOut, boolean showSql, String clientId) throws Exception {
 		StringBuilder sql = null;
 		int index = 0;
 		if (type == CallableType.PROCEDURE) {
@@ -1399,82 +1348,7 @@ public abstract class DatabaseDialect {
 		return "";
 	}
 
-	/**
-	 * LOCK MANAGEMENT
-	 */
-
-	/**
-	 * Retorna se a exception ocorrida no banco de dados é resultado de uma
-	 * tentativa de lock com WAIT.
-	 * 
-	 * @param e
-	 *            Exception
-	 * @return true se o erro ocorrido foi porque expirou o tempo numa tentativa
-	 *         de bloqueio no banco de dados.
-	 */
-	public boolean isLockTimeoutException(RuntimeException e) {
-		return false;
-	}
-
-	/**
-	 * Retorna se o dialeto do banco de dados aceita SELECT DISTINCT com FOR
-	 * UPDATE.
-	 * 
-	 * @return true se aceita.
-	 */
-	public boolean isForUpdateCompatibleWithDistinct() {
-		return true;
-	}
-
-	/**
-	 * Retorna string FOR UPDATE para bloqueio de registro caso seja suportado
-	 * pelo dialoeto do banco de dados.
-	 */
-	public String getSelectForUpdateString() {
-		return " FOR UPDATE";
-	}
-
-	/**
-	 * Retorna string FOR UPDATE para bloqueio de colunas caso seja suportado
-	 * pelo dialeto do banco de dados.
-	 */
-	public String getSelectForUpdateOfString() {
-		return " FOR UPDATE OF ";
-	}
-
-	/**
-	 * Retorna string NOWAIT (não aguardar) caso o dialeto do banco de dados
-	 * suporte.
-	 */
-	public String getNoWaitString() {
-		return " NOWAIT";
-	}
-
-	/**
-	 * Retorna string FOR UPDATE com NOWAIT(não aguardar) caso o dialeto do
-	 * banco de dados suporte.
-	 */
-	public String getSelectForUpdateNoWaitString() {
-		return getSelectForUpdateString() + getNoWaitString();
-	}
-
-	/**
-	 * Retorna se o dialeto suporta LOCK de tabelas individuais.
-	 * 
-	 * @return
-	 */
-	public boolean supportsIndividualTableLocking() {
-		return true;
-	}
-
-	/**
-	 * Retorna se o dialeto suporta LOCK com várias tabelas.
-	 * 
-	 * @return true se suporta
-	 */
-	public boolean supportsLockingQueriesWithMultipleTables() {
-		return true;
-	}
+	public abstract String applyLock(String sql, LockOptions lockOptions);
 
 	/**
 	 * Retorna os nomes das stored procedures
@@ -1502,8 +1376,7 @@ public abstract class DatabaseDialect {
 		Set<String> result = new HashSet<String>();
 		DatabaseMetaData metaData = connection.getMetaData();
 		metaData.getProcedures(getDefaultCatalog(), getDefaultSchema(), procedureNamePattern);
-		ResultSet procedureMetaData = metaData.getProcedures(getDefaultCatalog(), getDefaultSchema(),
-				procedureNamePattern);
+		ResultSet procedureMetaData = metaData.getProcedures(getDefaultCatalog(), getDefaultSchema(), procedureNamePattern);
 		if ((procedureMetaData != null) && (procedureMetaData.next())) {
 			do {
 				if (procedureMetaData.getInt(PROCEDURE_TYPE) == getIndexTypeOfProcedureMetadata())
@@ -1539,8 +1412,7 @@ public abstract class DatabaseDialect {
 	public Set<String> getStoredFunctionNames(Connection connection, String functionNamePattern) throws Exception {
 		Set<String> result = new LinkedHashSet<String>();
 		DatabaseMetaData metaData = connection.getMetaData();
-		ResultSet functionMetaData = metaData.getProcedures(getDefaultCatalog(), getDefaultSchema(),
-				functionNamePattern);
+		ResultSet functionMetaData = metaData.getProcedures(getDefaultCatalog(), getDefaultSchema(), functionNamePattern);
 		if ((functionMetaData != null) && (functionMetaData.next())) {
 			do {
 				if (functionMetaData.getInt(PROCEDURE_TYPE) == getIndexTypeOfFunctionMetadata())
@@ -1573,8 +1445,7 @@ public abstract class DatabaseDialect {
 	 * @return Lista de Stored Procedures
 	 * @throws SQLException
 	 */
-	public Set<StoredProcedureSchema> getStoredProcedures(Connection connection, boolean getParameters)
-			throws Exception {
+	public Set<StoredProcedureSchema> getStoredProcedures(Connection connection, boolean getParameters) throws Exception {
 		return getStoredProcedures(connection, "%", getParameters);
 	}
 
@@ -1588,17 +1459,15 @@ public abstract class DatabaseDialect {
 	 * @return Lista de Stored procedures
 	 * @throws SQLException
 	 */
-	public Set<StoredProcedureSchema> getStoredProcedures(Connection connection, String procedureNamePattern,
-			boolean getParameters) throws Exception {
+	public Set<StoredProcedureSchema> getStoredProcedures(Connection connection, String procedureNamePattern, boolean getParameters) throws Exception {
 		Set<StoredProcedureSchema> result = new LinkedHashSet<StoredProcedureSchema>();
 		DatabaseMetaData metaData = connection.getMetaData();
-		ResultSet procedureMetaData = metaData.getProcedures(getDefaultCatalog(), getDefaultSchema(),
-				procedureNamePattern);
+		ResultSet procedureMetaData = metaData.getProcedures(getDefaultCatalog(), getDefaultSchema(), procedureNamePattern);
 		if (procedureMetaData != null) {
 			while (procedureMetaData.next()) {
 				if (procedureMetaData.getInt(PROCEDURE_TYPE) == getIndexTypeOfProcedureMetadata()) {
-					StoredProcedureSchema storedProcedureSchema = (StoredProcedureSchema) readStoredProcedure(metaData,
-							procedureMetaData, getIndexTypeOfProcedureMetadata(), getParameters);
+					StoredProcedureSchema storedProcedureSchema = (StoredProcedureSchema) readStoredProcedure(metaData, procedureMetaData,
+							getIndexTypeOfProcedureMetadata(), getParameters);
 					result.add(storedProcedureSchema);
 				}
 			}
@@ -1627,8 +1496,8 @@ public abstract class DatabaseDialect {
 	 * @return Objeto StoredProcedureSchema
 	 * @throws SQLException
 	 */
-	protected StoredProcedureSchema readStoredProcedure(DatabaseMetaData metaData, ResultSet procedureMetaData,
-			int type, boolean getParameters) throws Exception {
+	protected StoredProcedureSchema readStoredProcedure(DatabaseMetaData metaData, ResultSet procedureMetaData, int type, boolean getParameters)
+			throws Exception {
 		StoredProcedureSchema storedProcedureSchema;
 		if (type == getIndexTypeOfProcedureMetadata())
 			storedProcedureSchema = new StoredProcedureSchema();
@@ -1638,8 +1507,7 @@ public abstract class DatabaseDialect {
 		storedProcedureSchema.setName(procedureMetaData.getString(PROCEDURE_NAME));
 
 		if (getParameters) {
-			ResultSet resultSet = metaData.getProcedureColumns(getDefaultCatalog(), getDefaultSchema(),
-					storedProcedureSchema.getName(), null);
+			ResultSet resultSet = metaData.getProcedureColumns(getDefaultCatalog(), getDefaultSchema(), storedProcedureSchema.getName(), null);
 			if ((resultSet != null) && (resultSet.next())) {
 				do {
 					String parameterName = resultSet.getString(COLUMN_NAME);
@@ -1717,17 +1585,15 @@ public abstract class DatabaseDialect {
 	 * @return Lista de functions
 	 * @throws SQLException
 	 */
-	public Set<StoredFunctionSchema> getStoredFunctions(Connection connection, String functionNamePattern,
-			boolean getParameters) throws Exception {
+	public Set<StoredFunctionSchema> getStoredFunctions(Connection connection, String functionNamePattern, boolean getParameters) throws Exception {
 		Set<StoredFunctionSchema> result = new HashSet<StoredFunctionSchema>();
 		DatabaseMetaData metaData = connection.getMetaData();
-		ResultSet functionMetaData = metaData.getProcedures(getDefaultCatalog(), getDefaultSchema(),
-				functionNamePattern);
+		ResultSet functionMetaData = metaData.getProcedures(getDefaultCatalog(), getDefaultSchema(), functionNamePattern);
 		if (functionMetaData != null) {
 			while (functionMetaData.next()) {
 				if (functionMetaData.getInt(PROCEDURE_TYPE) == getIndexTypeOfFunctionMetadata()) {
-					StoredFunctionSchema storedFunctionSchema = (StoredFunctionSchema) readStoredProcedure(metaData,
-							functionMetaData, getIndexTypeOfFunctionMetadata(), getParameters);
+					StoredFunctionSchema storedFunctionSchema = (StoredFunctionSchema) readStoredProcedure(metaData, functionMetaData,
+							getIndexTypeOfFunctionMetadata(), getParameters);
 					result.add(storedFunctionSchema);
 				}
 			}
@@ -1762,6 +1628,46 @@ public abstract class DatabaseDialect {
 	public abstract String getConnectionClientInfo(Connection connection) throws SQLException;
 
 	public abstract SQLTemplates getTemplateSQL();
+
+	public abstract SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception;
+	
+	
+	protected int extractErrorCode(SQLException sqlException) {
+		int errorCode = sqlException.getErrorCode();
+		SQLException nested = sqlException.getNextException();
+		while ( errorCode == 0 && nested != null ) {
+			errorCode = nested.getErrorCode();
+			nested = nested.getNextException();
+		}
+		return errorCode;
+	}
+	
+	public String extractConstraintName(SQLException ex) {
+		return null;
+	}
+	
+	protected String extractUsingTemplate(String templateStart, String templateEnd, String message) {
+		int templateStartPosition = message.indexOf(templateStart);
+		if (templateStartPosition < 0) {
+			return null;
+		}
+		int start = templateStartPosition + templateStart.length();
+		int end = message.indexOf(templateEnd, start);
+		if (end < 0) {
+			end = message.length();
+		}
+		return message.substring(start, end);
+	}
+	
+	public static String extractSqlState(SQLException sqlException) {
+		String sqlState = sqlException.getSQLState();
+		SQLException nested = sqlException.getNextException();
+		while ( sqlState == null && nested != null ) {
+			sqlState = nested.getSQLState();
+			nested = nested.getNextException();
+		}
+		return sqlState;
+	}
 
 	// public abstract List<ProcedureMetadata> getNativeFunctions() throws
 	// Exception;

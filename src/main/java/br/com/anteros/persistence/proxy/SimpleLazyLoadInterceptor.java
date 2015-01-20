@@ -10,6 +10,8 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.metadata.type.EntityStatus;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
+import br.com.anteros.persistence.session.lock.LockOptions;
+import br.com.anteros.persistence.session.query.SQLQuery;
 
 public class SimpleLazyLoadInterceptor {
 
@@ -23,15 +25,17 @@ public class SimpleLazyLoadInterceptor {
 	private boolean constructed = false;
 	private boolean initialized = false;
 	private Boolean processing = false;
+	private LockOptions lockOptions;
 
 	public SimpleLazyLoadInterceptor(SQLSession session, EntityCache entityCache, Map<String, Object> columKeyValues,
-			Cache transactionCache, Object owner, DescriptionField descriptionField) {
+			Cache transactionCache, Object owner, DescriptionField descriptionField, LockOptions lockOptions) {
 		this.session = session;
 		this.entityCache = entityCache;
 		this.columnKeyValuesTarget = columKeyValues;
 		this.transactionCache = transactionCache;
 		this.owner = owner;
 		this.descriptionFieldOwner = descriptionField;
+		this.lockOptions = lockOptions;
 	}
 
 	public synchronized Object getTargetObject() throws Exception {
@@ -57,7 +61,9 @@ public class SimpleLazyLoadInterceptor {
 					}
 				}
 
-				target = session.createQuery("").loadData(entityCache, owner, descriptionFieldOwner,
+				SQLQuery query = session.createQuery("");
+				query.setLockOptions(lockOptions);
+				target = query.loadData(entityCache, owner, descriptionFieldOwner,
 						columnKeyValuesTarget, transactionCache);
 
 				if (ownerEntityCache != null) {

@@ -10,118 +10,120 @@ import java.util.Map;
 import br.com.anteros.persistence.handler.ResultSetHandler;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.parameter.NamedParameter;
-import br.com.anteros.persistence.session.ProcedureResult;
 import br.com.anteros.persistence.session.SQLSessionResult;
-import br.com.anteros.persistence.session.lock.type.LockModeType;
+import br.com.anteros.persistence.session.lock.LockMode;
+import br.com.anteros.persistence.session.lock.LockOptions;
 
 public interface TypedSQLQuery<X> extends SQLQuery {
 
-	TypedSQLQuery<X> identifier(Identifier<?> identifier);
+	public TypedSQLQuery<X> identifier(Identifier<?> identifier);
 
-	TypedSQLQuery<X> sql(String sql);
+	public TypedSQLQuery<X> sql(String sql);
 
-	TypedSQLQuery<X> showSql(boolean showSql);
+	public TypedSQLQuery<X> showSql(boolean showSql);
 
-	TypedSQLQuery<X> formatSql(boolean formatSql);
+	public TypedSQLQuery<X> formatSql(boolean formatSql);
 
-	TypedSQLQuery<X> timeOut(int seconds);
+	public TypedSQLQuery<X> timeOut(int seconds);
 
-	TypedSQLQuery<X> resultSetHandler(ResultSetHandler handler);
+	public TypedSQLQuery<X> resultSetHandler(ResultSetHandler handler);
 
-	TypedSQLQuery<X> namedQuery(String name);
+	public TypedSQLQuery<X> namedQuery(String name);
 
-	TypedSQLQuery<X> clear();
+	public TypedSQLQuery<X> clear();
 	
-	TypedSQLQuery<X> setReadOnly(boolean readOnlyObjects);
+	public TypedSQLQuery<X> setReadOnly(boolean readOnlyObjects);
 
-	TypedSQLQuery<X> setParameters(Object parameters) throws Exception;
+	public TypedSQLQuery<X> setParameters(Object parameters) throws Exception;
 
-	TypedSQLQuery<X> setParameters(Object[] parameters) throws Exception;
+	public TypedSQLQuery<X> setParameters(Object[] parameters) throws Exception;
 
-	TypedSQLQuery<X> setParameters(NamedParameter[] parameters) throws Exception;
+	public TypedSQLQuery<X> setParameters(NamedParameter[] parameters) throws Exception;
 
-	TypedSQLQuery<X> setParameters(Map<String, Object> parameters) throws Exception;
+	public TypedSQLQuery<X> setParameters(Map<String, Object> parameters) throws Exception;
 
-	TypedSQLQuery<X> setInteger(int parameterIndex, int value) throws Exception;
+	public TypedSQLQuery<X> setInteger(int parameterIndex, int value) throws Exception;
 
-	TypedSQLQuery<X> setString(int parameterIndex, String value) throws Exception;
+	public TypedSQLQuery<X> setString(int parameterIndex, String value) throws Exception;
 
-	TypedSQLQuery<X> setLong(int parameterIndex, long value) throws Exception;
+	public TypedSQLQuery<X> setLong(int parameterIndex, long value) throws Exception;
 
-	TypedSQLQuery<X> setNull(int parameterIndex) throws Exception;
+	public TypedSQLQuery<X> setNull(int parameterIndex) throws Exception;
 
-	TypedSQLQuery<X> setDate(int parameterIndex, Date value) throws Exception;
+	public TypedSQLQuery<X> setDate(int parameterIndex, Date value) throws Exception;
 
-	TypedSQLQuery<X> setDateTime(int parameterIndex, Date value) throws Exception;
+	public TypedSQLQuery<X> setDateTime(int parameterIndex, Date value) throws Exception;
 
-	TypedSQLQuery<X> setObject(int parameterIndex, Object object) throws Exception;
+	public TypedSQLQuery<X> setObject(int parameterIndex, Object object) throws Exception;
 
-	TypedSQLQuery<X> setBlob(int parameterIndex, InputStream inputStream) throws Exception;
+	public TypedSQLQuery<X> setBlob(int parameterIndex, InputStream inputStream) throws Exception;
 
-	TypedSQLQuery<X> setBlob(int parameterIndex, byte[] bytes) throws Exception;
+	public TypedSQLQuery<X> setBlob(int parameterIndex, byte[] bytes) throws Exception;
 
-	TypedSQLQuery<X> setClob(int parameterIndex, InputStream inputStream) throws Exception;
+	public TypedSQLQuery<X> setClob(int parameterIndex, InputStream inputStream) throws Exception;
 
-	TypedSQLQuery<X> setClob(int parameterIndex, byte[] bytes) throws Exception;
+	public TypedSQLQuery<X> setClob(int parameterIndex, byte[] bytes) throws Exception;
 
-	TypedSQLQuery<X> setBoolean(int parameterIndex, boolean value) throws Exception;
+	public TypedSQLQuery<X> setBoolean(int parameterIndex, boolean value) throws Exception;
 
-	TypedSQLQuery<X> setDouble(int parameterIndex, double value) throws Exception;
+	public TypedSQLQuery<X> setDouble(int parameterIndex, double value) throws Exception;
 
-	TypedSQLQuery<X> setFloat(int parameterIndex, float value) throws Exception;
+	public TypedSQLQuery<X> setFloat(int parameterIndex, float value) throws Exception;
 
-	TypedSQLQuery<X> setBigDecimal(int parameterIndex, BigDecimal value) throws Exception;
+	public TypedSQLQuery<X> setBigDecimal(int parameterIndex, BigDecimal value) throws Exception;
 
-	TypedSQLQuery<X> setInteger(String parameterName, int value) throws Exception;
+	public TypedSQLQuery<X> setInteger(String parameterName, int value) throws Exception;
 
-	TypedSQLQuery<X> setString(String parameterName, String value) throws Exception;
+	public TypedSQLQuery<X> setString(String parameterName, String value) throws Exception;
 
-	TypedSQLQuery<X> setLong(String parameterName, long value) throws Exception;
+	public TypedSQLQuery<X> setLong(String parameterName, long value) throws Exception;
 
-	TypedSQLQuery<X> setNull(String parameterName) throws Exception;
+	public TypedSQLQuery<X> setNull(String parameterName) throws Exception;
 
-	TypedSQLQuery<X> setDate(String parameterName, Date value) throws Exception;
+	public TypedSQLQuery<X> setDate(String parameterName, Date value) throws Exception;
 
-	TypedSQLQuery<X> setDateTime(String parameterName, Date value) throws Exception;
+	public TypedSQLQuery<X> setDateTime(String parameterName, Date value) throws Exception;
 
-	TypedSQLQuery<X> setObject(String parameterName, Object object) throws Exception;
+	public TypedSQLQuery<X> setObject(String parameterName, Object object) throws Exception;
 
-	TypedSQLQuery<X> setBlob(String parameterName, InputStream inputStream) throws Exception;
+	public TypedSQLQuery<X> setBlob(String parameterName, InputStream inputStream) throws Exception;
 
-	TypedSQLQuery<X> setBlob(String parameterName, byte[] bytes) throws Exception;
+	public TypedSQLQuery<X> setBlob(String parameterName, byte[] bytes) throws Exception;
 
-	TypedSQLQuery<X> setClob(String parameterName, InputStream inputStream) throws Exception;
+	public TypedSQLQuery<X> setClob(String parameterName, InputStream inputStream) throws Exception;
 
-	TypedSQLQuery<X> setClob(String parameterName, byte[] bytes) throws Exception;
+	public TypedSQLQuery<X> setClob(String parameterName, byte[] bytes) throws Exception;
 
-	TypedSQLQuery<X> setBoolean(String parameterName, boolean value) throws Exception;
+	public TypedSQLQuery<X> setBoolean(String parameterName, boolean value) throws Exception;
 
-	TypedSQLQuery<X> setDouble(String parameterName, double value) throws Exception;
+	public TypedSQLQuery<X> setDouble(String parameterName, double value) throws Exception;
 
-	TypedSQLQuery<X> setFloat(String parameterName, float value) throws Exception;
+	public TypedSQLQuery<X> setFloat(String parameterName, float value) throws Exception;
 
-	TypedSQLQuery<X> setBigDecimal(String parameterName, BigDecimal value) throws Exception;
+	public TypedSQLQuery<X> setBigDecimal(String parameterName, BigDecimal value) throws Exception;
 
-	List<X> getResultList() throws Exception;
+	public List<X> getResultList() throws Exception;
 
-	SQLSessionResult<X> getResultListAndResultSet() throws Exception;
+	public SQLSessionResult<X> getResultListAndResultSet() throws Exception;
 
-	X getSingleResult() throws Exception;
+	public X getSingleResult() throws Exception;
 
-	ResultSet executeQuery() throws Exception;
+	public ResultSet executeQuery() throws Exception;
 
-	TypedSQLQuery<X> setLockMode(LockModeType lockMode);
+	public TypedSQLQuery<X> setLockOptions(LockOptions lockOptions);
 
-	LockModeType getLockMode();
-
-	TypedSQLQuery<X> allowDuplicateObjects(boolean allowDuplicateObjects);
-
-	TypedSQLQuery<X> setMaxResults(int maxResults);
-
-	TypedSQLQuery<X> setFirstResult(int firstResult);
+	public LockOptions getLockOptions();
 	
-	public TypedSQLQuery<X>  procedureOrFunctionName(String procedureName);
+	public SQLQuery setLockMode(String alias, LockMode lockMode);
 
-	public TypedSQLQuery<X>  namedStoredProcedureQuery(String name);
+	public TypedSQLQuery<X> allowDuplicateObjects(boolean allowDuplicateObjects);
+
+	public TypedSQLQuery<X> setMaxResults(int maxResults);
+
+	public TypedSQLQuery<X> setFirstResult(int firstResult);
+	
+	public TypedSQLQuery<X> procedureOrFunctionName(String procedureName);
+
+	public TypedSQLQuery<X> namedStoredProcedureQuery(String name);
 
 }

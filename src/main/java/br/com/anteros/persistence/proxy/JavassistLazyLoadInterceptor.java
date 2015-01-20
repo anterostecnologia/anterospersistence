@@ -29,6 +29,8 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.metadata.type.EntityStatus;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
+import br.com.anteros.persistence.session.lock.LockOptions;
+import br.com.anteros.persistence.session.query.SQLQuery;
 
 public class JavassistLazyLoadInterceptor implements MethodHandler {
 
@@ -42,15 +44,17 @@ public class JavassistLazyLoadInterceptor implements MethodHandler {
 	private Boolean constructed = Boolean.FALSE;
 	private Boolean initialized = Boolean.FALSE;
 	private Boolean processing = Boolean.FALSE;
+	private LockOptions lockOptions;
 
 	public JavassistLazyLoadInterceptor(SQLSession session, EntityCache entityCache,
-			Map<String, Object> columKeyValues, Cache transactionCache, Object owner, DescriptionField descriptionField) {
+			Map<String, Object> columKeyValues, Cache transactionCache, Object owner, DescriptionField descriptionField, LockOptions lockOptions) {
 		this.session = session;
 		this.entityCache = entityCache;
 		this.columnKeyValuesTarget = columKeyValues;
 		this.transactionCache = transactionCache;
 		this.owner = owner;
 		this.descriptionFieldOwner = descriptionField;
+		this.lockOptions = lockOptions;
 	}
 
 	public Object invoke(final Object proxy, final Method thisMethod, final Method proceed, final Object[] args)
@@ -118,7 +122,9 @@ public class JavassistLazyLoadInterceptor implements MethodHandler {
 					}
 				}
 
-				target = session.createQuery("").loadData(entityCache, owner, descriptionFieldOwner,
+				SQLQuery query = session.createQuery("");
+				query.setLockOptions(lockOptions);
+				target = query.loadData(entityCache, owner, descriptionFieldOwner,
 						columnKeyValuesTarget, transactionCache);
 
 				if (ownerEntityCache != null) {
@@ -218,6 +224,10 @@ public class JavassistLazyLoadInterceptor implements MethodHandler {
 
 	public boolean isInitialized() {
 		return initialized;
+	}
+
+	public LockOptions getLockOptions() {
+		return lockOptions;
 	}
 
 }

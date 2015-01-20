@@ -213,7 +213,7 @@ OK - Agora assume o padrão caso não seja informado.
 @Column(name = "ID_PESSOA_CLIENTE", inversedColumn = "ID_PESSOA", required = true)
  private Pessoa pessoaCliente;     
  
-3) Gerando "default" errado quando o BooleanType é omitido.
+OK - 3) Gerando "default" errado quando o BooleanType é omitido.
  	@BooleanValue(trueValue = "S", falseValue = "N")
 	@Column(name = "BO_LIDO", required = true, defaultValue = "'N'")
 	private Boolean lido;         

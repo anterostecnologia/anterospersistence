@@ -4,12 +4,12 @@ have a version locking index. Only a PESSIMISTIC lock mode type can be used when
 
 Toda vez que um Entity Manager modifica um registro da tabela correspondente à classe Conta,
 o campo referente ao atributo anotado com @Version é atualizado.
-Agora, antes de modificar umregistro da tabela referente à classe Conta, os EntityManagers comparam
+Agora, antes de modificar um registro da tabela referente à classe Conta, os EntityManagers comparam
 a versão do registro no banco de dados com a do objeto que eles possuem.
 Se as versões forem a mesma, significa que nenhum outro Entity Manager modificou o registro
 e então as modificações podem ser executadas sem problemas. Caso contrário, se as versões forem
 diferentes, significa que algum outro Entity Manager modificou o registro e então as modificações
-são abortadas e uma exceção é lançada. Emgeral, as aplicações devem capturar essa exceção e tentar
+são abortadas e uma exceção é lançada. Em geral, as aplicações devem capturar essa exceção e tentar
 refazer a operação.
 
 

@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
  * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  * 
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  ******************************************************************************/
 package br.com.anteros.persistence.metadata.identifier;
 
@@ -23,6 +20,7 @@ import java.sql.ResultSet;
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.persistence.session.SQLSession;
+import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.sql.command.Insert;
 import br.com.anteros.persistence.sql.command.Select;
 import br.com.anteros.persistence.sql.command.Update;
@@ -37,15 +35,14 @@ public class TableGenerator implements IdentifierGenerator {
 	private String value;
 	private String valueColumnName;
 	private Type type;
-	private String catalog=null;
-	private String schema=null;
+	private String catalog = null;
+	private String schema = null;
 	private Select select;
 	private Update update;
 	private Insert insert;
 	private int initialValue;
 
-	public TableGenerator(SQLSession session, String tableName, String pkColumnName, String valueColumnName,
-			String value, Type type,
+	public TableGenerator(SQLSession session, String tableName, String pkColumnName, String valueColumnName, String value, Type type,
 			String parameters, String catalog, String schema, int initialValue) {
 		this.session = session;
 		this.tableName = tableName;
@@ -84,9 +81,8 @@ public class TableGenerator implements IdentifierGenerator {
 	public Serializable generate() throws Exception {
 		long currentValue = 1;
 		try {
-			ResultSet rsSelect = session.createQuery(select.toStatementString() + " "
-					+ session.getDialect().getSelectForUpdateNoWaitString(),
-					new Object[] { value }).executeQuery();
+			String sql = select.toStatementString();
+			ResultSet rsSelect = session.createQuery(sql, new Object[] { value }, LockOptions.PESSIMISTIC_WRITE).executeQuery();
 			if (!rsSelect.next())
 				currentValue = 0;
 			else

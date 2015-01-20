@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
  * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  * 
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  ******************************************************************************/
 package br.com.anteros.persistence.sql.dialect;
 
@@ -42,6 +39,13 @@ import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.OracleTemplates;
 import br.com.anteros.persistence.schema.definition.ColumnSchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
+import br.com.anteros.persistence.session.exception.ConstraintViolationException;
+import br.com.anteros.persistence.session.exception.QueryTimeoutException;
+import br.com.anteros.persistence.session.exception.SQLSessionException;
+import br.com.anteros.persistence.session.lock.LockAcquisitionException;
+import br.com.anteros.persistence.session.lock.LockMode;
+import br.com.anteros.persistence.session.lock.LockOptions;
+import br.com.anteros.persistence.session.lock.LockTimeoutException;
 
 public class OracleDialect extends DatabaseDialect {
 
@@ -101,17 +105,9 @@ public class OracleDialect extends DatabaseDialect {
 		return true;
 	}
 
-	@Override
-	public String getSelectForUpdateString() {
-		return " FOR UPDATE";
-	}
-
-	
-
 	/*
 	 * public List<ProcedureMetadata> getNativeFunctions() throws Exception { //
-	 * http://ss64.com/ora/syntax-functions.html List<ProcedureMetadata> result
-	 * = new ArrayList<ProcedureMetadata>();
+	 * http://ss64.com/ora/syntax-functions.html List<ProcedureMetadata> result = new ArrayList<ProcedureMetadata>();
 	 * 
 	 * return result; }
 	 */
@@ -133,18 +129,15 @@ public class OracleDialect extends DatabaseDialect {
 
 	@Override
 	public Blob createTemporaryBlob(Connection connection, byte[] bytes) throws Exception {
-		return (Blob) createTemporaryLob(connection, new ByteArrayInputStream(bytes), ORACLE_BLOB,
-				"getBinaryOutputStream");
+		return (Blob) createTemporaryLob(connection, new ByteArrayInputStream(bytes), ORACLE_BLOB, "getBinaryOutputStream");
 	}
 
 	@Override
 	public Clob createTemporaryClob(Connection connection, byte[] bytes) throws Exception {
-		return (Clob) createTemporaryLob(connection, new ByteArrayInputStream(bytes), ORACLE_CLOB,
-				"getAsciiOutputStream");
+		return (Clob) createTemporaryLob(connection, new ByteArrayInputStream(bytes), ORACLE_CLOB, "getAsciiOutputStream");
 	}
 
-	protected Object createTemporaryLob(Connection connection, InputStream in, int lobType, String methodOutputStream)
-			throws Exception {
+	protected Object createTemporaryLob(Connection connection, InputStream in, int lobType, String methodOutputStream) throws Exception {
 		Class<?> lobClass = null;
 		if (lobType == ORACLE_BLOB)
 			lobClass = connection.getClass().getClassLoader().loadClass("oracle.sql.BLOB");
@@ -157,10 +150,8 @@ public class OracleDialect extends DatabaseDialect {
 		Class<?> c3p0ConnectionClass = null;
 		Class<?> cp30OracleUtilsClass = null;
 		try {
-			c3p0ConnectionClass = connection.getClass().getClassLoader()
-					.loadClass("com.mchange.v2.c3p0.C3P0ProxyConnection");
-			cp30OracleUtilsClass = connection.getClass().getClassLoader()
-					.loadClass("com.mchange.v2.c3p0.dbms.OracleUtils");
+			c3p0ConnectionClass = connection.getClass().getClassLoader().loadClass("com.mchange.v2.c3p0.C3P0ProxyConnection");
+			cp30OracleUtilsClass = connection.getClass().getClassLoader().loadClass("com.mchange.v2.c3p0.dbms.OracleUtils");
 		} catch (Exception e) {
 		}
 		if ((cp30OracleUtilsClass != null) && (c3p0ConnectionClass != null)
@@ -172,8 +163,7 @@ public class OracleDialect extends DatabaseDialect {
 				m = ReflectionUtils.findMethodObject(cp30OracleUtilsClass, "createTemporaryCLOB");
 			result = m.invoke(null, new Object[] { connection, Boolean.valueOf(true), 10 });
 		} else {
-			Method createTemporary = lobClass.getMethod("createTemporary", new Class[] { Connection.class,
-					Boolean.TYPE, Integer.TYPE });
+			Method createTemporary = lobClass.getMethod("createTemporary", new Class[] { Connection.class, Boolean.TYPE, Integer.TYPE });
 			result = createTemporary.invoke(null, connection, true, durationSessionConstant);
 		}
 		Method open = lobClass.getMethod("open", new Class[] { Integer.TYPE });
@@ -312,8 +302,7 @@ public class OracleDialect extends DatabaseDialect {
 		Statement statement = conn.createStatement();
 		ResultSet resultSet = statement
 				.executeQuery("SELECT I.INDEX_NAME, IC.COLUMN_POSITION, IC.COLUMN_NAME, I.UNIQUENESS  FROM USER_INDEXES I  JOIN USER_IND_COLUMNS IC    ON I.INDEX_NAME = IC.INDEX_NAME WHERE I.TABLE_NAME = '"
-						+ tableName.toUpperCase()
-						+ "' AND I.UNIQUENESS = 'UNIQUE' ORDER BY I.INDEX_NAME, IC.COLUMN_POSITION ");
+						+ tableName.toUpperCase() + "' AND I.UNIQUENESS = 'UNIQUE' ORDER BY I.INDEX_NAME, IC.COLUMN_POSITION ");
 		try {
 			IndexMetadata index = null;
 			while (resultSet.next()) {
@@ -338,8 +327,8 @@ public class OracleDialect extends DatabaseDialect {
 	@Override
 	public boolean checkUniqueKeyExists(Connection conn, String tableName, String uniqueKeyName) throws Exception {
 		Statement statement = conn.createStatement();
-		ResultSet resultSet = statement.executeQuery("SELECT I.INDEX_NAME FROM USER_INDEXES I  WHERE I.INDEX_NAME = '"
-				+ uniqueKeyName.toUpperCase() + "' AND I.UNIQUENESS = 'UNIQUE' ");
+		ResultSet resultSet = statement.executeQuery("SELECT I.INDEX_NAME FROM USER_INDEXES I  WHERE I.INDEX_NAME = '" + uniqueKeyName.toUpperCase()
+				+ "' AND I.UNIQUENESS = 'UNIQUE' ");
 		try {
 			if (resultSet.next()) {
 				return true;
@@ -355,8 +344,8 @@ public class OracleDialect extends DatabaseDialect {
 	@Override
 	public boolean checkIndexExistsByName(Connection conn, String tableName, String indexName) throws Exception {
 		Statement statement = conn.createStatement();
-		ResultSet resultSet = statement.executeQuery("SELECT I.INDEX_NAME FROM USER_INDEXES I  WHERE I.INDEX_NAME = '"
-				+ indexName.toUpperCase() + "' ");
+		ResultSet resultSet = statement.executeQuery("SELECT I.INDEX_NAME FROM USER_INDEXES I  WHERE I.INDEX_NAME = '" + indexName.toUpperCase()
+				+ "' ");
 		try {
 			if (resultSet.next()) {
 				return true;
@@ -370,13 +359,10 @@ public class OracleDialect extends DatabaseDialect {
 	}
 
 	@Override
-	public boolean checkForeignKeyExistsByName(Connection conn, String tableName, String foreignKeyName)
-			throws Exception {
+	public boolean checkForeignKeyExistsByName(Connection conn, String tableName, String foreignKeyName) throws Exception {
 		Statement statement = conn.createStatement();
-		ResultSet resultSet = statement
-				.executeQuery("SELECT UC.CONSTRAINT_NAME  FROM USER_CONSTRAINTS UC WHERE UC.TABLE_NAME = '"
-						+ tableName.toUpperCase() + "' AND   UC.CONSTRAINT_NAME = '" + foreignKeyName.toUpperCase()
-						+ "' AND  UC.CONSTRAINT_TYPE = 'R'");
+		ResultSet resultSet = statement.executeQuery("SELECT UC.CONSTRAINT_NAME  FROM USER_CONSTRAINTS UC WHERE UC.TABLE_NAME = '"
+				+ tableName.toUpperCase() + "' AND   UC.CONSTRAINT_NAME = '" + foreignKeyName.toUpperCase() + "' AND  UC.CONSTRAINT_TYPE = 'R'");
 		try {
 			if (resultSet.next()) {
 				return true;
@@ -437,8 +423,7 @@ public class OracleDialect extends DatabaseDialect {
 			schemaWriter.write(columnSchema.getColumnDefinition());
 		} else {
 
-			if (columnSchema.isAutoIncrement() && supportsIdentity() && !useColumnDefinitionForIdentity()
-					&& !columnSchema.hasSequenceName()) {
+			if (columnSchema.isAutoIncrement() && supportsIdentity() && !useColumnDefinitionForIdentity() && !columnSchema.hasSequenceName()) {
 				writeColumnIdentityClauseDDLStatement(schemaWriter);
 			} else {
 				/*
@@ -496,6 +481,76 @@ public class OracleDialect extends DatabaseDialect {
 	@Override
 	public SQLTemplates getTemplateSQL() {
 		return new OracleTemplates();
+	}
+
+	@Override
+	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception {
+		final int errorCode = extractErrorCode(ex);
+
+		// lock timeouts ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		if (errorCode == 30006) {
+			// ORA-30006: resource busy; acquire with WAIT timeout expired
+			throw new LockTimeoutException(msg, ex, sql);
+		} else if (errorCode == 54) {
+			// ORA-00054: resource busy and acquire with NOWAIT specified or timeout expired
+			throw new LockTimeoutException(msg, ex, sql);
+		} else if (4021 == errorCode) {
+			// ORA-04021 timeout occurred while waiting to lock object
+			throw new LockTimeoutException(msg, ex, sql);
+		}
+
+		// deadlocks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		if (60 == errorCode) {
+			// ORA-00060: deadlock detected while waiting for resource
+			return new LockAcquisitionException(msg, ex, sql);
+		} else if (4020 == errorCode) {
+			// ORA-04020 deadlock detected while trying to lock object
+			return new LockAcquisitionException(msg, ex, sql);
+		}
+
+		// query cancelled ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		if (1013 == errorCode) {
+			// ORA-01013: user requested cancel of current operation
+			throw new QueryTimeoutException(msg, ex, sql);
+		}
+
+		// data integrity violation ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		if (1407 == errorCode) {
+			// ORA-01407: cannot update column to NULL
+			return new ConstraintViolationException(msg, ex, sql, extractConstraintName(ex));
+		}
+
+		return null;
+
+	}
+
+	public String extractConstraintName(SQLException ex) {
+		int errorCode = extractErrorCode(ex);
+		if (errorCode == 1 || errorCode == 2291 || errorCode == 2292) {
+			return extractUsingTemplate("(", ")", ex.getMessage());
+		} else if (errorCode == 1400) {
+			return null;
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	public String applyLock(String sql, LockOptions lockOptions) {
+		LockMode lockMode = lockOptions.getLockMode();
+		switch (lockMode) {
+		case PESSIMISTIC_READ:
+			return sql + " LOCK IN SHARE MODE " + (lockOptions.getTimeOut() == LockOptions.NO_WAIT ? " NOWAIT " : "");
+		case PESSIMISTIC_WRITE:
+		case PESSIMISTIC_FORCE_INCREMENT:
+			return sql + " FOR UPDATE " + (lockOptions.getTimeOut() == LockOptions.NO_WAIT ? " NOWAIT" : "");
+		default:
+			return sql;
+		}
 	}
 
 }

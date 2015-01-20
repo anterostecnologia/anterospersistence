@@ -10,12 +10,14 @@ public class SQLQueryAnalyzerResult {
 	private List<ExpressionFieldMapper> expressionsFieldMapper;
 	private Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases;
 	private String parsedSql;
+	private boolean allowApplyLockStrategy = false;
 	
-	public SQLQueryAnalyzerResult(String parsedSql, Set<SQLQueryAnalyserAlias> aliases,List<ExpressionFieldMapper> expressionsFieldMapper, Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases) {
+	public SQLQueryAnalyzerResult(String parsedSql, Set<SQLQueryAnalyserAlias> aliases,List<ExpressionFieldMapper> expressionsFieldMapper, Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases,boolean allowApplyLockStrategy) {
 		this.aliases = aliases;
 		this.columnAliases = columnAliases;
 		this.parsedSql = parsedSql;
 		this.expressionsFieldMapper = expressionsFieldMapper;
+		this.allowApplyLockStrategy = allowApplyLockStrategy;
 	}
 
 	public Set<SQLQueryAnalyserAlias> getAliases() {
@@ -32,6 +34,10 @@ public class SQLQueryAnalyzerResult {
 
 	public List<ExpressionFieldMapper> getExpressionsFieldMapper() {
 		return expressionsFieldMapper;
+	}
+
+	public boolean isAllowApplyLockStrategy() {
+		return allowApplyLockStrategy;
 	}
 
 }

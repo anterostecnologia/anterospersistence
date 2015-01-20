@@ -24,7 +24,6 @@ import java.util.Map;
 
 import br.com.anteros.persistence.handler.ResultSetHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
-import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.parameter.NamedParameter;
@@ -32,123 +31,128 @@ import br.com.anteros.persistence.session.ProcedureResult;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionResult;
 import br.com.anteros.persistence.session.cache.Cache;
-import br.com.anteros.persistence.session.lock.type.LockModeType;
+import br.com.anteros.persistence.session.lock.LockMode;
+import br.com.anteros.persistence.session.lock.LockOptions;
 
 @SuppressWarnings("rawtypes")
 public interface SQLQuery {
 
 	public static boolean READ_ONLY = true;
 	
-	SQLQuery identifier(Identifier<?> identifier);
+	public SQLQuery identifier(Identifier<?> identifier);
 
-	SQLSession getSession();
+	public SQLSession getSession();
 
-	SQLQuery sql(String sql);
+	public SQLQuery sql(String sql);
+	
+	public String getSql();
 
-	SQLQuery showSql(boolean showSql);
+	public SQLQuery showSql(boolean showSql);
 
-	SQLQuery formatSql(boolean formatSql);
+	public SQLQuery formatSql(boolean formatSql);
 
-	SQLQuery timeOut(int seconds);
+	public SQLQuery timeOut(int seconds);
 
-	SQLQuery resultSetHandler(ResultSetHandler handler);
+	public SQLQuery resultSetHandler(ResultSetHandler handler);
 
-	SQLQuery namedQuery(String name);
+	public SQLQuery namedQuery(String name);
 
-	SQLQuery setReadOnly(boolean readOnlyObjects);
+	public SQLQuery setReadOnly(boolean readOnlyObjects);
 
-	SQLQuery clear();
+	public SQLQuery clear();
 
-	SQLQuery setParameters(Object parameters) throws Exception;
+	public SQLQuery setParameters(Object parameters) throws Exception;
 
-	SQLQuery setParameters(Object[] parameters) throws Exception;
+	public SQLQuery setParameters(Object[] parameters) throws Exception;
 
-	SQLQuery setParameters(NamedParameter[] parameters) throws Exception;
+	public SQLQuery setParameters(NamedParameter[] parameters) throws Exception;
 
-	SQLQuery setParameters(Map<String, Object> parameters) throws Exception;
+	public SQLQuery setParameters(Map<String, Object> parameters) throws Exception;
 
-	SQLQuery setInteger(int parameterIndex, int value) throws Exception;
+	public SQLQuery setInteger(int parameterIndex, int value) throws Exception;
 
-	SQLQuery setString(int parameterIndex, String value) throws Exception;
+	public SQLQuery setString(int parameterIndex, String value) throws Exception;
 
-	SQLQuery setLong(int parameterIndex, long value) throws Exception;
+	public SQLQuery setLong(int parameterIndex, long value) throws Exception;
 
-	SQLQuery setNull(int parameterIndex) throws Exception;
+	public SQLQuery setNull(int parameterIndex) throws Exception;
 
-	SQLQuery setDate(int parameterIndex, Date value) throws Exception;
+	public SQLQuery setDate(int parameterIndex, Date value) throws Exception;
 
-	SQLQuery setDateTime(int parameterIndex, Date value) throws Exception;
+	public SQLQuery setDateTime(int parameterIndex, Date value) throws Exception;
 
-	SQLQuery setObject(int parameterIndex, Object object) throws Exception;
+	public SQLQuery setObject(int parameterIndex, Object object) throws Exception;
 
-	SQLQuery setBlob(int parameterIndex, InputStream inputStream) throws Exception;
+	public SQLQuery setBlob(int parameterIndex, InputStream inputStream) throws Exception;
 
-	SQLQuery setBlob(int parameterIndex, byte[] bytes) throws Exception;
+	public SQLQuery setBlob(int parameterIndex, byte[] bytes) throws Exception;
 
-	SQLQuery setClob(int parameterIndex, InputStream inputStream) throws Exception;
+	public SQLQuery setClob(int parameterIndex, InputStream inputStream) throws Exception;
 
-	SQLQuery setClob(int parameterIndex, byte[] bytes) throws Exception;
+	public SQLQuery setClob(int parameterIndex, byte[] bytes) throws Exception;
 
-	SQLQuery setBoolean(int parameterIndex, boolean value) throws Exception;
+	public SQLQuery setBoolean(int parameterIndex, boolean value) throws Exception;
 
-	SQLQuery setDouble(int parameterIndex, double value) throws Exception;
+	public SQLQuery setDouble(int parameterIndex, double value) throws Exception;
 
-	SQLQuery setFloat(int parameterIndex, float value) throws Exception;
+	public SQLQuery setFloat(int parameterIndex, float value) throws Exception;
 
-	SQLQuery setBigDecimal(int parameterIndex, BigDecimal value) throws Exception;
+	public SQLQuery setBigDecimal(int parameterIndex, BigDecimal value) throws Exception;
 
-	SQLQuery setInteger(String parameterName, int value) throws Exception;
+	public SQLQuery setInteger(String parameterName, int value) throws Exception;
 
-	SQLQuery setString(String parameterName, String value) throws Exception;
+	public SQLQuery setString(String parameterName, String value) throws Exception;
 
-	SQLQuery setLong(String parameterName, long value) throws Exception;
+	public SQLQuery setLong(String parameterName, long value) throws Exception;
 
-	SQLQuery setNull(String parameterName) throws Exception;
+	public SQLQuery setNull(String parameterName) throws Exception;
 
-	SQLQuery setDate(String parameterName, Date value) throws Exception;
+	public SQLQuery setDate(String parameterName, Date value) throws Exception;
 
-	SQLQuery setDateTime(String parameterName, Date value) throws Exception;
+	public SQLQuery setDateTime(String parameterName, Date value) throws Exception;
 
-	SQLQuery setObject(String parameterName, Object object) throws Exception;
+	public SQLQuery setObject(String parameterName, Object object) throws Exception;
 
-	SQLQuery setBlob(String parameterName, InputStream inputStream) throws Exception;
+	public SQLQuery setBlob(String parameterName, InputStream inputStream) throws Exception;
 
-	SQLQuery setBlob(String parameterName, byte[] bytes) throws Exception;
+	public SQLQuery setBlob(String parameterName, byte[] bytes) throws Exception;
 
-	SQLQuery setClob(String parameterName, InputStream inputStream) throws Exception;
+	public SQLQuery setClob(String parameterName, InputStream inputStream) throws Exception;
 
-	SQLQuery setClob(String parameterName, byte[] bytes) throws Exception;
+	public SQLQuery setClob(String parameterName, byte[] bytes) throws Exception;
 
-	SQLQuery setBoolean(String parameterName, boolean value) throws Exception;
+	public SQLQuery setBoolean(String parameterName, boolean value) throws Exception;
 
-	SQLQuery setDouble(String parameterName, double value) throws Exception;
+	public SQLQuery setDouble(String parameterName, double value) throws Exception;
 
-	SQLQuery setFloat(String parameterName, float value) throws Exception;
+	public SQLQuery setFloat(String parameterName, float value) throws Exception;
 
-	SQLQuery setBigDecimal(String parameterName, BigDecimal value) throws Exception;
+	public SQLQuery setBigDecimal(String parameterName, BigDecimal value) throws Exception;
 
-	List getResultList() throws Exception;
+	public List getResultList() throws Exception;
 
-	SQLSessionResult getResultListAndResultSet() throws Exception;
+	public SQLSessionResult getResultListAndResultSet() throws Exception;
 
-	Object getSingleResult() throws Exception;
+	public Object getSingleResult() throws Exception;
 
-	void refresh(Object entity) throws Exception;
+	public void refresh(Object entity) throws Exception;
 
-	ResultSet executeQuery() throws Exception;
+	public ResultSet executeQuery() throws Exception;
 
-	Object loadData(EntityCache entityCacheTarget, Object owner, final DescriptionField descriptionFieldOwner,
+	public Object loadData(EntityCache entityCacheTarget, Object owner, final DescriptionField descriptionFieldOwner,
 			Map<String, Object> columnKeyTarget, Cache transactionCache) throws Exception;
 
-	SQLQuery setLockMode(LockModeType lockMode);
+	public SQLQuery setLockOptions(LockOptions lockOptions);
 
-	LockModeType getLockMode();
+	public LockOptions getLockOptions();
+	
+	public SQLQuery setLockMode(String alias, LockMode lockMode);
 
-	SQLQuery allowDuplicateObjects(boolean allowDuplicateObjects);
+	public SQLQuery allowDuplicateObjects(boolean allowDuplicateObjects);
 
-	SQLQuery setMaxResults(int max);
+	public SQLQuery setMaxResults(int max);
 
-	SQLQuery setFirstResult(int first);
+	public SQLQuery setFirstResult(int first);
 
 	public SQLQuery procedureOrFunctionName(String procedureName);
 
@@ -160,6 +164,4 @@ public interface SQLQuery {
 
 	public SQLQuery namedStoredProcedureQuery(String name);
 	
-	public int getAmountOfInstantiatedObjects();
-
 }

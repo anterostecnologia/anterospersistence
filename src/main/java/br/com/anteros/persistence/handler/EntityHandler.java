@@ -27,6 +27,8 @@ import br.com.anteros.persistence.proxy.collection.DefaultSQLList;
 import br.com.anteros.persistence.proxy.collection.DefaultSQLSet;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
+import br.com.anteros.persistence.session.lock.LockOptions;
+import br.com.anteros.persistence.session.lock.LockScope;
 import br.com.anteros.persistence.session.query.ExpressionFieldMapper;
 import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
@@ -53,10 +55,11 @@ public class EntityHandler implements ResultSetHandler {
 	private Map<String, Integer> cacheAliasIndex = new HashMap<String, Integer>();
 	private boolean isIncompleteKey;
 	private List<ExpressionFieldMapper> expressionsFieldMapper;
+	private LockOptions lockOptions;
 
 	public EntityHandler(LazyLoadFactory proxyFactory, Class<?> targetClass, EntityCacheManager entityCacheManager,
 			List<ExpressionFieldMapper> expressionsFieldMapper, Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, SQLSession session,
-			Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults, boolean readOnly) {
+			Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults, boolean readOnly, LockOptions lockOptions) {
 		this.resultClass = targetClass;
 		this.session = session;
 		this.entityCacheManager = entityCacheManager;
@@ -67,17 +70,18 @@ public class EntityHandler implements ResultSetHandler {
 		this.firstResult = firstResult;
 		this.readOnly = readOnly;
 		this.expressionsFieldMapper = expressionsFieldMapper;
+		this.lockOptions = lockOptions;
 	}
 
 	public EntityHandler(LazyLoadFactory proxyFactory, Class<?> targetClazz, EntityCacheManager entityCacheManager, SQLSession session,
 			Cache transactionCache, boolean allowDuplicateObjects, int firstResult, int maxResults) {
 		this(proxyFactory, targetClazz, entityCacheManager, new ArrayList<ExpressionFieldMapper>(),
 				new LinkedHashMap<SQLQueryAnalyserAlias, Map<String, String[]>>(), session, transactionCache, allowDuplicateObjects, firstResult,
-				maxResults, false);
+				maxResults, false, LockOptions.NONE);
 	}
 
 	/**
-	 * Processa o ResultSet e cria os objetos 
+	 * Processa o ResultSet e cria os objetos
 	 */
 	public Object handle(ResultSet resultSet) throws Exception {
 		List<Object> result = null;
@@ -164,9 +168,12 @@ public class EntityHandler implements ResultSetHandler {
 	/**
 	 * Método responsável por criar o objeto.
 	 * 
-	 * @param targetClass Classe para criação do objeto
-	 * @param resultSet Resultado do SQL.
-	 * @param result Objeto criado
+	 * @param targetClass
+	 *            Classe para criação do objeto
+	 * @param resultSet
+	 *            Resultado do SQL.
+	 * @param result
+	 *            Objeto criado
 	 * @return
 	 * @throws Exception
 	 */
@@ -208,6 +215,7 @@ public class EntityHandler implements ResultSetHandler {
 		 * Adiciona o objeto como sendo uma entidade gerenciada no contexto
 		 */
 		entityManaged = session.getPersistenceContext().addEntityManaged(mainObject, readOnly, false);
+		entityManaged.setLockMode(lockOptions.getLockMode());
 
 		/*
 		 * Processa as expressões para gerar os fields do objeto
@@ -239,8 +247,11 @@ public class EntityHandler implements ResultSetHandler {
 
 	/**
 	 * Retorna o alias da coluna de uma entidade no resultSet.
-	 * @param sourceEntityCache Entidade
-	 * @param columnName Nome da coluna
+	 * 
+	 * @param sourceEntityCache
+	 *            Entidade
+	 * @param columnName
+	 *            Nome da coluna
 	 * @return Alias da coluna
 	 */
 	private String getAliasColumnName(EntityCache sourceEntityCache, String columnName) {
@@ -268,8 +279,11 @@ public class EntityHandler implements ResultSetHandler {
 
 	/**
 	 * Retorna o alias da coluna de uma entidade no resultSet.
-	 * @param sourceAlias Nome do alias da tabela
-	 * @param columnName Nome da coluna
+	 * 
+	 * @param sourceAlias
+	 *            Nome do alias da tabela
+	 * @param columnName
+	 *            Nome da coluna
 	 * @return Alias da coluna
 	 */
 	private String getAliasColumnName(String sourceAlias, String columnName) {
@@ -295,9 +309,13 @@ public class EntityHandler implements ResultSetHandler {
 
 	/**
 	 * Adiciona um objeto no cache da transação SQL ou da persistência
-	 * @param entityCache Entidade
-	 * @param targetObject Objeto
-	 * @param uniqueId Chave do objeto
+	 * 
+	 * @param entityCache
+	 *            Entidade
+	 * @param targetObject
+	 *            Objeto
+	 * @param uniqueId
+	 *            Chave do objeto
 	 */
 	private void addObjectToCache(EntityCache entityCache, Object targetObject, String uniqueId) {
 		/*
@@ -314,10 +332,14 @@ public class EntityHandler implements ResultSetHandler {
 
 	/**
 	 * Retorna a chave única do objeto buscando os valores no resultSet.
-	 * @param resultSet Resultado do SQL.
-	 * @param entityCache Entidade
-	 * @param alias Alias da tabela
-	 * @return Chave única da entidade 
+	 * 
+	 * @param resultSet
+	 *            Resultado do SQL.
+	 * @param entityCache
+	 *            Entidade
+	 * @param alias
+	 *            Alias da tabela
+	 * @return Chave única da entidade
 	 * @throws SQLException
 	 */
 	private String getUniqueId(ResultSet resultSet, EntityCache entityCache, String alias) throws SQLException {
@@ -337,7 +359,7 @@ public class EntityHandler implements ResultSetHandler {
 			}
 
 			/*
-			 * Busca indice da coluna dentro do resultSet
+			 * Busca índice da coluna dentro do resultSet
 			 */
 			index = cacheAliasIndex.get(aliasColumnName);
 			if (index == null) {
@@ -346,8 +368,8 @@ public class EntityHandler implements ResultSetHandler {
 			}
 			if (index < 0) {
 				/*
-				 * Esta exception não deverá ocorrer nunca pois as colunas estão sendo parseadas pela análise do SQL.
-				 * Se isto ocorrer pode ser um erro na análise.
+				 * Esta exception não deverá ocorrer nunca pois as colunas estão sendo parseadas pela análise do SQL. Se
+				 * isto ocorrer pode ser um erro na análise.
 				 */
 				throw new SQLException("NÃO ACHOU COLUNA " + column.getColumnName());
 			}
@@ -362,18 +384,20 @@ public class EntityHandler implements ResultSetHandler {
 		/*
 		 * Retorna o chave única. Se for uma string "null" retorna como nula
 		 */
-		String result = uniqueIdTemp.toString();
-		if (result.equals("null"))
-			return null;
-		return result;
+		return (uniqueIdTemp.toString().equals("null") ? null : uniqueIdTemp.toString());
 	}
 
 	/**
 	 * Busca um objeto no cache usando a Entidade e a chave para localização.
-	 * @param session Sessão
-	 * @param targetEntityCache Entidade
-	 * @param uniqueId Chave primária do objeto
-	 * @param transactionCache Cache da transação
+	 * 
+	 * @param session
+	 *            Sessão
+	 * @param targetEntityCache
+	 *            Entidade
+	 * @param uniqueId
+	 *            Chave primária do objeto
+	 * @param transactionCache
+	 *            Cache da transação
 	 * @return Objeto correspondente a entidade e chave informada ou nulo caso não exista no cache.
 	 */
 	private Object getObjectFromCache(EntityCache targetEntityCache, String uniqueId, Cache transactionCache) {
@@ -381,7 +405,7 @@ public class EntityHandler implements ResultSetHandler {
 
 		/*
 		 * Se a classe for abstrata pega todas as implementações não abstratas e verifica se existe um objeto da classe
-		 * + ID no entityCache
+		 * + ID no Cache
 		 */
 		if (ReflectionUtils.isAbstractClass(targetEntityCache.getEntityClass())) {
 			EntityCache[] entitiesCache = session.getEntityCacheManager().getEntitiesBySuperClass(targetEntityCache);
@@ -395,7 +419,7 @@ public class EntityHandler implements ResultSetHandler {
 			}
 		} else {
 			/*
-			 * Caso não seja abstrata localiza classe+ID no entityCache
+			 * Caso não seja abstrata localiza classe+ID no Cache
 			 */
 			result = transactionCache.get(targetEntityCache.getEntityClass().getName() + "_" + uniqueId);
 
@@ -406,17 +430,21 @@ public class EntityHandler implements ResultSetHandler {
 	}
 
 	/**
-	 * Carrega as coleções, relacionamentos e Lob que não foram carregados no SQL. Adota o padrão definido 
-	 * no mapeamento para criar objetos ou criar proxies para os campos.
+	 * Carrega as coleções, relacionamentos e Lob que não foram carregados no SQL. Adota o padrão definido no mapeamento
+	 * para criar objetos ou criar proxies para os campos.
 	 * 
-	 * @param targetObject Objeto alvo
-	 * @param entityCache Entidade
-	 * @param resultSet Resultado do SQL.
+	 * @param targetObject
+	 *            Objeto alvo
+	 * @param entityCache
+	 *            Entidade
+	 * @param resultSet
+	 *            Resultado do SQL.
 	 * @throws Exception
 	 */
 	protected void loadCollectionsRelationShipAndLob(Object targetObject, EntityCache entityCache, ResultSet resultSet) throws Exception {
 		/*
-		 * Faz um loop apenas nos fields que tenham sido configuradas com ForeignKey, Lob e Fetch. Os demais campos simples já foram processados.
+		 * Faz um loop apenas nos fields que tenham sido configuradas com ForeignKey, Lob e Fetch. Os demais campos
+		 * simples já foram processados.
 		 */
 		for (DescriptionField descriptionField : entityCache.getDescriptionFields()) {
 			/*
@@ -489,6 +517,8 @@ public class EntityHandler implements ResultSetHandler {
 									 * Cria a query e busca novamente o objeto completo
 									 */
 									SQLQuery query = session.createQuery("");
+									if (lockOptions.getLockScope() == LockScope.EXTENDED)
+										query.setLockOptions(lockOptions);
 									result = query.loadData(targetEntityCache, targetObject, descriptionField, columnKeyValue, transactionCache);
 
 									EntityCache fieldentEntityCache = session.getEntityCacheManager()
@@ -500,6 +530,7 @@ public class EntityHandler implements ResultSetHandler {
 									 * Busca o objeto que será atribuido ao campo do objeto alvo
 									 */
 									SQLQuery query = session.createQuery("");
+									query.setLockOptions((lockOptions.getLockScope() == LockScope.EXTENDED ? lockOptions : LockOptions.NONE));
 									query.setReadOnly(readOnly);
 									result = query.loadData(targetEntityCache, targetObject, descriptionField, columnKeyValue, transactionCache);
 								}
@@ -515,12 +546,12 @@ public class EntityHandler implements ResultSetHandler {
 									entityManaged.getFieldsForUpdate().add(descriptionField.getField().getName());
 								}
 							}
-						} else { 
+						} else {
 							/*
 							 * Se for LAZY cria apenas o proxy.
 							 */
 							Object newObject = proxyFactory.createProxy(session, targetObject, descriptionField, targetEntityCache, columnKeyValue,
-									transactionCache);
+									transactionCache, (lockOptions.getLockScope() == LockScope.EXTENDED ? lockOptions : LockOptions.NONE));
 							descriptionField.getField().set(targetObject, newObject);
 
 							if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
@@ -536,12 +567,16 @@ public class EntityHandler implements ResultSetHandler {
 	}
 
 	/**
-	 * Verifica a necessidade de um determinado campo em um entidade de ser processado para criar o objeto. No caso de chaves estrangeiras
-	 * que não foram trazidas no SQL e objetos com chave parcial devem ser considerados como necessário criar o objeto do campo novamente.
+	 * Verifica a necessidade de um determinado campo em um entidade de ser processado para criar o objeto. No caso de
+	 * chaves estrangeiras que não foram trazidas no SQL e objetos com chave parcial devem ser considerados como
+	 * necessário criar o objeto do campo novamente.
 	 * 
-	 * @param entityCache Entidade
-	 * @param descriptionField Campo
-	 * @param assignedValue Valor atribuido ao campo atual
+	 * @param entityCache
+	 *            Entidade
+	 * @param descriptionField
+	 *            Campo
+	 * @param assignedValue
+	 *            Valor atribuido ao campo atual
 	 * @return Verdadeiro se há necessidade de criar o objeto e atribuir ao campo
 	 * @throws Exception
 	 */
@@ -585,8 +620,11 @@ public class EntityHandler implements ResultSetHandler {
 
 	/**
 	 * Retorna a entidade destino de um campo em uma determinada entidade
-	 * @param entityCache Entidade de origem
-	 * @param descriptionField Campo da entidade origem
+	 * 
+	 * @param entityCache
+	 *            Entidade de origem
+	 * @param descriptionField
+	 *            Campo da entidade origem
 	 * @return Entidade destino
 	 * @throws EntityHandlerException
 	 */
@@ -616,16 +654,21 @@ public class EntityHandler implements ResultSetHandler {
 	}
 
 	/**
-	 * Retorna os valores da chave de um determinado campo da entidade no resultSet. 
-	 * @param targetObject Objeto alvo
-	 * @param entityCache Entidade
-	 * @param resultSet Resultado do SQL
-	 * @param descriptionField Campo da entidade
+	 * Retorna os valores da chave de um determinado campo da entidade no resultSet.
+	 * 
+	 * @param targetObject
+	 *            Objeto alvo
+	 * @param entityCache
+	 *            Entidade
+	 * @param resultSet
+	 *            Resultado do SQL
+	 * @param descriptionField
+	 *            Campo da entidade
 	 * @return Mapa com os valores da chave
 	 * @throws EntityHandlerException
 	 */
-	private Map<String, Object> getColumnKeyValue(Object targetObject, EntityCache entityCache, ResultSet resultSet,
-			DescriptionField descriptionField) throws EntityHandlerException {
+	private Map<String, Object> getColumnKeyValue(Object targetObject, EntityCache entityCache, ResultSet resultSet, DescriptionField descriptionField)
+			throws EntityHandlerException {
 
 		/*
 		 * Se o DescriptionField for um FK guarda o valor da coluna. Apenas monta o objeto da chave estrangeira caso o

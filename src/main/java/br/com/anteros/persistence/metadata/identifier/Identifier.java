@@ -1,22 +1,20 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
  * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  * 
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  ******************************************************************************/
 package br.com.anteros.persistence.metadata.identifier;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -55,8 +53,7 @@ public class Identifier<T> implements Serializable {
 		if (ReflectionUtils.isAbstractClass(sourceClass)) {
 			anyClass = (Class<T>) session.getEntityCacheManager().getAnyConcreteClass(sourceClass);
 			if (anyClass == null) {
-				throw new IdentifierException("Não é possível criar um identificador para a classe abstrata "
-						+ sourceClass.getName()
+				throw new IdentifierException("Não é possível criar um identificador para a classe abstrata " + sourceClass.getName()
 						+ " pois não foi localizado nenhuma classe concreta que implemente a mesma.");
 			}
 		}
@@ -93,8 +90,7 @@ public class Identifier<T> implements Serializable {
 			throw new IdentifierException("Campo " + fieldName + " não encontrado na classe " + clazz.getName()
 					+ ". Não foi possível atribuir o valor.");
 
-		if ((value == null) || (value.getClass() == descriptionField.getField().getType())
-				|| (descriptionField.getTargetEntity() == null)) {
+		if ((value == null) || (value.getClass() == descriptionField.getField().getType()) || (descriptionField.getTargetEntity() == null)) {
 			if (value instanceof IdentifierColumn[])
 				descriptionField.setObjectValue(owner, ((IdentifierColumn[]) value)[0].getValue());
 			else
@@ -132,21 +128,18 @@ public class Identifier<T> implements Serializable {
 			for (DescriptionColumn descriptionColumn : descriptionField.getDescriptionColumns()) {
 				if (append)
 					select.and();
-				select.addCondition("" + descriptionColumn.getColumnName(), "=",
-						":P" + descriptionColumn.getColumnName());
+				select.addCondition("" + descriptionColumn.getColumnName(), "=", ":P" + descriptionColumn.getColumnName());
 				params.add(new NamedParameter("P" + descriptionColumn.getColumnName(), ((Object[]) value)[index]));
 				append = true;
 				index++;
 			}
 		} else {
-			throw new IdentifierException("Tipo de parâmetro incorreto " + value.getClass()
-					+ ". Não foi possível atribuir o valor para o campo " + descriptionField.getName() + " da classe "
-					+ entityCache.getEntityClass().getName());
+			throw new IdentifierException("Tipo de parâmetro incorreto " + value.getClass() + ". Não foi possível atribuir o valor para o campo "
+					+ descriptionField.getName() + " da classe " + entityCache.getEntityClass().getName());
 		}
-		descriptionField.setObjectValue(
-				owner,
-				session.createQuery(select.toStatementString(), descriptionField.getField().getType(),
-						params.toArray(new NamedParameter[] {})).getSingleResult());
+		descriptionField.setObjectValue(owner,
+				session.createQuery(select.toStatementString(), descriptionField.getField().getType(), params.toArray(new NamedParameter[] {}))
+						.getSingleResult());
 		return this;
 	}
 
@@ -167,6 +160,11 @@ public class Identifier<T> implements Serializable {
 
 	public Map<String, Object> getColumns() throws Exception {
 		return entityCache.getPrimaryKeysAndValues(owner);
+	}
+
+	public Collection<Object> getValues() throws Exception {
+		Map<String, Object> primaryKeysAndValues = entityCache.getPrimaryKeysAndValues(owner);
+		return primaryKeysAndValues.values();
 	}
 
 	public boolean hasIdentifier() throws Exception {
@@ -246,8 +244,7 @@ public class Identifier<T> implements Serializable {
 			for (Object fieldName : ((Map) id).keySet()) {
 				DescriptionField descriptionField = entityCache.getDescriptionField(fieldName.toString());
 				if (descriptionField == null) {
-					throw new IdentifierException("Campo " + fieldName + " não encontrado na classe "
-							+ entityCache.getEntityClass().getName()
+					throw new IdentifierException("Campo " + fieldName + " não encontrado na classe " + entityCache.getEntityClass().getName()
 							+ ". Não foi possível atribuir o id para o Identificador.");
 				}
 				descriptionField.setObjectValue(owner, ((Map) id).get(fieldName));
@@ -255,13 +252,10 @@ public class Identifier<T> implements Serializable {
 		} else {
 			if (entityCache.getPrimaryKeyFields().length == 1) {
 				Class<?> fieldClass = entityCache.getPrimaryKeyFields()[0].getFieldClass();
-				if ((id.getClass() != fieldClass)
-						&& (!ReflectionUtils.isStrictlyAssignableFrom(id.getClass(), fieldClass))) {
-					throw new IdentifierException("Objeto ID passado como parâmetro é do tipo "
-							+ id.getClass().getName() + " diferente do tipo ID (" + fieldClass + ") do campo "
-							+ entityCache.getPrimaryKeyFields()[0].getField().getName() + "  encontrado na classe "
-							+ entityCache.getEntityClass().getName()
-							+ ". Não foi possível atribuir o id para o Identificador.");
+				if ((id.getClass() != fieldClass) && (!ReflectionUtils.isStrictlyAssignableFrom(id.getClass(), fieldClass))) {
+					throw new IdentifierException("Objeto ID passado como parâmetro é do tipo " + id.getClass().getName() + " diferente do tipo ID ("
+							+ fieldClass + ") do campo " + entityCache.getPrimaryKeyFields()[0].getField().getName() + "  encontrado na classe "
+							+ entityCache.getEntityClass().getName() + ". Não foi possível atribuir o id para o Identificador.");
 				}
 				entityCache.getPrimaryKeyFields()[0].setObjectValue(owner, id);
 			} else {

@@ -18,7 +18,6 @@ package br.com.anteros.persistence.sql.dialect;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.Blob;
-import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -27,10 +26,11 @@ import java.sql.SQLException;
 
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.FirebirdTemplates;
-import br.com.anteros.persistence.metadata.annotation.type.CallableType;
-import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.schema.definition.SequenceGeneratorSchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
+import br.com.anteros.persistence.session.exception.SQLSessionException;
+import br.com.anteros.persistence.session.lock.LockMode;
+import br.com.anteros.persistence.session.lock.LockOptions;
 
 public class FirebirdDialect extends DatabaseDialect {
 
@@ -74,11 +74,6 @@ public class FirebirdDialect extends DatabaseDialect {
 	@Override
 	public String getIdentitySelectString() {
 		return null;
-	}
-
-	@Override
-	public String getSelectForUpdateString() {
-		return " WITH LOCK";
 	}
 
 	@Override
@@ -225,9 +220,7 @@ public class FirebirdDialect extends DatabaseDialect {
 
 		PreparedStatement stmt = connection.prepareStatement(SET_CLIENT_INFO_SQL);
 		try {
-
 			setClientInfo(stmt, CLIENT_INFO, clientInfo);
-
 		} finally {
 			stmt.close();
 		}
@@ -293,6 +286,25 @@ public class FirebirdDialect extends DatabaseDialect {
 	@Override
 	public SQLTemplates getTemplateSQL() {
 		return new FirebirdTemplates();
+	}
+
+	@Override
+	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception {
+		return new SQLSessionException(msg, ex, sql);
+	}
+
+	@Override
+	public String applyLock(String sql, LockOptions lockOptions) {
+		LockMode lockMode = lockOptions.getLockMode();
+		switch (lockMode) {
+		case PESSIMISTIC_READ:
+			return sql + " WITH LOCK ";
+		case PESSIMISTIC_WRITE:
+		case PESSIMISTIC_FORCE_INCREMENT:
+			return sql + " WITH LOCK ";
+		default:
+			return sql;
+		}
 	}
 
 }

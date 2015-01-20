@@ -26,6 +26,8 @@ import br.com.anteros.persistence.dsl.osql.templates.HSQLDBTemplates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
+import br.com.anteros.persistence.session.exception.SQLSessionException;
+import br.com.anteros.persistence.session.lock.LockOptions;
 
 public class HSQLDialect extends DatabaseDialect {
 
@@ -78,11 +80,6 @@ public class HSQLDialect extends DatabaseDialect {
 		return false;
 	}
 
-	@Override
-	public String getSelectForUpdateString() {
-		return "";
-	}
-	
 	@Override
 	public Blob createTemporaryBlob(Connection connection, byte[] bytes) throws Exception {
 		return null;
@@ -155,6 +152,16 @@ public class HSQLDialect extends DatabaseDialect {
 	@Override
 	public SQLTemplates getTemplateSQL() {
 		return new HSQLDBTemplates();
+	}
+
+	@Override
+	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception {
+		return new SQLSessionException(msg, ex, sql);
+	}
+
+	@Override
+	public String applyLock(String sql, LockOptions lockOptions) {
+		return sql;
 	}
 
 }

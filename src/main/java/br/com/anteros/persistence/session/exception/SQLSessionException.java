@@ -17,11 +17,26 @@ package br.com.anteros.persistence.session.exception;
 
 public class SQLSessionException extends RuntimeException {
 
+	private String sql;
+	
 	public SQLSessionException(String message) {
 		super(message);
 	}
 
+	public SQLSessionException(String message, Throwable t, String sql) {
+		super(message,t);
+		this.sql = sql;
+	}
+
 	public SQLSessionException(String message, Throwable t) {
 		super(message,t);
+	}
+
+	public String getSql() {
+		return sql;
+	}
+
+	public void setSql(String sql) {
+		this.sql = sql;
 	}
 }

@@ -17,7 +17,6 @@ package br.com.anteros.persistence.sql.dialect;
 
 import java.io.Writer;
 import java.sql.Blob;
-import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -26,9 +25,12 @@ import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.MySQLTemplates;
-import br.com.anteros.persistence.metadata.annotation.type.CallableType;
-import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
+import br.com.anteros.persistence.session.exception.SQLSessionException;
+import br.com.anteros.persistence.session.lock.LockAcquisitionException;
+import br.com.anteros.persistence.session.lock.LockMode;
+import br.com.anteros.persistence.session.lock.LockOptions;
+import br.com.anteros.persistence.session.lock.LockTimeoutException;
 import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 
 public class MySQLDialect extends DatabaseDialect {
@@ -99,10 +101,6 @@ public class MySQLDialect extends DatabaseDialect {
 		return 0;
 	}
 
-	@Override
-	public String getSelectForUpdateString() {
-		return " FOR UPDATE";
-	}
 
 	@Override
 	public String name() {
@@ -343,5 +341,34 @@ public class MySQLDialect extends DatabaseDialect {
 	@Override
 	public SQLTemplates getTemplateSQL() {
 		return new MySQLTemplates();
+	}
+
+	@Override
+	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception {
+		final String sqlState = extractSqlState( ex );
+
+		if ( "41000".equals( sqlState ) ) {
+			return new LockTimeoutException( msg, ex, sql );
+		}
+
+		if ( "40001".equals( sqlState ) ) {
+			return new LockAcquisitionException( msg, ex, sql );
+		}
+
+		return new SQLSessionException(msg, ex, sql);
+	}
+	
+	@Override
+	public String applyLock(String sql, LockOptions lockOptions) {
+		LockMode lockMode = lockOptions.getLockMode();
+		switch (lockMode) {
+		case PESSIMISTIC_READ:
+			return sql + " LOCK IN SHARE MODE " + (lockOptions.getTimeOut() == LockOptions.NO_WAIT ? " NOWAIT " : "");
+		case PESSIMISTIC_WRITE:
+		case PESSIMISTIC_FORCE_INCREMENT:
+			return sql + " FOR UPDATE " + (lockOptions.getTimeOut() == LockOptions.NO_WAIT ? " NOWAIT" : "");
+		default:
+			return sql;
+		}
 	}
 }

@@ -16,12 +16,13 @@ import br.com.anteros.persistence.proxy.lob.ClobLazyLoadProxy;
 import br.com.anteros.persistence.proxy.lob.NClobLazyLoadProxy;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
+import br.com.anteros.persistence.session.lock.LockOptions;
 
 public class SimpleLazyLoadFactory implements LazyLoadFactory {
 
 	@Override
 	public Object createProxy(SQLSession session, Object targetObject, DescriptionField descriptionField,
-			EntityCache targetEntityCache, Map<String, Object> columnKeyValues, Cache transactionCache)
+			EntityCache targetEntityCache, Map<String, Object> columnKeyValues, Cache transactionCache, LockOptions lockOptions)
 			throws Exception {
 		Object newObject = null;
 		if (descriptionField.isLob()) {
@@ -37,7 +38,7 @@ public class SimpleLazyLoadFactory implements LazyLoadFactory {
 					+ targetEntityCache.getEntityClass().getSimpleName());
 		} else {
 			SimpleLazyLoadInterceptor lazyLoadInterceptor = new SimpleLazyLoadInterceptor(session, targetEntityCache,
-					columnKeyValues, transactionCache, targetObject, descriptionField);
+					columnKeyValues, transactionCache, targetObject, descriptionField, lockOptions);
 			if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), Set.class))
 				newObject = new SQLLazyLoadSet(lazyLoadInterceptor);
 			else if (ReflectionUtils.isImplementsInterface(descriptionField.getField().getType(), List.class))

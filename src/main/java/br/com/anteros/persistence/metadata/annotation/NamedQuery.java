@@ -24,7 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
-import br.com.anteros.persistence.session.lock.type.LockModeType;
+import br.com.anteros.persistence.session.lock.LockMode;
 
 /*
  * 
@@ -44,7 +44,7 @@ public @interface NamedQuery {
 	String name();
 	String query();
 	CallableType callableType() default CallableType.NONE;
-	LockModeType lockMode() default LockModeType.NONE;
+	LockMode lockMode() default LockMode.NONE;
 	Class<?> resultClass() default Object.class;
 	
 	/**

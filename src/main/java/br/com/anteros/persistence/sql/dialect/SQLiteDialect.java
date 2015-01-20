@@ -16,16 +16,15 @@
 package br.com.anteros.persistence.sql.dialect;
 
 import java.sql.Blob;
-import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.SQLiteTemplates;
-import br.com.anteros.persistence.metadata.annotation.type.CallableType;
-import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
+import br.com.anteros.persistence.session.exception.SQLSessionException;
+import br.com.anteros.persistence.session.lock.LockOptions;
 
 public class SQLiteDialect extends DatabaseDialect {
 
@@ -82,10 +81,6 @@ public class SQLiteDialect extends DatabaseDialect {
 		throw new DatabaseDialectException(getClass().getName() + " não suporta sequence.");
 	}
 
-	@Override
-	public String getSelectForUpdateString() {
-		return "";
-	}
 
 	@Override
 	public String name() {
@@ -183,21 +178,6 @@ public class SQLiteDialect extends DatabaseDialect {
 	}
 
 	@Override
-	public String getNoWaitString() {
-		return "";
-	}
-
-	@Override
-	public String getSelectForUpdateNoWaitString() {
-		return "";
-	}
-
-	@Override
-	public String getSelectForUpdateOfString() {
-		return "";
-	}
-
-	@Override
 	public void setConnectionClientInfo(Connection connection, String clientInfo) throws SQLException {
 	}
 
@@ -209,5 +189,15 @@ public class SQLiteDialect extends DatabaseDialect {
 	@Override
 	public SQLTemplates getTemplateSQL() {
 		return new SQLiteTemplates();
+	}
+
+	@Override
+	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception {
+		return new SQLSessionException(msg, ex, sql);
+	}
+
+	@Override
+	public String applyLock(String sql, LockOptions lockOptions) {
+		return sql;
 	}
 }

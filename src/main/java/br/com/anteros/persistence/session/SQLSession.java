@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
  * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  * 
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  ******************************************************************************/
 package br.com.anteros.persistence.session;
 
@@ -31,7 +28,7 @@ import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.cache.Cache;
 import br.com.anteros.persistence.session.context.SQLPersistenceContext;
-import br.com.anteros.persistence.session.lock.type.LockModeType;
+import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
 import br.com.anteros.persistence.session.query.ExpressionFieldMapper;
 import br.com.anteros.persistence.session.query.SQLQuery;
@@ -50,74 +47,57 @@ public interface SQLSession {
 
 	public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties) throws Exception;
 
-	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode) throws Exception;
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockOptions lockOptions) throws Exception;
 
-	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties)
-			throws Exception;
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockOptions lockOptions, Map<String, Object> properties) throws Exception;
 
 	public <T> T find(Identifier<T> id) throws Exception;
 
-	public <T> T find(Identifier<T> id, LockModeType lockMode) throws Exception;
+	public <T> T find(Identifier<T> id, LockOptions lockOptions) throws Exception;
 
 	public <T> T find(Identifier<T> id, Map<String, Object> properties) throws Exception;
 
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode) throws Exception;
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockOptions lockOptions) throws Exception;
 
 	public <T> T find(Class<T> entityClass, Object primaryKey, boolean readOnly) throws Exception;
 
-	public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties, boolean readOnly)
-			throws Exception;
+	public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties, boolean readOnly) throws Exception;
 
-	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, boolean readOnly)
-			throws Exception;
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockOptions lockOptions, boolean readOnly) throws Exception;
 
-	public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties,
-			boolean readOnly) throws Exception;
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockOptions lockOptions, Map<String, Object> properties, boolean readOnly)
+			throws Exception;
 
 	public <T> T find(Identifier<T> id, boolean readOnly) throws Exception;
 
-	public <T> T find(Identifier<T> id, LockModeType lockMode, boolean readOnly) throws Exception;
+	public <T> T find(Identifier<T> id, LockOptions lockOptions, boolean readOnly) throws Exception;
 
 	public <T> T find(Identifier<T> id, Map<String, Object> properties, boolean readOnly) throws Exception;
 
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockModeType lockMode, boolean readOnly)
-			throws Exception;
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockOptions lockOptions, boolean readOnly) throws Exception;
 
 	/*
-	 * Atualiza o objeto com dados do banco descartando alterações na transação
-	 * atual
+	 * Atualiza o objeto com dados do banco descartando alterações na transação atual
 	 */
 	public void refresh(Object entity) throws Exception;
 
 	public void refresh(Object entity, Map<String, Object> properties) throws Exception;
 
-	public void refresh(Object entity, LockModeType lockMode) throws Exception;
+	public void refresh(Object entity, LockOptions lockOptions) throws Exception;
 
-	public void refresh(Object entity, LockModeType lockMode, Map<String, Object> properties) throws Exception;
+	public void refresh(Object entity, LockOptions lockOptions, Map<String, Object> properties) throws Exception;
 
 	/*
 	 * Bloqueia o objeto
 	 */
-	public void lock(Object entity, LockModeType mode);
-
-	public void lock(Object entity, LockModeType mode, int timeout);
-
-	public void lock(Object entity);
+	public void lock(Object entity, LockOptions lockOptions) throws Exception;
 
 	/*
 	 * Bloqueia a lista de objetos
 	 */
-	public void lockAll(Collection<?> entities, LockModeType mode);
+	public void lockAll(Collection<?> entities, LockOptions lockOptions) throws Exception;
 
-	public void lockAll(Collection<?> entities, LockModeType mode, int timeout);
-
-	public void lockAll(Collection<?> entities);
-
-	public void lockAll(Object[] entities, LockModeType mode);
-
-	public void lockAll(Object[] entities, LockModeType mode, int timeout);
-
-	public void lockAll(Object... entities);
+	public void lockAll(Object[] entities, LockOptions lockOptions) throws Exception;
 
 	/*
 	 * Desconecta o objeto do contexto de persistência
@@ -125,8 +105,7 @@ public interface SQLSession {
 	public void detach(Object entity);
 
 	/**
-	 * Remove todas as instâncias dos objetos da classe passada por parâmetro
-	 * gerenciadas pela sessão
+	 * Remove todas as instâncias dos objetos da classe passada por parâmetro gerenciadas pela sessão
 	 * 
 	 * @param object
 	 */
@@ -148,6 +127,14 @@ public interface SQLSession {
 
 	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, Object parameters) throws Exception;
 
+	public SQLQuery createQuery(String sql, LockOptions lockOptions) throws Exception;
+
+	public SQLQuery createQuery(String sql, Object parameters, LockOptions lockOptions) throws Exception;
+
+	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, LockOptions lockOptions) throws Exception;
+
+	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, Object parameters, LockOptions lockOptions) throws Exception;
+
 	/*
 	 * Cria uma query nomeada
 	 */
@@ -159,6 +146,14 @@ public interface SQLSession {
 
 	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters) throws Exception;
 
+	public SQLQuery createNamedQuery(String name, LockOptions lockOptions) throws Exception;
+
+	public SQLQuery createNamedQuery(String name, Object parameters, LockOptions lockOptions) throws Exception;
+
+	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, LockOptions lockOptions) throws Exception;
+
+	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters, LockOptions lockOptions) throws Exception;
+
 	/*
 	 * Cria uma query stored procedure
 	 */
@@ -168,8 +163,8 @@ public interface SQLSession {
 
 	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type, Class<T> resultClass) throws Exception;
 
-	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type, Class<T> resultClass,
-			Object[] parameters) throws Exception;
+	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type, Class<T> resultClass, Object[] parameters)
+			throws Exception;
 
 	/*
 	 * Cria uma query stored procedure nomeada
@@ -180,9 +175,7 @@ public interface SQLSession {
 
 	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass) throws Exception;
 
-	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass, Object[] parameters)
-			throws Exception;
-	
+	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass, Object[] parameters) throws Exception;
 
 	public Object save(Object object) throws Exception;
 
@@ -254,14 +247,9 @@ public interface SQLSession {
 
 	public void removeTable(String tableName) throws Exception;
 
-	public void enableLockMode() throws Exception;
-
-	public void disableLockMode() throws Exception;
-
-	public EntityHandler createNewEntityHandler(Class<?> resultClass, List<ExpressionFieldMapper> expressionsFieldMapper, 
-			Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, Cache transactionCache,
-			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly)
-			throws Exception;
+	public EntityHandler createNewEntityHandler(Class<?> resultClass, List<ExpressionFieldMapper> expressionsFieldMapper,
+			Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, Cache transactionCache, boolean allowDuplicateObjects,
+			Object objectToRefresh, int firstResult, int maxResults, boolean readOnly, LockOptions lockOptions) throws Exception;
 
 	public boolean isProxyObject(Object object) throws Exception;
 
@@ -286,5 +274,7 @@ public interface SQLSession {
 	public void clear() throws Exception;
 
 	public void executeDDL(String ddl) throws Exception;
+	
+	public String applyLock(String sql, Class<?> resultClass, LockOptions lockOptions) throws Exception;
 
 }

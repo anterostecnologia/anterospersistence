@@ -17,14 +17,14 @@ package br.com.anteros.persistence.metadata.configuration;
 
 import br.com.anteros.persistence.metadata.annotation.NamedQuery;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
-import br.com.anteros.persistence.session.lock.type.LockModeType;
+import br.com.anteros.persistence.session.lock.LockMode;
 
 public class NamedQueryConfiguration {
 
 	private String name;
 	private String query;
 	private CallableType callableType;
-	private LockModeType lockMode;
+	private LockMode lockMode;
 	private Class<?> resultClass;
 
 	public NamedQueryConfiguration() {
@@ -69,11 +69,11 @@ public class NamedQueryConfiguration {
 		return this;
 	}
 
-	public LockModeType getLockMode() {
+	public LockMode getLockMode() {
 		return lockMode;
 	}
 
-	public NamedQueryConfiguration lockMode(LockModeType lockMode) {
+	public NamedQueryConfiguration lockMode(LockMode lockMode) {
 		this.lockMode = lockMode;
 		return this;
 	}

@@ -194,7 +194,7 @@ public class CollectionExpressionFieldMapper extends ExpressionFieldMapper {
 		boolean appendSeparator = false;
 		for (String aliasColumnName : aliasPrimaryKeyColumns) {
 			/*
-			 * Busca indice da coluna dentro do resultSet
+			 * Busca índice da coluna dentro do resultSet
 			 */
 			index = resultSet.findColumn(aliasColumnName);
 			if (index < 0) {
@@ -215,10 +215,7 @@ public class CollectionExpressionFieldMapper extends ExpressionFieldMapper {
 		/*
 		 * Retorna o chave única. Se for uma string "null" retorna como nula
 		 */
-		String result = uniqueIdTemp.toString();
-		if (result.equals("null"))
-			return null;
-		return result;
+		return (uniqueIdTemp.toString().equals("null") ? null : uniqueIdTemp.toString());
 	}
 
 	@Override

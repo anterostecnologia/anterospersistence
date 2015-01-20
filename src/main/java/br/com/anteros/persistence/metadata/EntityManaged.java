@@ -7,6 +7,7 @@ import java.util.Set;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.metadata.type.EntityStatus;
 import br.com.anteros.persistence.session.SQLSession;
+import br.com.anteros.persistence.session.lock.LockMode;
 
 public class EntityManaged {
 	private EntityCache entityCache;
@@ -18,6 +19,7 @@ public class EntityManaged {
 	private Object oldVersion;
 	private Object currentVersion;
 	private boolean newEntity;
+	private LockMode lockMode = LockMode.NONE;
 
 	public EntityManaged(EntityCache entityCache) {
 		this.entityCache = entityCache;
@@ -139,6 +141,14 @@ public class EntityManaged {
 		this.setOriginalVersion(this.getCurrentVersion());
 		this.setCurrentVersion(null);
 		this.setNewEntity(false);
+	}
+
+	public LockMode getLockMode() {
+		return lockMode;
+	}
+
+	public void setLockMode(LockMode lockMode) {
+		this.lockMode = lockMode;
 	}
 
 }

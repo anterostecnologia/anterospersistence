@@ -21,11 +21,12 @@ import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.cache.Cache;
+import br.com.anteros.persistence.session.lock.LockOptions;
 
 public interface LazyLoadFactory {
 
 	public Object createProxy(SQLSession session, Object targetObject, DescriptionField descriptionField, EntityCache targetEntityCache,
-			Map<String, Object> columnKeyValues, Cache transactionCache) throws Exception;
+			Map<String, Object> columnKeyValues, Cache transactionCache, LockOptions lockOptions) throws Exception;
 	
 	public boolean proxyIsInitialized(Object object) throws Exception;
 	

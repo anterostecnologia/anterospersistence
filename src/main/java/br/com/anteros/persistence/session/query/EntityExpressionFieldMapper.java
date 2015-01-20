@@ -151,7 +151,9 @@ public class EntityExpressionFieldMapper extends ExpressionFieldMapper {
 
 	/**
 	 * Retorna a chave única do objeto buscando os valores no resultSet.
-	 * @param resultSet Resultado do SQL
+	 * 
+	 * @param resultSet
+	 *            Resultado do SQL
 	 * @return Chave única
 	 * @throws SQLException
 	 */
@@ -166,8 +168,8 @@ public class EntityExpressionFieldMapper extends ExpressionFieldMapper {
 			index = resultSet.findColumn(aliasColumnName);
 			if (index < 0) {
 				/*
-				 * Esta exception não deverá ocorrer nunca pois as colunas estão sendo parseadas pela análise do SQL.
-				 * Se isto ocorrer pode ser um erro na análise.
+				 * Esta exception não deverá ocorrer nunca pois as colunas estão sendo parseadas pela análise do SQL. Se
+				 * isto ocorrer pode ser um erro na análise.
 				 */
 				throw new SQLException("NÃO ACHOU COLUNA " + aliasColumnName);
 			}
@@ -182,10 +184,7 @@ public class EntityExpressionFieldMapper extends ExpressionFieldMapper {
 		/*
 		 * Retorna o chave única. Se for uma string "null" retorna como nula
 		 */
-		String result = uniqueIdTemp.toString();
-		if (result.equals("null"))
-			return null;
-		return result;
+		return (uniqueIdTemp.toString().equals("null") ? null : uniqueIdTemp.toString());
 	}
 
 	@Override

@@ -54,7 +54,8 @@ import br.com.anteros.persistence.session.SQLSessionResult;
 import br.com.anteros.persistence.session.cache.Cache;
 import br.com.anteros.persistence.session.cache.PersistenceMetadataCache;
 import br.com.anteros.persistence.session.cache.SQLCache;
-import br.com.anteros.persistence.session.lock.type.LockModeType;
+import br.com.anteros.persistence.session.lock.LockMode;
+import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyzer;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyzerException;
@@ -84,12 +85,11 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	public static int FIRST_RECORD = 0;
 	protected int timeOut = 0;
 	private String namedQuery;
-	protected LockModeType lockMode;
+	protected LockOptions lockOptions = new LockOptions(LockMode.NONE);
 	protected boolean allowDuplicateObjects = false;
 	private int firstResult;
 	private int maxResults;
 	private boolean readOnly = false;
-	private int amountOfInstantiatedObjects = 0;
 
 	public SQLQueryImpl(SQLSession session) {
 		this.session = session;
@@ -435,6 +435,11 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		}
 
 		SQLCache transactionCache = new SQLCache();
+		
+		String parsedSql = analyzerResult.getParsedSql();
+		
+		if (readOnly)
+			lockOptions = LockOptions.NONE;
 
 		try {
 			if (entityCache == null)
@@ -444,20 +449,23 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 					throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + getResultClass().getName()
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 				}
+				
+				parsedSql = session.applyLock(parsedSql, resultClass, lockOptions);
+				
 				handler = session.createNewEntityHandler(getResultClass(), analyzerResult.getExpressionsFieldMapper(),
 						analyzerResult.getColumnAliases(), transactionCache, allowDuplicateObjects, objectToRefresh, firstResult, maxResults,
-						readOnly);
+						readOnly, lockOptions);
 			}
 
 			if (this.parameters.size() > 0)
-				result = (List) session.getRunner().query(session.getConnection(), analyzerResult.getParsedSql(), handler,
+				result = (List) session.getRunner().query(session.getConnection(), parsedSql, handler,
 						parameters.values().toArray(), showSql, formatSql, timeOut, session.getListeners(), session.clientId());
 			else if (this.namedParameters.size() > 0)
-				result = (List) session.getRunner().query(session.getConnection(), analyzerResult.getParsedSql(), handler,
+				result = (List) session.getRunner().query(session.getConnection(), parsedSql, handler,
 						namedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql, timeOut, session.getListeners(),
 						session.clientId());
 			else
-				result = (List) session.getRunner().query(session.getConnection(), analyzerResult.getParsedSql(), handler, showSql, formatSql,
+				result = (List) session.getRunner().query(session.getConnection(), parsedSql, handler, showSql, formatSql,
 						timeOut, session.getListeners(), session.clientId());
 
 		} finally {
@@ -1168,7 +1176,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			}
 
 			handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressionsFieldMapper(), analyzerResult.getColumnAliases(),
-					transactionCache, false, null, firstResult, maxResults, readOnly);
+					transactionCache, false, null, firstResult, maxResults, readOnly, lockOptions);
 			sql = analyzerResult.getParsedSql();
 		}
 
@@ -1203,7 +1211,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				}
 				sql = analyzerResult.getParsedSql();
 				handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressionsFieldMapper(), analyzerResult.getColumnAliases(),
-						transactionCache, false, null, firstResult, maxResults, readOnly);
+						transactionCache, false, null, firstResult, maxResults, readOnly, lockOptions);
 			}
 
 			result = (List) session.getRunner().query(session.getConnection(), sql, handler, parameter, showSql, formatSql, 0,
@@ -1290,6 +1298,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect()).analyze(sql, getResultClass());
 			PersistenceMetadataCache.getInstance().put(getResultClass().getName() + ":" + sql, analyzerResult);
 		}
+		
+		String parsedSql = analyzerResult.getParsedSql();
 
 		SQLCache transactionCache = new SQLCache();
 		try {
@@ -1300,19 +1310,20 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 					throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + getResultClass().getName()
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta. SQL-> " + sql);
 				}
+				parsedSql = session.getDialect().applyLock(parsedSql, lockOptions);
 				handler = session.createNewEntityHandler(getResultClass(), analyzerResult.getExpressionsFieldMapper(),
-						analyzerResult.getColumnAliases(), transactionCache, allowDuplicateObjects, null, firstResult, maxResults, readOnly);
+						analyzerResult.getColumnAliases(), transactionCache, allowDuplicateObjects, null, firstResult, maxResults, readOnly, lockOptions);
 			}
 
 			if (this.parameters.size() > 0)
-				result = session.getRunner().queryWithResultSet(session.getConnection(), analyzerResult.getParsedSql(), handler,
+				result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, handler,
 						parameters.values().toArray(), showSql, formatSql, timeOut, session.getListeners(), session.clientId());
 			else if (this.namedParameters.size() > 0)
-				result = session.getRunner().queryWithResultSet(session.getConnection(), analyzerResult.getParsedSql(), handler,
+				result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, handler,
 						namedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql, timeOut, session.getListeners(),
 						session.clientId());
 			else
-				result = session.getRunner().queryWithResultSet(session.getConnection(), analyzerResult.getParsedSql(), handler,
+				result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, handler,
 						new NamedParameterParserResult[] {}, showSql, formatSql, timeOut, session.getListeners(), session.clientId());
 
 		} finally {
@@ -1323,13 +1334,13 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		return result;
 	}
 
-	public TypedSQLQuery<T> setLockMode(LockModeType lockMode) {
-		this.lockMode = lockMode;
+	public TypedSQLQuery<T> setLockOptions(LockOptions lockOptions) {
+		this.lockOptions = lockOptions;
 		return this;
 	}
 
-	public LockModeType getLockMode() {
-		return lockMode;
+	public LockOptions getLockOptions() {
+		return lockOptions;
 	}
 
 	@Override
@@ -1422,8 +1433,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	}
 
 	@Override
-	public int getAmountOfInstantiatedObjects() {
-		return amountOfInstantiatedObjects;
+	public SQLQuery setLockMode(String alias, LockMode lockMode) {
+		return null;
 	}
 
 }
