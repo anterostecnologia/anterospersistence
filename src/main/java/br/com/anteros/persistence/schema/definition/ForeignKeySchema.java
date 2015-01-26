@@ -17,14 +17,17 @@ package br.com.anteros.persistence.schema.definition;
 
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import br.com.anteros.persistence.schema.exception.SchemaGeneratorException;
 import br.com.anteros.persistence.session.SQLSession;
 
 public class ForeignKeySchema extends ConstraintSchema {
 
-	protected final List<ColumnSchema> columnsReferences = new ArrayList<ColumnSchema>();
+	protected final Set<ColumnSchema> columnsReferences = new LinkedHashSet<ColumnSchema>();
 	protected TableSchema referencedTable;
 	protected boolean cascadeOnDelete;
 
@@ -67,8 +70,8 @@ public class ForeignKeySchema extends ConstraintSchema {
 		columnsReferences.add(referencedColumn);
 	}
 
-	public List<ColumnSchema> getColumnsReferences() {
-		return columnsReferences;
+	public Set<ColumnSchema> getColumnsReferences() {
+		return Collections.unmodifiableSet(columnsReferences);
 	}
 
 	public TableSchema getReferencedTable() {

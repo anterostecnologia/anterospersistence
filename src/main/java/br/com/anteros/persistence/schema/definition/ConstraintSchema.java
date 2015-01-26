@@ -15,12 +15,14 @@
  *******************************************************************************/
 package br.com.anteros.persistence.schema.definition;
 
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public abstract class ConstraintSchema extends ObjectSchema {
 
-	protected final List<ColumnSchema> columns = new ArrayList<ColumnSchema>();
+	protected final Set<ColumnSchema> columns = new LinkedHashSet<ColumnSchema>();
 	protected TableSchema table;
 	
 	public ConstraintSchema() {
@@ -32,12 +34,12 @@ public abstract class ConstraintSchema extends ObjectSchema {
     }
     
 
-    public void addColumns(List<ColumnSchema> columns) {
+    public void addColumns(Collection<ColumnSchema> columns) {
         this.columns.addAll(columns);
     }
 
 	
-	public List<ColumnSchema> getColumns() {
+	public Set<ColumnSchema> getColumns() {
 		return columns;
 	}
 

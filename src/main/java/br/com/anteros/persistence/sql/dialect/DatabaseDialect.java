@@ -474,7 +474,7 @@ public abstract class DatabaseDialect {
 			schemaWriter.write("CONSTRAINT " + getQuoted("PK_" + tableSchema.getName()) + " ");
 		}
 		schemaWriter.write("PRIMARY KEY (");
-		List<ColumnSchema> keyColumns = tableSchema.getPrimaryKey().getColumns();
+		Set<ColumnSchema> keyColumns = tableSchema.getPrimaryKey().getColumns();
 		for (Iterator<ColumnSchema> iterator = keyColumns.iterator(); iterator.hasNext();) {
 			schemaWriter.write(getQuoted(iterator.next().getName()));
 			if (iterator.hasNext()) {
