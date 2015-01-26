@@ -3,13 +3,13 @@
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
- ******************************************************************************/
+ *******************************************************************************/
 package br.com.anteros.persistence.sql.dialect;
 
 import java.io.ByteArrayInputStream;
@@ -487,44 +487,29 @@ public class OracleDialect extends DatabaseDialect {
 	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception {
 		final int errorCode = extractErrorCode(ex);
 
-		// lock timeouts ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		if (errorCode == 30006) {
-			// ORA-30006: resource busy; acquire with WAIT timeout expired
-			throw new LockTimeoutException(msg, ex, sql);
-		} else if (errorCode == 54) {
-			// ORA-00054: resource busy and acquire with NOWAIT specified or timeout expired
-			throw new LockTimeoutException(msg, ex, sql);
-		} else if (4021 == errorCode) {
-			// ORA-04021 timeout occurred while waiting to lock object
-			throw new LockTimeoutException(msg, ex, sql);
+		if (errorCode == 30006) { // ORA-30006: resource busy; acquire with WAIT timeout expired
+			return new LockTimeoutException(msg, ex, sql);
+		} else if (errorCode == 54) { // ORA-00054: resource busy and acquire with NOWAIT specified or timeout expired
+			return new LockTimeoutException(msg, ex, sql);
+		} else if (4021 == errorCode) { // ORA-04021 timeout occurred while waiting to lock object
+			return new LockTimeoutException(msg, ex, sql);
 		}
 
-		// deadlocks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		if (60 == errorCode) {
-			// ORA-00060: deadlock detected while waiting for resource
+		if (60 == errorCode) { // ORA-00060: deadlock detected while waiting for resource
 			return new LockAcquisitionException(msg, ex, sql);
-		} else if (4020 == errorCode) {
-			// ORA-04020 deadlock detected while trying to lock object
+		} else if (4020 == errorCode) { // ORA-04020 deadlock detected while trying to lock object
 			return new LockAcquisitionException(msg, ex, sql);
 		}
 
-		// query cancelled ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		if (1013 == errorCode) {
-			// ORA-01013: user requested cancel of current operation
-			throw new QueryTimeoutException(msg, ex, sql);
+		if (1013 == errorCode) { // ORA-01013: user requested cancel of current operation
+			return new QueryTimeoutException(msg, ex, sql);
 		}
 
-		// data integrity violation ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		if (1407 == errorCode) {
-			// ORA-01407: cannot update column to NULL
+		if (1407 == errorCode) { // ORA-01407: cannot update column to NULL
 			return new ConstraintViolationException(msg, ex, sql, extractConstraintName(ex));
 		}
 
-		return null;
+		return new SQLSessionException(msg, ex, sql);
 
 	}
 
@@ -542,15 +527,38 @@ public class OracleDialect extends DatabaseDialect {
 	@Override
 	public String applyLock(String sql, LockOptions lockOptions) {
 		LockMode lockMode = lockOptions.getLockMode();
+		String aliases = "";
+		if (lockOptions.getAliasesToLock() != null) {
+			boolean appendDelimiter = false;
+			for (String alias : lockOptions.getAliasesToLock()) {
+				if (appendDelimiter)
+					aliases += ", ";
+				aliases += alias;
+				appendDelimiter = true;
+			}
+			if (!(StringUtils.isEmpty(aliases)))
+				aliases = " OF "+aliases;
+		}
 		switch (lockMode) {
 		case PESSIMISTIC_READ:
-			return sql + " LOCK IN SHARE MODE " + (lockOptions.getTimeOut() == LockOptions.NO_WAIT ? " NOWAIT " : "");
+			return sql
+					+ " FOR UPDATE "+aliases
+					+ (lockOptions.getTimeOut() >= LockOptions.NO_WAIT ? (lockOptions.getTimeOut() > 0 ? " WAIT " + lockOptions.getTimeOut()
+							: " NOWAIT ") : "");
 		case PESSIMISTIC_WRITE:
 		case PESSIMISTIC_FORCE_INCREMENT:
-			return sql + " FOR UPDATE " + (lockOptions.getTimeOut() == LockOptions.NO_WAIT ? " NOWAIT" : "");
+			return sql
+					+ " FOR UPDATE "+aliases
+					+ (lockOptions.getTimeOut() >= LockOptions.NO_WAIT ? (lockOptions.getTimeOut() > 0 ? " WAIT " + lockOptions.getTimeOut()
+							: " NOWAIT ") : "");
 		default:
 			return sql;
 		}
+	}
+
+	@Override
+	public String getSetLockTimeoutString(int secondsTimeOut) {
+		return null;
 	}
 
 }

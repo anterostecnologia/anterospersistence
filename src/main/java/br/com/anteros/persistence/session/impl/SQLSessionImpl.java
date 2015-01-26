@@ -1,15 +1,18 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * 
+ *  
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
- * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
- ******************************************************************************/
+ *  
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package br.com.anteros.persistence.session.impl;
 
 import java.sql.Connection;
@@ -23,6 +26,7 @@ import java.util.Set;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.handler.EntityHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
@@ -41,9 +45,9 @@ import br.com.anteros.persistence.session.cache.Cache;
 import br.com.anteros.persistence.session.context.SQLPersistenceContext;
 import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.session.lock.LockManager;
+import br.com.anteros.persistence.session.lock.LockManagerJDBC;
 import br.com.anteros.persistence.session.lock.LockMode;
 import br.com.anteros.persistence.session.lock.LockOptions;
-import br.com.anteros.persistence.session.lock.OptimisticLockException;
 import br.com.anteros.persistence.session.query.AbstractSQLRunner;
 import br.com.anteros.persistence.session.query.ExpressionFieldMapper;
 import br.com.anteros.persistence.session.query.SQLQuery;
@@ -80,7 +84,7 @@ public class SQLSessionImpl implements SQLSession {
 	private String clientId;
 
 	public SQLSessionImpl(SQLSessionFactory sessionFactory, Connection connection, EntityCacheManager entityCacheManager,
-			AbstractSQLRunner queryRunner, DatabaseDialect dialect, boolean showSql, boolean formatSql, int queryTimeout,
+			AbstractSQLRunner queryRunner, DatabaseDialect dialect, boolean showSql, boolean formatSql, int queryTimeout, int lockTimeout,
 			TransactionFactory transactionFactory) throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.connection = connection;
@@ -95,6 +99,12 @@ public class SQLSessionImpl implements SQLSession {
 		this.queryRunner = queryRunner;
 		this.queryTimeout = queryTimeout;
 		this.transactionFactory = transactionFactory;
+		this.lockManager = new LockManagerJDBC();
+		
+		String lockTimeoutSql = dialect.getSetLockTimeoutString(lockTimeout);
+		if (!StringUtils.isEmpty(lockTimeoutSql)){
+			connection.prepareStatement(lockTimeoutSql).execute();
+		}
 	}
 
 	public long update(String sql) throws Exception {
@@ -656,38 +666,17 @@ public class SQLSessionImpl implements SQLSession {
 
 	@Override
 	public SQLQuery createNamedQuery(String name) throws Exception {
-		return createNamedQuery(name, new LockOptions().setLockMode(LockMode.NONE));
-	}
-
-	@Override
-	public SQLQuery createNamedQuery(String name, Object parameters) throws Exception {
-		return createNamedQuery(name, parameters, new LockOptions().setLockMode(LockMode.NONE));
-	}
-
-	@Override
-	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass) throws Exception {
-		return createNamedQuery(name, resultClass, new LockOptions().setLockMode(LockMode.NONE));
-	}
-
-	@Override
-	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters) throws Exception {
-		return createNamedQuery(name, resultClass, parameters, new LockOptions().setLockMode(LockMode.NONE));
-	}
-
-	@Override
-	public SQLQuery createNamedQuery(String name, LockOptions lockOptions) throws Exception {
 		errorIfClosed();
 		SQLQuery result = new SQLQueryImpl(this);
 		result.namedQuery(name);
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
 		result.formatSql(formatSql);
-		result.setLockOptions(lockOptions);
 		return result;
 	}
 
 	@Override
-	public SQLQuery createNamedQuery(String name, Object parameters, LockOptions lockOptions) throws Exception {
+	public SQLQuery createNamedQuery(String name, Object parameters) throws Exception {
 		errorIfClosed();
 		SQLQuery result = new SQLQueryImpl(this);
 		result.namedQuery(name);
@@ -695,22 +684,19 @@ public class SQLSessionImpl implements SQLSession {
 		result.timeOut(queryTimeout);
 		result.showSql(showSql);
 		result.formatSql(formatSql);
-		result.setLockOptions(lockOptions);
 		return result;
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, LockOptions lockOptions) throws Exception {
+	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass) throws Exception {
 		errorIfClosed();
-		return new SQLQueryImpl<T>(this).resultClass(resultClass).timeOut(queryTimeout).namedQuery(name).showSql(showSql).formatSql(formatSql)
-				.setLockOptions(lockOptions);
+		return new SQLQueryImpl<T>(this).resultClass(resultClass).timeOut(queryTimeout).namedQuery(name).showSql(showSql).formatSql(formatSql);
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters, LockOptions lockOptions) throws Exception {
+	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters) throws Exception {
 		errorIfClosed();
-		return new SQLQueryImpl<T>(this).resultClass(resultClass).namedQuery(name).setParameters(parameters).showSql(showSql).formatSql(formatSql)
-				.setLockOptions(lockOptions);
+		return new SQLQueryImpl<T>(this).resultClass(resultClass).namedQuery(name).setParameters(parameters).showSql(showSql).formatSql(formatSql);
 	}
 
 	@Override

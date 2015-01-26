@@ -1,18 +1,18 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- * 
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- ******************************************************************************/
+ *******************************************************************************/
 package br.com.anteros.persistence.sql.dialect;
 
 import java.io.Writer;
@@ -363,12 +363,17 @@ public class MySQLDialect extends DatabaseDialect {
 		LockMode lockMode = lockOptions.getLockMode();
 		switch (lockMode) {
 		case PESSIMISTIC_READ:
-			return sql + " LOCK IN SHARE MODE " + (lockOptions.getTimeOut() == LockOptions.NO_WAIT ? " NOWAIT " : "");
+			return sql + " LOCK IN SHARE MODE ";
 		case PESSIMISTIC_WRITE:
 		case PESSIMISTIC_FORCE_INCREMENT:
-			return sql + " FOR UPDATE " + (lockOptions.getTimeOut() == LockOptions.NO_WAIT ? " NOWAIT" : "");
+			return sql + " FOR UPDATE ";
 		default:
 			return sql;
 		}
+	}
+
+	@Override
+	public String getSetLockTimeoutString(int secondsTimeOut) {
+		return "set innodb_lock_wait_timeout  = "+secondsTimeOut;
 	}
 }

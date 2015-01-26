@@ -1,3 +1,15 @@
+/*******************************************************************************
+ * Copyright 2012 Anteros Tecnologia
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *******************************************************************************/
 package br.com.anteros.persistence.handler;
 
 import java.sql.ResultSet;
@@ -517,8 +529,17 @@ public class EntityHandler implements ResultSetHandler {
 									 * Cria a query e busca novamente o objeto completo
 									 */
 									SQLQuery query = session.createQuery("");
-									if (lockOptions.getLockScope() == LockScope.EXTENDED)
-										query.setLockOptions(lockOptions);
+									/*
+									 * Extende o lock para as coleções e tabelas de junção
+									 */
+									if ((descriptionField.isCollection() || descriptionField.isJoinTable())
+											&& (lockOptions.getLockScope() == LockScope.EXTENDED)) {
+										LockOptions lockOpts = LockOptions.copy(lockOptions, new LockOptions());
+										lockOpts.clearAliasesToLock();
+										query.setLockOptions(lockOpts);
+									} else
+										query.setLockOptions(LockOptions.NONE);
+
 									result = query.loadData(targetEntityCache, targetObject, descriptionField, columnKeyValue, transactionCache);
 
 									EntityCache fieldentEntityCache = session.getEntityCacheManager()
@@ -530,7 +551,18 @@ public class EntityHandler implements ResultSetHandler {
 									 * Busca o objeto que será atribuido ao campo do objeto alvo
 									 */
 									SQLQuery query = session.createQuery("");
-									query.setLockOptions((lockOptions.getLockScope() == LockScope.EXTENDED ? lockOptions : LockOptions.NONE));
+
+									/*
+									 * Extende o lock para as coleções e tabelas de junção
+									 */
+									if ((descriptionField.isCollection() || descriptionField.isJoinTable())
+											&& (lockOptions.getLockScope() == LockScope.EXTENDED)) {
+										LockOptions lockOpts = LockOptions.copy(lockOptions, new LockOptions());
+										lockOpts.clearAliasesToLock();
+										query.setLockOptions(lockOptions);
+									} else
+										query.setLockOptions(LockOptions.NONE);
+
 									query.setReadOnly(readOnly);
 									result = query.loadData(targetEntityCache, targetObject, descriptionField, columnKeyValue, transactionCache);
 								}
@@ -550,8 +582,10 @@ public class EntityHandler implements ResultSetHandler {
 							/*
 							 * Se for LAZY cria apenas o proxy.
 							 */
+							LockOptions lockOpts = LockOptions.copy(lockOptions, new LockOptions());
+							lockOpts.clearAliasesToLock();
 							Object newObject = proxyFactory.createProxy(session, targetObject, descriptionField, targetEntityCache, columnKeyValue,
-									transactionCache, (lockOptions.getLockScope() == LockScope.EXTENDED ? lockOptions : LockOptions.NONE));
+									transactionCache, (lockOptions.getLockScope() == LockScope.EXTENDED ? lockOpts : LockOptions.NONE));
 							descriptionField.getField().set(targetObject, newObject);
 
 							if (entityManaged.getStatus() != EntityStatus.READ_ONLY) {
@@ -567,7 +601,7 @@ public class EntityHandler implements ResultSetHandler {
 	}
 
 	/**
-	 * Verifica a necessidade de um determinado campo em um entidade de ser processado para criar o objeto. No caso de
+	 * Verifica se um determinado campo em uma entidade tem necessidade de ser processado para criar o objeto. No caso de
 	 * chaves estrangeiras que não foram trazidas no SQL e objetos com chave parcial devem ser considerados como
 	 * necessário criar o objeto do campo novamente.
 	 * 
@@ -576,7 +610,7 @@ public class EntityHandler implements ResultSetHandler {
 	 * @param descriptionField
 	 *            Campo
 	 * @param assignedValue
-	 *            Valor atribuido ao campo atual
+	 *            Valor atribuído ao campo atual
 	 * @return Verdadeiro se há necessidade de criar o objeto e atribuir ao campo
 	 * @throws Exception
 	 */

@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2012 Anteros Tecnologia
+ *  
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *  
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package br.com.anteros.persistence.session.repository.impl;
 
 import java.io.Serializable;
@@ -20,6 +35,7 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionNamedQuery;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionFactory;
+import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.query.SQLQueryException;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
 import br.com.anteros.persistence.session.repository.Page;
@@ -28,8 +44,7 @@ import br.com.anteros.persistence.session.repository.SQLRepository;
 import br.com.anteros.persistence.session.repository.SQLRepositoryException;
 import br.com.anteros.persistence.transaction.Transaction;
 
-public class GenericSQLRepository<T, ID extends Serializable> implements
-		SQLRepository<T, ID> {
+public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepository<T, ID> {
 
 	private static final EntityPathResolver DEFAULT_ENTITY_PATH_RESOLVER = SimpleEntityPathResolver.INSTANCE;
 	public static final String COUNT_QUERY_STRING = "select count(*) from %s x";
@@ -43,8 +58,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 
 	public GenericSQLRepository(SQLSession session) {
 		this.session = session;
-		Class<?>[] typeArguments = TypeResolver.resolveRawArguments(
-				GenericSQLRepository.class, getClass());
+		Class<?>[] typeArguments = TypeResolver.resolveRawArguments(GenericSQLRepository.class, getClass());
 		if (typeArguments != null) {
 			this.persistentClass = typeArguments[0];
 		}
@@ -52,8 +66,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 
 	public GenericSQLRepository(SQLSessionFactory sessionFactory) {
 		this.sessionFactory = sessionFactory;
-		Class<?>[] typeArguments = TypeResolver.resolveRawArguments(
-				GenericSQLRepository.class, getClass());
+		Class<?>[] typeArguments = TypeResolver.resolveRawArguments(GenericSQLRepository.class, getClass());
 		if (typeArguments != null) {
 			this.persistentClass = typeArguments[0];
 		}
@@ -111,7 +124,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 	}
 
 	@Override
-	public T findOne(ID id, boolean readOnly) {
+	public T findOne(ID id, LockOptions lockOptions, boolean readOnly) {
 		Assert.notNull(id, "O id não pode ser nulo.");
 
 		Assert.notNull(
@@ -119,14 +132,14 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 				"A classe de persistência não foi informada. Verifique se usou a classe GenericSQLRepository diretamente, se usou será necessário passar a classe de persistência como parâmetro. Se preferir pode extender a classe GenericSQLRepository e definir os parâmetros do genérics da classe.");
 
 		try {
-			return (T) getSession().find(persistentClass, id,readOnly);
+			return (T) getSession().find(persistentClass, id, lockOptions, readOnly);
 		} catch (Exception e) {
 			throw new SQLRepositoryException(e);
 		}
 	}
 
 	@Override
-	public T findOne(String sql, boolean readOnly) {
+	public T findOne(String sql, LockOptions lockOptions, boolean readOnly) {
 		List<T> result = find(sql, readOnly);
 		if ((result != null) && (result.size() > 0))
 			return result.get(0);
@@ -134,7 +147,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 	}
 
 	@Override
-	public T findOne(String sql, Object parameters, boolean readOnly) {
+	public T findOne(String sql, Object parameters, LockOptions lockOptions, boolean readOnly) {
 		List<T> result = find(sql, parameters, readOnly);
 		if ((result != null) && (result.size() > 0))
 			return result.get(0);
@@ -153,15 +166,14 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 	}
 
 	@Override
-	public List<T> findAll(boolean readOnly) {
+	public List<T> findAll(LockOptions lockOptions, boolean readOnly) {
 		Assert.notNull(
 				persistentClass,
 				"A classe de persistência não foi informada. Verifique se usou a classe GenericSQLRepository diretamente, se usou será necessário passar a classe de persistência como parâmetro. Se preferir pode extender a classe GenericSQLRepository e definir os parâmetros do genérics da classe.");
 
 		try {
-			TypedSQLQuery<?> query = getSession().createQuery(
-					"select * from " + getEntityCache().getTableName(),
-					persistentClass);
+			TypedSQLQuery<?> query = getSession().createQuery("select * from " + getEntityCache().getTableName(), persistentClass);
+			query.setLockOptions(lockOptions);
 			query.setReadOnly(readOnly);
 			return (List<T>) query.getResultList();
 		} catch (Exception e) {
@@ -174,12 +186,11 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 				persistentClass,
 				"A classe de persistência não foi informada. Verifique se usou a classe GenericSQLRepository diretamente, se usou será necessário passar a classe de persistência como parâmetro. Se preferir pode extender a classe GenericSQLRepository e definir os parâmetros do genérics da classe.");
 
-		return getSession().getEntityCacheManager().getEntityCache(
-				persistentClass);
+		return getSession().getEntityCacheManager().getEntityCache(persistentClass);
 	}
 
 	@Override
-	public Page<T> findAll(Pageable pageable, boolean readOnly) {
+	public Page<T> findAll(Pageable pageable, LockOptions lockOptions, boolean readOnly) {
 
 		if (null == pageable) {
 			return new PageImpl<T>(findAll());
@@ -187,17 +198,15 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 
 		TypedSQLQuery<?> query;
 		try {
-			query = getSession().createQuery(
-					"select * from " + getEntityCache().getTableName(),
-					persistentClass);
+			query = getSession().createQuery("select * from " + getEntityCache().getTableName(), persistentClass);
 
 			query.setFirstResult(pageable.getOffset());
 			query.setMaxResults(pageable.getPageSize());
 			query.setReadOnly(readOnly);
+			query.setLockOptions(lockOptions);
 
 			Long total = count();
-			List<T> content = (List<T>) (total > pageable.getOffset() ? query
-					.getResultList() : Collections.<T> emptyList());
+			List<T> content = (List<T>) (total > pageable.getOffset() ? query.getResultList() : Collections.<T> emptyList());
 
 			return new PageImpl<T>(content, pageable, total);
 		} catch (Exception e) {
@@ -206,10 +215,11 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 	}
 
 	@Override
-	public List<T> find(String sql,boolean readOnly) {
+	public List<T> find(String sql, LockOptions lockOptions, boolean readOnly) {
 		try {
 			TypedSQLQuery<?> query = getSession().createQuery(sql, persistentClass);
 			query.setReadOnly(readOnly);
+			query.setLockOptions(lockOptions);
 			return (List<T>) query.getResultList();
 		} catch (Exception e) {
 			throw new SQLRepositoryException(e);
@@ -217,7 +227,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 	}
 
 	@Override
-	public Page<T> find(String sql, Pageable pageable, boolean readOnly) {
+	public Page<T> find(String sql, Pageable pageable, LockOptions lockOptions, boolean readOnly) {
 		if (null == pageable) {
 			return new PageImpl<T>(find(sql));
 		}
@@ -228,10 +238,10 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 			query.setFirstResult(pageable.getOffset());
 			query.setMaxResults(pageable.getPageSize());
 			query.setReadOnly(readOnly);
+			query.setLockOptions(lockOptions);
 
 			Long total = doCount(getCountQueryString("(" + sql + ")"));
-			List<T> content = (List<T>) (total > pageable.getOffset() ? query
-					.getResultList() : Collections.<T> emptyList());
+			List<T> content = (List<T>) (total > pageable.getOffset() ? query.getResultList() : Collections.<T> emptyList());
 
 			return new PageImpl<T>(content, pageable, total);
 		} catch (Exception e) {
@@ -240,11 +250,11 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 	}
 
 	@Override
-	public List<T> find(String sql, Object parameters, boolean readOnly) {
+	public List<T> find(String sql, Object parameters, LockOptions lockOptions, boolean readOnly) {
 		try {
-			TypedSQLQuery<?> query = getSession().createQuery(sql, persistentClass,
-					parameters);
+			TypedSQLQuery<?> query = getSession().createQuery(sql, persistentClass, parameters);
 			query.setReadOnly(readOnly);
+			query.setLockOptions(lockOptions);
 			return (List<T>) query.getResultList();
 		} catch (Exception e) {
 			throw new SQLRepositoryException(e);
@@ -252,7 +262,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 	}
 
 	@Override
-	public Page<T> find(String sql, Object parameters, Pageable pageable, boolean readOnly) {
+	public Page<T> find(String sql, Object parameters, Pageable pageable, LockOptions lockOptions, boolean readOnly) {
 		if (null == pageable) {
 			return new PageImpl<T>(find(sql, parameters));
 		}
@@ -264,11 +274,9 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 			query.setMaxResults(pageable.getPageSize());
 			query.setParameters(parameters);
 			query.setReadOnly(readOnly);
-
-			Long total = doCount(getCountQueryString("(" + sql + ")"),
-					parameters);
-			List<T> content = (List<T>) (total > pageable.getOffset() ? query
-					.getResultList() : Collections.<T> emptyList());
+			query.setLockOptions(lockOptions);
+			Long total = doCount(getCountQueryString("(" + sql + ")"), parameters);
+			List<T> content = (List<T>) (total > pageable.getOffset() ? query.getResultList() : Collections.<T> emptyList());
 
 			return new PageImpl<T>(content, pageable, total);
 		} catch (Exception e) {
@@ -283,15 +291,11 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 				persistentClass,
 				"A classe de persistência não foi informada. Verifique se usou a classe GenericSQLRepository diretamente, se usou será necessário passar a classe de persistência como parâmetro. Se preferir pode extender a classe GenericSQLRepository e definir os parâmetros do genérics da classe.");
 
-		EntityCache cache = session.getEntityCacheManager().getEntityCache(
-				persistentClass);
-		DescriptionNamedQuery namedQuery = cache
-				.getDescriptionNamedQuery(queryName);
+		EntityCache cache = session.getEntityCacheManager().getEntityCache(persistentClass);
+		DescriptionNamedQuery namedQuery = cache.getDescriptionNamedQuery(queryName);
 		if (namedQuery == null)
-			throw new SQLQueryException("Query nomeada " + queryName
-					+ " não encontrada.");
-		String sql = namedQuery.getQuery();
-		return find(sql, readOnly);
+			throw new SQLQueryException("Query nomeada " + queryName + " não encontrada.");
+		return find(namedQuery.getQuery(),  namedQuery.getLockOptions(), readOnly);
 	}
 
 	@Override
@@ -301,53 +305,40 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 				persistentClass,
 				"A classe de persistência não foi informada. Verifique se usou a classe GenericSQLRepository diretamente, se usou será necessário passar a classe de persistência como parâmetro. Se preferir pode extender a classe GenericSQLRepository e definir os parâmetros do genérics da classe.");
 
-		EntityCache cache = session.getEntityCacheManager().getEntityCache(
-				persistentClass);
-		DescriptionNamedQuery namedQuery = cache
-				.getDescriptionNamedQuery(queryName);
+		EntityCache cache = session.getEntityCacheManager().getEntityCache(persistentClass);
+		DescriptionNamedQuery namedQuery = cache.getDescriptionNamedQuery(queryName);
 		if (namedQuery == null)
-			throw new SQLQueryException("Query nomeada " + queryName
-					+ " não encontrada.");
-		String sql = namedQuery.getQuery();
-		return find(sql, pageable, readOnly);
+			throw new SQLQueryException("Query nomeada " + queryName + " não encontrada.");
+		return find(namedQuery.getQuery(), pageable, namedQuery.getLockOptions(), readOnly);
 
 	}
 
 	@Override
-	public List<T> findByNamedQuery(String queryName, Object parameters, boolean readOnly) {
+	public List<T> findByNamedQuery(String queryName, Object parameters,  boolean readOnly) {
 		Assert.notNull(queryName, "O nome da query não pode ser nulo.");
 		Assert.notNull(
 				persistentClass,
 				"A classe de persistência não foi informada. Verifique se usou a classe GenericSQLRepository diretamente, se usou será necessário passar a classe de persistência como parâmetro. Se preferir pode extender a classe GenericSQLRepository e definir os parâmetros do genérics da classe.");
 
-		EntityCache cache = session.getEntityCacheManager().getEntityCache(
-				persistentClass);
-		DescriptionNamedQuery namedQuery = cache
-				.getDescriptionNamedQuery(queryName);
+		EntityCache cache = session.getEntityCacheManager().getEntityCache(persistentClass);
+		DescriptionNamedQuery namedQuery = cache.getDescriptionNamedQuery(queryName);
 		if (namedQuery == null)
-			throw new SQLQueryException("Query nomeada " + queryName
-					+ " não encontrada.");
-		String sql = namedQuery.getQuery();
-		return find(sql, parameters, readOnly);
+			throw new SQLQueryException("Query nomeada " + queryName + " não encontrada.");
+		return find(namedQuery.getQuery(), parameters, namedQuery.getLockOptions(), readOnly);
 	}
 
 	@Override
-	public Page<T> findByNamedQuery(String queryName, Object parameters,
-			Pageable pageable, boolean readOnly) {
+	public Page<T> findByNamedQuery(String queryName, Object parameters, Pageable pageable, boolean readOnly) {
 		Assert.notNull(queryName, "O nome da query não pode ser nulo.");
 		Assert.notNull(
 				persistentClass,
 				"A classe de persistência não foi informada. Verifique se usou a classe GenericSQLRepository diretamente, se usou será necessário passar a classe de persistência como parâmetro. Se preferir pode extender a classe GenericSQLRepository e definir os parâmetros do genérics da classe.");
 
-		EntityCache cache = session.getEntityCacheManager().getEntityCache(
-				persistentClass);
-		DescriptionNamedQuery namedQuery = cache
-				.getDescriptionNamedQuery(queryName);
+		EntityCache cache = session.getEntityCacheManager().getEntityCache(persistentClass);
+		DescriptionNamedQuery namedQuery = cache.getDescriptionNamedQuery(queryName);
 		if (namedQuery == null)
-			throw new SQLQueryException("Query nomeada " + queryName
-					+ " não encontrada.");
-		String sql = namedQuery.getQuery();
-		return find(sql, parameters, pageable, readOnly);
+			throw new SQLQueryException("Query nomeada " + queryName + " não encontrada.");
+		return find(namedQuery.getQuery(), parameters, pageable, namedQuery.getLockOptions(), readOnly);
 
 	}
 
@@ -362,15 +353,13 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 				"A classe de persistência não foi informada. Verifique se usou a classe GenericSQLRepository diretamente, se usou será necessário passar a classe de persistência como parâmetro. Se preferir pode extender a classe GenericSQLRepository e definir os parâmetros do genérics da classe.");
 
 		if (path == null)
-			this.path = (EntityPath<T>) DEFAULT_ENTITY_PATH_RESOLVER
-					.createPath(persistentClass);
+			this.path = (EntityPath<T>) DEFAULT_ENTITY_PATH_RESOLVER.createPath(persistentClass);
 		return path;
 	}
 
 	protected PathBuilder<T> getPathBuilder() {
 		if (builder == null)
-			this.builder = new PathBuilder<T>(getEntityPath().getType(),
-					path.getMetadata());
+			this.builder = new PathBuilder<T>(getEntityPath().getType(), path.getMetadata());
 		return builder;
 	}
 
@@ -395,15 +384,13 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 		query.offset(pageable.getOffset());
 		query.limit(pageable.getPageSize());
 
-		List<T> content = total > pageable.getOffset() ? query.list(path)
-				: Collections.<T> emptyList();
+		List<T> content = total > pageable.getOffset() ? query.list(path) : Collections.<T> emptyList();
 
 		return new PageImpl<T>(content, pageable, total);
 	}
 
 	@Override
-	public Page<T> findAll(Predicate predicate, Pageable pageable,
-			OrderSpecifier<?>... orders) {
+	public Page<T> findAll(Predicate predicate, Pageable pageable, OrderSpecifier<?>... orders) {
 		OSQLQuery countQuery = createQuery(predicate);
 		Long total = countQuery.count();
 
@@ -412,8 +399,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 		query.limit(pageable.getPageSize());
 		query.orderBy(orders);
 
-		List<T> content = total > pageable.getOffset() ? query.list(path)
-				: Collections.<T> emptyList();
+		List<T> content = total > pageable.getOffset() ? query.list(path) : Collections.<T> emptyList();
 
 		return new PageImpl<T>(content, pageable, total);
 	}
@@ -429,12 +415,11 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 				throw new SQLRepositoryException(e);
 			}
 		}
-		throw new SQLRepositoryException(
-				"Não foi configurado nenhuma SQLSession ou SQLSessionFactory para o repositório.");
+		throw new SQLRepositoryException("Não foi configurado nenhuma SQLSession ou SQLSessionFactory para o repositório.");
 	}
 
 	@Override
-	public void refresh(T entity) {
+	public void refresh(T entity, LockOptions lockOptions) {
 		try {
 			getSession().refresh(entity);
 		} catch (Exception e) {
@@ -461,8 +446,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 
 	protected long doCount(String countSql, Object parameters) {
 		try {
-			ResultSet rs = getSession().createQuery(countSql)
-					.setParameters(parameters).executeQuery();
+			ResultSet rs = getSession().createQuery(countSql).setParameters(parameters).executeQuery();
 			rs.next();
 			Long value = rs.getLong(1);
 			rs.close();
@@ -487,9 +471,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 
 			T entity = findOne(id);
 			if (entity == null) {
-				throw new SQLRepositoryException(String.format(
-						"Não foi encontrada nenhuma entidade %s com o id %s.",
-						persistentClass, id));
+				throw new SQLRepositoryException(String.format("Não foi encontrada nenhuma entidade %s com o id %s.", persistentClass, id));
 			}
 			remove(entity);
 		} catch (Exception e) {
@@ -536,8 +518,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 
 	protected OSQLQuery createQuery(Predicate... predicate) {
 
-		OSQLQuery query = new OSQLQuery(session).from(getEntityPath()).where(
-				predicate);
+		OSQLQuery query = new OSQLQuery(session).from(getEntityPath()).where(predicate);
 		return query;
 	}
 
@@ -561,8 +542,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 	@SuppressWarnings("unchecked")
 	@Override
 	public Identifier<T> createIdentifier() throws Exception {
-		return (Identifier<T>) getSession().createIdentifier(
-				getPersistentClass());
+		return (Identifier<T>) getSession().createIdentifier(getPersistentClass());
 	}
 
 	@Override
@@ -573,8 +553,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 	@Override
 	public SQLSession openSession() throws Exception {
 		if (sessionFactory == null)
-			throw new SQLRepositoryException(
-					"Nenhuma fábrica de sessões foi atribuída ao repositório não é possível criar uma nova sessão SQL.");
+			throw new SQLRepositoryException("Nenhuma fábrica de sessões foi atribuída ao repositório não é possível criar uma nova sessão SQL.");
 		return sessionFactory.openSession();
 	}
 
@@ -584,48 +563,143 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 	}
 
 	@Override
-	public List<T> find(String sql) {
-		return find(sql,false);
+	public List<T> find(String sql, LockOptions lockOptions) {
+		return find(sql, false);
 	}
 
 	@Override
-	public Page<T> find(String sql, Pageable pageable) {
-		return find(sql,pageable,false);
+	public Page<T> find(String sql, Pageable pageable, LockOptions lockOptions) {
+		return find(sql, pageable, false);
 	}
 
 	@Override
-	public List<T> find(String sql, Object parameters) {
-		return find(sql,parameters,false);
+	public List<T> find(String sql, Object parameters, LockOptions lockOptions) {
+		return find(sql, parameters, false);
 	}
 
 	@Override
-	public Page<T> find(String sql, Object parameters, Pageable pageable) {
-		return find(sql,parameters,pageable,false);
+	public Page<T> find(String sql, Object parameters, Pageable pageable, LockOptions lockOptions) {
+		return find(sql, parameters, pageable, false);
 	}
 
 	@Override
-	public T findOne(ID id) {
-		return findOne(id,false);
+	public T findOne(ID id, LockOptions lockOptions) {
+		return findOne(id, false);
 	}
 
 	@Override
-	public T findOne(String sql) {
-		return findOne(sql,false);
+	public T findOne(String sql, LockOptions lockOptions) {
+		return findOne(sql, false);
 	}
 
 	@Override
-	public T findOne(String sql, Object parameters) {
-		return findOne(sql,parameters,false);
+	public T findOne(String sql, Object parameters, LockOptions lockOptions) {
+		return findOne(sql, parameters, false);
 	}
 
 	@Override
-	public List<T> findAll() {
+	public List<T> findAll(LockOptions lockOptions) {
 		return findAll(false);
 	}
 
 	@Override
+	public Page<T> findAll(Pageable pageable, LockOptions lockOptions) {
+		return findAll(pageable, false);
+	}
+
+	@Override
+	public T findOne(ID id) {
+		return findOne(id, LockOptions.NONE);
+	}
+
+	@Override
+	public T findOne(String sql) {
+		return findOne(sql, LockOptions.NONE);
+	}
+
+	@Override
+	public T findOne(String sql, Object parameters) {
+		return findOne(sql, parameters, LockOptions.NONE);
+	}
+
+	@Override
+	public T findOne(ID id, boolean readOnly) {
+		return findOne(id, LockOptions.NONE, readOnly);
+	}
+
+	@Override
+	public T findOne(String sql, boolean readOnly) {
+		return findOne(sql, LockOptions.NONE, readOnly);
+	}
+
+	@Override
+	public T findOne(String sql, Object parameters, boolean readOnly) {
+		return findOne(sql, parameters, LockOptions.NONE, readOnly);
+	}
+
+	@Override
+	public List<T> findAll() {
+		return findAll(LockOptions.NONE);
+	}
+
+	@Override
 	public Page<T> findAll(Pageable pageable) {
-		return findAll(pageable,false);
+		return findAll(pageable, LockOptions.NONE);
+	}
+
+	@Override
+	public List<T> findAll(boolean readOnly) {
+		return findAll(LockOptions.NONE, readOnly);
+	}
+
+	@Override
+	public Page<T> findAll(Pageable pageable, boolean readOnly) {
+		return findAll(pageable, LockOptions.NONE, readOnly);
+	}
+
+	@Override
+	public List<T> find(String sql) {
+		return find(sql, LockOptions.NONE);
+	}
+
+	@Override
+	public Page<T> find(String sql, Pageable pageable) {
+		return find(sql, pageable, LockOptions.NONE);
+	}
+
+	@Override
+	public List<T> find(String sql, Object parameters) {
+		return find(sql, parameters, LockOptions.NONE);
+	}
+
+	@Override
+	public Page<T> find(String sql, Object parameters, Pageable pageable) {
+		return find(sql, parameters, pageable, LockOptions.NONE);
+	}
+
+	@Override
+	public List<T> find(String sql, boolean readOnly) {
+		return find(sql, LockOptions.NONE, readOnly);
+	}
+
+	@Override
+	public Page<T> find(String sql, Pageable pageable, boolean readOnly) {
+		return find(sql, pageable, LockOptions.NONE, readOnly);
+	}
+
+	@Override
+	public List<T> find(String sql, Object parameters, boolean readOnly) {
+		return find(sql, parameters, LockOptions.NONE, readOnly);
+	}
+
+	@Override
+	public Page<T> find(String sql, Object parameters, Pageable pageable, boolean readOnly) {
+		return find(sql, parameters, pageable, LockOptions.NONE, readOnly);
+	}
+
+	@Override
+	public void refresh(T entity) {
+		refresh(entity, LockOptions.NONE);
 	}
 
 	@Override
@@ -640,14 +714,12 @@ public class GenericSQLRepository<T, ID extends Serializable> implements
 
 	@Override
 	public List<T> findByNamedQuery(String queryName, Object parameters) {
-		return findByNamedQuery(queryName,parameters,false);
+		return findByNamedQuery(queryName, parameters, false);
 	}
 
 	@Override
 	public Page<T> findByNamedQuery(String queryName, Object parameters, Pageable pageable) {
-		return findByNamedQuery(queryName,parameters,pageable,false);
+		return findByNamedQuery(queryName, parameters, pageable);
 	}
-
-	
 
 }

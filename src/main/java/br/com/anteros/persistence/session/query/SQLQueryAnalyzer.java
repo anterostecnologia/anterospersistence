@@ -1,15 +1,18 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * 
+ *  
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
- * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
- ******************************************************************************/
+ *  
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package br.com.anteros.persistence.session.query;
 
 import java.util.ArrayList;
@@ -26,6 +29,7 @@ import java.util.TreeMap;
 import br.com.anteros.core.utils.CompactHashSet;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.handler.EntityHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.annotation.type.FetchType;
@@ -53,7 +57,7 @@ import br.com.anteros.persistence.sql.parser.node.ValueNode;
  * Classe responsável pela análise do SQL e montagem das expressões necessárias para criação dos objetos da classe de
  * resultado. Esta é umas das principais classes no conceito do framework pois permite que o usuário escreva o SQL sem
  * precisar informar nenhum tipo de mapeamento entre o SQL e o Objeto. A classe analisa e descobre qual parte do SQL
- * corresponde a qual parte do Objeto.
+ * corresponde a qual parte do Objeto. A análise será usado pela classe {@link EntityHandler}.
  * 
  * @author edson
  *
@@ -116,7 +120,8 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		parser.parse(node);
 
 		allowApplyLockStrategy = false;
-		for (ColumnNode columnNode : (ColumnNode[]) ParserUtil.findChildren(getFirstSelectStatement(node), ColumnNode.class.getSimpleName())) {
+		INode[] children = ParserUtil.findChildren(getFirstSelectStatement(node), ColumnNode.class.getSimpleName());
+		for (INode columnNode : children) {
 			if (columnNode.toString().toLowerCase().contains("distinct")) {
 				allowApplyLockStrategy = true;
 				break;

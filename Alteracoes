@@ -16,6 +16,8 @@ OK - Corrigir problema no relacionamento ONY_TO_MANY com EAGER, o framework tent
 
 - Implementar estratégias de Lock
 
+- Implementar FlushMode o que irá permitir definir se é necessário usar save ou as entidades serão salvas automaticamentes no flush ou commit da session.
+
 - Join Table anotação bidirecional. Utilizar mappedBy, para não ser necessario anotação de ambos lados;
 
 OK - Integração com API de Validação do JAVA
@@ -221,4 +223,7 @@ OK - 3) Gerando "default" errado quando o BooleanType é omitido.
 	
 	
 	
+	
+
+	http://pt.slideshare.net/ElvisRocha/java-ee-6-31342044
 	

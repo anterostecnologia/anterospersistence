@@ -1,20 +1,21 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- * 
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- ******************************************************************************/
+ *******************************************************************************/
 package br.com.anteros.persistence.sql.command;
 
+import java.sql.SQLException;
 import java.util.List;
 
 import br.com.anteros.core.log.Logger;
@@ -39,12 +40,12 @@ public class InsertCommandSQL extends CommandSQL {
 
 	private IdentifierPostInsert identifierPostInsert;
 	private DescriptionColumn identifyColumn;
-	
+
 	private static Logger LOG = LoggerProvider.getInstance().getLogger(InsertCommandSQL.class.getName());
 
-	public InsertCommandSQL(SQLSession session, String sql, List<NamedParameter> namedParameters, Object targetObject,
-			EntityCache entityCache, String targetTableName, boolean showSql,
-			IdentifierPostInsert identifierPostInsert, DescriptionColumn identifyColumn, DescriptionSQL descriptionSQL) {
+	public InsertCommandSQL(SQLSession session, String sql, List<NamedParameter> namedParameters, Object targetObject, EntityCache entityCache,
+			String targetTableName, boolean showSql, IdentifierPostInsert identifierPostInsert, DescriptionColumn identifyColumn,
+			DescriptionSQL descriptionSQL) {
 		super(session, sql, namedParameters, targetObject, entityCache, targetTableName, showSql, descriptionSQL);
 		this.identifierPostInsert = identifierPostInsert;
 		this.identifyColumn = identifyColumn;
@@ -53,8 +54,7 @@ public class InsertCommandSQL extends CommandSQL {
 	@Override
 	public void execute() throws Exception {
 		/*
-		 * Troca os parâmetros que aguardam o identificador de outro objeto pelo
-		 * valor do identificador gerado
+		 * Troca os parâmetros que aguardam o identificador de outro objeto pelo valor do identificador gerado
 		 */
 		for (NamedParameter parameter : namedParameters) {
 			if (parameter.getValue() instanceof IdentifierPostInsert)
@@ -64,78 +64,75 @@ public class InsertCommandSQL extends CommandSQL {
 		 * Executa o SQL
 		 */
 		if (StringUtils.isNotEmpty(this.getSql())) {
-			if ((descriptionSQL != null) && descriptionSQL.isCallable()) {
-				ProcedureResult result = null;
-				try {
-					result = queryRunner.executeProcedure(session, session.getDialect(),
-							descriptionSQL.getCallableType(), descriptionSQL.getSql(),
-							namedParameters.toArray(new NamedParameter[]{}),showSql, 0, session.clientId());
-					/*
-					 * Verifica se houve sucesso na execução
-					 */
-					Object successValue;
-					if (descriptionSQL.getCallableType() == CallableType.PROCEDURE)
-						successValue = result.getOutPutParameter(descriptionSQL.getSuccessParameter());
-					else
-						successValue = result.getFunctionResult();
+			try {
+				if ((descriptionSQL != null) && descriptionSQL.isCallable()) {
+					ProcedureResult result = null;
+					try {
+						result = queryRunner.executeProcedure(session, session.getDialect(), descriptionSQL.getCallableType(),
+								descriptionSQL.getSql(), namedParameters.toArray(new NamedParameter[] {}), showSql, 0, session.clientId());
+						/*
+						 * Verifica se houve sucesso na execução
+						 */
+						Object successValue;
+						if (descriptionSQL.getCallableType() == CallableType.PROCEDURE)
+							successValue = result.getOutPutParameter(descriptionSQL.getSuccessParameter());
+						else
+							successValue = result.getFunctionResult();
 
-					if (showSql) {
-						LOG.debug("RESULT = " + successValue);
-						LOG.debug("");
-					}
-
-					if (!descriptionSQL.getSuccessValue().equalsIgnoreCase(successValue.toString()))
-						throw new SQLSessionException(successValue.toString());
-
-					if (descriptionSQL.getParametersId().size() > 0) {
-						Identifier identifier = session.getIdentifier(targetObject);
-						EntityCache entityCache = session.getEntityCacheManager().getEntityCache(
-								targetObject.getClass());
-						DescriptionField[] primaryKeyFields = entityCache.getPrimaryKeyFields();
-						IdentifierColumnList identifierList = IdentifierColumn.list();
-						for (DescriptionField descriptionField : primaryKeyFields) {
-							for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
-								identifierList.add(new IdentifierColumn(column.getColumnName(), result
-										.getOutPutParameter(descriptionSQL.getParameterIdByColumnName(column
-												.getColumnName()))));
-							}
-							identifier.setFieldValue(descriptionField.getName(),
-									identifierList.toArray(new IdentifierColumn[] {}));
+						if (showSql) {
+							LOG.debug("RESULT = " + successValue);
+							LOG.debug("");
 						}
 
-					}
-				} finally {
-					if (result != null)
-						result.close();
-				}
+						if (!descriptionSQL.getSuccessValue().equalsIgnoreCase(successValue.toString()))
+							throw new SQLSessionException(successValue.toString());
 
-			} else {
-				if (identifierPostInsert != null) {
-					if (descriptionSQL != null) {
-						queryRunner.update(session.getConnection(), descriptionSQL.getSql(), descriptionSQL
-								.processParameters(namedParameters), identifierPostInsert, session.getDialect()
-								.getIdentitySelectString(), showSql, session.getListeners(), session.clientId());
-					} else {
-						queryRunner.update(session.getConnection(), sql, NamedParameter.getAllValues(namedParameters),
-								identifierPostInsert, session.getDialect().getIdentitySelectString(), showSql,
-								session.getListeners(), session.clientId());
+						if (descriptionSQL.getParametersId().size() > 0) {
+							Identifier identifier = session.getIdentifier(targetObject);
+							EntityCache entityCache = session.getEntityCacheManager().getEntityCache(targetObject.getClass());
+							DescriptionField[] primaryKeyFields = entityCache.getPrimaryKeyFields();
+							IdentifierColumnList identifierList = IdentifierColumn.list();
+							for (DescriptionField descriptionField : primaryKeyFields) {
+								for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
+									identifierList.add(new IdentifierColumn(column.getColumnName(), result.getOutPutParameter(descriptionSQL
+											.getParameterIdByColumnName(column.getColumnName()))));
+								}
+								identifier.setFieldValue(descriptionField.getName(), identifierList.toArray(new IdentifierColumn[] {}));
+							}
+
+						}
+					} finally {
+						if (result != null)
+							result.close();
 					}
-					generatedId = identifierPostInsert.generate();
-					ReflectionUtils.setObjectValueByFieldName(targetObject, identifyColumn.getField().getName(),
-							generatedId);
+
 				} else {
-					if (descriptionSQL != null) {
-						queryRunner.update(session.getConnection(), descriptionSQL.getSql(),
-								descriptionSQL.processParameters(namedParameters), showSql, session.getListeners(),
-								session.clientId());
-					} else
-						queryRunner.update(session.getConnection(), sql, NamedParameter.getAllValues(namedParameters),
-								showSql, session.getListeners(), session.clientId());
+					if (identifierPostInsert != null) {
+						if (descriptionSQL != null) {
+							queryRunner.update(session.getConnection(), descriptionSQL.getSql(), descriptionSQL.processParameters(namedParameters),
+									identifierPostInsert, session.getDialect().getIdentitySelectString(), showSql, session.getListeners(),
+									session.clientId());
+						} else {
+							queryRunner.update(session.getConnection(), sql, NamedParameter.getAllValues(namedParameters), identifierPostInsert,
+									session.getDialect().getIdentitySelectString(), showSql, session.getListeners(), session.clientId());
+						}
+						generatedId = identifierPostInsert.generate();
+						ReflectionUtils.setObjectValueByFieldName(targetObject, identifyColumn.getField().getName(), generatedId);
+					} else {
+						if (descriptionSQL != null) {
+							queryRunner.update(session.getConnection(), descriptionSQL.getSql(), descriptionSQL.processParameters(namedParameters),
+									showSql, session.getListeners(), session.clientId());
+						} else
+							queryRunner.update(session.getConnection(), sql, NamedParameter.getAllValues(namedParameters), showSql,
+									session.getListeners(), session.clientId());
 
+					}
 				}
+				if (targetObject == null)
+					return;
+			} catch (SQLException ex) {
+				session.getDialect().convertSQLException(ex, "", sql);
 			}
-			if (targetObject == null)
-				return;
 		}
 		setEntityManaged();
 

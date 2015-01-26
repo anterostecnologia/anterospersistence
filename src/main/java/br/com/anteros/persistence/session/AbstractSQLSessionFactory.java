@@ -1,18 +1,18 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- * 
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *  
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- ******************************************************************************/
+ *******************************************************************************/
 package br.com.anteros.persistence.session;
 
 import java.io.IOException;
@@ -56,6 +56,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	private boolean showSql = false;
 	private boolean formatSql = false;
 	private int queryTimeout = 0;
+	private int lockTimeout = 0;
 
 	public AbstractSQLSessionFactory(EntityCacheManager entityCacheManager, DataSource dataSource,
 			SessionFactoryConfiguration configuration) throws Exception {
@@ -86,6 +87,9 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
 		if (configuration.getProperty(AnterosPersistenceProperties.QUERY_TIMEOUT) != null)
 			this.queryTimeout = new Integer(configuration.getProperty(AnterosPersistenceProperties.QUERY_TIMEOUT))
+					.intValue();
+		if (configuration.getProperty(AnterosPersistenceProperties.LOCK_TIMEOUT) != null)
+			this.lockTimeout = new Integer(configuration.getProperty(AnterosPersistenceProperties.LOCK_TIMEOUT))
 					.intValue();
 
 		this.currentSessionContext = buildCurrentSessionContext();
@@ -345,6 +349,14 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		if (transactionManager == null)
 			transactionManager = getTransactionManagerLookup().getTransactionManager();
 		return transactionManager;
+	}
+
+	public int getLockTimeout() {
+		return lockTimeout;
+	}
+
+	public void setLockTimeout(int lockTimeout) {
+		this.lockTimeout = lockTimeout;
 	}
 	
 }
