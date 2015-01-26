@@ -205,4 +205,9 @@ public class SQLiteDialect extends DatabaseDialect {
 	public String getSetLockTimeoutString(int secondsTimeOut) {
 		return null;
 	}
+	
+	@Override
+	public boolean supportsLock() {
+		return false;
+	}
 }

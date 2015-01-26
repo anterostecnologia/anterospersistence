@@ -1191,6 +1191,10 @@ public abstract class DatabaseDialect {
 	public boolean supportsIdentity() {
 		return false;
 	}
+	
+	public boolean supportsLock(){
+		return true;
+	}
 
 	public boolean useColumnDefinitionForIdentity() {
 		return true;
