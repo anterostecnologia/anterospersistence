@@ -900,4 +900,12 @@ public class EntityCache {
 		return "";
 	}
 
+	public boolean containsDescriptionField(DescriptionField descriptionField) {
+		for (DescriptionField descField : fields){
+			if (descField.equals(descriptionField))
+				return true;
+		}
+		return false;
+	}
+
 }

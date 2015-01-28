@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.session.query;
 
@@ -1008,7 +1005,12 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			/*
 			 * Chama o método que cria a expressão.
 			 */
+			System.out.println(Arrays.toString(expression));
 			makeExpressionFieldMapper(null, resultClass, expression, 0, expressions.get(expression));
+		}
+		
+		for (ExpressionFieldMapper f : expressionsFieldMapper){
+			System.out.println(f);
 		}
 	}
 
@@ -1045,116 +1047,126 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 	private void makeExpressionFieldMapper(ExpressionFieldMapper owner, Class<?> targetClass, String[] expression, int position,
 			String[] aliasPathWithColumn) {
 
-		EntityCache entityCache = entityCacheManager.getEntityCache(targetClass);
+		EntityCache resultEntityCache = entityCacheManager.getEntityCache(targetClass);
+
+		EntityCache caches[] = { resultEntityCache };
+		/*
+		 * Se for uma classe abstrata pega as classes concretas
+		 */
+		if (resultEntityCache.isAbstractClass())
+			caches = entityCacheManager.getEntitiesBySuperClass(resultEntityCache);
+
 		/*
 		 * Pega a primeira parte da expressão onde será iniciado o processamento
 		 */
 		String targetField = expression[position];
 		String alias = aliasPathWithColumn[position];
 
-		/*
-		 * Pega o DescriptionColumn do field alvo
-		 */
-		DescriptionField descriptionField = entityCache.getDescriptionField(targetField);
-		if (descriptionField == null)
-			return;
+		for (EntityCache entityCache : caches) {
+			/*
+			 * Pega o DescriptionColumn do field alvo
+			 */
+			DescriptionField descriptionField = entityCache.getDescriptionField(targetField);
+			if (descriptionField == null)
+				continue;
 
-		/*
-		 * Se a posição passada for a última da lista de expressões isto corresponde a um campo simples a ser atribuido
-		 * ao objeto alvo. Criamos aqui um SimpleExpressionFieldMapper que irá fazer isto.
-		 */
-		if (position == expression.length - 1) {
-			if (owner != null)
-				owner.addChild(new SimpleExpressionFieldMapper(entityCache, descriptionField, alias));
-			else
-				expressionsFieldMapper.add(new SimpleExpressionFieldMapper(entityCache, descriptionField, alias));
-		} else {
-			ExpressionFieldMapper expressionField = null;
-			if (owner != null) {
-				expressionField = owner.getExpressionFieldByName(descriptionField.getField().getName());
+			/*
+			 * Se a posição passada for a última da lista de expressões isto corresponde a um campo simples a ser
+			 * atribuido ao objeto alvo. Criamos aqui um SimpleExpressionFieldMapper que irá fazer isto.
+			 */
+			if (position == expression.length - 1) {
+				if (owner != null)
+					owner.addChild(new SimpleExpressionFieldMapper(entityCache, descriptionField, alias));
+				else
+					expressionsFieldMapper.add(new SimpleExpressionFieldMapper(entityCache, descriptionField, alias));
 			} else {
-				expressionField = getExpressionFieldByName(descriptionField.getField().getName());
-			}
-			if (expressionField == null) {
-				/*
-				 * Se o campo for uma coleção criamos aqui um CollectionExpressionFieldMapper que irá cria a mesma e
-				 * atribuir ao objeto alvo.
-				 */
-				if (descriptionField.isCollectionEntity()) {
-					EntityCache fieldEntityCache = entityCacheManager.getEntityCache(descriptionField.getTargetClass());
-					String discriminatorColumnName = "";
-					/*
-					 * Se a classe alvo da coleção for abstrata guardamos o nome da coluna correspondente ao
-					 * discriminatorColumn no ResultSet para ser usado posteriormente para saber qual instância concreta
-					 * do objeto deverá ser criada.
-					 */
-					if (ReflectionUtils.isAbstractClass(descriptionField.getTargetClass())) {
-						discriminatorColumnName = getAliasColumnName(fieldEntityCache, fieldEntityCache.getDiscriminatorColumn().getColumnName());
-					}
-					/*
-					 * Armazenamos também o nome das colunas no ResultSet que formam a chave do objeto para facilitar a
-					 * busca da chave posteriormente e verificar se devemos criar o objeto
-					 */
-					List<String> aliasPrimaryKeyColumns = new ArrayList<String>();
-					for (DescriptionColumn column : fieldEntityCache.getPrimaryKeyColumns()) {
-						if (alias != null) {
-							aliasPrimaryKeyColumns.add(getAliasColumnName(alias, column.getColumnName()));
-						} else {
-							aliasPrimaryKeyColumns.add(getAliasColumnName(fieldEntityCache, column.getColumnName()));
-						}
-					}
-					expressionField = new CollectionExpressionFieldMapper(fieldEntityCache, descriptionField, alias, discriminatorColumnName,
-							aliasPrimaryKeyColumns.toArray(new String[] {}));
-				} else {
-					EntityCache fieldEntityCache = entityCacheManager.getEntityCache(descriptionField.getField().getType());
-					String discriminatorColumnName = "";
-					/*
-					 * Se a classe da entidade for abstrata guardamos o nome da coluna correspondente ao
-					 * discriminatorColumn no ResultSet para ser usado posteriormente para saber qual instância concreta
-					 * do objeto deverá ser criada.
-					 */
-					if (ReflectionUtils.isAbstractClass(descriptionField.getTargetClass())) {
-						discriminatorColumnName = getAliasColumnName(fieldEntityCache, fieldEntityCache.getDiscriminatorColumn().getColumnName());
-					}
-					/*
-					 * Armazenamos também o nome das colunas no ResultSet que formam a chave do objeto para facilitar a
-					 * busca da chave posteriormente e verificar se devemos criar o objeto
-					 */
-					List<String> aliasPrimaryKeyColumns = new ArrayList<String>();
-					for (DescriptionColumn column : fieldEntityCache.getPrimaryKeyColumns()) {
-						if (alias != null) {
-							aliasPrimaryKeyColumns.add(getAliasColumnName(alias, column.getColumnName()));
-						} else {
-							aliasPrimaryKeyColumns.add(getAliasColumnName(fieldEntityCache, column.getColumnName()));
-						}
-					}
-
-					expressionField = new EntityExpressionFieldMapper(fieldEntityCache, descriptionField, alias, discriminatorColumnName,
-							aliasPrimaryKeyColumns.toArray(new String[] {}));
-				}
-				/*
-				 * Se foi informado o ExpressionFieldMapper então a nova expressão será filha da expressão pai formando
-				 * assim uma árvore de expressões.
-				 */
+				ExpressionFieldMapper expressionField = null;
 				if (owner != null) {
-					owner.addChild(expressionField);
+					expressionField = owner.getExpressionFieldByName(descriptionField.getField().getName());
 				} else {
-					/*
-					 * Sem um pai a expressão é adicionada na lista primária de expressões(primeiro nível).
-					 */
-					expressionsFieldMapper.add(expressionField);
+					expressionField = getExpressionFieldByName(descriptionField.getField().getName());
 				}
+				if (expressionField == null) {
+					/*
+					 * Se o campo for uma coleção criamos aqui um CollectionExpressionFieldMapper que irá cria a mesma e
+					 * atribuir ao objeto alvo.
+					 */
+					if (descriptionField.isCollectionEntity()) {
+						EntityCache fieldEntityCache = entityCacheManager.getEntityCache(descriptionField.getTargetClass());
+						String discriminatorColumnName = "";
+						/*
+						 * Se a classe alvo da coleção for abstrata guardamos o nome da coluna correspondente ao
+						 * discriminatorColumn no ResultSet para ser usado posteriormente para saber qual instância
+						 * concreta do objeto deverá ser criada.
+						 */
+						if (ReflectionUtils.isAbstractClass(descriptionField.getTargetClass())) {
+							discriminatorColumnName = getAliasColumnName(fieldEntityCache, fieldEntityCache.getDiscriminatorColumn().getColumnName());
+						}
+						/*
+						 * Armazenamos também o nome das colunas no ResultSet que formam a chave do objeto para
+						 * facilitar a busca da chave posteriormente e verificar se devemos criar o objeto
+						 */
+						List<String> aliasPrimaryKeyColumns = new ArrayList<String>();
+						for (DescriptionColumn column : fieldEntityCache.getPrimaryKeyColumns()) {
+							if (alias != null) {
+								aliasPrimaryKeyColumns.add(getAliasColumnName(alias, column.getColumnName()));
+							} else {
+								aliasPrimaryKeyColumns.add(getAliasColumnName(fieldEntityCache, column.getColumnName()));
+							}
+						}
+						expressionField = new CollectionExpressionFieldMapper(fieldEntityCache, descriptionField, alias, discriminatorColumnName,
+								aliasPrimaryKeyColumns.toArray(new String[] {}));
+					} else {
+						EntityCache fieldEntityCache = entityCacheManager.getEntityCache(descriptionField.getField().getType());
+						String discriminatorColumnName = "";
+						/*
+						 * Se a classe da entidade for abstrata guardamos o nome da coluna correspondente ao
+						 * discriminatorColumn no ResultSet para ser usado posteriormente para saber qual instância
+						 * concreta do objeto deverá ser criada.
+						 */
+						if (ReflectionUtils.isAbstractClass(descriptionField.getTargetClass())) {
+							discriminatorColumnName = getAliasColumnName(fieldEntityCache, fieldEntityCache.getDiscriminatorColumn().getColumnName());
+						}
+						/*
+						 * Armazenamos também o nome das colunas no ResultSet que formam a chave do objeto para
+						 * facilitar a busca da chave posteriormente e verificar se devemos criar o objeto
+						 */
+						List<String> aliasPrimaryKeyColumns = new ArrayList<String>();
+						for (DescriptionColumn column : fieldEntityCache.getPrimaryKeyColumns()) {
+							if (alias != null) {
+								aliasPrimaryKeyColumns.add(getAliasColumnName(alias, column.getColumnName()));
+							} else {
+								aliasPrimaryKeyColumns.add(getAliasColumnName(fieldEntityCache, column.getColumnName()));
+							}
+						}
+
+						expressionField = new EntityExpressionFieldMapper(fieldEntityCache, descriptionField, alias, discriminatorColumnName,
+								aliasPrimaryKeyColumns.toArray(new String[] {}));
+					}
+					/*
+					 * Se foi informado o ExpressionFieldMapper então a nova expressão será filha da expressão pai
+					 * formando assim uma árvore de expressões.
+					 */
+					if (owner != null) {
+						owner.addChild(expressionField);
+					} else {
+						/*
+						 * Sem um pai a expressão é adicionada na lista primária de expressões(primeiro nível).
+						 */
+						expressionsFieldMapper.add(expressionField);
+					}
+				}
+				/*
+				 * Incrementa a posição para processar próxima expressão
+				 */
+				position++;
+				/*
+				 * Chama o método novamente fazendo assim recursivamente o processamento das expressões. Na nova chamada
+				 * o a expressão criada será o pai da próxima expressão.
+				 */
+				makeExpressionFieldMapper(expressionField, expressionField.getTargetEntityCache().getEntityClass(), expression, position,
+						aliasPathWithColumn);
 			}
-			/*
-			 * Incrementa a posição para processar próxima expressão
-			 */
-			position++;
-			/*
-			 * Chama o método novamente fazendo assim recursivamente o processamento das expressões. Na nova chamada o a
-			 * expressão criada será o pai da próxima expressão.
-			 */
-			makeExpressionFieldMapper(expressionField, expressionField.getTargetEntityCache().getEntityClass(), expression, position,
-					aliasPathWithColumn);
 		}
 	}
 

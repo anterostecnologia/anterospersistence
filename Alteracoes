@@ -1,3 +1,24 @@
+- Terminar implementação de Convert
+
+- Testar OSql e usar
+
+- Forma de fazer paginação de objetos
+
+- Implementar comandos sql para sugestão de indices
+
+- Concluir implementação MappedSuperClass     
+  ver link http://www.concretepage.com/hibernate/example-mappedsuperclass-hibernate 
+
+- Implementar anotações @Embeddable, @Embedded, @AttributeOverride e @AttributeOverrides.
+  Ver link http://www.concretepage.com/hibernate/example-embeddedid-hibernate
+           http://www.java2s.com/Tutorial/Java/0355__JPA/AttributeOverridesForEmbeddableID.htm
+           http://www.programmingforfuture.com/2013/02/attributeoverrides-annotation-in.html
+
+- Possibilidade de trabalhar as classes do Joda Time e novos tipos de data Java 8
+
+
+
+
 OK - Qdo usar anotação @ForeignKey e não usar @Column ou @Columns usar as colunas da Classe estrangeira. Pra isso será necessário garantir
   que esta classe já tenha sido lida.
   
@@ -12,7 +33,7 @@ OK - Colunas usadas em fields com anotação @ForeignKey devem ser obrigatoriame
 OK - Corrigir problema no relacionamento ONY_TO_MANY com EAGER, o framework tenta buscar a lista antes de adicionar o objeto pai ao cache. 
     Obs: O problema era o tamanho do cache de objetos, muito pequeno.
   
-- Terminar implementação de Convert
+
 
 OK - Implementar estratégias de Lock
 
@@ -26,21 +47,13 @@ OK - Fazer LOB carregar com lazy
 
 - Implementar nas anotações para verificar quando salvar
    boolean insertable() default true;
-   boolean updatable() default true;
-   
-- Implementar Criteria   
-
-- Possibilidade de trabalhar as classes do Joda Time
-
-- Forma de fazer paginação de objetos
+   boolean updatable() default true;   
 
 - Internacionalização de Log's
 
 - Permitir consultas com Query By Example
 
 - Fazer internacionalização das mensagens - EM ANDAMENTO (Já definido como fazer)
-
-- Implementar comandos sql para sugestão de indices
 
 - Implementar Integração com JAX-RS, JAXB, JEE, JERSEY
 
@@ -55,10 +68,7 @@ OK - Fazer LOB carregar com lazy
 OK - Implementar limit para trazer registros
    Obs: Implementado junto com DSL.
    
-- Implementar anotações @Embeddable, @Embedded, @AttributeOverride e @AttributeOverrides.
-  Ver link http://www.concretepage.com/hibernate/example-embeddedid-hibernate
-           http://www.java2s.com/Tutorial/Java/0355__JPA/AttributeOverridesForEmbeddableID.htm
-           http://www.programmingforfuture.com/2013/02/attributeoverrides-annotation-in.html
+
 
 - Ver possibilidade de implementar @SecondaryTables, @SecondaryTable: Ver exemplo MovimentoEstoque x MovimentoEstoqueValor
  sendo que a segunda tabela seria a de valor.
@@ -179,11 +189,8 @@ OK - Terminar validação das referencedColumn no cacheManager
               
 OK - Implementar validação de campos requeridos em heranças das entidades no modo "single table".
               
-- Não permitir 2 entidades com mesmo nome de tabela         
+OK - Não permitir 2 entidades com mesmo nome de tabela         
 
-- Concluir implementação MappedSuperClass     
-  ver link http://www.concretepage.com/hibernate/example-mappedsuperclass-hibernate            
-              
               
 BUGS:
 

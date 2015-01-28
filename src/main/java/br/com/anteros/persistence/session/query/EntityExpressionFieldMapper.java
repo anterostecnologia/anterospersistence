@@ -51,6 +51,10 @@ public class EntityExpressionFieldMapper extends ExpressionFieldMapper {
 	@Override
 	public void execute(SQLSession session, ResultSet resultSet, EntityManaged entityManaged, Object targetObject, Cache transactionCache)
 			throws Exception {
+		
+		if (!session.getEntityCacheManager().getEntityCache(targetObject.getClass()).containsDescriptionField(descriptionField))
+			return;
+		
 		Object newObject = null;
 		/*
 		 * Se o campo do objeto alvo ainda não foi inicializado
