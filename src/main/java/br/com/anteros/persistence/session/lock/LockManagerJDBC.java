@@ -178,6 +178,8 @@ public class LockManagerJDBC implements LockManager {
 	 */
 	@Override
 	public String applyLock(SQLSession session, String sql, Class<?> resultClass, LockOptions lockOptions) throws Exception {
+		if (resultClass==null)
+			return sql;
 		validateLockOptions(lockOptions, session.getEntityCacheManager().getEntityCache(resultClass));
 		return session.getDialect().applyLock(sql, lockOptions);
 	}
