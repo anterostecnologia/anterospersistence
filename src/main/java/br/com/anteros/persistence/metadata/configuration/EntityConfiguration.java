@@ -25,10 +25,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import br.com.anteros.core.converter.Converter;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.annotation.Comment;
-import br.com.anteros.persistence.metadata.annotation.Converter;
-import br.com.anteros.persistence.metadata.annotation.Converters;
+import br.com.anteros.persistence.metadata.annotation.Convert;
+import br.com.anteros.persistence.metadata.annotation.Converts;
 import br.com.anteros.persistence.metadata.annotation.DiscriminatorColumn;
 import br.com.anteros.persistence.metadata.annotation.DiscriminatorValue;
 import br.com.anteros.persistence.metadata.annotation.Entity;
@@ -40,14 +41,12 @@ import br.com.anteros.persistence.metadata.annotation.Inheritance;
 import br.com.anteros.persistence.metadata.annotation.MappedSuperclass;
 import br.com.anteros.persistence.metadata.annotation.NamedQueries;
 import br.com.anteros.persistence.metadata.annotation.NamedQuery;
-import br.com.anteros.persistence.metadata.annotation.ObjectTypeConverter;
 import br.com.anteros.persistence.metadata.annotation.ReadOnly;
 import br.com.anteros.persistence.metadata.annotation.SQLDelete;
 import br.com.anteros.persistence.metadata.annotation.SQLDeleteAll;
 import br.com.anteros.persistence.metadata.annotation.SQLInsert;
 import br.com.anteros.persistence.metadata.annotation.SQLUpdate;
 import br.com.anteros.persistence.metadata.annotation.Table;
-import br.com.anteros.persistence.metadata.annotation.TypeConverters;
 import br.com.anteros.persistence.metadata.annotation.UniqueConstraint;
 import br.com.anteros.persistence.metadata.annotation.type.DiscriminatorType;
 import br.com.anteros.persistence.metadata.annotation.type.InheritanceType;
@@ -81,9 +80,7 @@ public class EntityConfiguration {
 	private String schema = "";
 	private String catalog = "";
 	private RemoteConfiguration remote;
-	private ConverterConfiguration[] converters = {};
-	private ObjectTypeConverterConfiguration[] objectTypeConverters = {};
-	private TypeConverterConfiguration[] typeConverters = {};
+	private ConvertConfiguration[] converts = {};
 
 	public EntityConfiguration(Class<? extends Serializable> sourceClazz, PersistenceModelConfiguration model) {
 		this.sourceClazz = sourceClazz;
@@ -346,6 +343,27 @@ public class EntityConfiguration {
 				comment(((Comment) annotation).value());
 			} else if (annotation instanceof Remote) {
 				remote(new RemoteConfiguration((Remote) annotation));
+			} else if ((annotation instanceof Converts) || (annotation instanceof Convert)
+					|| (annotation instanceof Convert.List)) {
+				Convert[] converts = null;
+				if (annotation instanceof Converts)
+					converts = ((Converts) annotation).value();
+				else if (annotation instanceof Converter)
+					converts = new Convert[] { (Convert) annotation };
+				else if (annotation instanceof Convert.List)
+					converts = ((Convert.List) annotation).value();
+
+				ConvertConfiguration[] convertsConf = null;
+				if (indexes != null) {
+					convertsConf = new ConvertConfiguration[converts.length];
+					for (int i = 0; i < converts.length; i++) {
+						convertsConf[i] = new ConvertConfiguration(converts[i]);
+					}
+				}
+				if ((annotation instanceof Converts) || (annotation instanceof Convert.List))
+					converts(convertsConf);
+				else
+					convert(convertsConf);
 			}
 		}
 
@@ -506,65 +524,6 @@ public class EntityConfiguration {
 		return remote;
 	}
 
-	public ConverterConfiguration[] getConverters() {
-		return converters;
-	}
-
-	public EntityConfiguration converters(ConverterConfiguration[] converters) {
-		this.converters = converters;
-		this.annotations.add(Converters.class);
-		return this;
-	}
-
-	public EntityConfiguration converters(ConverterConfiguration converter) {
-		this.converters = new ConverterConfiguration[] { converter };
-		this.annotations.add(Converter.class);
-		return this;
-	}
-
-	public EntityConfiguration converter(ConverterConfiguration[] converter) {
-		this.converters = converter;
-		this.annotations.add(Converter.class);
-		return this;
-	}
-
-	public ObjectTypeConverterConfiguration[] getObjectTypeConverters() {
-		return objectTypeConverters;
-	}
-
-	public EntityConfiguration objectTypeConverters(ObjectTypeConverterConfiguration[] objectTypeConverters) {
-		this.objectTypeConverters = objectTypeConverters;
-		this.annotations.add(ObjectTypeConverter.class);
-		return this;
-	}
-
-	public EntityConfiguration objectTypeConverters(ObjectTypeConverterConfiguration objectTypeConverter) {
-		this.objectTypeConverters = new ObjectTypeConverterConfiguration[] { objectTypeConverter };
-		this.annotations.add(ObjectTypeConverter.class);
-		return this;
-	}
-
-	public EntityConfiguration objectTypeConverter(ObjectTypeConverterConfiguration[] objectTypeConverter) {
-		this.objectTypeConverters = objectTypeConverter;
-		this.annotations.add(ObjectTypeConverter.class);
-		return this;
-	}
-
-	public TypeConverterConfiguration[] getTypeConverters() {
-		return typeConverters;
-	}
-
-	public EntityConfiguration typeConverters(TypeConverterConfiguration[] typeConverters) {
-		this.typeConverters = typeConverters;
-		this.annotations.add(TypeConverters.class);
-		return this;
-	}
-
-	public EntityConfiguration typeConverters(TypeConverterConfiguration typeConverter) {
-		this.typeConverters = new TypeConverterConfiguration[] { typeConverter };
-		this.annotations.add(TypeConverters.class);
-		return this;
-	}
 
 	public DiscriminatorType getDiscriminatorColumnType() {
 		return discriminatorColumnType;
@@ -576,6 +535,29 @@ public class EntityConfiguration {
 
 	public EntityConfiguration getEntityConfigurationBySourceClass(Class<?> sourceClazz) {
 		return model.getEntityConfigurationBySourceClass(sourceClazz);
+	}
+	
+
+	public ConvertConfiguration[] getConverts() {
+		return converts;
+	}
+
+	public EntityConfiguration converts(ConvertConfiguration[] converts) {
+		this.converts = converts;
+		this.annotations.add(Converts.class);
+		return this;
+	}
+
+	public EntityConfiguration convert(ConvertConfiguration[] converts) {
+		this.converts = converts;
+		this.annotations.add(Converts.class);
+		return this;
+	}
+
+	public EntityConfiguration convert(ConvertConfiguration convert) {
+		this.converts = new ConvertConfiguration[] { convert };
+		this.annotations.add(Convert.class);
+		return this;
 	}
 
 }

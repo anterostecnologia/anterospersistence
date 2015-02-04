@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package br.com.anteros.persistence.metadata.converter.converters;
+package br.com.anteros.persistence.metadata.annotation;
 
-import br.com.anteros.persistence.metadata.converter.AttributeConverter;
-import br.com.anteros.persistence.session.SQLSession;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class TypeConverter implements AttributeConverter<Object, Object> {
-
-	public Object convertToDatabaseColumn(Object attribute, SQLSession session) {
-		return null;
-	}
-
-	public Object convertToEntityAttribute(Object dbData, SQLSession session) {
-		return null;
-	}
-
+@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Converts {
+	
+	Convert[] value();
 }

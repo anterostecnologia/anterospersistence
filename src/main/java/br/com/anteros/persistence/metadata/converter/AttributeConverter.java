@@ -15,7 +15,6 @@
  *******************************************************************************/
 package br.com.anteros.persistence.metadata.converter;
 
-import br.com.anteros.persistence.session.SQLSession;
 
 
 /**
@@ -35,7 +34,7 @@ public interface AttributeConverter<X,Y> {
      * @param attribute  Valor do atributo da entidade para converter
      * @return  Valor convertido para a coluna do banco de dados
      */
-    public Y convertToDatabaseColumn (X attribute, SQLSession session);
+    public Y convertToDatabaseColumn (X attribute);
 
     /**
      * Converte o valor da coluna do banco de dados para um atributo
@@ -44,5 +43,5 @@ public interface AttributeConverter<X,Y> {
      * @param dbData  valor da coluna no banco de dados para converter
      * @return  valor convertido para o atributo da entidade
      */
-    public X convertToEntityAttribute (Y dbData, SQLSession session);
+    public X convertToEntityAttribute (Y dbData);
 }

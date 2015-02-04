@@ -15,14 +15,29 @@
  *******************************************************************************/
 package br.com.anteros.persistence.metadata.annotation;
 
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target({ ElementType.FIELD })
-@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.METHOD, ElementType.FIELD, ElementType.TYPE })
+@Retention(RUNTIME)
 public @interface Convert {
+	Class<?> converter() default void.class;
 
-	String value() default "none";
+	String attributeName() default "";
+
+	boolean disableConversion() default false;
+	
+	 /**
+		 * Defines several {@code @Index} annotations on the same element.
+		 */
+		@Target({ ElementType.FIELD, ElementType.TYPE })
+		@Retention(RUNTIME)
+		@Documented
+		public @interface List {
+			Convert[] value();
+		}
 }

@@ -48,12 +48,12 @@ import br.com.anteros.core.utils.ResourceUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
+import br.com.anteros.persistence.metadata.annotation.Converter;
 import br.com.anteros.persistence.metadata.annotation.Entity;
 import br.com.anteros.persistence.metadata.annotation.EnumValues;
 import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
 import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
 import br.com.anteros.persistence.session.SQLSessionFactory;
-import br.com.anteros.persistence.session.exception.SQLSessionFactoryException;
 import br.com.anteros.persistence.session.impl.SQLSessionFactoryImpl;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
@@ -65,6 +65,8 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 	protected static Logger LOG = LoggerProvider.getInstance().getLogger(AbstractPersistenceConfiguration.class);
 
 	public static final String SECURITY_PACKAGE = "br.com.anteros.security.model";
+	public static final String CONVERTERS_PACKAGE = "br.com.anteros.persistence.metadata.converter.converters";
+	
 	@Transient
 	protected EntityCacheManager entityCacheManager;
 	@Transient
@@ -198,7 +200,7 @@ public abstract class AbstractPersistenceConfiguration extends AnterosBasicConfi
 			String[] packages = StringUtils.tokenizeToStringArray(getSessionFactoryConfiguration()
 					.getPackageToScanEntity().getPackageName(), ", ;");
 			List<Class<?>> scanClasses = ClassPathScanner.scanClasses(new ClassFilter().packages(packages)
-					.annotation(Entity.class).annotation(EnumValues.class));
+					.annotation(Entity.class).annotation(Converter.class).annotation(EnumValues.class).packageName(CONVERTERS_PACKAGE));
 			if (LOG.isDebugEnabled()) {
 				for (Class<?> cl : scanClasses) {
 					LOG.debug("Encontrado classe scaneada " + cl.getName());

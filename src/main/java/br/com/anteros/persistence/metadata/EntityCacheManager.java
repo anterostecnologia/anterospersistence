@@ -1,23 +1,21 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.metadata;
 
 import java.io.Serializable;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -33,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import br.com.anteros.core.utils.CompactHashSet;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
@@ -44,8 +43,7 @@ import br.com.anteros.persistence.metadata.annotation.Column;
 import br.com.anteros.persistence.metadata.annotation.Columns;
 import br.com.anteros.persistence.metadata.annotation.CompositeId;
 import br.com.anteros.persistence.metadata.annotation.Convert;
-import br.com.anteros.persistence.metadata.annotation.Converter;
-import br.com.anteros.persistence.metadata.annotation.Converters;
+import br.com.anteros.persistence.metadata.annotation.Converts;
 import br.com.anteros.persistence.metadata.annotation.DiscriminatorValue;
 import br.com.anteros.persistence.metadata.annotation.EnumValues;
 import br.com.anteros.persistence.metadata.annotation.Enumerated;
@@ -64,8 +62,6 @@ import br.com.anteros.persistence.metadata.annotation.MapKeyEnumerated;
 import br.com.anteros.persistence.metadata.annotation.MapKeyTemporal;
 import br.com.anteros.persistence.metadata.annotation.NamedQueries;
 import br.com.anteros.persistence.metadata.annotation.NamedQuery;
-import br.com.anteros.persistence.metadata.annotation.ObjectTypeConverter;
-import br.com.anteros.persistence.metadata.annotation.ObjectTypeConverters;
 import br.com.anteros.persistence.metadata.annotation.OrderBy;
 import br.com.anteros.persistence.metadata.annotation.SQLDelete;
 import br.com.anteros.persistence.metadata.annotation.SQLDeleteAll;
@@ -76,8 +72,6 @@ import br.com.anteros.persistence.metadata.annotation.Table;
 import br.com.anteros.persistence.metadata.annotation.TableGenerator;
 import br.com.anteros.persistence.metadata.annotation.Temporal;
 import br.com.anteros.persistence.metadata.annotation.Transient;
-import br.com.anteros.persistence.metadata.annotation.TypeConverter;
-import br.com.anteros.persistence.metadata.annotation.TypeConverters;
 import br.com.anteros.persistence.metadata.annotation.Version;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.annotation.type.CascadeType;
@@ -87,6 +81,7 @@ import br.com.anteros.persistence.metadata.annotation.type.GeneratedType;
 import br.com.anteros.persistence.metadata.annotation.type.InheritanceType;
 import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
 import br.com.anteros.persistence.metadata.configuration.ColumnConfiguration;
+import br.com.anteros.persistence.metadata.configuration.ConvertConfiguration;
 import br.com.anteros.persistence.metadata.configuration.ConverterConfiguration;
 import br.com.anteros.persistence.metadata.configuration.EntityConfiguration;
 import br.com.anteros.persistence.metadata.configuration.EnumValueConfiguration;
@@ -94,15 +89,14 @@ import br.com.anteros.persistence.metadata.configuration.FieldConfiguration;
 import br.com.anteros.persistence.metadata.configuration.IndexConfiguration;
 import br.com.anteros.persistence.metadata.configuration.JoinColumnConfiguration;
 import br.com.anteros.persistence.metadata.configuration.JoinTableConfiguration;
-import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
 import br.com.anteros.persistence.metadata.configuration.NamedQueryConfiguration;
-import br.com.anteros.persistence.metadata.configuration.ObjectTypeConverterConfiguration;
+import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
 import br.com.anteros.persistence.metadata.configuration.RemoteParamConfiguration;
 import br.com.anteros.persistence.metadata.configuration.SQLInsertIdConfiguration;
-import br.com.anteros.persistence.metadata.configuration.TypeConverterConfiguration;
 import br.com.anteros.persistence.metadata.configuration.UniqueConstraintConfiguration;
+import br.com.anteros.persistence.metadata.converter.AttributeConverter;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
-import br.com.anteros.persistence.metadata.descriptor.DescriptionConverter;
+import br.com.anteros.persistence.metadata.descriptor.DescriptionConvert;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionGenerator;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionIndex;
@@ -112,7 +106,6 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionSQL;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionUniqueConstraint;
 import br.com.anteros.persistence.metadata.descriptor.ParamDescription;
 import br.com.anteros.persistence.metadata.descriptor.type.ColumnType;
-import br.com.anteros.persistence.metadata.descriptor.type.DescriptionConverterType;
 import br.com.anteros.persistence.metadata.descriptor.type.FieldType;
 import br.com.anteros.persistence.metadata.descriptor.type.SQLStatementType;
 import br.com.anteros.persistence.metadata.exception.EntityCacheManagerException;
@@ -128,12 +121,13 @@ import br.com.anteros.synchronism.annotation.IdSynchronism;
 import br.com.anteros.synchronism.annotation.Remote;
 
 /**
- * Classe responsável por gerenciar Cache das Entidades.
+ * Classe responsável por gerenciar cache das entidades e conversores.
  * 
  */
 @SuppressWarnings("unchecked")
 public class EntityCacheManager {
 	private Map<Class<? extends Serializable>, EntityCache> entities = new LinkedHashMap<Class<? extends Serializable>, EntityCache>();
+	private Set<ConverterCache> converters = new CompactHashSet<ConverterCache>();
 	private boolean loaded = false;
 	private boolean validate = true;
 	private PropertyAccessorFactory propertyAccessorFactory;
@@ -147,8 +141,8 @@ public class EntityCacheManager {
 	 * 
 	 * param clazzes throws Exception
 	 */
-	public void load(List<Class<? extends Serializable>> clazzes, boolean validate,
-			PropertyAccessorFactory propertyAccessorFactory, DatabaseDialect databaseDialect) throws Exception {
+	public void load(List<Class<? extends Serializable>> clazzes, boolean validate, PropertyAccessorFactory propertyAccessorFactory,
+			DatabaseDialect databaseDialect) throws Exception {
 		this.propertyAccessorFactory = propertyAccessorFactory;
 		if (!isLoaded()) {
 			Collections.sort(clazzes, new DependencyComparator());
@@ -164,8 +158,8 @@ public class EntityCacheManager {
 	}
 
 	/**
-	 * Método utilizado para ler as configurações das classes configuradas no
-	 * modelo. param modelConfiguration throws Exception
+	 * Método utilizado para ler as configurações das classes configuradas no modelo. param modelConfiguration throws
+	 * Exception
 	 */
 	public void load(PersistenceModelConfiguration modelConfiguration, PropertyAccessorFactory propertyAccessorFactory,
 			DatabaseDialect databaseDialect) throws Exception {
@@ -175,10 +169,14 @@ public class EntityCacheManager {
 
 			modelConfiguration.sortByDependency();
 
+			for (ConverterConfiguration converter : modelConfiguration.getConverters()) {
+				addConverter(new ConverterCache((AttributeConverter<?, ?>) converter.getConverter().newInstance(),
+						converter.getEntityAttributeType(), converter.getDatabaseColumnType(), converter.isAutoApply()));
+			}
+
 			for (Class<? extends Serializable> sourceClazz : modelConfiguration.getEntities().keySet()) {
-				if (!sourceClazz.isEnum()) {
-					addEntityClass(sourceClazz,
-							loadBasicConfigurations(sourceClazz, modelConfiguration.getEntities().get(sourceClazz)));
+				if (!sourceClazz.isEnum()) { // Se não é um Enum é uma Entidade
+					addEntityClass(sourceClazz, loadBasicConfigurations(sourceClazz, modelConfiguration.getEntities().get(sourceClazz)));
 				}
 			}
 
@@ -201,12 +199,12 @@ public class EntityCacheManager {
 		for (EntityCache entityCache : entities.values()) {
 			if (entityCache.hasNamedQueries()) {
 				for (DescriptionNamedQuery namedQuery : entityCache.getDescriptionNamedQueries()) {
-					SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache
-							.getInstance().get(namedQuery.getResultClass().getName()+":"+namedQuery.getQuery());
+					SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(
+							namedQuery.getResultClass().getName() + ":" + namedQuery.getQuery());
 					if (analyzerResult == null) {
-						analyzerResult = new SQLQueryAnalyzer(this, databaseDialect).analyze(namedQuery.getQuery(),
-								namedQuery.getResultClass());
-						PersistenceMetadataCache.getInstance().put(namedQuery.getResultClass().getName()+":"+namedQuery.getQuery(), analyzerResult);
+						analyzerResult = new SQLQueryAnalyzer(this, databaseDialect).analyze(namedQuery.getQuery(), namedQuery.getResultClass());
+						PersistenceMetadataCache.getInstance().put(namedQuery.getResultClass().getName() + ":" + namedQuery.getQuery(),
+								analyzerResult);
 					}
 				}
 			}
@@ -219,16 +217,14 @@ public class EntityCacheManager {
 			/*
 			 * Valida se os parâmetros usados nas configurações
 			 * 
-			 * SQLInsert,SQLUpdate,SQLDelete,SQLDeleteAll existem na lista de
-			 * colunas da classe.
+			 * SQLInsert,SQLUpdate,SQLDelete,SQLDeleteAll existem na lista de colunas da classe.
 			 */
 			for (DescriptionSQL descriptionSQL : entityCache.getDescriptionSql().values()) {
-				NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache
-						.getInstance().get("NamedParameters:" + descriptionSQL.getSql());
+				NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache.getInstance().get(
+						"NamedParameters:" + descriptionSQL.getSql());
 				if (parserResult == null) {
 					parserResult = NamedParameterStatement.parse(descriptionSQL.getSql(), null);
-					PersistenceMetadataCache.getInstance().put("NamedParameters:" + descriptionSQL.getSql(),
-							parserResult);
+					PersistenceMetadataCache.getInstance().put("NamedParameters:" + descriptionSQL.getSql(), parserResult);
 				}
 				if (parserResult != null) {
 					for (String param : parserResult.getParsedParams().keySet()) {
@@ -236,16 +232,15 @@ public class EntityCacheManager {
 								&& (!descriptionSQL.getSuccessParameter().equalsIgnoreCase(param))
 								&& (descriptionSQL.getParametersId().get(param) == null))
 							throw new EntityCacheException(AnterosPersistenceTranslate.getMessage(this.getClass(),
-									"descriptionSql.parameter.not.found", param, descriptionSQL.getSql(),
-									descriptionSQL.getSqlType(), entityCache.getEntityClass().getName()));
+									"descriptionSql.parameter.not.found", param, descriptionSQL.getSql(), descriptionSQL.getSqlType(), entityCache
+											.getEntityClass().getName()));
 					}
 				}
 			}
 
 			for (DescriptionField descriptionField : entityCache.getDescriptionFields()) {
 				/*
-				 * Valida se o campo simples foi marcado como requerido mas está
-				 * numa classe que é uma herança
+				 * Valida se o campo simples foi marcado como requerido mas está numa classe que é uma herança
 				 */
 				if (descriptionField.isSimple() && descriptionField.getSimpleColumn().isRequired()) {
 					if ((descriptionField.getEntityCache() == entityCache) && (entityCache.isInheritance())
@@ -263,16 +258,14 @@ public class EntityCacheManager {
 				/*
 				 * Valida se os parâmetros usados nas configurações
 				 * 
-				 * SQLInsert,SQLUpdate,SQLDelete,SQLDeleteAll do campo existem
-				 * na lista de colunas da classe do campo.
+				 * SQLInsert,SQLUpdate,SQLDelete,SQLDeleteAll do campo existem na lista de colunas da classe do campo.
 				 */
 				for (DescriptionSQL descriptionSQL : descriptionField.getDescriptionSql().values()) {
-					NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache
-							.getInstance().get("NamedParameters:" + descriptionSQL.getSql());
+					NamedParameterParserResult parserResult = (NamedParameterParserResult) PersistenceMetadataCache.getInstance().get(
+							"NamedParameters:" + descriptionSQL.getSql());
 					if (parserResult == null) {
 						parserResult = NamedParameterStatement.parse(descriptionSQL.getSql(), null);
-						PersistenceMetadataCache.getInstance().put("NamedParameters:" + descriptionSQL.getSql(),
-								parserResult);
+						PersistenceMetadataCache.getInstance().put("NamedParameters:" + descriptionSQL.getSql(), parserResult);
 					}
 					if (parserResult != null) {
 						for (String param : parserResult.getParsedParams().keySet()) {
@@ -283,11 +276,9 @@ public class EntityCacheManager {
 							if ((descriptionField.getDescriptionColumnByName(param) == null)
 									&& (!descriptionSQL.getSuccessParameter().equalsIgnoreCase(param))
 									&& (descriptionSQL.getParametersId().get(param) == null))
-								throw new EntityCacheException("O parâmetro " + param + " usado no sql "
-										+ descriptionSQL.getSql() + " da configuração de "
-										+ descriptionSQL.getSqlType() + " no campo " + descriptionField.getName()
-										+ " não foi encontrado na lista de colunas da classe "
-										+ descriptionField.getTargetClass().getName());
+								throw new EntityCacheException("O parâmetro " + param + " usado no sql " + descriptionSQL.getSql()
+										+ " da configuração de " + descriptionSQL.getSqlType() + " no campo " + descriptionField.getName()
+										+ " não foi encontrado na lista de colunas da classe " + descriptionField.getTargetClass().getName());
 
 						}
 					}
@@ -299,25 +290,21 @@ public class EntityCacheManager {
 							EntityCache referencedCache = descriptionField.getTargetEntity();
 							if (referencedCache == null) {
 								throw new EntityCacheException("Tabela " + column.getReferencedTableName()
-										+ " não encontrada na lista de entidades gerenciadas. Verifique o Campo "
-										+ descriptionField.getName() + " da classe "
-										+ entityCache.getEntityClass().getName());
+										+ " não encontrada na lista de entidades gerenciadas. Verifique o Campo " + descriptionField.getName()
+										+ " da classe " + entityCache.getEntityClass().getName());
 							}
 							List<EntityCache> entitiesCache = getEntityCachesByTableName(referencedCache.getTableName());
 							DescriptionColumn referencedColumn = null;
 							for (EntityCache ec : entitiesCache) {
-								referencedColumn = ec
-										.getDescriptionColumnByColumnName(column.getReferencedColumnName());
+								referencedColumn = ec.getDescriptionColumnByColumnName(column.getReferencedColumnName());
 								if (referencedColumn != null)
 									break;
 							}
 
 							if ((referencedColumn == null) || !(referencedColumn.isPrimaryKey())) {
-								throw new EntityCacheException("A coluna " + column.getReferencedColumnName()
-										+ " referenciada no campo " + descriptionField.getName() + " da classe "
-										+ descriptionField.getEntityCache().getEntityClass().getName()
-										+ " não foi encontrada na classe " + referencedCache.getEntityClass().getName()
-										+ " ou não é um ID.");
+								throw new EntityCacheException("A coluna " + column.getReferencedColumnName() + " referenciada no campo "
+										+ descriptionField.getName() + " da classe " + descriptionField.getEntityCache().getEntityClass().getName()
+										+ " não foi encontrada na classe " + referencedCache.getEntityClass().getName() + " ou não é um ID.");
 							}
 						}
 					}
@@ -331,21 +318,17 @@ public class EntityCacheManager {
 		return loaded;
 	}
 
-	private void loadConfigurationsSuperClass(EntityCache entityCache, PersistenceModelConfiguration modelConfiguration)
-			throws Exception {
+	private void loadConfigurationsSuperClass(EntityCache entityCache, PersistenceModelConfiguration modelConfiguration) throws Exception {
 		Class<?> sourceClazz = entityCache.getEntityClass();
 		EntityCache cacheSuper;
 
 		/*
 		 * Se superclasse != de Object.class e ela não possuir Inheritance
 		 */
-		EntityConfiguration entityConfigurationSuper = modelConfiguration.getEntities()
-				.get(sourceClazz.getSuperclass());
+		EntityConfiguration entityConfigurationSuper = modelConfiguration.getEntities().get(sourceClazz.getSuperclass());
 		if ((sourceClazz.getSuperclass() != Object.class && (entityConfigurationSuper == null || (!entityConfigurationSuper
-				.isAnnotationPresent(Inheritance.class) && !entityConfigurationSuper
-				.isAnnotationPresent(DiscriminatorValue.class))))) {
-			throw new EntityCacheException("A classe " + sourceClazz + " é uma subclasse de "
-					+ sourceClazz.getSuperclass()
+				.isAnnotationPresent(Inheritance.class) && !entityConfigurationSuper.isAnnotationPresent(DiscriminatorValue.class))))) {
+			throw new EntityCacheException("A classe " + sourceClazz + " é uma subclasse de " + sourceClazz.getSuperclass()
 					+ ", que não possui Inheritance definida ou não foi adicionada nas configurações.");
 		} else if ((entityConfigurationSuper != null)
 				&& ((entityConfigurationSuper.isAnnotationPresent(Inheritance.class)) || (entityConfigurationSuper
@@ -359,8 +342,8 @@ public class EntityCacheManager {
 			temporaryListFields.addAll(cacheSuper.getDescriptionFields());
 			for (DescriptionField f : cacheSuper.getDescriptionFields()) {
 				if (entityCache.getDescriptionField(f.getName()) != null) {
-					throw new EntityCacheException("Encontrado campo " + f.getName() + " duplicado na classe "
-							+ sourceClazz + ". Verifique se o mesmo já não existe na super classe.");
+					throw new EntityCacheException("Encontrado campo " + f.getName() + " duplicado na classe " + sourceClazz
+							+ ". Verifique se o mesmo já não existe na super classe.");
 				}
 			}
 			try {
@@ -384,10 +367,8 @@ public class EntityCacheManager {
 		if (entityConfiguration.isAnnotationPresent(DiscriminatorValue.class)) {
 			cacheSuper = entities.get(sourceClazz.getSuperclass());
 			if (cacheSuper == null) {
-				throw new EntityCacheException(
-						"A Entidade "
-								+ sourceClazz.getName()
-								+ " possui a configuração DiscriminatorValue mas não herda de uma outra Entidade ou a Entidade herdada não foi localizada.");
+				throw new EntityCacheException("A Entidade " + sourceClazz.getName()
+						+ " possui a configuração DiscriminatorValue mas não herda de uma outra Entidade ou a Entidade herdada não foi localizada.");
 			}
 			entityCache.setTableName(cacheSuper.getTableName());
 			entityCache.setDiscriminatorValue(entityConfiguration.getDiscriminatorValue());
@@ -404,8 +385,7 @@ public class EntityCacheManager {
 	private void loadRemainderConfigurations(EntityCache cache) throws EntityCacheException {
 
 		/*
-		 * Percorre DescriptionFields, se FetchMode.ONE_TO_MANY, seta a
-		 * targetEntity
+		 * Percorre DescriptionFields, se FetchMode.ONE_TO_MANY, seta a targetEntity
 		 */
 		for (DescriptionField descriptionField : cache.getDescriptionFields()) {
 			/*
@@ -429,20 +409,17 @@ public class EntityCacheManager {
 					}
 					if (!found)
 						throw new EntityCacheException("A coluna " + c.getColumnName()
-								+ " não faz parte da chave das entidades relacionadas. Verifique o campo  "
-								+ descriptionField.getName() + " na classe "
-								+ descriptionField.getEntityCache().getEntityClass().getName());
+								+ " não faz parte da chave das entidades relacionadas. Verifique o campo  " + descriptionField.getName()
+								+ " na classe " + descriptionField.getEntityCache().getEntityClass().getName());
 				}
 			}
 			if (descriptionField.hasModeType()) {
 				EntityCache refCache = getEntityCache(descriptionField.getTargetClass());
 				if ((refCache == null)
-						&& ((descriptionField.getModeType() == FetchMode.ONE_TO_MANY)
-								|| (descriptionField.getModeType() == FetchMode.FOREIGN_KEY) || (descriptionField
+						&& ((descriptionField.getModeType() == FetchMode.ONE_TO_MANY) || (descriptionField.getModeType() == FetchMode.FOREIGN_KEY) || (descriptionField
 								.getModeType() == FetchMode.MANY_TO_MANY)))
 					throw new EntityCacheException("A classe " + descriptionField.getFieldClass().getName()
-							+ " não foi encontrada na lista de classes configuradas. Verifique o campo "
-							+ descriptionField.getName() + " da Classe "
+							+ " não foi encontrada na lista de classes configuradas. Verifique o campo " + descriptionField.getName() + " da Classe "
 							+ descriptionField.getEntityCache().getEntityClass().getName());
 				descriptionField.setTargetEntity(refCache);
 				if (descriptionField.getModeType() == FetchMode.ONE_TO_MANY) {
@@ -451,25 +428,22 @@ public class EntityCacheManager {
 						mapped = descriptionField.getDescriptionMappedBy();
 						mapped.setEntityCache(entities.get(descriptionField.getTargetClass()));
 					} catch (Exception ex) {
-						throw new EntityCacheException("Erro lendo classe " + cache.getEntityClass().getName() + ". "
-								+ " campo " + descriptionField.getName() + " " + ex.getMessage());
+						throw new EntityCacheException("Erro lendo classe " + cache.getEntityClass().getName() + ". " + " campo "
+								+ descriptionField.getName() + " " + ex.getMessage());
 					}
 					if (mapped.getEntityCache().getDescriptionField(mapped.getMappedBy()) == null) {
-						throw new EntityCacheException("O mapeamento do campo " + descriptionField.getName()
-								+ " da classe " + cache.getEntityClass().getName()
-								+ " está incorreto. O mapeamento configurado em mappedBy=" + mapped.getMappedBy()
+						throw new EntityCacheException("O mapeamento do campo " + descriptionField.getName() + " da classe "
+								+ cache.getEntityClass().getName() + " está incorreto. O mapeamento configurado em mappedBy=" + mapped.getMappedBy()
 								+ " não foi encontrado na classe " + mapped.getEntityCache().getEntityClass().getName());
 					}
 					descriptionField.setDescriptionMappedBy(mapped);
 				} else if (descriptionField.getModeType() == FetchMode.FOREIGN_KEY) {
 					for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
-						DescriptionColumn refColumn = refCache.getDescriptionColumnByName(column
-								.getReferencedColumnName());
+						DescriptionColumn refColumn = refCache.getDescriptionColumnByName(column.getReferencedColumnName());
 						if (refColumn == null)
-							throw new EntityCacheException("A Coluna referenciada " + column.getReferencedColumnName()
-									+ ", do field " + descriptionField.getField().getName() + " na entidade "
-									+ cache.getEntityClass().getName() + " não foi localizada na entidade "
-									+ descriptionField.getTargetClass().getName());
+							throw new EntityCacheException("A Coluna referenciada " + column.getReferencedColumnName() + ", do field "
+									+ descriptionField.getField().getName() + " na entidade " + cache.getEntityClass().getName()
+									+ " não foi localizada na entidade " + descriptionField.getTargetClass().getName());
 
 						column.setReferencedColumn(refColumn);
 					}
@@ -481,13 +455,11 @@ public class EntityCacheManager {
 							refCache = descriptionField.getEntityCache();
 
 						descriptionField.setTargetEntity(refCache);
-						DescriptionColumn refColumn = refCache.getDescriptionColumnByColumnName(column
-								.getReferencedColumnName());
+						DescriptionColumn refColumn = refCache.getDescriptionColumnByColumnName(column.getReferencedColumnName());
 						if (refColumn == null)
-							throw new EntityCacheException("A Coluna referenciada " + column.getReferencedColumnName()
-									+ ", do field " + descriptionField.getField().getName() + " na entidade "
-									+ cache.getEntityClass().getName() + " não foi localizada na entidade "
-									+ descriptionField.getTargetClass().getName());
+							throw new EntityCacheException("A Coluna referenciada " + column.getReferencedColumnName() + ", do field "
+									+ descriptionField.getField().getName() + " na entidade " + cache.getEntityClass().getName()
+									+ " não foi localizada na entidade " + descriptionField.getTargetClass().getName());
 
 						column.setReferencedColumn(refColumn);
 						column.setReferencedTableName(refCache.getTableName());
@@ -496,20 +468,6 @@ public class EntityCacheManager {
 			}
 
 		}
-
-		/*
-		 * Adiciona validador para as colunas com required = true
-		 * 
-		 * VER ISSO DEPOIS QUE TIVER IMPLEMENTADO VALIDATION
-		 */
-		/*
-		 * if (cache != null) { for (DescriptionField field :
-		 * cache.getDescriptionFields()) { for (DescriptionColumn column :
-		 * field.getDescriptionColumns()) { if (column.isRequired()) {
-		 * field.getValidators().add(new NullablelValidator(NotNull.MESSAGE,
-		 * false)); break; } } } }
-		 */
-
 	}
 
 	@SuppressWarnings("unused")
@@ -525,8 +483,7 @@ public class EntityCacheManager {
 	 * 
 	 * param sourceClazz return throws Exception
 	 */
-	private EntityCache loadBasicConfigurations(Class<? extends Serializable> sourceClazz,
-			EntityConfiguration entityConfiguration) throws Exception {
+	private EntityCache loadBasicConfigurations(Class<? extends Serializable> sourceClazz, EntityConfiguration entityConfiguration) throws Exception {
 		/**
 		 * Valida as configurações básicas
 		 */
@@ -569,8 +526,7 @@ public class EntityCacheManager {
 		/*
 		 * Se possuir NamedQueries ou NamedQuery
 		 */
-		if (entityConfiguration.isAnnotationPresent(NamedQueries.class)
-				|| entityConfiguration.isAnnotationPresent(NamedQuery.class))
+		if (entityConfiguration.isAnnotationPresent(NamedQueries.class) || entityConfiguration.isAnnotationPresent(NamedQuery.class))
 			readNamedQuery(entityCache, entityConfiguration);
 
 		/*
@@ -599,8 +555,8 @@ public class EntityCacheManager {
 		/*
 		 * Se possuir SQLInsert, SQLDelete, SQLDeleteAll ou SQLUpdate na classe
 		 */
-		readConfigurationSQL(sourceClazz, entityConfiguration, entityCache, new Class[] { SQLInsert.class,
-				SQLUpdate.class, SQLDelete.class, SQLDeleteAll.class });
+		readConfigurationSQL(sourceClazz, entityConfiguration, entityCache, new Class[] { SQLInsert.class, SQLUpdate.class, SQLDelete.class,
+				SQLDeleteAll.class });
 
 		tableName = sourceClazz.getSimpleName().toLowerCase();
 		schema = "";
@@ -614,8 +570,7 @@ public class EntityCacheManager {
 			schema = entityConfiguration.getSchema();
 			for (UniqueConstraintConfiguration uniqueConstraint : entityConfiguration.getUniqueConstraints()) {
 				DescriptionUniqueConstraint descriptionUniqueConstraint = new DescriptionUniqueConstraint(entityCache);
-				descriptionUniqueConstraint.name(uniqueConstraint.getName()).columnNames(
-						uniqueConstraint.getColumnNames());
+				descriptionUniqueConstraint.name(uniqueConstraint.getName()).columnNames(uniqueConstraint.getColumnNames());
 				entityCache.addUniqueConstraint(descriptionUniqueConstraint);
 			}
 		}
@@ -627,34 +582,29 @@ public class EntityCacheManager {
 		/*
 		 * Adiciona os índices
 		 */
-		if (entityConfiguration.isAnnotationPresent(Indexes.class)
-				|| entityConfiguration.isAnnotationPresent(Index.class)) {
+		if (entityConfiguration.isAnnotationPresent(Indexes.class) || entityConfiguration.isAnnotationPresent(Index.class)) {
 			IndexConfiguration[] indexes = entityConfiguration.getIndexes();
 			if (indexes != null) {
 				for (IndexConfiguration index : indexes) {
 					entityCache.getIndexes().add(
-							new DescriptionIndex(entityCache).name(index.getName()).columnNames(index.getColumnNames())
-									.schema(index.getSchema()).catalog(index.getCatalog()).unique(index.isUnique()));
+							new DescriptionIndex(entityCache).name(index.getName()).columnNames(index.getColumnNames()).schema(index.getSchema())
+									.catalog(index.getCatalog()).unique(index.isUnique()));
 				}
 			}
 		}
 
 		/*
-		 * Adicionas os conversores
+		 * Adicionas os conversores de campos entidade x banco de dados
 		 */
-		readConverterConfiguration(entityCache, entityConfiguration);
+		readConvertConfiguration(entityCache, entityConfiguration);
 
 		for (FieldConfiguration fieldConfiguration : entityConfiguration.getFields()) {
 			/*
 			 * Se possuir Transient
 			 */
-			if (fieldConfiguration.isAnnotationPresent(Transient.class))
-				continue;
-
-			if (fieldConfiguration.getName().toLowerCase().startsWith("$javassist_read_write_handler"))
-				continue;
-
-			if (Modifier.isStatic(fieldConfiguration.getField().getModifiers()))
+			if ((fieldConfiguration.isAnnotationPresent(Transient.class))
+					|| (fieldConfiguration.getName().toLowerCase().startsWith("$javassist_read_write_handler"))
+					|| (Modifier.isStatic(fieldConfiguration.getField().getModifiers())))
 				continue;
 
 			validateBasicFieldConfiguration(sourceClazz, fieldConfiguration);
@@ -662,8 +612,7 @@ public class EntityCacheManager {
 			/*
 			 * Se possuir Fetch
 			 */
-			if (fieldConfiguration.isAnnotationPresent(Fetch.class)
-					&& !fieldConfiguration.isAnnotationPresent(ForeignKey.class)
+			if (fieldConfiguration.isAnnotationPresent(Fetch.class) && !fieldConfiguration.isAnnotationPresent(ForeignKey.class)
 					&& !fieldConfiguration.isAnnotationPresent(JoinTable.class)) {
 
 				/*
@@ -673,10 +622,8 @@ public class EntityCacheManager {
 					try {
 						readElementCollectionConfiguration(fieldConfiguration, entityCache);
 					} catch (Exception e) {
-						throw new EntityCacheManagerException(
-								"Não foi possível ler as configurações ELEMENT COLLECTION do campo "
-										+ fieldConfiguration.getName() + " da classe "
-										+ entityCache.getEntityClass().getName() + " - " + e.getMessage());
+						throw new EntityCacheManagerException("Não foi possível ler as configurações ELEMENT COLLECTION do campo "
+								+ fieldConfiguration.getName() + " da classe " + entityCache.getEntityClass().getName() + " - " + e.getMessage());
 					}
 				} else
 					readFetchConfigurations(entityCache, fieldConfiguration);
@@ -685,26 +632,21 @@ public class EntityCacheManager {
 			/*
 			 * Se possuir ForeignKey
 			 */
-			if (fieldConfiguration.isAnnotationPresent(ForeignKey.class)
-					&& !fieldConfiguration.isAnnotationPresent(Columns.class)
+			if (fieldConfiguration.isAnnotationPresent(ForeignKey.class) && !fieldConfiguration.isAnnotationPresent(Columns.class)
 					&& !fieldConfiguration.isAnnotationPresent(CompositeId.class))
 				readForeignKeyConfiguration(fieldConfiguration, entityCache, entityConfiguration.getModel());
 
 			/*
-			 * Se não possuir ForeignKey, Fetch e CompositeId ou Transient será
-			 * uma coluna normal
+			 * Se não possuir ForeignKey, Fetch e CompositeId ou Transient será uma coluna normal
 			 */
-			if (!fieldConfiguration.isAnnotationPresent(ForeignKey.class)
-					&& !fieldConfiguration.isAnnotationPresent(Fetch.class)
-					&& !fieldConfiguration.isAnnotationPresent(CompositeId.class)
-					&& !fieldConfiguration.isAnnotationPresent(JoinTable.class))
+			if (!fieldConfiguration.isAnnotationPresent(ForeignKey.class) && !fieldConfiguration.isAnnotationPresent(Fetch.class)
+					&& !fieldConfiguration.isAnnotationPresent(CompositeId.class) && !fieldConfiguration.isAnnotationPresent(JoinTable.class))
 				readColumnConfiguration(fieldConfiguration, entityCache, entityConfiguration.getModel());
 
 			/*
 			 * Se possuir Columns ou CompositeId
 			 */
-			if (fieldConfiguration.isAnnotationPresent(Columns.class)
-					|| fieldConfiguration.isAnnotationPresent(CompositeId.class))
+			if (fieldConfiguration.isAnnotationPresent(Columns.class) || fieldConfiguration.isAnnotationPresent(CompositeId.class))
 				readCompositeIdConfiguration(fieldConfiguration, entityCache, entityConfiguration.getModel());
 
 			/*
@@ -713,33 +655,28 @@ public class EntityCacheManager {
 			if (fieldConfiguration.isAnnotationPresent(JoinTable.class))
 				readJoinTableConfiguration(fieldConfiguration, entityCache);
 
-			if (fieldConfiguration.isAnnotationPresent(Remote.class)
-					&& (!fieldConfiguration.isAnnotationPresent(JoinTable.class)))
-				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade "
-						+ fieldConfiguration.getType().getName()
+			if (fieldConfiguration.isAnnotationPresent(Remote.class) && (!fieldConfiguration.isAnnotationPresent(JoinTable.class)))
+				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade " + fieldConfiguration.getType().getName()
 						+ " possui configuração Remote e deve estar acompanhada da configuração JoinTable ");
 
 			/*
-			 * Se possuir SQLInsert, SQLDelete, SQLDeleteAll ou SQLUpdate no
-			 * field
+			 * Se possuir SQLInsert, SQLDelete, SQLDeleteAll ou SQLUpdate no field
 			 */
-			readConfigurationSQL(sourceClazz, entityCache, new Class[] { SQLInsert.class, SQLUpdate.class,
-					SQLDelete.class, SQLDeleteAll.class }, fieldConfiguration);
+			readConfigurationSQL(sourceClazz, entityCache, new Class[] { SQLInsert.class, SQLUpdate.class, SQLDelete.class, SQLDeleteAll.class },
+					fieldConfiguration);
 
 			/*
 			 * Adiciona os índices
 			 */
-			if (fieldConfiguration.isAnnotationPresent(Indexes.class)
-					|| entityConfiguration.isAnnotationPresent(Index.class)) {
+			if (fieldConfiguration.isAnnotationPresent(Indexes.class) || entityConfiguration.isAnnotationPresent(Index.class)) {
 				IndexConfiguration[] indexes = fieldConfiguration.getIndexes();
 				if (indexes != null) {
 					DescriptionField df = entityCache.getDescriptionField(fieldConfiguration.getField().getName());
 					if (df != null) {
 						for (IndexConfiguration index : indexes)
 							df.getIndexes().add(
-									new DescriptionIndex(entityCache).name(index.getName())
-											.columnNames(index.getColumnNames()).schema(index.getSchema())
-											.catalog(index.getCatalog()).unique(index.isUnique()));
+									new DescriptionIndex(entityCache).name(index.getName()).columnNames(index.getColumnNames())
+											.schema(index.getSchema()).catalog(index.getCatalog()).unique(index.isUnique()));
 					}
 				}
 			}
@@ -747,206 +684,115 @@ public class EntityCacheManager {
 			/*
 			 * Adicionas os conversores
 			 */
-			readConverterConfiguration(entityCache, fieldConfiguration);
+			readConvertConfiguration(entityCache, fieldConfiguration);
 
 		}
 
 		return entityCache;
 	}
 
-	protected void readConverterConfiguration(EntityCache entityCache, FieldConfiguration fieldConfiguration) {
+	protected void readConvertConfiguration(EntityCache entityCache, FieldConfiguration fieldConfiguration) throws EntityCacheException,
+			InstantiationException, IllegalAccessException {
 		/*
 		 * Adiciona os conversores
 		 */
-		if (fieldConfiguration.isAnnotationPresent(Converters.class)
-				|| fieldConfiguration.isAnnotationPresent(Converter.class)) {
-			ConverterConfiguration[] converters = fieldConfiguration.getConverters();
-			if (converters != null) {
+		if (fieldConfiguration.isAnnotationPresent(Converts.class) || fieldConfiguration.isAnnotationPresent(Convert.class)) {
+			ConvertConfiguration[] converts = fieldConfiguration.getConverts();
+			if (converts != null) {
 				DescriptionField df = entityCache.getDescriptionField(fieldConfiguration.getField().getName());
 				if (df != null) {
-					for (ConverterConfiguration converter : converters)
-						df.getConverters().add(
-								new DescriptionConverter(DescriptionConverterType.CUSTOM_CONVERTER).attributeConverter(
-										converter.getAttributeConverter()).attributeName(converter.getAttributeName()));
+					for (ConvertConfiguration convert : converts) {
+						ConverterCache converterCache = getConverterByCache(convert.getConverter());
+						df.getConverts().add(
+								new DescriptionConvert(converterCache.getConverter(), convert.getAttributeName(), converterCache
+										.getEntityAttributeType(), converterCache.getDatabaseColumnType()));
+					}
 				}
-			}
-		}
-		/*
-		 * Adiciona os conversores de tipos
-		 */
-		if (fieldConfiguration.isAnnotationPresent(TypeConverter.class)
-				|| fieldConfiguration.isAnnotationPresent(TypeConverters.class)) {
-			TypeConverterConfiguration[] converters = fieldConfiguration.getTypeConverters();
-			if (converters != null) {
-				DescriptionField df = entityCache.getDescriptionField(fieldConfiguration.getField().getName());
-				if (df != null) {
-					for (TypeConverterConfiguration converter : converters)
-						df.getConverters().add(
-								new DescriptionConverter(DescriptionConverterType.TYPE_CONVERTER)
-										.name(converter.getName()).dataType(converter.getDataType())
-										.objectType(converter.getObjectType()));
-				}
-			}
-		}
-
-		/*
-		 * Adiciona os conversores de objetos
-		 */
-		if (fieldConfiguration.isAnnotationPresent(ObjectTypeConverter.class)
-				|| fieldConfiguration.isAnnotationPresent(ObjectTypeConverters.class)) {
-			ObjectTypeConverterConfiguration[] converters = fieldConfiguration.getObjectTypeConverters();
-			if (converters != null) {
-				DescriptionField df = entityCache.getDescriptionField(fieldConfiguration.getField().getName());
-				if (df != null) {
-					for (ObjectTypeConverterConfiguration converter : converters)
-						df.getConverters().add(
-								new DescriptionConverter(DescriptionConverterType.OBJECT_CONVERTER)
-										.name(converter.getName()).dataType(converter.getDataType())
-										.objectType(converter.getObjectType())
-										.conversionValues(converter.getConversionValues())
-										.defaultObjectValue(converter.getDefaultObjectValue()));
-				}
-			}
-		}
-		/*
-		 * Adiciona os nomes dos conversores
-		 */
-		if (fieldConfiguration.isAnnotationPresent(Convert.class)) {
-			DescriptionField df = entityCache.getDescriptionField(fieldConfiguration.getField().getName());
-			df.setConvert(fieldConfiguration.getConvert());
-		}
-
-		if (fieldConfiguration.isAnnotationPresent(MapKeyConvert.class)) {
-			DescriptionField df = entityCache.getDescriptionField(fieldConfiguration.getField().getName());
-			df.setMapKeyConvert(fieldConfiguration.getMapKeyConvert());
-		}
-	}
-
-	protected void readConverterConfiguration(EntityCache entityCache, EntityConfiguration entityConfiguration) {
-		/*
-		 * Adiciona os conversores
-		 */
-		if (entityConfiguration.isAnnotationPresent(Converters.class)
-				|| entityConfiguration.isAnnotationPresent(Converter.class)) {
-			ConverterConfiguration[] converters = entityConfiguration.getConverters();
-			if (converters != null) {
-				for (ConverterConfiguration converter : converters)
-					entityCache.getConverters().add(
-							new DescriptionConverter(DescriptionConverterType.CUSTOM_CONVERTER).attributeConverter(
-									converter.getAttributeConverter()).attributeName(converter.getAttributeName()));
-			}
-		}
-		/*
-		 * Adiciona os conversores de tipos
-		 */
-		if (entityConfiguration.isAnnotationPresent(TypeConverter.class)
-				|| entityConfiguration.isAnnotationPresent(TypeConverters.class)) {
-			TypeConverterConfiguration[] converters = entityConfiguration.getTypeConverters();
-			if (converters != null) {
-				for (TypeConverterConfiguration converter : converters)
-					entityCache.getConverters().add(
-							new DescriptionConverter(DescriptionConverterType.TYPE_CONVERTER).name(converter.getName())
-									.dataType(converter.getDataType()).objectType(converter.getObjectType()));
-			}
-		}
-
-		/*
-		 * Adiciona os conversores de objetos
-		 */
-		if (entityConfiguration.isAnnotationPresent(ObjectTypeConverter.class)
-				|| entityConfiguration.isAnnotationPresent(ObjectTypeConverters.class)) {
-			ObjectTypeConverterConfiguration[] converters = entityConfiguration.getObjectTypeConverters();
-			if (converters != null) {
-				for (ObjectTypeConverterConfiguration converter : converters)
-					entityCache.getConverters().add(
-							new DescriptionConverter(DescriptionConverterType.OBJECT_CONVERTER)
-									.name(converter.getName()).dataType(converter.getDataType())
-									.objectType(converter.getObjectType())
-									.conversionValues(converter.getConversionValues())
-									.defaultObjectValue(converter.getDefaultObjectValue()));
 			}
 		}
 
 	}
 
-	protected void validateBasicFieldConfiguration(Class<? extends Serializable> sourceClazz,
-			FieldConfiguration fieldConfiguration) throws EntityCacheException {
+	public ConverterCache getConverterByCache(Class<?> converter) {
+		for (ConverterCache converterCache : converters) {
+			if (converterCache.getConverter().getClass().equals(converter))
+				return converterCache;
+		}
+		return null;
+	}
+
+	protected void readConvertConfiguration(EntityCache entityCache, EntityConfiguration entityConfiguration) throws EntityCacheException,
+			InstantiationException, IllegalAccessException {
+		/*
+		 * Adiciona os conversores anotados na classe
+		 */
+		if (entityConfiguration.isAnnotationPresent(Converts.class) || entityConfiguration.isAnnotationPresent(Convert.class)) {
+			ConvertConfiguration[] converts = entityConfiguration.getConverts();
+			if (converts != null) {
+				for (ConvertConfiguration convert : converts) {
+					if (StringUtils.isEmpty(convert.getAttributeName())) {
+						throw new EntityCacheException("Conversores configurados em uma entidade devem ter o nome do atributo.");
+					}
+					ConverterCache converterCache = getConverterByCache(convert.getConverter());
+					entityCache.getConverts().add(
+							new DescriptionConvert(converterCache.getConverter(), convert.getAttributeName(),
+									converterCache.getEntityAttributeType(), converterCache.getDatabaseColumnType()));
+				}
+			}
+		}
+	}
+
+	protected void validateBasicFieldConfiguration(Class<? extends Serializable> sourceClazz, FieldConfiguration fieldConfiguration)
+			throws EntityCacheException {
 		if (fieldConfiguration.getAnnotations().size() == 0)
-			throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe "
-					+ sourceClazz.getName()
+			throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe " + sourceClazz.getName()
 					+ " não possuí nenhuma configuração. Caso o campo não seja persistido configurar como Transient.");
 
 		if (!ReflectionUtils.hasGetterAccessor(sourceClazz, fieldConfiguration.getField())) {
-			throw new EntityCacheException(
-					"O campo "
-							+ fieldConfiguration.getName()
-							+ " da classe "
-							+ sourceClazz.getName()
-							+ " não possuí um método acessor (GET) configurado. Defina os métodos acessores para todos os campos das entidades.");
+			throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe " + sourceClazz.getName()
+					+ " não possuí um método acessor (GET) configurado. Defina os métodos acessores para todos os campos das entidades.");
 		}
 
 		if (!ReflectionUtils.hasSetterAccessor(sourceClazz, fieldConfiguration.getField())) {
-			throw new EntityCacheException(
-					"O campo "
-							+ fieldConfiguration.getName()
-							+ " da classe "
-							+ sourceClazz.getName()
-							+ " não possuí um método acessor (SET) configurado. Defina os métodos acessores para todos os campos das entidades.");
+			throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe " + sourceClazz.getName()
+					+ " não possuí um método acessor (SET) configurado. Defina os métodos acessores para todos os campos das entidades.");
 		}
 
 		if (validate) {
 			/*
-			 * if ((fieldConfiguration.getColumns()!=null) &&
-			 * (fieldConfiguration.getColumns().size()==0)){ throw new
-			 * EntityCacheException("O campo " + fieldConfiguration.getName() +
-			 * " da classe " + sourceClazz.getName() +
-			 * " não possuí anotação de coluna."); }
-			 */
-
-			/*
 			 * Se field Date, deve possuir a configuração Temporal
 			 */
-			if (fieldConfiguration.getType() == java.util.Date.class
-					&& !fieldConfiguration.isAnnotationPresent(Temporal.class))
-				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe "
-						+ sourceClazz.getName() + " é do tipo java.util.Date, mas não possui a configuração Temporal.");
+			if (fieldConfiguration.getType() == java.util.Date.class && !fieldConfiguration.isAnnotationPresent(Temporal.class))
+				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe " + sourceClazz.getName()
+						+ " é do tipo java.util.Date, mas não possui a configuração Temporal.");
 
 			/*
 			 * Se possuir precisão, mas não possui tamanho
 			 */
-			if (fieldConfiguration.isAnnotationPresent(Column.class)
-					&& fieldConfiguration.getColumns().iterator().next().getScale() > 0
+			if (fieldConfiguration.isAnnotationPresent(Column.class) && fieldConfiguration.getColumns().iterator().next().getScale() > 0
 					&& fieldConfiguration.getColumns().iterator().next().getPrecision() < 1)
-				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe "
-						+ sourceClazz.getName() + " foi definido escala(decimais) "
-						+ fieldConfiguration.getColumns().iterator().next().getScale() + " e tamanho 0");
+				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe " + sourceClazz.getName()
+						+ " foi definido escala(decimais) " + fieldConfiguration.getColumns().iterator().next().getScale() + " e tamanho 0");
 
 			/*
 			 * Valida se é um tipo primitivo
 			 */
 			if (fieldConfiguration.getType().isPrimitive())
-				throw new EntityCacheException(
-						"O campo "
-								+ fieldConfiguration.getName()
-								+ " da classe "
-								+ sourceClazz.getName()
-								+ " é um tipo primitivo. Utilize somente classes Wrapper's. Ex: Long, Integer, Short, Double, etc.");
+				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe " + sourceClazz.getName()
+						+ " é um tipo primitivo. Utilize somente classes Wrapper's. Ex: Long, Integer, Short, Double, etc.");
 
 			/*
 			 * Verifica se o tipo é Boolean e se possui uma configuração
 			 * 
 			 * BooleanValue
 			 */
-			if ((fieldConfiguration.getType().equals(BooleanValue.class) && (!fieldConfiguration
-					.isAnnotationPresent(BooleanValue.class))))
-				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe "
-						+ sourceClazz.getName() + " é do tipo Boolean e não possuí a configuração BooleanValue.");
+			if ((fieldConfiguration.getType().equals(BooleanValue.class) && (!fieldConfiguration.isAnnotationPresent(BooleanValue.class))))
+				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe " + sourceClazz.getName()
+						+ " é do tipo Boolean e não possuí a configuração BooleanValue.");
 
-			if (fieldConfiguration.isAnnotationPresent(OrderBy.class)
-					&& !fieldConfiguration.isAnnotationPresent(Fetch.class))
-				throw new EntityCacheException(
-						"A configuração Order deve estar acompanhada com a configuração Fetch. Campo "
-								+ fieldConfiguration + " da classe " + sourceClazz.getName());
+			if (fieldConfiguration.isAnnotationPresent(OrderBy.class) && !fieldConfiguration.isAnnotationPresent(Fetch.class))
+				throw new EntityCacheException("A configuração Order deve estar acompanhada com a configuração Fetch. Campo " + fieldConfiguration
+						+ " da classe " + sourceClazz.getName());
 
 			/*
 			 * Se possuir JoinTable, deve estar acompanhada com Fetch
@@ -959,11 +805,10 @@ public class EntityCacheManager {
 				if (fieldConfiguration.getFetch().getMode() != FetchMode.MANY_TO_MANY)
 					throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade "
 							+ fieldConfiguration.getType().getName() + " deve ser informado FetchMode.MANY_TO_MANY");
-				if (!(ReflectionUtils.isImplementsInterface(fieldConfiguration.getType(), Collection.class) || ReflectionUtils
-						.isImplementsInterface(fieldConfiguration.getType(), Set.class))) {
-					throw new EntityCacheException(
-							"A configuração Fetch com FechMode=MANY_TO_MANY só pode ser usada em coleções. Verifique o campo "
-									+ fieldConfiguration.getName() + " da classe " + sourceClazz.getName());
+				if (!(ReflectionUtils.isImplementsInterface(fieldConfiguration.getType(), Collection.class) || ReflectionUtils.isImplementsInterface(
+						fieldConfiguration.getType(), Set.class))) {
+					throw new EntityCacheException("A configuração Fetch com FechMode=MANY_TO_MANY só pode ser usada em coleções. Verifique o campo "
+							+ fieldConfiguration.getName() + " da classe " + sourceClazz.getName());
 				}
 			}
 
@@ -1010,22 +855,17 @@ public class EntityCacheManager {
 					 */
 					if (ReflectionUtils.isImplementsMap(fieldConfiguration.getType())) {
 						if (!fieldConfiguration.isAnnotationPresent(MapKeyColumn.class)) {
-							throw new EntityCacheException(
-									"O campo "
-											+ fieldConfiguration.getName()
-											+ " da entidade "
-											+ fieldConfiguration.getType().getName()
-											+ " é uma implemtaçãoo de java.util.Map e deve ser informada a configuração MapKeyColumn.");
+							throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade "
+									+ fieldConfiguration.getType().getName()
+									+ " é uma implemtaçãoo de java.util.Map e deve ser informada a configuração MapKeyColumn.");
 						}
 
 						/*
-						 * Se possuir MapKeyColumn deve ser do tipo
-						 * String.class,Integer.class, Long.class, Date.class ou
-						 * Enum
+						 * Se possuir MapKeyColumn deve ser do tipo String.class,Integer.class, Long.class, Date.class
+						 * ou Enum
 						 */
-						if (!ReflectionUtils.containsInTypedMap(fieldConfiguration.getField(), new Class<?>[] {
-								String.class, Integer.class, Long.class, Date.class, Enum.class, Float.class,
-								BigDecimal.class, BigInteger.class, Double.class })) {
+						if (!ReflectionUtils.containsInTypedMap(fieldConfiguration.getField(), new Class<?>[] { String.class, Integer.class,
+								Long.class, Date.class, Enum.class, Float.class, BigDecimal.class, BigInteger.class, Double.class })) {
 							throw new EntityCacheException(
 									"O campo "
 											+ fieldConfiguration.getName()
@@ -1042,12 +882,9 @@ public class EntityCacheManager {
 				 */
 				if (fieldConfiguration.isAnnotationPresent(MapKeyEnumerated.class)) {
 					if (!ReflectionUtils.isImplementsMap(fieldConfiguration.getType())) {
-						throw new EntityCacheException(
-								"O campo "
-										+ fieldConfiguration.getName()
-										+ " da entidade "
-										+ fieldConfiguration.getType().getName()
-										+ ", possui a configuração MapKeyEnumerated. Esta configuração só pode ser usado com campos do tipo Map.");
+						throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade "
+								+ fieldConfiguration.getType().getName()
+								+ ", possui a configuração MapKeyEnumerated. Esta configuração só pode ser usado com campos do tipo Map.");
 					}
 
 				}
@@ -1057,12 +894,9 @@ public class EntityCacheManager {
 				 */
 				if (fieldConfiguration.isAnnotationPresent(MapKeyEnumerated.class)) {
 					if (!ReflectionUtils.isImplementsMap(fieldConfiguration.getType())) {
-						throw new EntityCacheException(
-								"O campo "
-										+ fieldConfiguration.getName()
-										+ " da entidade "
-										+ fieldConfiguration.getType().getName()
-										+ ", possui a configuração MapKeyEnumerated. Esta configuração só pode ser usado com campos do tipo Map.");
+						throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade "
+								+ fieldConfiguration.getType().getName()
+								+ ", possui a configuração MapKeyEnumerated. Esta configuração só pode ser usado com campos do tipo Map.");
 					}
 
 					if (!ReflectionUtils.containsEnumInKeyTypedMap(fieldConfiguration.getField())) {
@@ -1080,16 +914,12 @@ public class EntityCacheManager {
 				 */
 				if (fieldConfiguration.isAnnotationPresent(MapKeyTemporal.class)) {
 					if (!ReflectionUtils.isImplementsMap(fieldConfiguration.getType())) {
-						throw new EntityCacheException(
-								"O campo "
-										+ fieldConfiguration.getName()
-										+ " da entidade "
-										+ fieldConfiguration.getType().getName()
-										+ ", possui a configuração MapKeyTemporal. Esta configuração só pode ser usado com campos do tipo Map.");
+						throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade "
+								+ fieldConfiguration.getType().getName()
+								+ ", possui a configuração MapKeyTemporal. Esta configuração só pode ser usado com campos do tipo Map.");
 					}
 
-					if (!ReflectionUtils.containsInKeyTypedMap(fieldConfiguration.getField(),
-							new Class<?>[] { java.util.Date.class })) {
+					if (!ReflectionUtils.containsInKeyTypedMap(fieldConfiguration.getField(), new Class<?>[] { java.util.Date.class })) {
 						throw new EntityCacheException(
 								"O campo "
 										+ fieldConfiguration.getName()
@@ -1103,21 +933,17 @@ public class EntityCacheManager {
 				 * Se possui EnumValues
 				 */
 				if (fieldConfiguration.isAnnotationPresent(EnumValues.class)) {
-					throw new EntityCacheException(
-							"A configuração EnumValues não é permitido para campos. Deve ser usada somente em classes Enum->"
-									+ fieldConfiguration.getName() + " da entidade "
-									+ fieldConfiguration.getType().getName());
+					throw new EntityCacheException("A configuração EnumValues não é permitido para campos. Deve ser usada somente em classes Enum->"
+							+ fieldConfiguration.getName() + " da entidade " + fieldConfiguration.getType().getName());
 
 				}
 
 				/*
 				 * Se FetchMode.ONE_TO_MANY vazio
 				 */
-				if (fieldConfiguration.getFetch().getMode() == FetchMode.ONE_TO_MANY
-						&& "".equals(fieldConfiguration.getFetch().getMappedBy())) {
-					throw new EntityCacheException(
-							"Ao utilizar FetchMode.ONE_TO_MANY deve-se informar o argumento mappedBy. Campo "
-									+ fieldConfiguration);
+				if (fieldConfiguration.getFetch().getMode() == FetchMode.ONE_TO_MANY && "".equals(fieldConfiguration.getFetch().getMappedBy())) {
+					throw new EntityCacheException("Ao utilizar FetchMode.ONE_TO_MANY deve-se informar o argumento mappedBy. Campo "
+							+ fieldConfiguration);
 				} else if (fieldConfiguration.getFetch().getMode() == FetchMode.ONE_TO_MANY) {
 					if (!(ReflectionUtils.isImplementsInterface(fieldConfiguration.getType(), Collection.class) || ReflectionUtils
 							.isImplementsInterface(fieldConfiguration.getType(), Set.class))) {
@@ -1133,14 +959,12 @@ public class EntityCacheManager {
 						/*
 						 * Se FetchMode.SELECT vazio
 						 */
-						throw new EntityCacheException(
-								"Ao utilizar FetchMode.SELECT, deve-se informar o argumento statement. Campo "
-										+ fieldConfiguration);
+						throw new EntityCacheException("Ao utilizar FetchMode.SELECT, deve-se informar o argumento statement. Campo "
+								+ fieldConfiguration);
 
 					if (fieldConfiguration.isAnnotationPresent(OrderBy.class))
-						throw new EntityCacheException(
-								"A configuração OrderBy não deve ser utilizada junto com FetchMode.SELECT. Campo "
-										+ fieldConfiguration);
+						throw new EntityCacheException("A configuração OrderBy não deve ser utilizada junto com FetchMode.SELECT. Campo "
+								+ fieldConfiguration);
 
 				}
 
@@ -1152,12 +976,9 @@ public class EntityCacheManager {
 			 * Columns
 			 */
 			if (fieldConfiguration.isAnnotationPresent(CompositeId.class)) {
-				if (!fieldConfiguration.isAnnotationPresent(Column.class)
-						&& !fieldConfiguration.isAnnotationPresent(Columns.class)) {
-					throw new EntityCacheException(
-							"O campo "
-									+ fieldConfiguration
-									+ ", possui a configuração CompositeId, que obrigatoriamente deve estar acompanhada por Column ou Columns");
+				if (!fieldConfiguration.isAnnotationPresent(Column.class) && !fieldConfiguration.isAnnotationPresent(Columns.class)) {
+					throw new EntityCacheException("O campo " + fieldConfiguration
+							+ ", possui a configuração CompositeId, que obrigatoriamente deve estar acompanhada por Column ou Columns");
 				}
 
 				/*
@@ -1171,12 +992,10 @@ public class EntityCacheManager {
 			}
 
 			/*
-			 * Se possuir Cascade e o field não for uma Collection ou
-			 * ForeignKey, e não possuir Fetch
+			 * Se possuir Cascade e o field não for uma Collection ou ForeignKey, e não possuir Fetch
 			 */
 			if (fieldConfiguration.isAnnotationPresent(Cascade.class)) {
-				if (!ReflectionUtils.isCollection(fieldConfiguration.getType())
-						&& !fieldConfiguration.isAnnotationPresent(ForeignKey.class)) {
+				if (!ReflectionUtils.isCollection(fieldConfiguration.getType()) && !fieldConfiguration.isAnnotationPresent(ForeignKey.class)) {
 					throw new EntityCacheException(
 							"O campo "
 									+ fieldConfiguration.getName()
@@ -1188,24 +1007,20 @@ public class EntityCacheManager {
 
 				}
 
-				if (!fieldConfiguration.isAnnotationPresent(Fetch.class)
-						&& (!fieldConfiguration.isAnnotationPresent(ForeignKey.class))) {
+				if (!fieldConfiguration.isAnnotationPresent(Fetch.class) && (!fieldConfiguration.isAnnotationPresent(ForeignKey.class))) {
 					throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade "
-							+ fieldConfiguration.getType().getName()
-							+ " deve estar acompanhado da configuração Fetch ou ForeignKey.");
+							+ fieldConfiguration.getType().getName() + " deve estar acompanhado da configuração Fetch ou ForeignKey.");
 				}
 			}
 
 			/*
-			 * Se possui Lob, deve ser do tipo Byte[], byte[], implementar
-			 * java.io.Serializable, Character[], char[] ou java.lang.String
+			 * Se possui Lob, deve ser do tipo Byte[], byte[], implementar java.io.Serializable, Character[], char[] ou
+			 * java.lang.String
 			 */
 			if (fieldConfiguration.isAnnotationPresent(Lob.class)) {
 				if (fieldConfiguration.getType() != byte[].class && fieldConfiguration.getType() != Byte[].class
-						&& Serializable.class.isAssignableFrom(fieldConfiguration.getType())
-						&& fieldConfiguration.getType() != Character[].class
-						&& fieldConfiguration.getType() != char[].class
-						&& fieldConfiguration.getType() != java.lang.String.class) {
+						&& Serializable.class.isAssignableFrom(fieldConfiguration.getType()) && fieldConfiguration.getType() != Character[].class
+						&& fieldConfiguration.getType() != char[].class && fieldConfiguration.getType() != java.lang.String.class) {
 					throw new EntityCacheException(
 							"O campo "
 									+ fieldConfiguration.getName()
@@ -1223,40 +1038,29 @@ public class EntityCacheManager {
 		if (fieldConfiguration.isAnnotationPresent(Version.class)) {
 			if ((fieldConfiguration.getType() != Integer.class) && (fieldConfiguration.getType() != Long.class)
 					&& (fieldConfiguration.getType() != Short.class) && (fieldConfiguration.getType() != Date.class)) {
-				throw new EntityCacheException(
-						"O campo "
-								+ fieldConfiguration.getName()
-								+ " da Entidade "
-								+ sourceClazz.getName()
-								+ " possui Version que pode ser utilizado somente com atributos do tipo Long, Integer, Short e Date.");
+				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da Entidade " + sourceClazz.getName()
+						+ " possui Version que pode ser utilizado somente com atributos do tipo Long, Integer, Short e Date.");
 			}
 		}
 
 		/*
 		 * Se possuir SequenceGenerator e TableGenerator
 		 */
-		if (fieldConfiguration.isAnnotationPresent(SequenceGenerator.class)
-				|| fieldConfiguration.isAnnotationPresent(TableGenerator.class)) {
+		if (fieldConfiguration.isAnnotationPresent(SequenceGenerator.class) || fieldConfiguration.isAnnotationPresent(TableGenerator.class)) {
 			/*
 			 * Se não possuir GenerateValue
 			 */
 			if (!fieldConfiguration.isAnnotationPresent(GeneratedValue.class)) {
-				throw new EntityCacheException(
-						"O campo "
-								+ fieldConfiguration.getName()
-								+ " da entidade "
-								+ fieldConfiguration.getType().getName()
-								+ " possui SequenceGenerator/TableGenerator e deve estar acompanhdo da configuração GenerateValue ");
+				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade " + fieldConfiguration.getType().getName()
+						+ " possui SequenceGenerator/TableGenerator e deve estar acompanhdo da configuração GenerateValue ");
 			}
 
 			/*
 			 * Se possuir TableGenerator, GeneratedType deve ser TABLE
 			 */
 			if (fieldConfiguration.isAnnotationPresent(TableGenerator.class)
-					&& ((fieldConfiguration.getGeneratedType() != GeneratedType.TABLE) && (fieldConfiguration
-							.getGeneratedType() != GeneratedType.AUTO))) {
-				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade "
-						+ fieldConfiguration.getType().getName()
+					&& ((fieldConfiguration.getGeneratedType() != GeneratedType.TABLE) && (fieldConfiguration.getGeneratedType() != GeneratedType.AUTO))) {
+				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade " + fieldConfiguration.getType().getName()
 						+ " possui TableGenerator  e o GeneratedType deve ser: TABLE ou AUTO");
 			}
 
@@ -1264,10 +1068,8 @@ public class EntityCacheManager {
 			 * Se possuir SequenceGenerator, GeneratedType deve ser SEQUENCE
 			 */
 			if (fieldConfiguration.isAnnotationPresent(SequenceGenerator.class)
-					&& (fieldConfiguration.getGeneratedType() != GeneratedType.SEQUENCE && fieldConfiguration
-							.getGeneratedType() != GeneratedType.AUTO)) {
-				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade "
-						+ fieldConfiguration.getType().getName()
+					&& (fieldConfiguration.getGeneratedType() != GeneratedType.SEQUENCE && fieldConfiguration.getGeneratedType() != GeneratedType.AUTO)) {
+				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade " + fieldConfiguration.getType().getName()
 						+ " possui SequenceGenerator e o GeneratedType deve ser: SEQUENCE ou AUTO");
 			}
 		}
@@ -1277,28 +1079,23 @@ public class EntityCacheManager {
 		 */
 		if (fieldConfiguration.isAnnotationPresent(MapKeyConvert.class)) {
 			if (!ReflectionUtils.isImplementsMap(fieldConfiguration.getType())) {
-				throw new EntityCacheException(
-						"O campo "
-								+ fieldConfiguration.getName()
-								+ " da entidade "
-								+ fieldConfiguration.getType().getName()
-								+ ", possui a configuração MapKeyConvert. Esta configuração só pode ser usado com campos do tipo Map.");
+				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da entidade " + fieldConfiguration.getType().getName()
+						+ ", possui a configuração MapKeyConvert. Esta configuração só pode ser usado com campos do tipo Map.");
 			}
 		}
 	}
 
-	protected void validateBasicConfiguration(Class<? extends Serializable> sourceClazz,
-			EntityConfiguration entityConfiguration) throws EntityCacheException {
+	protected void validateBasicConfiguration(Class<? extends Serializable> sourceClazz, EntityConfiguration entityConfiguration)
+			throws EntityCacheException {
 		if (validate) {
-			String[] errors = EntityCacheAnnotationValidation.validateEntityConfiguration(sourceClazz,
-					entityConfiguration);
+			String[] errors = EntityCacheAnnotationValidation.validateEntityConfiguration(sourceClazz, entityConfiguration);
 			if (errors.length > 0)
 				throw new EntityCacheException(errors[0]);
 		}
 	}
 
-	private void readConfigurationSQL(Class<?> sourceClazz, EntityConfiguration entityConfiguration,
-			EntityCache entityCache, Class<?>[] annotationClazz) throws EntityCacheException {
+	private void readConfigurationSQL(Class<?> sourceClazz, EntityConfiguration entityConfiguration, EntityCache entityCache,
+			Class<?>[] annotationClazz) throws EntityCacheException {
 		for (Class clazz : annotationClazz) {
 			if (entityConfiguration.isAnnotationPresent(clazz)) {
 				DescriptionSQL descriptionSQL = new DescriptionSQL();
@@ -1339,13 +1136,12 @@ public class EntityCacheManager {
 				}
 				if (descriptionSQL.isCallable()) {
 					if ((descriptionSQL.getSql() == null) || ("".equals(descriptionSQL.getSql())))
-						throw new EntityCacheException("Informe o SQL na configuração " + clazz.getSimpleName()
-								+ " da classe " + sourceClazz.getName());
+						throw new EntityCacheException("Informe o SQL na configuração " + clazz.getSimpleName() + " da classe "
+								+ sourceClazz.getName());
 
 					if (descriptionSQL.getCallableType() == null)
-						throw new EntityCacheException(
-								"Informe o tipo do procedimento (PROCEDURE, FUNCTION) na configuração "
-										+ clazz.getSimpleName() + " da classe " + sourceClazz.getName());
+						throw new EntityCacheException("Informe o tipo do procedimento (PROCEDURE, FUNCTION) na configuração "
+								+ clazz.getSimpleName() + " da classe " + sourceClazz.getName());
 
 					if (descriptionSQL.getCallableType() == CallableType.PROCEDURE) {
 						if (descriptionSQL.getSuccessParameter() == null) {
@@ -1369,16 +1165,16 @@ public class EntityCacheManager {
 		}
 	}
 
-	private void readConfigurationSQL(Class<?> sourceClazz, EntityCache cache, Class<?>[] annotationClazz,
-			FieldConfiguration fieldConfiguration) throws EntityCacheException {
+	private void readConfigurationSQL(Class<?> sourceClazz, EntityCache cache, Class<?>[] annotationClazz, FieldConfiguration fieldConfiguration)
+			throws EntityCacheException {
 		for (Class<?> fieldClazz : annotationClazz) {
 			if (fieldConfiguration.isAnnotationPresent(fieldClazz)) {
 				if (!((ReflectionUtils.isImplementsInterface(fieldConfiguration.getType(), Collection.class)
-						|| ReflectionUtils.isImplementsInterface(fieldConfiguration.getType(), Set.class) || ReflectionUtils
-							.isImplementsInterface(fieldConfiguration.getType(), Map.class)))) {
+						|| ReflectionUtils.isImplementsInterface(fieldConfiguration.getType(), Set.class) || ReflectionUtils.isImplementsInterface(
+						fieldConfiguration.getType(), Map.class)))) {
 					throw new EntityCacheException("A configuração " + sourceClazz.getSimpleName()
-							+ " só pode ser usada em coleções ou maps. Verifique o campo "
-							+ fieldConfiguration.getName() + " da classe " + sourceClazz.getName());
+							+ " só pode ser usada em coleções ou maps. Verifique o campo " + fieldConfiguration.getName() + " da classe "
+							+ sourceClazz.getName());
 				}
 
 				DescriptionField descField = cache.getDescriptionField(fieldConfiguration.getName());
@@ -1421,13 +1217,11 @@ public class EntityCacheManager {
 				}
 				if (descriptionSQL.isCallable()) {
 					if ((descriptionSQL.getSql() == null) || ("".equals(descriptionSQL.getSql()))) {
-						throw new EntityCacheException("Informe o SQL na configuração SQLUpdate da classe "
-								+ sourceClazz.getName());
+						throw new EntityCacheException("Informe o SQL na configuração SQLUpdate da classe " + sourceClazz.getName());
 					}
 					if (descriptionSQL.getCallableType() == null) {
-						throw new EntityCacheException(
-								"Informe o tipo do procedimento (PROCEDURE, FUNCTION) na configuração SQLUpdate da classe "
-										+ sourceClazz.getName());
+						throw new EntityCacheException("Informe o tipo do procedimento (PROCEDURE, FUNCTION) na configuração SQLUpdate da classe "
+								+ sourceClazz.getName());
 					}
 					if (descriptionSQL.getCallableType() == CallableType.PROCEDURE) {
 						if (descriptionSQL.getSuccessParameter() == null) {
@@ -1454,8 +1248,7 @@ public class EntityCacheManager {
 	}
 
 	private void readNamedQuery(EntityCache entityCache, EntityConfiguration entityConfiguration) {
-		if (entityConfiguration.isAnnotationPresent(NamedQueries.class)
-				|| entityConfiguration.isAnnotationPresent(NamedQuery.class)) {
+		if (entityConfiguration.isAnnotationPresent(NamedQueries.class) || entityConfiguration.isAnnotationPresent(NamedQuery.class)) {
 			/*
 			 * Se possuir NamedQueries
 			 */
@@ -1482,12 +1275,10 @@ public class EntityCacheManager {
 	 * throws Exception
 	 * 
 	 */
-	private void readElementCollectionConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache)
-			throws Exception {
+	private void readElementCollectionConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache) throws Exception {
 		DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
 		if (propertyAccessorFactory != null)
-			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(),
-					fieldConfiguration.getField()));
+			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
 		descriptionField.setFetchMode(fieldConfiguration.getFetch().getMode());
 		descriptionField.setTableName(fieldConfiguration.getCollectionTable().getName());
 		descriptionField.setSchema(fieldConfiguration.getCollectionTable().getSchema());
@@ -1501,33 +1292,29 @@ public class EntityCacheManager {
 		/*
 		 * Adiciona os indices
 		 */
-		if (fieldConfiguration.isAnnotationPresent(Indexes.class)
-				|| fieldConfiguration.isAnnotationPresent(Index.class)) {
+		if (fieldConfiguration.isAnnotationPresent(Indexes.class) || fieldConfiguration.isAnnotationPresent(Index.class)) {
 			IndexConfiguration[] indexes = fieldConfiguration.getIndexes();
 			if (indexes != null) {
 				for (IndexConfiguration index : indexes)
 					descriptionField.getIndexes().add(
-							new DescriptionIndex(entityCache).name(index.getName()).columnNames(index.getColumnNames())
-									.schema(index.getSchema()).catalog(index.getCatalog()).unique(index.isUnique()));
+							new DescriptionIndex(entityCache).name(index.getName()).columnNames(index.getColumnNames()).schema(index.getSchema())
+									.catalog(index.getCatalog()).unique(index.isUnique()));
 			}
 		}
 
 		/*
 		 * Adiciona as constraints únicas da collection table
 		 */
-		for (UniqueConstraintConfiguration uniqueConstraint : fieldConfiguration.getCollectionTable()
-				.getUniqueConstraints()) {
+		for (UniqueConstraintConfiguration uniqueConstraint : fieldConfiguration.getCollectionTable().getUniqueConstraints()) {
 			DescriptionUniqueConstraint descriptionUniqueConstraint = new DescriptionUniqueConstraint(entityCache);
 			descriptionUniqueConstraint.name(uniqueConstraint.getName()).columnNames(uniqueConstraint.getColumnNames());
 			descriptionField.addUniqueConstraint(descriptionUniqueConstraint);
 		}
 
 		/*
-		 * Se a coluna/colunas forem configuradas como únicas adiciona
-		 * constraint única
+		 * Se a coluna/colunas forem configuradas como únicas adiciona constraint única
 		 */
-		if ((fieldConfiguration.isAnnotationPresent(Column.class))
-				|| (fieldConfiguration.isAnnotationPresent(Columns.class))) {
+		if ((fieldConfiguration.isAnnotationPresent(Column.class)) || (fieldConfiguration.isAnnotationPresent(Columns.class))) {
 			DescriptionUniqueConstraint descriptionUniqueConstraint = new DescriptionUniqueConstraint(entityCache);
 			descriptionUniqueConstraint.columnNames(fieldConfiguration.getUniqueColumnNames());
 			if (descriptionUniqueConstraint.getColumnNames().length > 0)
@@ -1541,8 +1328,8 @@ public class EntityCacheManager {
 			descriptionField.setOrderByClause(fieldConfiguration.getOrderByClause());
 
 		DescriptionColumn descriptionColumn = new DescriptionColumn(entityCache, fieldConfiguration.getField());
-		descriptionColumn.setColumnName("".equals(fieldConfiguration.getSimpleColumn().getName()) ? "VALUE"
-				: fieldConfiguration.getSimpleColumn().getName());
+		descriptionColumn.setColumnName("".equals(fieldConfiguration.getSimpleColumn().getName()) ? "VALUE" : fieldConfiguration.getSimpleColumn()
+				.getName());
 		descriptionColumn.setReferencedColumnName(descriptionColumn.getColumnName());
 		descriptionColumn.setColumnDefinition(fieldConfiguration.getSimpleColumn().getColumnDefinition());
 		descriptionColumn.setDescriptionField(descriptionField);
@@ -1576,8 +1363,8 @@ public class EntityCacheManager {
 		for (JoinColumnConfiguration j : fieldConfiguration.getCollectionTable().getJoinColumns()) {
 			descriptionJoinColumn = new DescriptionColumn(entityCache, fieldConfiguration.getField());
 			descriptionJoinColumn.setColumnName(j.getName());
-			descriptionJoinColumn.setReferencedColumnName((j.getReferencedColumnName() == null || "".equals(j
-					.getReferencedColumnName())) ? j.getName() : j.getReferencedColumnName());
+			descriptionJoinColumn.setReferencedColumnName((j.getReferencedColumnName() == null || "".equals(j.getReferencedColumnName())) ? j
+					.getName() : j.getReferencedColumnName());
 			descriptionJoinColumn.setColumnType(ColumnType.PRIMARY_KEY);
 			descriptionJoinColumn.setRequired(true);
 			descriptionJoinColumn.setCompositeId(compositeId);
@@ -1617,8 +1404,7 @@ public class EntityCacheManager {
 	 * throws Exception
 	 * 
 	 */
-	private void readJoinTableConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache)
-			throws Exception {
+	private void readJoinTableConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache) throws Exception {
 		JoinTableConfiguration joinTableConfiguration = fieldConfiguration.getJoinTable();
 
 		String tableName = joinTableConfiguration.getName();
@@ -1626,28 +1412,25 @@ public class EntityCacheManager {
 		 * Se não definiu um nome para tabela, assuma classePai_classeFilha
 		 */
 		if ("".equals(tableName)) {
-			tableName = fieldConfiguration.getType().getSimpleName().toLowerCase() + "_"
-					+ fieldConfiguration.getType().getSimpleName().toLowerCase();
+			tableName = fieldConfiguration.getType().getSimpleName().toLowerCase() + "_" + fieldConfiguration.getType().getSimpleName().toLowerCase();
 		}
 
 		DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
 		if (propertyAccessorFactory != null)
-			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(),
-					fieldConfiguration.getField()));
+			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
 
 		descriptionField.setFieldType(FieldType.JOIN_TABLE);
 		descriptionField.setTableName(tableName);
 		descriptionField.setComment(fieldConfiguration.getComment());
 		readRemoteConfiguration(descriptionField, fieldConfiguration, entityCache);
 
-		if (fieldConfiguration.isAnnotationPresent(Indexes.class)
-				|| fieldConfiguration.isAnnotationPresent(Index.class)) {
+		if (fieldConfiguration.isAnnotationPresent(Indexes.class) || fieldConfiguration.isAnnotationPresent(Index.class)) {
 			IndexConfiguration[] indexes = fieldConfiguration.getIndexes();
 			if (indexes != null) {
 				for (IndexConfiguration index : indexes)
 					descriptionField.getIndexes().add(
-							new DescriptionIndex(entityCache).name(index.getName()).columnNames(index.getColumnNames())
-									.schema(index.getSchema()).catalog(index.getCatalog()).unique(index.isUnique()));
+							new DescriptionIndex(entityCache).name(index.getName()).columnNames(index.getColumnNames()).schema(index.getSchema())
+									.catalog(index.getCatalog()).unique(index.isUnique()));
 			}
 		}
 
@@ -1661,11 +1444,9 @@ public class EntityCacheManager {
 		}
 
 		/*
-		 * Se a coluna/colunas forem configuradas como únicas adiciona
-		 * constraint única
+		 * Se a coluna/colunas forem configuradas como únicas adiciona constraint única
 		 */
-		if ((fieldConfiguration.isAnnotationPresent(Column.class))
-				|| (fieldConfiguration.isAnnotationPresent(Columns.class))) {
+		if ((fieldConfiguration.isAnnotationPresent(Column.class)) || (fieldConfiguration.isAnnotationPresent(Columns.class))) {
 			DescriptionUniqueConstraint descriptionUniqueConstraint = new DescriptionUniqueConstraint(entityCache);
 			descriptionUniqueConstraint.columnNames(joinTableConfiguration.getUniqueColumnNames());
 			if (descriptionUniqueConstraint.getColumnNames().length > 0)
@@ -1703,9 +1484,8 @@ public class EntityCacheManager {
 			descriptionColumn.setRequired(true);
 			descriptionColumn.setCompositeId(compositeId);
 			descriptionColumn.setForeignKey(true);
-			descriptionColumn.setReferencedColumnName(((joinColumn.getReferencedColumnName() == null || joinColumn
-					.getReferencedColumnName().equals(""))) ? joinColumn.getName() : joinColumn
-					.getReferencedColumnName());
+			descriptionColumn.setReferencedColumnName(((joinColumn.getReferencedColumnName() == null || joinColumn.getReferencedColumnName().equals(
+					""))) ? joinColumn.getName() : joinColumn.getReferencedColumnName());
 			descriptionColumn.setJoinColumn(true);
 			descriptionColumn.setColumnDefinition(joinColumn.getColumnDefinition());
 			descriptionField.addDescriptionColumns(descriptionColumn);
@@ -1718,9 +1498,8 @@ public class EntityCacheManager {
 			descriptionColumn.setRequired(true);
 			descriptionColumn.setCompositeId(compositeId);
 			descriptionColumn.setForeignKey(true);
-			descriptionColumn.setReferencedColumnName((joinColumn.getReferencedColumnName() == null || joinColumn
-					.getReferencedColumnName().equals("")) ? joinColumn.getName() : joinColumn
-					.getReferencedColumnName());
+			descriptionColumn.setReferencedColumnName((joinColumn.getReferencedColumnName() == null || joinColumn.getReferencedColumnName()
+					.equals("")) ? joinColumn.getName() : joinColumn.getReferencedColumnName());
 			descriptionColumn.setInversedJoinColumn(true);
 			descriptionColumn.setColumnDefinition(joinColumn.getColumnDefinition());
 			descriptionField.addDescriptionColumns(descriptionColumn);
@@ -1749,8 +1528,8 @@ public class EntityCacheManager {
 	 * @param model
 	 * 
 	 */
-	private void readCompositeIdConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache,
-			PersistenceModelConfiguration model) throws Exception {
+	private void readCompositeIdConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache, PersistenceModelConfiguration model)
+			throws Exception {
 		DescriptionField descriptionField = null;
 		if (fieldConfiguration.isAnnotationPresent(Column.class)) {
 			ColumnConfiguration columnConfiguration = fieldConfiguration.getColumns().iterator().next();
@@ -1760,9 +1539,8 @@ public class EntityCacheManager {
 			descriptionColumn.setColumnName(columnName);
 			descriptionColumn.setCompositeId(fieldConfiguration.isAnnotationPresent(CompositeId.class));
 			descriptionColumn.setExpression(fieldConfiguration.getName());
-			descriptionColumn
-					.setReferencedColumnName(columnConfiguration.getInversedColumn().equals("") ? columnConfiguration
-							.getName() : columnConfiguration.getInversedColumn());
+			descriptionColumn.setReferencedColumnName(columnConfiguration.getInversedColumn().equals("") ? columnConfiguration.getName()
+					: columnConfiguration.getInversedColumn());
 			descriptionColumn.setLength(columnConfiguration.getLength());
 			descriptionColumn.setPrecision(columnConfiguration.getPrecision());
 			descriptionColumn.setScale(columnConfiguration.getScale());
@@ -1775,8 +1553,8 @@ public class EntityCacheManager {
 
 			descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
 			if (propertyAccessorFactory != null)
-				descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(
-						entityCache.getEntityClass(), fieldConfiguration.getField()));
+				descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(),
+						fieldConfiguration.getField()));
 
 			descriptionField.addDescriptionColumns(descriptionColumn);
 			descriptionField.setComment(fieldConfiguration.getComment());
@@ -1810,18 +1588,16 @@ public class EntityCacheManager {
 			entityCache.addDescriptionField(descriptionField);
 
 		} else if (fieldConfiguration.isAnnotationPresent(Columns.class)) {
-			ColumnConfiguration[] columnsConfiguration = fieldConfiguration.getColumns().toArray(
-					new ColumnConfiguration[] {});
+			ColumnConfiguration[] columnsConfiguration = fieldConfiguration.getColumns().toArray(new ColumnConfiguration[] {});
 			DescriptionColumn descComposite;
 			/*
-			 * Se possuir Columns e ForeignKey Adiciona na Coleção de
-			 * ForeignKeys foreignColumns
+			 * Se possuir Columns e ForeignKey Adiciona na Coleção de ForeignKeys foreignColumns
 			 */
 			if (fieldConfiguration.isAnnotationPresent(ForeignKey.class)) {
 				descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
 				if (propertyAccessorFactory != null)
-					descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(
-							entityCache.getEntityClass(), fieldConfiguration.getField()));
+					descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(),
+							fieldConfiguration.getField()));
 
 				descriptionField.setFieldType(FieldType.RELATIONSHIP);
 				descriptionField.setFetchType(fieldConfiguration.getForeignKey().getType());
@@ -1837,15 +1613,13 @@ public class EntityCacheManager {
 			for (ColumnConfiguration columnConfiguration : columnsConfiguration) {
 				descComposite = new DescriptionColumn(entityCache, fieldConfiguration.getField());
 				descComposite.setColumnName(columnConfiguration.getName());
-				descComposite
-						.setReferencedColumnName(columnConfiguration.getInversedColumn().equals("") ? columnConfiguration
-								.getName() : columnConfiguration.getInversedColumn());
+				descComposite.setReferencedColumnName(columnConfiguration.getInversedColumn().equals("") ? columnConfiguration.getName()
+						: columnConfiguration.getInversedColumn());
 				descComposite.setRequired(fieldConfiguration.isAnnotationPresent(CompositeId.class));
 				descComposite.setCompositeId(fieldConfiguration.isAnnotationPresent(CompositeId.class));
 				descComposite.setColumnDefinition(columnConfiguration.getColumnDefinition());
 
-				if ((fieldConfiguration.isAnnotationPresent(CompositeId.class))
-						|| (fieldConfiguration.isAnnotationPresent(Id.class))) {
+				if ((fieldConfiguration.isAnnotationPresent(CompositeId.class)) || (fieldConfiguration.isAnnotationPresent(Id.class))) {
 					descComposite.setColumnType(ColumnType.PRIMARY_KEY);
 					descComposite.setRequired(true);
 				}
@@ -1872,8 +1646,8 @@ public class EntityCacheManager {
 	 * throws Exception
 	 * 
 	 */
-	private void readColumnConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache,
-			PersistenceModelConfiguration model) throws Exception {
+	private void readColumnConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache, PersistenceModelConfiguration model)
+			throws Exception {
 		String columnName = fieldConfiguration.getName().toLowerCase();
 		String inversedColumn = columnName;
 
@@ -1886,8 +1660,7 @@ public class EntityCacheManager {
 			inversedColumn = column.getInversedColumn();
 			descriptionColumn.setRequired(column.isRequired());
 			descriptionColumn.setColumnDefinition(column.getColumnDefinition());
-			if ((fieldConfiguration.getType() != java.util.Date.class)
-					&& (fieldConfiguration.getType() != java.sql.Date.class)) {
+			if ((fieldConfiguration.getType() != java.util.Date.class) && (fieldConfiguration.getType() != java.sql.Date.class)) {
 				descriptionColumn.setLength(column.getLength());
 				descriptionColumn.setPrecision(column.getPrecision());
 				descriptionColumn.setScale(column.getScale());
@@ -1901,8 +1674,7 @@ public class EntityCacheManager {
 
 		DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
 		if (propertyAccessorFactory != null)
-			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(),
-					fieldConfiguration.getField()));
+			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
 
 		descriptionField.addDescriptionColumns(descriptionColumn);
 		descriptionField.setComment(fieldConfiguration.getComment());
@@ -1950,8 +1722,7 @@ public class EntityCacheManager {
 				if (fieldConfiguration.getType() != Boolean.class)
 					throw new EntityCacheException(
 							"A configuração BooleanValue somente pode ser usada com campos do tipo Boolean.class. Verifique o campo "
-									+ fieldConfiguration.getName() + " da classe "
-									+ entityCache.getEntityClass().getName());
+									+ fieldConfiguration.getName() + " da classe " + entityCache.getEntityClass().getName());
 			}
 
 			descriptionColumn.setTrueValue(fieldConfiguration.getTrueValue());
@@ -1961,20 +1732,17 @@ public class EntityCacheManager {
 		}
 
 		/*
-		 * Se possuir Id ou CompositeId. define como PrimaryKey e adiciona na
-		 * coleção de descriptioncolumns
+		 * Se possuir Id ou CompositeId. define como PrimaryKey e adiciona na coleção de descriptioncolumns
 		 */
 		if (fieldConfiguration.isAnnotationPresent(Id.class)
-				|| (fieldConfiguration.isAnnotationPresent(CompositeId.class) && fieldConfiguration
-						.isAnnotationPresent(Column.class))) {
+				|| (fieldConfiguration.isAnnotationPresent(CompositeId.class) && fieldConfiguration.isAnnotationPresent(Column.class))) {
 			descriptionColumn.setColumnType(ColumnType.PRIMARY_KEY);
 			descriptionColumn.setRequired(true);
 
 			/*
 			 * Possuir CompositeId
 			 */
-			if (fieldConfiguration.isAnnotationPresent(CompositeId.class)
-					&& fieldConfiguration.isAnnotationPresent(Column.class)
+			if (fieldConfiguration.isAnnotationPresent(CompositeId.class) && fieldConfiguration.isAnnotationPresent(Column.class)
 					&& fieldConfiguration.isAnnotationPresent(ForeignKey.class)) {
 				descriptionColumn.setCompositeId(true);
 				descriptionColumn.setReferencedColumnName(columnName);
@@ -1994,11 +1762,9 @@ public class EntityCacheManager {
 		}
 
 		/*
-		 * Se a coluna/colunas forem configuradas como únicas adiciona
-		 * constraint única
+		 * Se a coluna/colunas forem configuradas como únicas adiciona constraint única
 		 */
-		if ((fieldConfiguration.isAnnotationPresent(Column.class))
-				|| (fieldConfiguration.isAnnotationPresent(Columns.class))) {
+		if ((fieldConfiguration.isAnnotationPresent(Column.class)) || (fieldConfiguration.isAnnotationPresent(Columns.class))) {
 			DescriptionUniqueConstraint descriptionUniqueConstraint = new DescriptionUniqueConstraint(entityCache);
 			descriptionUniqueConstraint.columnNames(fieldConfiguration.getUniqueColumnNames());
 			if (descriptionUniqueConstraint.getColumnNames().length > 0)
@@ -2012,15 +1778,15 @@ public class EntityCacheManager {
 		entityCache.addDescriptionField(descriptionField);
 	}
 
-	public void readEnumeratedConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache,
-			PersistenceModelConfiguration model, DescriptionColumn descriptionColumn) throws EntityCacheException {
+	public void readEnumeratedConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache, PersistenceModelConfiguration model,
+			DescriptionColumn descriptionColumn) throws EntityCacheException {
 		if (fieldConfiguration.isAnnotationPresent(Enumerated.class)) {
 			Map<String, String> enumValues = new HashMap<String, String>();
 
 			Class<?> enumClass = fieldConfiguration.getType();
 			if (!ReflectionUtils.isExtendsClass(Enum.class, enumClass)) {
-				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe "
-						+ entityCache.getEntityClass().getName() + " configurado com Enumerated deve ser do tipo Enum.");
+				throw new EntityCacheException("O campo " + fieldConfiguration.getName() + " da classe " + entityCache.getEntityClass().getName()
+						+ " configurado com Enumerated deve ser do tipo Enum.");
 			}
 
 			/*
@@ -2032,16 +1798,13 @@ public class EntityCacheManager {
 					EnumValueConfiguration[] enumValuesConfiguration = enumConfiguration.getEnumValues();
 
 					/*
-					 * Se quantidade de constantes da Classe de Enum difere da
-					 * quantidade de EnumValue.
+					 * Se quantidade de constantes da Classe de Enum difere da quantidade de EnumValue.
 					 */
 					if (enumValuesConfiguration.length != enumClass.getEnumConstants().length)
-						throw new EntityCacheException(
-								"A quantidade de valores definidos no Enum "
-										+ enumClass.getName()
-										+ " difere da quantidade de valores definidos na configuração EnumValues.\nEnumValues->"
-										+ Arrays.toString(enumValuesConfiguration) + "\n" + enumClass.getName() + "->"
-										+ Arrays.toString(enumClass.getEnumConstants()));
+						throw new EntityCacheException("A quantidade de valores definidos no Enum " + enumClass.getName()
+								+ " difere da quantidade de valores definidos na configuração EnumValues.\nEnumValues->"
+								+ Arrays.toString(enumValuesConfiguration) + "\n" + enumClass.getName() + "->"
+								+ Arrays.toString(enumClass.getEnumConstants()));
 
 					for (EnumValueConfiguration value : enumValuesConfiguration)
 						enumValues.put(value.getEnumValue(), value.getValue());
@@ -2060,8 +1823,8 @@ public class EntityCacheManager {
 		}
 	}
 
-	private void readGeneratorConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache,
-			DescriptionColumn descriptionColumn) throws EntityCacheException {
+	private void readGeneratorConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache, DescriptionColumn descriptionColumn)
+			throws EntityCacheException {
 		/*
 		 * Se possuir TableGenerator ou SequenceGenerator ou se possuir
 		 * 
@@ -2070,8 +1833,7 @@ public class EntityCacheManager {
 		if (fieldConfiguration.isAnnotationPresent(GeneratedValue.class)) {
 
 			/*
-			 * Se possuir GeneratedValue, adiciona um sequence na
-			 * DescriptionColumn
+			 * Se possuir GeneratedValue, adiciona um sequence na DescriptionColumn
 			 */
 			if (fieldConfiguration.isAnnotationPresent(GeneratedValue.class)) {
 				descriptionColumn.setGeneratedType(fieldConfiguration.getGeneratedType());
@@ -2092,8 +1854,8 @@ public class EntityCacheManager {
 			 */
 			if (fieldConfiguration.isAnnotationPresent(TableGenerator.class)) {
 				if (StringUtils.isEmpty(fieldConfiguration.getTableGenerator().getValue()))
-					throw new EntityCacheException("Informe o valor para o TableGenerator do campo "
-							+ fieldConfiguration.getName() + " da Classe " + entityCache.getEntityClass().getName());
+					throw new EntityCacheException("Informe o valor para o TableGenerator do campo " + fieldConfiguration.getName() + " da Classe "
+							+ entityCache.getEntityClass().getName());
 
 				DescriptionGenerator descriptionGenerator = new DescriptionGenerator();
 
@@ -2152,24 +1914,22 @@ public class EntityCacheManager {
 	}
 
 	/**
-	 * Se possuir ForeignKey Cria um DescriptionField. Verifica de possui Fetch
-	 * e seta suas propiedades no DescriptionField. Se não possuir CompositeId
-	 * cria um DescriptionColumn e adiciona na coleção de ForeignKeys. Por fim,
-	 * faz a união das coleções de DescriptionField com ForeignKeys
+	 * Se possuir ForeignKey Cria um DescriptionField. Verifica de possui Fetch e seta suas propiedades no
+	 * DescriptionField. Se não possuir CompositeId cria um DescriptionColumn e adiciona na coleção de ForeignKeys. Por
+	 * fim, faz a união das coleções de DescriptionField com ForeignKeys
 	 * 
 	 * throws Exception
 	 */
-	private void readForeignKeyConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache,
-			PersistenceModelConfiguration model) throws Exception {
+	private void readForeignKeyConfiguration(FieldConfiguration fieldConfiguration, EntityCache entityCache, PersistenceModelConfiguration model)
+			throws Exception {
 		try {
 			DescriptionColumn descriptionColumn = new DescriptionColumn(entityCache, fieldConfiguration.getField());
 			descriptionColumn.setColumnName(fieldConfiguration.getName().toLowerCase());
 			descriptionColumn.setForeignKey(true);
 			FieldConfiguration foreingKeyField = getIdFieldConfiguration(fieldConfiguration.getType(), model);
 			if (foreingKeyField == null)
-				throw new EntityCacheException("Campo " + fieldConfiguration.getName() + "("
-						+ descriptionColumn.getReferencedColumnName() + ") não encontrado na classe "
-						+ fieldConfiguration.getType() + " ou a classe não foi adicionada nas configurações.");
+				throw new EntityCacheException("Campo " + fieldConfiguration.getName() + "(" + descriptionColumn.getReferencedColumnName()
+						+ ") não encontrado na classe " + fieldConfiguration.getType() + " ou a classe não foi adicionada nas configurações.");
 
 			if (fieldConfiguration.isAnnotationPresent(Column.class)) {
 				ColumnConfiguration simpleColumn = fieldConfiguration.getSimpleColumn();
@@ -2179,8 +1939,8 @@ public class EntityCacheManager {
 				descriptionColumn.setPrecision(simpleColumn.getPrecision());
 				descriptionColumn.setScale(simpleColumn.getScale());
 				descriptionColumn.setRequired(simpleColumn.isRequired());
-				descriptionColumn.setReferencedColumnName("".equals(simpleColumn.getInversedColumn()) ? simpleColumn
-						.getName() : simpleColumn.getInversedColumn());
+				descriptionColumn.setReferencedColumnName("".equals(simpleColumn.getInversedColumn()) ? simpleColumn.getName() : simpleColumn
+						.getInversedColumn());
 			} else {
 				if (foreingKeyField.isAnnotationPresent(Column.class)) {
 
@@ -2193,8 +1953,8 @@ public class EntityCacheManager {
 
 			DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
 			if (propertyAccessorFactory != null)
-				descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(
-						entityCache.getEntityClass(), fieldConfiguration.getField()));
+				descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(),
+						fieldConfiguration.getField()));
 
 			descriptionField.setFieldType(FieldType.RELATIONSHIP);
 			descriptionField.setTargetClass(fieldConfiguration.getType());
@@ -2216,12 +1976,11 @@ public class EntityCacheManager {
 			descriptionColumn.setDescriptionField(descriptionField);
 			descriptionColumn.setIdSynchronism(fieldConfiguration.isAnnotationPresent(IdSynchronism.class));
 			try {
-				DatabaseTypesUtil.getSQLDataTypeFromFieldForeignKey(fieldConfiguration,
-						descriptionColumn.getReferencedColumnName(), descriptionColumn);
+				DatabaseTypesUtil.getSQLDataTypeFromFieldForeignKey(fieldConfiguration, descriptionColumn.getReferencedColumnName(),
+						descriptionColumn);
 			} catch (RuntimeException ex) {
-				throw new EntityCacheException(
-						ex.getMessage()
-								+ ". Verifique se a coluna possuí o mesmo nome na outra entidade relacionada. Caso seja diferente informe o inversedColumn.");
+				throw new EntityCacheException(ex.getMessage()
+						+ ". Verifique se a coluna possuí o mesmo nome na outra entidade relacionada. Caso seja diferente informe o inversedColumn.");
 			}
 			descriptionField.addDescriptionColumns(descriptionColumn);
 
@@ -2234,25 +1993,21 @@ public class EntityCacheManager {
 			entityCache.addDescriptionField(descriptionField);
 			entityCache.addDescriptionColumn(descriptionColumn);
 
-			if ((descriptionField.getFetchType() == FetchType.LAZY) && (descriptionField.isRelationShip())
-					&& !(descriptionField.isRequired())) {
+			if ((descriptionField.getFetchType() == FetchType.LAZY) && (descriptionField.isRelationShip()) && !(descriptionField.isRequired())) {
 				throw new EntityCacheException(
 						"Não é permitido usar LAZY em chaves estrangeiras que não sejam obrigatórias pois isto inviabiliza a comparação do objeto com nulo devido ao uso de proxy.");
 			}
 
 		} catch (Exception ex) {
-			throw new EntityCacheException("Erro lendo configuração ForeignKey  do campo "
-					+ fieldConfiguration.getName() + " da classe " + entityCache.getEntityClass().getName() + ". "
-					+ ex.getMessage());
+			throw new EntityCacheException("Erro lendo configuração ForeignKey  do campo " + fieldConfiguration.getName() + " da classe "
+					+ entityCache.getEntityClass().getName() + ". " + ex.getMessage());
 		}
 	}
 
-	private void readFetchConfigurations(EntityCache entityCache, FieldConfiguration fieldConfiguration)
-			throws Exception {
+	private void readFetchConfigurations(EntityCache entityCache, FieldConfiguration fieldConfiguration) throws Exception {
 		DescriptionField descriptionField = new DescriptionField(entityCache, fieldConfiguration.getField());
 		if (propertyAccessorFactory != null)
-			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(),
-					fieldConfiguration.getField()));
+			descriptionField.setPropertyAccessor(propertyAccessorFactory.createAccessor(entityCache.getEntityClass(), fieldConfiguration.getField()));
 
 		descriptionField.setFieldType(FieldType.RELATIONSHIP);
 		descriptionField.setFetchMode(fieldConfiguration.getFetch().getMode());
@@ -2264,8 +2019,7 @@ public class EntityCacheManager {
 
 		readRemoteConfiguration(descriptionField, fieldConfiguration, entityCache);
 		/*
-		 * Verifica se é uma coleção. Se não estiver tipada recupera o tipo e
-		 * seta no TargetEntity
+		 * Verifica se é uma coleção. Se não estiver tipada recupera o tipo e seta no TargetEntity
 		 */
 		if (ReflectionUtils.isCollection(fieldConfiguration.getType())) {
 			descriptionField.setFieldType(FieldType.COLLECTION_ENTITY);
@@ -2273,8 +2027,7 @@ public class EntityCacheManager {
 				descriptionField.setTargetClass(ReflectionUtils.getGenericType(fieldConfiguration.getField()));
 		}
 
-		if ((descriptionField.getTargetClass() == void.class)
-				&& (descriptionField.getModeType() == FetchMode.FOREIGN_KEY)) {
+		if ((descriptionField.getTargetClass() == void.class) && (descriptionField.getModeType() == FetchMode.FOREIGN_KEY)) {
 			descriptionField.setTargetClass(fieldConfiguration.getField().getType());
 		}
 
@@ -2282,12 +2035,8 @@ public class EntityCacheManager {
 		 * Se targetEntity não possuir tipo, retorna Exception
 		 */
 		if (descriptionField.getModeType() == FetchMode.ONE_TO_MANY && descriptionField.getTargetClass() == void.class)
-			throw new EntityCacheException(
-					"O campo "
-							+ fieldConfiguration
-							+ " da entidade "
-							+ fieldConfiguration.getType().getName()
-							+ " deve ser tipado usando generics ou informado o tipo através do argumento targetEntity da configuração Fetch.");
+			throw new EntityCacheException("O campo " + fieldConfiguration + " da entidade " + fieldConfiguration.getType().getName()
+					+ " deve ser tipado usando generics ou informado o tipo através do argumento targetEntity da configuração Fetch.");
 
 		/*
 		 * Se possuir Cascade
@@ -2295,10 +2044,8 @@ public class EntityCacheManager {
 		if (fieldConfiguration.isAnnotationPresent(Cascade.class))
 			descriptionField.setCascadeTypes(fieldConfiguration.getCascadeTypes());
 
-		if ((descriptionField.getModeType() == FetchMode.ONE_TO_MANY)
-				|| (descriptionField.getModeType() == FetchMode.FOREIGN_KEY))
-			descriptionField
-					.setDescriptionMappedBy(new DescriptionMappedBy(fieldConfiguration.getFetch().getMappedBy()));
+		if ((descriptionField.getModeType() == FetchMode.ONE_TO_MANY) || (descriptionField.getModeType() == FetchMode.FOREIGN_KEY))
+			descriptionField.setDescriptionMappedBy(new DescriptionMappedBy(fieldConfiguration.getFetch().getMappedBy()));
 
 		descriptionField.setFetchType(fieldConfiguration.getFetch().getType());
 
@@ -2308,8 +2055,7 @@ public class EntityCacheManager {
 
 	}
 
-	private void readRemoteConfiguration(DescriptionField descriptionField, FieldConfiguration fieldConfiguration,
-			EntityCache entityCache) {
+	private void readRemoteConfiguration(DescriptionField descriptionField, FieldConfiguration fieldConfiguration, EntityCache entityCache) {
 		if (fieldConfiguration.isAnnotationPresent(Remote.class)) {
 			descriptionField.setMobileActionExport(fieldConfiguration.getRemote().getMobileActionExport());
 			descriptionField.setMobileActionImport(fieldConfiguration.getRemote().getMobileActionImport());
@@ -2340,6 +2086,10 @@ public class EntityCacheManager {
 		entities.put(clazz, cache);
 	}
 
+	private void addConverter(ConverterCache converter) {
+		converters.add(converter);
+	}
+
 	private FieldConfiguration getIdFieldConfiguration(Class<?> clazz, PersistenceModelConfiguration model) {
 		EntityConfiguration entityConfiguration = model.getEntities().get(clazz);
 		if (entityConfiguration == null)
@@ -2349,8 +2099,7 @@ public class EntityCacheManager {
 		for (FieldConfiguration fieldConfiguration : entityConfiguration.getFields()) {
 			if (fieldConfiguration.isAnnotationPresent(Id.class))
 				field = fieldConfiguration;
-			else if (fieldConfiguration.isAnnotationPresent(CompositeId.class)
-					&& !fieldConfiguration.isAnnotationPresent(ForeignKey.class))
+			else if (fieldConfiguration.isAnnotationPresent(CompositeId.class) && !fieldConfiguration.isAnnotationPresent(ForeignKey.class))
 				field = fieldConfiguration;
 
 		}
@@ -2363,8 +2112,7 @@ public class EntityCacheManager {
 	public EntityCache[] getEntitiesBySuperClass(Class<?> superClass) {
 		List<EntityCache> result = new ArrayList<EntityCache>();
 		for (EntityCache entityCache : entities.values()) {
-			if ((ReflectionUtils.isExtendsClass(superClass, entityCache.getEntityClass()))
-					&& (entityCache.getEntityClass() != superClass))
+			if ((ReflectionUtils.isExtendsClass(superClass, entityCache.getEntityClass())) && (entityCache.getEntityClass() != superClass))
 				result.add(entityCache);
 		}
 		return result.toArray(new EntityCache[] {});
@@ -2372,8 +2120,7 @@ public class EntityCacheManager {
 
 	public EntityCache getEntitySuperClass(Class<?> clazz) {
 		for (EntityCache entityCache : entities.values()) {
-			if ((ReflectionUtils.isExtendsClass(entityCache.getEntityClass(), clazz))
-					&& (entityCache.getEntityClass() != clazz))
+			if ((ReflectionUtils.isExtendsClass(entityCache.getEntityClass(), clazz)) && (entityCache.getEntityClass() != clazz))
 				if (!entityCache.isInheritance()) {
 					return entityCache;
 				}
@@ -2445,8 +2192,7 @@ public class EntityCacheManager {
 	public EntityCache getEntityCacheByTableName(String tableName) {
 		int count = countEntityCacheByTableName(tableName);
 		if (countEntityCacheByTableName(tableName) > 1) {
-			throw new EntityCacheManagerException("Foram encontradas " + count + " classes com o mesmo nome de tabela "
-					+ tableName);
+			throw new EntityCacheManagerException("Foram encontradas " + count + " classes com o mesmo nome de tabela " + tableName);
 		}
 
 		if ((tableName != null) && (!"".equals(tableName))) {
@@ -2472,8 +2218,7 @@ public class EntityCacheManager {
 	public EntityCache getEntityCacheByName(String name) {
 		if ((name != null) && (!"".equals(name))) {
 			for (EntityCache entityCache : entities.values()) {
-				if ((name.equalsIgnoreCase(entityCache.getEntityClass().getName()))
-						&& (!entityCache.hasDiscriminatorValue()))
+				if ((name.equalsIgnoreCase(entityCache.getEntityClass().getName())) && (!entityCache.hasDiscriminatorValue()))
 					return entityCache;
 			}
 		}
@@ -2504,8 +2249,7 @@ public class EntityCacheManager {
 	public EntityCache[] getAllConcreteEntityCacheByTableName(String tableName) {
 		ArrayList<EntityCache> result = new ArrayList<EntityCache>();
 		for (EntityCache annotionCache : entities.values()) {
-			if (tableName.equalsIgnoreCase(annotionCache.getTableName())
-					&& (!ReflectionUtils.isAbstractClass(annotionCache.getEntityClass())))
+			if (tableName.equalsIgnoreCase(annotionCache.getTableName()) && (!ReflectionUtils.isAbstractClass(annotionCache.getEntityClass())))
 				result.add(annotionCache);
 		}
 		return result.toArray(new EntityCache[] {});

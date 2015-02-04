@@ -1,41 +1,25 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.metadata.configuration;
 
-import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Blob;
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.swing.text.StyleContext.SmallAttributeSet;
-
-import br.com.anteros.core.converter.converters.DateConverter;
-import br.com.anteros.core.converter.converters.FileConverter;
-import br.com.anteros.core.converter.converters.SqlDateConverter;
-import br.com.anteros.core.converter.converters.SqlTimeConverter;
-import br.com.anteros.core.converter.converters.SqlTimestampConverter;
 import br.com.anteros.core.utils.Assert;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.annotation.BooleanValue;
@@ -45,8 +29,9 @@ import br.com.anteros.persistence.metadata.annotation.Column;
 import br.com.anteros.persistence.metadata.annotation.Columns;
 import br.com.anteros.persistence.metadata.annotation.Comment;
 import br.com.anteros.persistence.metadata.annotation.CompositeId;
+import br.com.anteros.persistence.metadata.annotation.Convert;
 import br.com.anteros.persistence.metadata.annotation.Converter;
-import br.com.anteros.persistence.metadata.annotation.Converters;
+import br.com.anteros.persistence.metadata.annotation.Converts;
 import br.com.anteros.persistence.metadata.annotation.Enumerated;
 import br.com.anteros.persistence.metadata.annotation.ExternalFile;
 import br.com.anteros.persistence.metadata.annotation.Fetch;
@@ -60,7 +45,6 @@ import br.com.anteros.persistence.metadata.annotation.Lob;
 import br.com.anteros.persistence.metadata.annotation.MapKeyColumn;
 import br.com.anteros.persistence.metadata.annotation.MapKeyEnumerated;
 import br.com.anteros.persistence.metadata.annotation.MapKeyTemporal;
-import br.com.anteros.persistence.metadata.annotation.ObjectTypeConverter;
 import br.com.anteros.persistence.metadata.annotation.OrderBy;
 import br.com.anteros.persistence.metadata.annotation.SQLDelete;
 import br.com.anteros.persistence.metadata.annotation.SQLDeleteAll;
@@ -70,7 +54,6 @@ import br.com.anteros.persistence.metadata.annotation.SequenceGenerator;
 import br.com.anteros.persistence.metadata.annotation.TableGenerator;
 import br.com.anteros.persistence.metadata.annotation.Temporal;
 import br.com.anteros.persistence.metadata.annotation.Transient;
-import br.com.anteros.persistence.metadata.annotation.TypeConverters;
 import br.com.anteros.persistence.metadata.annotation.UniqueConstraint;
 import br.com.anteros.persistence.metadata.annotation.Version;
 import br.com.anteros.persistence.metadata.annotation.type.BooleanType;
@@ -117,12 +100,10 @@ public class FieldConfiguration {
 	private boolean version = false;
 	private String comment = "";
 	private IndexConfiguration[] indexes;
-	private ConverterConfiguration[] converters;
+	private ConvertConfiguration[] converts;
 	private String convert;
 	private String mapKeyConvert;
 	private RemoteConfiguration remote;
-	private ObjectTypeConverterConfiguration[] objectTypeConverters;
-	private TypeConverterConfiguration[] typeConverters;
 	private boolean externalFile;
 
 	public boolean isExternalFile() {
@@ -163,16 +144,14 @@ public class FieldConfiguration {
 		this.name = name;
 	}
 
-	public FieldConfiguration column(String name, int length, int precision, int scale, boolean required,
-			String inversedColumn, boolean exportColumn, String defaultValue) {
-		columns.add(new ColumnConfiguration(name, length, precision, scale, required, inversedColumn, exportColumn,
-				defaultValue));
+	public FieldConfiguration column(String name, int length, int precision, int scale, boolean required, String inversedColumn,
+			boolean exportColumn, String defaultValue) {
+		columns.add(new ColumnConfiguration(name, length, precision, scale, required, inversedColumn, exportColumn, defaultValue));
 		annotations.add(Column.class);
 		return this;
 	}
 
-	public FieldConfiguration column(String name, int length, int precision, int scale, boolean required,
-			String inversedColumn) {
+	public FieldConfiguration column(String name, int length, int precision, int scale, boolean required, String inversedColumn) {
 		columns.add(new ColumnConfiguration(name, length, precision, scale, required, inversedColumn));
 		annotations.add(Column.class);
 		return this;
@@ -219,8 +198,7 @@ public class FieldConfiguration {
 		return this;
 	}
 
-	public FieldConfiguration fetch(FetchType type, FetchMode mode, String mappedBy, Class<?> targetEntity,
-			String statement) {
+	public FieldConfiguration fetch(FetchType type, FetchMode mode, String mappedBy, Class<?> targetEntity, String statement) {
 		annotations.add(Fetch.class);
 		this.fetch = new FetchConfiguration(statement, type, mode, mappedBy, targetEntity);
 		return this;
@@ -232,8 +210,7 @@ public class FieldConfiguration {
 		return this;
 	}
 
-	public FieldConfiguration foreignKey(String statement, FetchType type, FetchMode mode, String mappedBy,
-			boolean useIndex) {
+	public FieldConfiguration foreignKey(String statement, FetchType type, FetchMode mode, String mappedBy, boolean useIndex) {
 		annotations.add(ForeignKey.class);
 		this.foreignKey = new ForeignKeyConfiguration(statement, type, mode, mappedBy, useIndex);
 		return this;
@@ -262,8 +239,7 @@ public class FieldConfiguration {
 		return this;
 	}
 
-	public FieldConfiguration joinTable(String name, JoinColumnConfiguration[] joinColumns,
-			JoinColumnConfiguration[] inversedJoinColumns) {
+	public FieldConfiguration joinTable(String name, JoinColumnConfiguration[] joinColumns, JoinColumnConfiguration[] inversedJoinColumns) {
 		annotations.add(JoinTable.class);
 		this.joinTable = new JoinTableConfiguration(name, joinColumns, inversedJoinColumns);
 		return this;
@@ -275,11 +251,9 @@ public class FieldConfiguration {
 		return this;
 	}
 
-	public FieldConfiguration sequenceGenerator(String sequenceName, String catalog, int initialValue, int startsWith,
-			String schema) {
+	public FieldConfiguration sequenceGenerator(String sequenceName, String catalog, int initialValue, int startsWith, String schema) {
 		annotations.add(SequenceGenerator.class);
-		this.sequenceGenerator = new SequenceGeneratorConfiguration(sequenceName, catalog, initialValue, startsWith,
-				schema);
+		this.sequenceGenerator = new SequenceGeneratorConfiguration(sequenceName, catalog, initialValue, startsWith, schema);
 		return this;
 	}
 
@@ -487,8 +461,7 @@ public class FieldConfiguration {
 		Annotation[] annotations = field.getAnnotations();
 		for (Annotation annotation : annotations) {
 			if (annotation instanceof BooleanValue) {
-				booleanValue(((BooleanValue) annotation).trueValue(), ((BooleanValue) annotation).falseValue(),
-						((BooleanValue) annotation).type());
+				booleanValue(((BooleanValue) annotation).trueValue(), ((BooleanValue) annotation).falseValue(), ((BooleanValue) annotation).type());
 			} else if (annotation instanceof Cascade) {
 				cascade(((Cascade) annotation).values());
 			} else if (annotation instanceof MapKeyEnumerated) {
@@ -512,8 +485,8 @@ public class FieldConfiguration {
 				if (indexes != null) {
 					indexesConf = new IndexConfiguration[indexes.length];
 					for (int i = 0; i < indexes.length; i++) {
-						indexesConf[i] = new IndexConfiguration(indexes[i].name(), indexes[i].columnNames())
-								.catalog(indexes[i].catalog()).schema(indexes[i].schema()).unique(indexes[i].unique());
+						indexesConf[i] = new IndexConfiguration(indexes[i].name(), indexes[i].columnNames()).catalog(indexes[i].catalog())
+								.schema(indexes[i].schema()).unique(indexes[i].unique());
 					}
 				}
 				if (annotation instanceof Indexes)
@@ -577,36 +550,34 @@ public class FieldConfiguration {
 				comment(((Comment) annotation).value());
 			} else if (annotation instanceof ExternalFile) {
 				externalFile(true);
-			} else if ((annotation instanceof Converters) || (annotation instanceof Converter)
-					|| (annotation instanceof Converter.List)) {
-				Converter[] converts = null;
-				if (annotation instanceof Converters)
-					converts = ((Converters) annotation).value();
+			} else if ((annotation instanceof Converts) || (annotation instanceof Convert) || (annotation instanceof Convert.List)) {
+				Convert[] converts = null;
+				if (annotation instanceof Converts)
+					converts = ((Converts) annotation).value();
 				else if (annotation instanceof Converter)
-					converts = new Converter[] { (Converter) annotation };
-				else if (annotation instanceof Converter.List)
-					converts = ((Converter.List) annotation).value();
+					converts = new Convert[] { (Convert) annotation };
+				else if (annotation instanceof Convert.List)
+					converts = ((Convert.List) annotation).value();
 
-				ConverterConfiguration[] convertsConf = null;
+				ConvertConfiguration[] convertsConf = null;
 				if (indexes != null) {
-					convertsConf = new ConverterConfiguration[converts.length];
+					convertsConf = new ConvertConfiguration[converts.length];
 					for (int i = 0; i < converts.length; i++) {
-						convertsConf[i] = new ConverterConfiguration(converts[i]);
+						convertsConf[i] = new ConvertConfiguration(converts[i]);
 					}
 				}
-				if ((annotation instanceof Converters) || (annotation instanceof Converter.List))
-					converters(convertsConf);
+				if ((annotation instanceof Converts) || (annotation instanceof Convert.List))
+					converts(convertsConf);
 				else
-					converter(convertsConf);
+					convert(convertsConf);
 			} else if (annotation instanceof IdSynchronism) {
 				idSynchronism();
 			}
 		}
 
 		/*
-		 * Se possuir configuração Index com apenas um indice o qual não foi
-		 * definido columnNames assume as colunas do campo como colunas do
-		 * indice
+		 * Se possuir configuração Index com apenas um indice o qual não foi definido columnNames assume as colunas do
+		 * campo como colunas do indice
 		 */
 		if ((getIndexes() != null) && (getIndexes().length == 1)) {
 			List<String> cns = new ArrayList<String>();
@@ -749,35 +720,40 @@ public class FieldConfiguration {
 		return this;
 	}
 
-	public ConverterConfiguration[] getConverters() {
-		return converters;
+	public ConvertConfiguration[] getConverts() {
+		return converts;
 	}
 
-	public FieldConfiguration converters(ConverterConfiguration[] converts) {
-		this.converters = converts;
-		this.annotations.add(Converters.class);
+	public FieldConfiguration converts(ConvertConfiguration[] converts) {
+		if (converts == null)
+			return this;
+		this.converts = converts;
+		this.annotations.add(Converts.class);
 		return this;
 	}
 
-	public FieldConfiguration converter(ConverterConfiguration[] converters) {
-		this.converters = converters;
-		this.annotations.add(Converter.class);
+	public FieldConfiguration convert(ConvertConfiguration[] converts) {
+		if (converts == null)
+			return this;
+		this.converts = converts;
+		this.annotations.add(Converts.class);
 		return this;
 	}
 
-	public FieldConfiguration converter(ConverterConfiguration converter) {
-		this.converters = new ConverterConfiguration[] { converter };
-		this.annotations.add(Converter.class);
+	public FieldConfiguration convert(ConvertConfiguration convert) {
+		if (convert == null)
+			return this;
+		this.converts = new ConvertConfiguration[] { convert };
+		this.annotations.add(Convert.class);
 		return this;
 	}
 
 	public FieldConfiguration remote(String displayLabel, String mobileActionExport, String mobileActionImport,
-			RemoteParamConfiguration[] importParams, RemoteParamConfiguration[] exportParams,
-			int exportOrderToSendData, String[] exportFields, ConnectivityType importConnectivityType,
-			ConnectivityType exportConnectivityType) {
+			RemoteParamConfiguration[] importParams, RemoteParamConfiguration[] exportParams, int exportOrderToSendData, String[] exportFields,
+			ConnectivityType importConnectivityType, ConnectivityType exportConnectivityType) {
 		annotations.add(Remote.class);
-		this.remote = new RemoteConfiguration(displayLabel, mobileActionExport, mobileActionImport, importParams,
-				exportParams, exportOrderToSendData, exportFields, importConnectivityType, exportConnectivityType);
+		this.remote = new RemoteConfiguration(displayLabel, mobileActionExport, mobileActionImport, importParams, exportParams,
+				exportOrderToSendData, exportFields, importConnectivityType, exportConnectivityType);
 		return this;
 	}
 
@@ -815,44 +791,6 @@ public class FieldConfiguration {
 		return this;
 	}
 
-	public ObjectTypeConverterConfiguration[] getObjectTypeConverters() {
-		return objectTypeConverters;
-	}
-
-	public FieldConfiguration objectTypeConverters(ObjectTypeConverterConfiguration[] objectTypeConverters) {
-		this.objectTypeConverters = objectTypeConverters;
-		this.annotations.add(ObjectTypeConverter.class);
-		return this;
-	}
-
-	public FieldConfiguration objectTypeConverters(ObjectTypeConverterConfiguration objectTypeConverter) {
-		this.objectTypeConverters = new ObjectTypeConverterConfiguration[] { objectTypeConverter };
-		this.annotations.add(ObjectTypeConverter.class);
-		return this;
-	}
-
-	public FieldConfiguration objectTypeConverter(ObjectTypeConverterConfiguration[] objectTypeConverter) {
-		this.objectTypeConverters = objectTypeConverter;
-		this.annotations.add(ObjectTypeConverter.class);
-		return this;
-	}
-
-	public TypeConverterConfiguration[] getTypeConverters() {
-		return typeConverters;
-	}
-
-	public FieldConfiguration typeConverters(TypeConverterConfiguration[] typeConverters) {
-		this.typeConverters = typeConverters;
-		this.annotations.add(TypeConverters.class);
-		return this;
-	}
-
-	public FieldConfiguration typeConverters(TypeConverterConfiguration typeConverter) {
-		this.typeConverters = new TypeConverterConfiguration[] { typeConverter };
-		this.annotations.add(TypeConverters.class);
-		return this;
-	}
-
 	public boolean isSimpleField() {
 		return ReflectionUtils.isSimpleField(field);
 
@@ -865,14 +803,14 @@ public class FieldConfiguration {
 	public boolean isCompositeId() {
 		return isAnnotationPresent(CompositeId.class);
 	}
-	
+
 	public EntityConfiguration getEntityConfigurationBySourceClass(Class<?> sourceClazz) {
 		return entity.getEntityConfigurationBySourceClass(sourceClazz);
 	}
-	
-	public ColumnConfiguration getColumnByName(String columnName){
-		for (ColumnConfiguration column : columns){
-			if (column.getName().equals(columnName)){
+
+	public ColumnConfiguration getColumnByName(String columnName) {
+		for (ColumnConfiguration column : columns) {
+			if (column.getName().equals(columnName)) {
 				return column;
 			}
 		}

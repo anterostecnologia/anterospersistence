@@ -72,7 +72,7 @@ public class DescriptionField {
 	private String comment = "";
 	private List<DescriptionIndex> indexes = new ArrayList<DescriptionIndex>();
 	private List<DescriptionUniqueConstraint> uniqueConstraints = new ArrayList<DescriptionUniqueConstraint>();
-	private List<DescriptionConverter> converters = new ArrayList<DescriptionConverter>();
+	private List<DescriptionConvert> converts = new ArrayList<DescriptionConvert>();
 	private String foreignKeyName;
 	private String mobileActionImport;
 	private String mobileActionExport;
@@ -83,8 +83,6 @@ public class DescriptionField {
 	private ConnectivityType importConnectivityType = ConnectivityType.ALL_CONNECTION;
 	private ConnectivityType exportConnectivityType = ConnectivityType.ALL_CONNECTION;
 	private String[] exportColumns;
-	private String convert;
-	private String mapKeyConvert;
 	private PropertyAccessor propertyAccessor = null;
 
 	public DescriptionField(EntityCache entityCache, Field field) {
@@ -852,16 +850,16 @@ public class DescriptionField {
 		uniqueConstraints.add(uniqueConstraint);
 	}
 
-	public List<DescriptionConverter> getConverters() {
-		return converters;
+	public List<DescriptionConvert> getConverts() {
+		return converts;
 	}
 
-	public void setConverts(List<DescriptionConverter> converters) {
-		this.converters = converters;
+	public void setConverts(List<DescriptionConvert> converts) {
+		this.converts = converts;
 	}
 
 	public boolean hasConverts() {
-		return ((converters != null) && (converters.size() > 0));
+		return ((converts != null) && (converts.size() > 0));
 	}
 
 	public int exportColumnsCount() {
@@ -1053,22 +1051,6 @@ public class DescriptionField {
 			return new NamedParameter(sourceColumn.getColumnName(), new LobParameterBinding(columnValue));
 		else
 			return new NamedParameter(sourceColumn.getColumnName(), columnValue);
-	}
-
-	public String getConvert() {
-		return convert;
-	}
-
-	public void setConvert(String convert) {
-		this.convert = convert;
-	}
-
-	public String getMapKeyConvert() {
-		return mapKeyConvert;
-	}
-
-	public void setMapKeyConvert(String mapKeyConvert) {
-		this.mapKeyConvert = mapKeyConvert;
 	}
 
 	public DescriptionColumn getLastJoinColumn() {

@@ -1,58 +1,93 @@
-/*******************************************************************************
- * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *******************************************************************************/
 package br.com.anteros.persistence.metadata.configuration;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.annotation.Converter;
 import br.com.anteros.persistence.metadata.converter.AttributeConverter;
+import br.com.anteros.persistence.metadata.exception.EntityCacheManagerException;
 
 public class ConverterConfiguration {
+	private Class<?> converter;
+	private boolean autoApply = false;
+	private final Class<?> entityAttributeType;
+	private final Class<?> databaseColumnType;
+	
+	public ConverterConfiguration(Class<?> converterClass) throws InstantiationException, IllegalAccessException {
+		if (!ReflectionUtils.isImplementsInterface(converterClass, AttributeConverter.class))
+			throw new EntityCacheManagerException("A classe " + converter.getName()
+					+ " não implementa a interface AttributeConverter.");
+        this.converter = converterClass;
+        
+        final ParameterizedType attributeConverterSignature = extractAttributeConverterParameterizedType(converter);
 
-	private Class<AttributeConverter> attributeConverter;
+		if (attributeConverterSignature.getActualTypeArguments().length < 2) {
+			throw new EntityCacheManagerException("A classe AttributeConverter [" + converter.getName()
+					+ "] não contém informação de tipos parametrizaada.");
+		}
 
-	private String attributeName = "";
+		if (attributeConverterSignature.getActualTypeArguments().length > 2) {
+			throw new EntityCacheManagerException("A classe AttributeConverter [" + converter.getName()
+					+ "] possuí mais de 2 tipos parametrizados.");
+		}
+		entityAttributeType = (Class<?>) attributeConverterSignature.getActualTypeArguments()[0];
+		if (entityAttributeType == null) {
+			throw new EntityCacheManagerException("Não foi possível determinar o o tipo de atributo para a Entidade na classe AttributeConverter ["
+					+ converter.getName() + "]");
+		}
 
-	public ConverterConfiguration() {
-
+		databaseColumnType = (Class<?>) attributeConverterSignature.getActualTypeArguments()[1];
+		if (databaseColumnType == null) {
+			throw new EntityCacheManagerException(
+					"Não foi possível determinar o tipo de atributo para a coluna do banco de dados na classe AttributeConverter ["
+							+ converter.getName() + "]");
+		}
 	}
 	
-	public ConverterConfiguration(Class<AttributeConverter> attributeConverter, String attributeName) {
-		this.attributeConverter = attributeConverter;
-		this.attributeName = attributeName;
+	public static ParameterizedType extractAttributeConverterParameterizedType(Class<?> converter) {
+		for (Type type : converter.getGenericInterfaces()) {
+			if (ParameterizedType.class.isInstance(type)) {
+				final ParameterizedType parameterizedType = (ParameterizedType) type;
+				if (AttributeConverter.class.equals(parameterizedType.getRawType())) {
+					return parameterizedType;
+				}
+			}
+		}
+
+		throw new EntityCacheManagerException("Não foi possível extrair a representação de um tipo parametrizado da classe AttributeConverter ["
+				+ converter.getName() + "]");
+	}
+	
+	public boolean isAutoApply() {
+		return autoApply;
 	}
 
-	public ConverterConfiguration(Converter converter) {
-		this.attributeConverter = converter.attributeConverter();
-		this.attributeName = converter.attributeName();
+	public void loadAnnotations(){
+		Annotation[] annotations = converter.getAnnotations();
+		for (Annotation annotation : annotations) {
+			if (annotation instanceof Converter) {
+				this.autoApply =((Converter)annotation).autoApply();
+				break;
+			}
+		}
 	}
 
-	public Class<AttributeConverter> getAttributeConverter() {
-		return attributeConverter;
+	public Class<?> getEntityAttributeType() {
+		return entityAttributeType;
 	}
 
-	public ConverterConfiguration attributeConverter(Class<AttributeConverter> attributeConverter) {
-		this.attributeConverter = attributeConverter;
+	public Class<?> getDatabaseColumnType() {
+		return databaseColumnType;
+	}
+
+	public ConverterConfiguration autoApply(boolean autoApply) {
+		this.autoApply = autoApply;
 		return this;
 	}
 
-	public String getAttributeName() {
-		return attributeName;
-	}
-
-	public ConverterConfiguration attributeName(String attributeName) {
-		this.attributeName = attributeName;
-		return this;
+	public Class<?> getConverter() {
+		return converter;
 	}
 }

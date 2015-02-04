@@ -34,7 +34,7 @@ import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.annotation.type.ScopeType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
-import br.com.anteros.persistence.metadata.descriptor.DescriptionConverter;
+import br.com.anteros.persistence.metadata.descriptor.DescriptionConvert;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionIndex;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionNamedQuery;
@@ -46,7 +46,6 @@ import br.com.anteros.persistence.metadata.descriptor.type.ConnectivityType;
 import br.com.anteros.persistence.metadata.descriptor.type.SQLStatementType;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPath;
 import br.com.anteros.persistence.session.SQLSession;
-import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 
 public class EntityCache {
 	private Set<DescriptionColumn> columns = new LinkedHashSet<DescriptionColumn>();
@@ -75,7 +74,7 @@ public class EntityCache {
 	private Map<Integer, ParamDescription> importParams;
 	private ConnectivityType importConnectivityType = ConnectivityType.ALL_CONNECTION;
 	private ConnectivityType exportConnectivityType = ConnectivityType.ALL_CONNECTION;
-	private List<DescriptionConverter> converters = new ArrayList<DescriptionConverter>();
+	private List<DescriptionConvert> converts = new ArrayList<DescriptionConvert>();
 
 	public String generateAndGetAliasTableName() {
 		generateAliasTableName();
@@ -830,12 +829,12 @@ public class EntityCache {
 		return null;
 	}
 
-	public List<DescriptionConverter> getConverters() {
-		return converters;
+	public List<DescriptionConvert> getConverts() {
+		return converts;
 	}
 
-	public void setConverters(List<DescriptionConverter> converters) {
-		this.converters = converters;
+	public void setConverts(List<DescriptionConvert> converts) {
+		this.converts = converts;
 	}
 
 	public boolean isInheritance() {

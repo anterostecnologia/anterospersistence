@@ -1,33 +1,36 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.metadata.configuration;
 
 import java.io.Serializable;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import br.com.anteros.core.utils.CompactHashSet;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.annotation.BooleanValue;
 import br.com.anteros.persistence.metadata.annotation.CollectionTable;
 import br.com.anteros.persistence.metadata.annotation.Column;
 import br.com.anteros.persistence.metadata.annotation.Columns;
+import br.com.anteros.persistence.metadata.annotation.Convert;
+import br.com.anteros.persistence.metadata.annotation.Converts;
 import br.com.anteros.persistence.metadata.annotation.DiscriminatorColumn;
 import br.com.anteros.persistence.metadata.annotation.DiscriminatorValue;
 import br.com.anteros.persistence.metadata.annotation.Enumerated;
@@ -48,32 +51,38 @@ import br.com.anteros.persistence.metadata.annotation.type.FetchType;
 import br.com.anteros.persistence.metadata.annotation.type.InheritanceType;
 import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
 import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
+import br.com.anteros.persistence.metadata.converter.AttributeConverter;
+import br.com.anteros.persistence.metadata.descriptor.DescriptionConvert;
 
 public class PersistenceModelConfiguration {
 
 	private Map<Class<? extends Serializable>, EntityConfiguration> entities = new LinkedHashMap<Class<? extends Serializable>, EntityConfiguration>();
+	private Set<ConverterConfiguration> converters = new CompactHashSet<ConverterConfiguration>();
 
 	public EntityConfiguration addEntity(Class<? extends Serializable> sourceClazz) {
 		EntityConfiguration entity = new EntityConfiguration(sourceClazz, this);
+		entity.loadAnnotations();
 		entities.put(sourceClazz, entity);
 		return entity;
 	}
 
-	public EntityConfiguration addEnum(Class<? extends Serializable> sourceClazz) {
-		EntityConfiguration entity = new EntityConfiguration(sourceClazz, this);
-		entities.put(sourceClazz, entity);
-		return entity;
+	public ConverterConfiguration addConverter(Class<? extends Serializable> sourceClazz) throws InstantiationException, IllegalAccessException {
+		ConverterConfiguration converter = new ConverterConfiguration(sourceClazz);
+		converter.loadAnnotations();
+		converters.add(converter);
+		return converter;
 	}
 
 	public Map<Class<? extends Serializable>, EntityConfiguration> getEntities() {
 		return entities;
 	}
 
-	public void loadAnnotationsByClass(Class<? extends Serializable> sourceClazz) {
-		EntityConfiguration entity = new EntityConfiguration(sourceClazz, this);
-		entity.loadAnnotations();
-		entities.put(sourceClazz, entity);
-
+	public void loadAnnotationsByClass(Class<? extends Serializable> sourceClazz) throws InstantiationException, IllegalAccessException {
+		if (ReflectionUtils.isImplementsInterface(sourceClazz, AttributeConverter.class)) {
+			addConverter(sourceClazz);
+		} else {
+			addEntity(sourceClazz);
+		}
 	}
 
 	public void sortByDependency() {
@@ -102,19 +111,16 @@ public class PersistenceModelConfiguration {
 		for (Class<?> sourceClazz : getEntities().keySet()) {
 			EntityConfiguration entityConfiguration = getEntities().get(sourceClazz);
 
-			EntityConfiguration entityConfigurationBySuperClass = getEntityConfigurationBySourceClass(sourceClazz
-					.getSuperclass());
+			EntityConfiguration entityConfigurationBySuperClass = getEntityConfigurationBySourceClass(sourceClazz.getSuperclass());
 			/*
 			 * Se não foi definido @Table e não é uma herança, define o padrão
 			 */
-			if (!entityConfiguration.isAnnotationPresent(new Class[] { Table.class })
-					&& (entityConfigurationBySuperClass == null)) {
+			if (!entityConfiguration.isAnnotationPresent(new Class[] { Table.class }) && (entityConfigurationBySuperClass == null)) {
 				entityConfiguration.table(entityConfiguration.getSourceClazz().getSimpleName());
 			}
 
 			/*
-			 * Se é uma classe abstrata e não foi definido @DiscriminatorColumn
-			 * define o padrão
+			 * Se é uma classe abstrata e não foi definido @DiscriminatorColumn define o padrão
 			 */
 			if (ReflectionUtils.isAbstractClass(entityConfiguration.getSourceClazz())
 					&& !entityConfiguration.isAnnotationPresent(DiscriminatorColumn.class)) {
@@ -122,58 +128,90 @@ public class PersistenceModelConfiguration {
 			}
 
 			/*
-			 * Se é uma classe abstrata e não foi definido @Inheritance define o
-			 * padrão
+			 * Se é uma classe abstrata e não foi definido @Inheritance define o padrão
 			 */
-			if (ReflectionUtils.isAbstractClass(entityConfiguration.getSourceClazz())
-					&& !entityConfiguration.isAnnotationPresent(Inheritance.class)) {
+			if (ReflectionUtils.isAbstractClass(entityConfiguration.getSourceClazz()) && !entityConfiguration.isAnnotationPresent(Inheritance.class)) {
 				entityConfiguration.inheritance(InheritanceType.SINGLE_TABLE);
 			}
 
 			/*
 			 * Se é uma classe herdada e não foi definido o @DiscriminatorValue
 			 */
-			if (!entityConfiguration.isAnnotationPresent(DiscriminatorValue.class)
-					&& (entityConfigurationBySuperClass != null)) {
+			if (!entityConfiguration.isAnnotationPresent(DiscriminatorValue.class) && (entityConfigurationBySuperClass != null)) {
 				entityConfiguration.discriminatorValue(sourceClazz.getSimpleName());
 			}
 
 			for (FieldConfiguration fieldConfiguration : entityConfiguration.getFields()) {
 
 				/*
-				 * Se não for um campo simples ou coleção/map pode ser uma chave
-				 * estrangeira (MANY_TO_ONE, ONE_TO_ONE)
+				 * Verifica se possuí um Convert configurado. Caso não tenha e não seja um campo simples ou FK configura
+				 * um Convert se possível
+				 */
+				checkConvertIsConfigured(entityConfiguration, fieldConfiguration);
+
+				/*
+				 * Se não for um campo simples ou coleção/map pode ser uma chave estrangeira (MANY_TO_ONE, ONE_TO_ONE)
 				 */
 				checkForeignKeyIsConfigured(fieldConfiguration);
 
 				/*
-				 * Se for uma coleção e não foi definido @Fetch Verifica se é um
-				 * relacionamento ONE_TO_MANY, MANY_TO_MANY ou
-				 * ELEMENT_COLLECTION
+				 * Se for uma coleção e não foi definido @Fetch Verifica se é um relacionamento ONE_TO_MANY,
+				 * MANY_TO_MANY ou ELEMENT_COLLECTION
 				 */
 				checkCollectionIsConfigured(entityConfiguration, fieldConfiguration);
 
 				/*
-				 * Se for um map e não foi definido @Fetch Verifica se é um
-				 * relacionamento ELEMENT_COLLECTION
+				 * Se for um map e não foi definido @Fetch Verifica se é um relacionamento ELEMENT_COLLECTION
 				 */
 				checkMapIsConfigured(entityConfiguration, fieldConfiguration);
 			}
 		}
 	}
 
+	protected void checkConvertIsConfigured(EntityConfiguration entityConfiguration, FieldConfiguration fieldConfiguration) {
+		/*
+		 * Verifica se possuí um Convert configurado. Caso não tenha e não seja um campo simples ou FK configura um
+		 * Convert se possível
+		 */
+		if (!fieldConfiguration.isSimpleField()
+				&& !fieldConfiguration.isAnnotationPresent(new Class[] { Convert.class, Converts.class, Convert.List.class })
+				&& !isForeignKey(fieldConfiguration)) {
+			fieldConfiguration.convert(findConvertToField(entityConfiguration, fieldConfiguration));
+		}
+	}
+
+	protected ConvertConfiguration findConvertToField(EntityConfiguration entityConfiguration, FieldConfiguration fieldConfiguration) {
+		/*
+		 * Procura por um @Convert na Entidade
+		 */
+		for (ConvertConfiguration convert : entityConfiguration.getConverts()) {
+			if (fieldConfiguration.getField().getName().equals(convert.getAttributeName())) {
+				return convert;
+			}
+		}
+
+		/*
+		 * Procura por um @Converter global
+		 */
+		for (ConverterConfiguration converter : converters) {
+			if (converter.getEntityAttributeType().equals(fieldConfiguration.getType())) {
+				return new ConvertConfiguration(converter.getConverter());
+			}
+		}
+
+		return null;
+	}
+
 	protected void checkForeignKeyHasColumns(FieldConfiguration fieldConfiguration) {
 		if (fieldConfiguration.isAnnotationPresent(ForeignKey.class)
-				&& ((!fieldConfiguration.isAnnotationPresent(new Class[] { Column.class, Columns.class,
-						Column.List.class })))) {
+				&& ((!fieldConfiguration.isAnnotationPresent(new Class[] { Column.class, Columns.class, Column.List.class })))) {
 			Class<?> fkClass = fieldConfiguration.getField().getType();
 			EntityConfiguration sourceConfiguration = getEntityConfigurationBySourceClass(fkClass);
 			if (sourceConfiguration != null) {
 				FieldConfiguration[] fieldConfigurations = sourceConfiguration.getAllFields();
 				for (FieldConfiguration fld : fieldConfigurations) {
 					/*
-					 * Se for chave primária usa colunas para a foreignkey
-					 * omitida
+					 * Se for chave primária usa colunas para a foreignkey omitida
 					 */
 					if (fld.isId() || (fld.isCompositeId())) {
 						for (ColumnConfiguration column : fld.getColumns()) {
@@ -198,8 +236,7 @@ public class PersistenceModelConfiguration {
 
 			if (!fieldConfiguration.isAnnotationPresent(CollectionTable.class)) {
 				List<JoinColumnConfiguration> joinColumns = getJoinColumns(entityConfiguration);
-				fieldConfiguration.collectionTable(entityConfiguration.getTableName() + "_"
-						+ fieldConfiguration.getField().getName(),
+				fieldConfiguration.collectionTable(entityConfiguration.getTableName() + "_" + fieldConfiguration.getField().getName(),
 						joinColumns.toArray(new JoinColumnConfiguration[] {}));
 			}
 
@@ -209,8 +246,7 @@ public class PersistenceModelConfiguration {
 		}
 	}
 
-	protected void checkCollectionIsConfigured(EntityConfiguration entityConfiguration,
-			FieldConfiguration fieldConfiguration) {
+	protected void checkCollectionIsConfigured(EntityConfiguration entityConfiguration, FieldConfiguration fieldConfiguration) {
 		if (ReflectionUtils.isImplementsInterface(fieldConfiguration.getField().getType(), Collection.class)
 				&& !fieldConfiguration.isAnnotationPresent(new Class[] { Transient.class })) {
 			Class<?> genericType = ReflectionUtils.getGenericType(fieldConfiguration.getField());
@@ -228,8 +264,7 @@ public class PersistenceModelConfiguration {
 
 				if (!fieldConfiguration.isAnnotationPresent(new Class[] { CollectionTable.class })) {
 					List<JoinColumnConfiguration> joinColumns = getJoinColumns(entityConfiguration);
-					fieldConfiguration.collectionTable(entityConfiguration.getTableName() + "_"
-							+ fieldConfiguration.getField().getName(),
+					fieldConfiguration.collectionTable(entityConfiguration.getTableName() + "_" + fieldConfiguration.getField().getName(),
 							joinColumns.toArray(new JoinColumnConfiguration[] {}));
 				}
 			} else {
@@ -238,16 +273,14 @@ public class PersistenceModelConfiguration {
 				 */
 				EntityConfiguration sourceConfiguration = getEntityConfigurationBySourceClass(genericType);
 				if (sourceConfiguration != null) {
-					FieldConfiguration fieldFound = findFieldCandidate(fieldConfiguration, genericType,
-							sourceConfiguration);
+					FieldConfiguration fieldFound = findFieldCandidate(fieldConfiguration, genericType, sourceConfiguration);
 
 					/*
 					 * Se encontrou o campo é um ONE_TO_MANY
 					 */
 					if (fieldFound != null) {
 						if (!fieldConfiguration.isAnnotationPresent(Fetch.class)) {
-							fieldConfiguration.fetch(FetchType.LAZY, FetchMode.ONE_TO_MANY, fieldFound.getField()
-									.getName(), genericType, "");
+							fieldConfiguration.fetch(FetchType.LAZY, FetchMode.ONE_TO_MANY, fieldFound.getField().getName(), genericType, "");
 						}
 					} else {
 						/*
@@ -278,22 +311,20 @@ public class PersistenceModelConfiguration {
 		for (FieldConfiguration fc : entityConfiguration.getAllFields()) {
 			if (fc.isId()) {
 				String name = fc.getSimpleColumn().getName();
-				joinColumns.add(new JoinColumnConfiguration(entityConfiguration.getSourceClazz().getSimpleName()
-						+ "_ID", name));
+				joinColumns.add(new JoinColumnConfiguration(entityConfiguration.getSourceClazz().getSimpleName() + "_ID", name));
 			} else if (fc.isCompositeId()) {
 				for (ColumnConfiguration cl : fc.getColumns()) {
-					joinColumns.add(new JoinColumnConfiguration(entityConfiguration.getSourceClazz().getSimpleName()
-							+ "_" + cl.getName(), cl.getName()));
+					joinColumns.add(new JoinColumnConfiguration(entityConfiguration.getSourceClazz().getSimpleName() + "_" + cl.getName(), cl
+							.getName()));
 				}
 			}
 		}
 		return joinColumns;
 	}
 
-	protected void checkForeignKeyIsConfigured(FieldConfiguration fieldConfiguration) {
+	protected boolean isForeignKey(FieldConfiguration fieldConfiguration) {
 		if (!fieldConfiguration.isSimpleField()
-				&& !ReflectionUtils.isImplementsInterface(fieldConfiguration.getField().getType(), new Class[] {
-						Collection.class, Map.class })
+				&& !ReflectionUtils.isImplementsInterface(fieldConfiguration.getField().getType(), new Class[] { Collection.class, Map.class })
 				&& !fieldConfiguration.isAnnotationPresent(new Class[] { ForeignKey.class, Transient.class })) {
 			Class<?> fkClass = fieldConfiguration.getField().getType();
 			EntityConfiguration sourceConfiguration = getEntityConfigurationBySourceClass(fkClass);
@@ -301,15 +332,21 @@ public class PersistenceModelConfiguration {
 			 * Se encontrou a configuração para a classe é uma chave estrangeira
 			 */
 			if (sourceConfiguration != null) {
-				fieldConfiguration.foreignKey();
+				return true;
 			}
+		}
+		return fieldConfiguration.isAnnotationPresent(new Class[] { ForeignKey.class, Transient.class });
+	}
+
+	protected void checkForeignKeyIsConfigured(FieldConfiguration fieldConfiguration) {
+		if (isForeignKey(fieldConfiguration)) {
+			fieldConfiguration.foreignKey();
 		}
 
 		/*
 		 * Se a anotação @ForeignKey estiver presente e foi omitido
 		 * 
-		 * @Column ou @Columns assume como default a(s) coluna(s) da classe
-		 * estrangeira
+		 * @Column ou @Columns assume como default a(s) coluna(s) da classe estrangeira
 		 */
 		checkForeignKeyHasColumns(fieldConfiguration);
 	}
@@ -319,11 +356,9 @@ public class PersistenceModelConfiguration {
 			return;
 
 		/*
-		 * Se não foi definido nome da coluna ou definido campo como transient e
-		 * não é uma coleção.
+		 * Se não foi definido nome da coluna ou definido campo como transient e não é uma coleção.
 		 */
-		if (!fieldConfiguration.isAnnotationPresent(new Class[] { Column.class, Columns.class })
-				&& (fieldConfiguration.isSimpleField())) {
+		if (!fieldConfiguration.isAnnotationPresent(new Class[] { Column.class, Columns.class }) && (fieldConfiguration.isSimpleField())) {
 			fieldConfiguration.column(fieldConfiguration.getField().getName());
 		}
 
@@ -338,24 +373,21 @@ public class PersistenceModelConfiguration {
 		/*
 		 * Se o campo é um Enum e não foi definido @Enumerated
 		 */
-		if (Enum.class.isAssignableFrom(fieldConfiguration.getType())
-				&& (!fieldConfiguration.isAnnotationPresent(Enumerated.class))) {
+		if (Enum.class.isAssignableFrom(fieldConfiguration.getType()) && (!fieldConfiguration.isAnnotationPresent(Enumerated.class))) {
 			fieldConfiguration.enumerated(EnumType.STRING);
 		}
 
 		/*
 		 * Se o campo é um Lob e não foi definido @Lob
 		 */
-		if (ReflectionUtils.isLobField(fieldConfiguration.getField())
-				&& !fieldConfiguration.isAnnotationPresent(Lob.class)) {
+		if (ReflectionUtils.isLobField(fieldConfiguration.getField()) && !fieldConfiguration.isAnnotationPresent(Lob.class)) {
 			fieldConfiguration.lob(FetchType.LAZY);
 		}
 
 		/*
 		 * Se o cmapo é uma Data e não foi definido @Temporal
 		 */
-		if (ReflectionUtils.isDateTimeField(fieldConfiguration.getField())
-				&& !fieldConfiguration.isAnnotationPresent(Temporal.class)) {
+		if (ReflectionUtils.isDateTimeField(fieldConfiguration.getField()) && !fieldConfiguration.isAnnotationPresent(Temporal.class)) {
 			fieldConfiguration.temporal(TemporalType.DATE);
 		}
 	}
@@ -363,9 +395,8 @@ public class PersistenceModelConfiguration {
 	protected FieldConfiguration findFieldCandidate(FieldConfiguration fieldConfiguration, Class<?> genericType,
 			EntityConfiguration sourceConfiguration) {
 		/*
-		 * Verifica se existe um campo na classe da coleção que seja do MESMO
-		 * TIPO da classe sendo analisada e que possa ter o nome do atributo
-		 * igual ao nome da classe
+		 * Verifica se existe um campo na classe da coleção que seja do MESMO TIPO da classe sendo analisada e que possa
+		 * ter o nome do atributo igual ao nome da classe
 		 */
 		FieldConfiguration fieldFound = null;
 		for (FieldConfiguration fc : sourceConfiguration.getAllFields()) {
@@ -379,9 +410,8 @@ public class PersistenceModelConfiguration {
 
 		if (fieldFound == null) {
 			/*
-			 * Verifica se existe um campo na classe da coleção que seja HERANÇA
-			 * do tipo da classe sendo analisada e que possa ter o nome do
-			 * atributo igual ao nome da classe
+			 * Verifica se existe um campo na classe da coleção que seja HERANÇA do tipo da classe sendo analisada e que
+			 * possa ter o nome do atributo igual ao nome da classe
 			 */
 			for (FieldConfiguration fc : sourceConfiguration.getAllFields()) {
 				if (ReflectionUtils.isExtendsClass(genericType, sourceConfiguration.getSourceClazz())) {
@@ -394,8 +424,8 @@ public class PersistenceModelConfiguration {
 
 			if (fieldFound == null) {
 				/*
-				 * Verifica se existe um campo na classe da coleção que seja
-				 * MESMO TIPO ou HERANÇA da classe sendo analisada
+				 * Verifica se existe um campo na classe da coleção que seja MESMO TIPO ou HERANÇA da classe sendo
+				 * analisada
 				 */
 				for (FieldConfiguration fc : sourceConfiguration.getAllFields()) {
 					if ((sourceConfiguration.getSourceClazz() == genericType)
@@ -411,6 +441,14 @@ public class PersistenceModelConfiguration {
 
 	public EntityConfiguration getEntityConfigurationBySourceClass(Class<?> sourceClazz) {
 		return getEntities().get(sourceClazz);
+	}
+
+	public Set<ConverterConfiguration> getConverters() {
+		return converters;
+	}
+
+	public void setConverters(Set<ConverterConfiguration> converters) {
+		this.converters = converters;
 	}
 
 }

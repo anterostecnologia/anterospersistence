@@ -18,7 +18,6 @@ package br.com.anteros.persistence.session;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Map;
 
 import javax.sql.DataSource;
 import javax.transaction.TransactionManager;
@@ -49,7 +48,6 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	protected EntityCacheManager entityCacheManager;
 	protected DataSource dataSource;
 	protected SessionFactoryConfiguration configuration;
-	private static final ThreadLocal<Map<SQLSessionFactory, SQLSession>> sessionContext = new ThreadLocal<Map<SQLSessionFactory, SQLSession>>();
 	protected CurrentSQLSessionContext currentSessionContext;
 	private TransactionManager transactionManager;
 

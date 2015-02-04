@@ -17,30 +17,12 @@ package br.com.anteros.persistence.metadata.annotation;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import br.com.anteros.persistence.metadata.converter.AttributeConverter;
-
-@Target({ ElementType.FIELD, ElementType.TYPE })
-@Retention(RetentionPolicy.RUNTIME)
+@Target(value = ElementType.TYPE)
+@Retention(RUNTIME)
 public @interface Converter {
-
-	Class<AttributeConverter> attributeConverter() default AttributeConverter.class;
-
-	String attributeName() default "";
-	
-	/**
-	 * Defines several {@code @Converter} annotations on the same element.
-	 */
-	@Target({ ElementType.FIELD, ElementType.TYPE })
-	@Retention(RUNTIME)
-	@Documented
-	public @interface List {
-		Converter[] value();
-	}
-
+	boolean autoApply() default false;
 }

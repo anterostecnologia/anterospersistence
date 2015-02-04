@@ -219,6 +219,7 @@ public class SQLSessionImpl implements SQLSession {
 			commandQueue.clear();
 		}
 		connection.close();
+		connection = null;
 		LOG.debug("Fechou session " + this);
 	}
 

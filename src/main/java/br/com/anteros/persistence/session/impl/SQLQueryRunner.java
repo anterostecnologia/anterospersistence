@@ -139,6 +139,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			resultSet = this.wrap(statement.executeQuery());
 			result = resultSetHandler.handle(resultSet);
 		} catch (SQLException e) {
+			statement=null;
 			this.rethrow(e, sql, parameters, clientId);
 
 		} finally {
@@ -146,6 +147,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 				close(resultSet);
 			} finally {
 				close(statement);
+				statement=null;
 			}
 		}
 		return result;
@@ -156,26 +158,26 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			List<SQLSessionListener> listeners, String clientId) throws Exception {
 		SQLSessionResult result = new SQLSessionResult();
 		ResultSet resultSet = null;
-		NamedParameterStatement stmt = null;
+		NamedParameterStatement statement = null;
 		try {
-			stmt = new NamedParameterStatement(connection, sql, parameters);
+			statement = new NamedParameterStatement(connection, sql, parameters);
 			if (timeOut > 0)
-				stmt.getStatement().setQueryTimeout(timeOut);
+				statement.getStatement().setQueryTimeout(timeOut);
 
 			for (NamedParameter param : parameters) {
 				if (!(param instanceof SubstitutedParameter))
-					stmt.setObject(param.getName(), param.getValue());
+					statement.setObject(param.getName(), param.getValue());
 			}
 			if (showSql) {
 				showSQLAndParameters(sql, parameters, formatSql, listeners, clientId);
 			}
 
-			resultSet = this.wrap(stmt.executeQuery());
+			resultSet = this.wrap(statement.executeQuery());
 			Object resultHandler = resultSetHandler.handle(resultSet);
 			result.setResultSet(resultSet);
 			result.setResultList(((List) resultHandler));
 		} catch (SQLException e) {
-			close(stmt);
+			statement=null;
 			this.rethrow(e, sql, parameters, clientId);
 		}
 
@@ -234,6 +236,8 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			resultSet = this.wrap(statement.executeQuery());
 			result = resultSetHandler.handle(resultSet);
 		} catch (SQLException e) {
+			close(statement);
+			statement=null;
 			this.rethrow(e, sql, parameters, clientId);
 
 		} finally {
@@ -452,6 +456,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			}
 			result = this.wrap(statement.executeQuery());
 		} catch (SQLException e) {
+			statement = null;
 			this.rethrow(e, sql, parameters, clientId);
 		} finally {
 		}
@@ -504,6 +509,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 
 		} finally {
 			close(statement);
+			statement=null;
 		}
 
 		return resultSet;
@@ -612,6 +618,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 
 		} finally {
 			close(statement);
+			statement=null;
 		}
 
 		return rows;
@@ -658,6 +665,8 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			if (statement != null)
 				close(statement.getStatement());
 			close(stmtGeneratedKeys);
+			statement=null;
+			stmtGeneratedKeys=null;
 		}
 
 		return rows;
