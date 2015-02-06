@@ -176,19 +176,19 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		 */
 		buildExpressionsAndColumnAliases(getFirstSelectStatement(node));
 		
-		// System.out.println(sql);
-		// System.out.println("--------------------EXPRESSIONS-------------------------------");
-		// for (ExpressionFieldMapper expField : expressionsFieldMapper)
-		// System.out.println(expField);
-		// System.out.println("--------------------COLUMN ALIASES----------------------------");
-		// for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
-		// System.out.println("ALIAS-> " + a.getAlias() + " path " +
-		// a.getAliasPath());
-		// System.out.println("    ----------------------------------");
-		// for (String k : columnAliases.get(a).keySet()) {
-		// System.out.println("    " + k + " = " + columnAliases.get(a).get(k));
-		// }
-		// }
+		 System.out.println(sql);
+		 System.out.println("--------------------EXPRESSIONS-------------------------------");
+		 for (ExpressionFieldMapper expField : expressionsFieldMapper)
+		 System.out.println(expField);
+		 System.out.println("--------------------COLUMN ALIASES----------------------------");
+		 for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
+		 System.out.println("ALIAS-> " + a.getAlias() + " path " +
+		 a.getAliasPath());
+		 System.out.println("    ----------------------------------");
+		 for (String k : columnAliases.get(a).keySet()) {
+		 System.out.println("    " + k + " = " + columnAliases.get(a).get(k));
+		 }
+		 }
 
 	}
 
@@ -1104,6 +1104,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			/*
 			 * Chama o método que cria a expressão.
 			 */
+			System.out.println(Arrays.toString(expression));
 			makeExpressionFieldMapper(null, resultClass, expression, 0, expressions.get(expression));
 		}
 	}
@@ -1158,7 +1159,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		 * Pega a primeira parte da expressão onde será iniciado o processamento
 		 */
 		String targetField = expression[position];
-		String alias = aliasPathWithColumn[position];
+		String aliasExpression = aliasPathWithColumn[position];
 
 		for (EntityCache entityCache : caches) {
 			/*
@@ -1175,9 +1176,9 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			 */
 			if (position == expression.length - 1) {
 				if (owner != null)
-					owner.addChild(new SimpleExpressionFieldMapper(entityCache, descriptionField, alias));
+					owner.addChild(new SimpleExpressionFieldMapper(entityCache, descriptionField, aliasExpression));
 				else
-					expressionsFieldMapper.add(new SimpleExpressionFieldMapper(entityCache, descriptionField, alias));
+					expressionsFieldMapper.add(new SimpleExpressionFieldMapper(entityCache, descriptionField, aliasExpression));
 			} else {
 				ExpressionFieldMapper expressionField = null;
 				if (owner != null) {
@@ -1213,15 +1214,15 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 						 */
 						List<String> aliasPrimaryKeyColumns = new ArrayList<String>();
 						for (DescriptionColumn column : fieldEntityCache.getPrimaryKeyColumns()) {
-							if (alias != null) {
-								aliasPrimaryKeyColumns.add(getAliasColumnName(alias, column.getColumnName()));
+							if (aliasExpression != null) {
+								aliasPrimaryKeyColumns.add(getAliasColumnName(aliasExpression, column.getColumnName()));
 							} else {
 								aliasPrimaryKeyColumns
 										.add(getAliasColumnName(fieldEntityCache, column.getColumnName()));
 							}
 						}
 						expressionField = new CollectionExpressionFieldMapper(fieldEntityCache, descriptionField,
-								alias, discriminatorColumnName,
+								aliasExpression, discriminatorColumnName,
 								aliasPrimaryKeyColumns.toArray(new String[] {}));
 					} else {
 						EntityCache fieldEntityCache = entityCacheManager.getEntityCache(descriptionField.getField()
@@ -1245,15 +1246,15 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 						 */
 						List<String> aliasPrimaryKeyColumns = new ArrayList<String>();
 						for (DescriptionColumn column : fieldEntityCache.getPrimaryKeyColumns()) {
-							if (alias != null) {
-								aliasPrimaryKeyColumns.add(getAliasColumnName(alias, column.getColumnName()));
+							if (aliasExpression != null) {
+								aliasPrimaryKeyColumns.add(getAliasColumnName(aliasExpression, column.getColumnName()));
 							} else {
 								aliasPrimaryKeyColumns
 										.add(getAliasColumnName(fieldEntityCache, column.getColumnName()));
 							}
 						}
 
-						expressionField = new EntityExpressionFieldMapper(fieldEntityCache, descriptionField, alias,
+						expressionField = new EntityExpressionFieldMapper(fieldEntityCache, descriptionField, aliasExpression,
 								discriminatorColumnName,
 								aliasPrimaryKeyColumns.toArray(new String[] {}));
 					}

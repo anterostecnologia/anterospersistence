@@ -196,6 +196,7 @@ public class CollectionExpressionFieldMapper extends ExpressionFieldMapper {
 		 * terminar a árvore de expressões.
 		 */
 		for (ExpressionFieldMapper expField : children) {
+			System.out.println("chamou para processar filho "+expField);
 			expField.execute(session, resultSet, entityManaged, newObject, transactionCache);
 		}
 	}
