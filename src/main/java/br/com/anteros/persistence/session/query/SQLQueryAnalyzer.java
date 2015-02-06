@@ -176,19 +176,19 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		 */
 		buildExpressionsAndColumnAliases(getFirstSelectStatement(node));
 		
-		 System.out.println(sql);
-		 System.out.println("--------------------EXPRESSIONS-------------------------------");
-		 for (ExpressionFieldMapper expField : expressionsFieldMapper)
-		 System.out.println(expField);
-		 System.out.println("--------------------COLUMN ALIASES----------------------------");
-		 for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
-		 System.out.println("ALIAS-> " + a.getAlias() + " path " +
-		 a.getAliasPath());
-		 System.out.println("    ----------------------------------");
-		 for (String k : columnAliases.get(a).keySet()) {
-		 System.out.println("    " + k + " = " + columnAliases.get(a).get(k));
-		 }
-		 }
+//		 System.out.println(sql);
+//		 System.out.println("--------------------EXPRESSIONS-------------------------------");
+//		 for (ExpressionFieldMapper expField : expressionsFieldMapper)
+//		 System.out.println(expField);
+//		 System.out.println("--------------------COLUMN ALIASES----------------------------");
+//		 for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
+//		 System.out.println("ALIAS-> " + a.getAlias() + " path " +
+//		 a.getAliasPath());
+//		 System.out.println("    ----------------------------------");
+//		 for (String k : columnAliases.get(a).keySet()) {
+//		 System.out.println("    " + k + " = " + columnAliases.get(a).get(k));
+//		 }
+//		 }
 
 	}
 
@@ -1161,7 +1161,9 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		String targetField = expression[position];
 		String aliasExpression = aliasPathWithColumn[position];
 
+		int oldPosition = position;
 		for (EntityCache entityCache : caches) {
+			position = oldPosition;
 			/*
 			 * Pega o DescriptionColumn do field alvo
 			 */
