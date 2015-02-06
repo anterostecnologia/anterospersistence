@@ -12,16 +12,15 @@ import br.com.anteros.persistence.metadata.exception.EntityCacheManagerException
 public class ConverterConfiguration {
 	private Class<?> converter;
 	private boolean autoApply = false;
-	private final Class<?> entityAttributeType;
-	private final Class<?> databaseColumnType;
-	
-	public ConverterConfiguration(Class<?> converterClass) throws InstantiationException, IllegalAccessException {
+	private Class entityAttributeType;
+	private Class databaseColumnType;
+
+	public ConverterConfiguration(Class converterClass) throws InstantiationException, IllegalAccessException {
 		if (!ReflectionUtils.isImplementsInterface(converterClass, AttributeConverter.class))
-			throw new EntityCacheManagerException("A classe " + converter.getName()
-					+ " não implementa a interface AttributeConverter.");
-        this.converter = converterClass;
-        
-        final ParameterizedType attributeConverterSignature = extractAttributeConverterParameterizedType(converter);
+			throw new EntityCacheManagerException("A classe " + converter.getName() + " não implementa a interface AttributeConverter.");
+		this.converter = converterClass;
+
+		final ParameterizedType attributeConverterSignature = extractAttributeConverterParameterizedType(converter);
 
 		if (attributeConverterSignature.getActualTypeArguments().length < 2) {
 			throw new EntityCacheManagerException("A classe AttributeConverter [" + converter.getName()
@@ -29,24 +28,30 @@ public class ConverterConfiguration {
 		}
 
 		if (attributeConverterSignature.getActualTypeArguments().length > 2) {
-			throw new EntityCacheManagerException("A classe AttributeConverter [" + converter.getName()
-					+ "] possuí mais de 2 tipos parametrizados.");
+			throw new EntityCacheManagerException("A classe AttributeConverter [" + converter.getName() + "] possuí mais de 2 tipos parametrizados.");
 		}
-		entityAttributeType = (Class<?>) attributeConverterSignature.getActualTypeArguments()[0];
+
+		Type type = attributeConverterSignature.getActualTypeArguments()[0];
+		if (type instanceof Class) {
+			this.entityAttributeType = (Class) type;
+		} else if (type instanceof ParameterizedType) {
+			this.entityAttributeType = (Class) ((ParameterizedType) type).getRawType();
+		}
+
 		if (entityAttributeType == null) {
 			throw new EntityCacheManagerException("Não foi possível determinar o o tipo de atributo para a Entidade na classe AttributeConverter ["
 					+ converter.getName() + "]");
 		}
 
-		databaseColumnType = (Class<?>) attributeConverterSignature.getActualTypeArguments()[1];
+		databaseColumnType = (Class) attributeConverterSignature.getActualTypeArguments()[1];
 		if (databaseColumnType == null) {
 			throw new EntityCacheManagerException(
 					"Não foi possível determinar o tipo de atributo para a coluna do banco de dados na classe AttributeConverter ["
 							+ converter.getName() + "]");
 		}
 	}
-	
-	public static ParameterizedType extractAttributeConverterParameterizedType(Class<?> converter) {
+
+	public static ParameterizedType extractAttributeConverterParameterizedType(Class converter) {
 		for (Type type : converter.getGenericInterfaces()) {
 			if (ParameterizedType.class.isInstance(type)) {
 				final ParameterizedType parameterizedType = (ParameterizedType) type;
@@ -59,26 +64,26 @@ public class ConverterConfiguration {
 		throw new EntityCacheManagerException("Não foi possível extrair a representação de um tipo parametrizado da classe AttributeConverter ["
 				+ converter.getName() + "]");
 	}
-	
+
 	public boolean isAutoApply() {
 		return autoApply;
 	}
 
-	public void loadAnnotations(){
+	public void loadAnnotations() {
 		Annotation[] annotations = converter.getAnnotations();
 		for (Annotation annotation : annotations) {
 			if (annotation instanceof Converter) {
-				this.autoApply =((Converter)annotation).autoApply();
+				this.autoApply = ((Converter) annotation).autoApply();
 				break;
 			}
 		}
 	}
 
-	public Class<?> getEntityAttributeType() {
+	public Class getEntityAttributeType() {
 		return entityAttributeType;
 	}
 
-	public Class<?> getDatabaseColumnType() {
+	public Class getDatabaseColumnType() {
 		return databaseColumnType;
 	}
 

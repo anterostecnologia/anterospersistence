@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.metadata.descriptor;
 
@@ -23,6 +20,7 @@ import java.util.Map;
 
 import br.com.anteros.core.utils.ObjectUtils;
 import br.com.anteros.core.utils.ReflectionUtils;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.FieldEntityValue;
 import br.com.anteros.persistence.metadata.annotation.type.BooleanType;
@@ -270,7 +268,7 @@ public class DescriptionColumn {
 				.append(columnName).append(" compositeId=").append(compositeId).append(" referencedColumnName=").append(referencedColumnName)
 				.append(" isPrimaryKey=").append(isPrimaryKey()).append(" isForeignKey=").append(isForeignKey()).append(" isDiscriminatorColumn=")
 				.append(isDiscriminatorColumn()).append(" isNoneColumn=").append(isNoneColumn()).append(" targetClass=")
-				.append((this.getDescriptionField()==null?"<no descriptionField>":this.getDescriptionField().getTargetClass())).toString();
+				.append((this.getDescriptionField() == null ? "<no descriptionField>" : this.getDescriptionField().getTargetClass())).toString();
 	}
 
 	public List<DescriptionColumn> getColumns() {
@@ -320,12 +318,12 @@ public class DescriptionColumn {
 	public boolean hasGenerator() {
 		return (generatedType != null);
 	}
-	
+
 	public String getSequenceName() {
 		for (DescriptionGenerator descriptionGenerator : generators.values()) {
-			if (descriptionGenerator.isSequenceGenerator()){
+			if (descriptionGenerator.isSequenceGenerator()) {
 				return descriptionGenerator.getSequenceName();
-			}			
+			}
 		}
 		return "";
 	}
@@ -547,10 +545,10 @@ public class DescriptionColumn {
 			}
 		} else if (this.isEnumerated()) {
 			return String.class;
-		} else if (this.isMapKeyColumn()){
+		} else if (this.isMapKeyColumn()) {
 			return this.getElementCollectionType();
 		}
-			
+
 		return field.getType();
 	}
 
@@ -610,8 +608,8 @@ public class DescriptionColumn {
 		this.booleanReturnType = booleanReturnType;
 	}
 
-	public boolean hasConverts() {
-		return descriptionField.hasConverts();
+	public boolean hasConvert() {
+		return (getConvert() != null);
 	}
 
 	public boolean isIdSynchronism() {
@@ -663,9 +661,29 @@ public class DescriptionColumn {
 	}
 
 	public boolean hasDefaultValue() {
-		if (defaultValue==null)
+		if (defaultValue == null)
 			return false;
 		return (!"".equals(defaultValue));
 	}
 
+	public DescriptionConvert getConvert() {
+		if ((descriptionField.getConverts() != null) && (descriptionField.getConverts().size() > 0)) {
+			for (DescriptionConvert convert : descriptionField.getConverts()) {
+				if (isMapKeyColumn()) {
+					if (!StringUtils.isEmpty(convert.getAttributeName()) || (convert.getAttributeName().startsWith("key.")))
+						return convert;
+				} else if (isElementColumn()) {
+					if (descriptionField.isAnyCollection())
+						return convert;
+					if (descriptionField.isMapTable()) {
+						if (!StringUtils.isEmpty(convert.getAttributeName()) || (convert.getAttributeName().startsWith("value.")))
+							return convert;
+					}
+				} else if (!descriptionField.isAnyCollectionOrMap()) {
+					return convert;
+				}
+			}
+		}
+		return null;
+	}
 }

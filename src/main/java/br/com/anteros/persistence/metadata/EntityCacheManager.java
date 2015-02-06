@@ -15,7 +15,6 @@ package br.com.anteros.persistence.metadata;
 import java.io.Serializable;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -175,7 +174,7 @@ public class EntityCacheManager {
 			}
 
 			for (Class<? extends Serializable> sourceClazz : modelConfiguration.getEntities().keySet()) {
-				if (!sourceClazz.isEnum()) { // Se não é um Enum é uma Entidade
+				if (!sourceClazz.isEnum() ) { // Se não é um Enum é uma Entidade
 					addEntityClass(sourceClazz, loadBasicConfigurations(sourceClazz, modelConfiguration.getEntities().get(sourceClazz)));
 				}
 			}
@@ -284,7 +283,7 @@ public class EntityCacheManager {
 					}
 				}
 
-				if (descriptionField.isRelationShip()) {
+				if (descriptionField.isRelationShip() || descriptionField.isAnyCollectionOrMap()) {
 					for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
 						if (column.isForeignKey() && (column.getReferencedTableName() != null)) {
 							EntityCache referencedCache = descriptionField.getTargetEntity();
@@ -1365,6 +1364,7 @@ public class EntityCacheManager {
 			descriptionJoinColumn.setColumnName(j.getName());
 			descriptionJoinColumn.setReferencedColumnName((j.getReferencedColumnName() == null || "".equals(j.getReferencedColumnName())) ? j
 					.getName() : j.getReferencedColumnName());
+			descriptionJoinColumn.setReferencedTableName(entityCache.getTableName());
 			descriptionJoinColumn.setColumnType(ColumnType.PRIMARY_KEY);
 			descriptionJoinColumn.setRequired(true);
 			descriptionJoinColumn.setCompositeId(compositeId);

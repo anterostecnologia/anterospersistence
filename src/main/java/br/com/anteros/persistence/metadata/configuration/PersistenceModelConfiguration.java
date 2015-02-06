@@ -13,10 +13,7 @@
 package br.com.anteros.persistence.metadata.configuration;
 
 import java.io.Serializable;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +27,7 @@ import br.com.anteros.persistence.metadata.annotation.CollectionTable;
 import br.com.anteros.persistence.metadata.annotation.Column;
 import br.com.anteros.persistence.metadata.annotation.Columns;
 import br.com.anteros.persistence.metadata.annotation.Convert;
+import br.com.anteros.persistence.metadata.annotation.Converter;
 import br.com.anteros.persistence.metadata.annotation.Converts;
 import br.com.anteros.persistence.metadata.annotation.DiscriminatorColumn;
 import br.com.anteros.persistence.metadata.annotation.DiscriminatorValue;
@@ -52,7 +50,7 @@ import br.com.anteros.persistence.metadata.annotation.type.InheritanceType;
 import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
 import br.com.anteros.persistence.metadata.comparator.DependencyComparator;
 import br.com.anteros.persistence.metadata.converter.AttributeConverter;
-import br.com.anteros.persistence.metadata.descriptor.DescriptionConvert;
+import br.com.anteros.persistence.metadata.exception.EntityCacheManagerException;
 
 public class PersistenceModelConfiguration {
 
@@ -78,6 +76,11 @@ public class PersistenceModelConfiguration {
 	}
 
 	public void loadAnnotationsByClass(Class<? extends Serializable> sourceClazz) throws InstantiationException, IllegalAccessException {
+		if ((sourceClazz.isAnnotationPresent(Converter.class)) && (!ReflectionUtils.isImplementsInterface(sourceClazz, AttributeConverter.class))) {
+			throw new EntityCacheManagerException("A classe " + sourceClazz
+					+ " configurada como um Converter não implementa a interface AttributeConverter.");
+		}
+
 		if (ReflectionUtils.isImplementsInterface(sourceClazz, AttributeConverter.class)) {
 			addConverter(sourceClazz);
 		} else {
@@ -144,12 +147,6 @@ public class PersistenceModelConfiguration {
 			for (FieldConfiguration fieldConfiguration : entityConfiguration.getFields()) {
 
 				/*
-				 * Verifica se possuí um Convert configurado. Caso não tenha e não seja um campo simples ou FK configura
-				 * um Convert se possível
-				 */
-				checkConvertIsConfigured(entityConfiguration, fieldConfiguration);
-
-				/*
 				 * Se não for um campo simples ou coleção/map pode ser uma chave estrangeira (MANY_TO_ONE, ONE_TO_ONE)
 				 */
 				checkForeignKeyIsConfigured(fieldConfiguration);
@@ -164,38 +161,63 @@ public class PersistenceModelConfiguration {
 				 * Se for um map e não foi definido @Fetch Verifica se é um relacionamento ELEMENT_COLLECTION
 				 */
 				checkMapIsConfigured(entityConfiguration, fieldConfiguration);
+
+				/*
+				 * Verifica se possuí um Convert configurado nos campos simples. Caso não tenha e não seja um campo
+				 * simples, coleção , map ou FK configura um Convert se possível
+				 */
+				checkConvertSimpleFieldIsConfigured(entityConfiguration, fieldConfiguration);
 			}
 		}
 	}
 
-	protected void checkConvertIsConfigured(EntityConfiguration entityConfiguration, FieldConfiguration fieldConfiguration) {
+	protected void checkConvertSimpleFieldIsConfigured(EntityConfiguration entityConfiguration, FieldConfiguration fieldConfiguration) {
 		/*
-		 * Verifica se possuí um Convert configurado. Caso não tenha e não seja um campo simples ou FK configura um
-		 * Convert se possível
+		 * Verifica se possuí um Convert configurado. Caso não tenha e não seja um campo simples, coleção, map ou FK
+		 * configura um Convert se possível
 		 */
-		if (!fieldConfiguration.isSimpleField()
-				&& !fieldConfiguration.isAnnotationPresent(new Class[] { Convert.class, Converts.class, Convert.List.class })
-				&& !isForeignKey(fieldConfiguration)) {
+		if ((!fieldConfiguration.isAnnotationPresent(new Class[] { Convert.class, Converts.class, Convert.List.class }))
+				&& !fieldConfiguration.isCollectionOrMap() && (!fieldConfiguration.isForeignKey()) && (!fieldConfiguration.isSimpleField())) {
 			fieldConfiguration.convert(findConvertToField(entityConfiguration, fieldConfiguration));
 		}
 	}
 
-	protected ConvertConfiguration findConvertToField(EntityConfiguration entityConfiguration, FieldConfiguration fieldConfiguration) {
+	protected ConvertConfiguration[] findConvertToField(EntityConfiguration entityConfiguration, FieldConfiguration fieldConfiguration) {
 		/*
 		 * Procura por um @Convert na Entidade
 		 */
 		for (ConvertConfiguration convert : entityConfiguration.getConverts()) {
 			if (fieldConfiguration.getField().getName().equals(convert.getAttributeName())) {
-				return convert;
+				return new ConvertConfiguration[] { convert };
 			}
 		}
 
 		/*
 		 * Procura por um @Converter global
 		 */
-		for (ConverterConfiguration converter : converters) {
-			if (converter.getEntityAttributeType().equals(fieldConfiguration.getType())) {
-				return new ConvertConfiguration(converter.getConverter());
+		if (fieldConfiguration.isMap()) {
+			List<ConvertConfiguration> result = new ArrayList<ConvertConfiguration>();
+			List<Class<?>> types = ReflectionUtils.getGenericMapTypes(fieldConfiguration.getField());
+			if (types.size() < 2)
+				return null;
+			for (ConverterConfiguration converter : converters) {
+				if ((converter.getEntityAttributeType().equals(types.get(0))) && (!ReflectionUtils.isSimple(types.get(0)))) {
+					result.add(new ConvertConfiguration(converter.getConverter(), "key"));
+				}
+				if ((converter.getEntityAttributeType().equals(types.get(1))) && (!ReflectionUtils.isSimple(types.get(1)))) {
+					result.add(new ConvertConfiguration(converter.getConverter(), "value"));
+				}
+			}
+			return result.toArray(new ConvertConfiguration[] {});
+		} else {
+			Class<?> genericType = fieldConfiguration.getField().getType();
+			if (fieldConfiguration.isCollection())
+				genericType = ReflectionUtils.getGenericType(fieldConfiguration.getField());
+
+			for (ConverterConfiguration converter : converters) {
+				if (converter.getEntityAttributeType().equals(genericType)) {
+					return new ConvertConfiguration[] { new ConvertConfiguration(converter.getConverter()) };
+				}
 			}
 		}
 
@@ -224,8 +246,7 @@ public class PersistenceModelConfiguration {
 	}
 
 	protected void checkMapIsConfigured(EntityConfiguration entityConfiguration, FieldConfiguration fieldConfiguration) {
-		if (ReflectionUtils.isImplementsInterface(fieldConfiguration.getField().getType(), Map.class)
-				&& !fieldConfiguration.isAnnotationPresent(new Class[] { Transient.class })) {
+		if (fieldConfiguration.isMap() && !fieldConfiguration.isTransient()) {
 			if (!fieldConfiguration.isAnnotationPresent(Fetch.class)) {
 				fieldConfiguration.fetch(FetchType.LAZY, FetchMode.ELEMENT_COLLECTION, "", null, "");
 			}
@@ -243,12 +264,18 @@ public class PersistenceModelConfiguration {
 			if (!fieldConfiguration.isAnnotationPresent(MapKeyColumn.class)) {
 				fieldConfiguration.mapKeyColumn(fieldConfiguration.getField().getName() + "_KEY");
 			}
+
+			List<Class<?>> types = ReflectionUtils.getGenericMapTypes(fieldConfiguration.getField());
+			if (types.size() == 2) {
+				if ((!ReflectionUtils.isSimple(types.get(0)) || (!ReflectionUtils.isSimple(types.get(1))))) {
+					fieldConfiguration.convert(findConvertToField(entityConfiguration, fieldConfiguration));
+				}
+			}
 		}
 	}
 
 	protected void checkCollectionIsConfigured(EntityConfiguration entityConfiguration, FieldConfiguration fieldConfiguration) {
-		if (ReflectionUtils.isImplementsInterface(fieldConfiguration.getField().getType(), Collection.class)
-				&& !fieldConfiguration.isAnnotationPresent(new Class[] { Transient.class })) {
+		if (fieldConfiguration.isCollection() && !fieldConfiguration.isTransient()) {
 			Class<?> genericType = ReflectionUtils.getGenericType(fieldConfiguration.getField());
 			/*
 			 * Se for um tipo simples então é um ELEMENT_COLLECTION
@@ -301,6 +328,11 @@ public class PersistenceModelConfiguration {
 									entityJoinColumns.toArray(new JoinColumnConfiguration[] {}));
 						}
 					}
+				} else {
+					/*
+					 * Como não encontrou uma entidade como FK do tipo da collection pode ser um tipo a ser convertido
+					 */
+					fieldConfiguration.convert(findConvertToField(entityConfiguration, fieldConfiguration));
 				}
 			}
 		}
@@ -323,9 +355,8 @@ public class PersistenceModelConfiguration {
 	}
 
 	protected boolean isForeignKey(FieldConfiguration fieldConfiguration) {
-		if (!fieldConfiguration.isSimpleField()
-				&& !ReflectionUtils.isImplementsInterface(fieldConfiguration.getField().getType(), new Class[] { Collection.class, Map.class })
-				&& !fieldConfiguration.isAnnotationPresent(new Class[] { ForeignKey.class, Transient.class })) {
+		if (!fieldConfiguration.isSimpleField() && !fieldConfiguration.isCollectionOrMap() && !fieldConfiguration.isForeignKey()
+				&& !fieldConfiguration.isTransient()) {
 			Class<?> fkClass = fieldConfiguration.getField().getType();
 			EntityConfiguration sourceConfiguration = getEntityConfigurationBySourceClass(fkClass);
 			/*
@@ -352,7 +383,7 @@ public class PersistenceModelConfiguration {
 	}
 
 	protected void checkBasicConfigurations(FieldConfiguration fieldConfiguration) {
-		if (fieldConfiguration.isAnnotationPresent(new Class[] { Transient.class }))
+		if (fieldConfiguration.isTransient())
 			return;
 
 		/*

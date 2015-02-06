@@ -258,8 +258,8 @@ public class SQLPersisterImpl implements SQLPersister {
 			 */
 			fieldValue = field.getObjectValue(targetObject);
 			if (fieldValue != null) {
-				if (field.isCollection() || field.isJoinTable()) {
-					if (field.isCollectionMapTable()) {
+				if (field.isAnyCollectionOrMap() || field.isJoinTable()) {
+					if (field.isMapTable()) {
 						if (fieldValue instanceof Map) {
 							for (Object key : ((Map<?, ?>) fieldValue).keySet()) {
 								Object value = ((Map<?, ?>) fieldValue).get(key);
@@ -302,7 +302,7 @@ public class SQLPersisterImpl implements SQLPersister {
 		 */
 		NamedParameter namedParameterField = null;
 		for (DescriptionField fieldModified : entityCache.getDescriptionFields()) {
-			if (!fieldModified.isCollection() && !fieldModified.isVersioned() && !fieldModified.isJoinTable()) {
+			if (!fieldModified.isAnyCollectionOrMap() && !fieldModified.isVersioned() && !fieldModified.isJoinTable()) {
 				for (DescriptionColumn columnModified : fieldModified.getDescriptionColumns()) {
 					if (columnModified.isPrimaryKey()) {
 						namedParameterField = fieldModified.getNamedParameterFromObjectValue(session, targetObject, columnModified);
@@ -350,7 +350,7 @@ public class SQLPersisterImpl implements SQLPersister {
 		 * Gera os demais campos do insert
 		 */
 		for (DescriptionField fieldModified : entityCache.getDescriptionFields()) {
-			if (!fieldModified.isCollection() && !fieldModified.isVersioned() && !fieldModified.isJoinTable()) {
+			if (!fieldModified.isAnyCollectionOrMap() && !fieldModified.isVersioned() && !fieldModified.isJoinTable()) {
 				if ((fieldModified.getObjectValue(targetObject) != null) || (fieldModified.hasGenerator())) {
 					for (DescriptionColumn columnModified : fieldModified.getDescriptionColumns()) {
 						if (!columnModified.isPrimaryKey()) {
@@ -425,7 +425,7 @@ public class SQLPersisterImpl implements SQLPersister {
 				/*
 				 * Se for uma coleção de entidades ou relacionamento joinTable (muitos para muitos)
 				 */
-				if (descriptionField.isCollection() || descriptionField.isJoinTable()) {
+				if (descriptionField.isAnyCollectionOrMap() || descriptionField.isJoinTable()) {
 					newColumnValue = descriptionField.getField().get(targetObject);
 					if (session.isProxyObject(newColumnValue)) {
 						if (!session.proxyIsInitialized(newColumnValue))
@@ -476,10 +476,10 @@ public class SQLPersisterImpl implements SQLPersister {
 				 * Se for uma coleção de entidades ou relacionamento joinTable (muitos para muitos) deleta os itens
 				 * atuais e insere novamente
 				 */
-				if (descriptionField.isCollection() || descriptionField.isJoinTable()) {
+				if (descriptionField.isAnyCollectionOrMap() || descriptionField.isJoinTable()) {
 					Object fieldValue = descriptionField.getObjectValue(targetObject);
 					if (fieldValue != null) {
-						if (descriptionField.isCollectionMapTable()) {
+						if (descriptionField.isMapTable()) {
 							/*
 							 * Remove todos os itens da Coleção
 							 */
@@ -578,7 +578,7 @@ public class SQLPersisterImpl implements SQLPersister {
 					 * não existe B(new) em A(old) gera insert
 					 */
 					if (!found) {
-						if (descriptionField.isCollectionMapTable()) {
+						if (descriptionField.isMapTable()) {
 							Object key = targetValue.getSource();
 							Object value = ((Map<?, ?>) targetValue.getValue()).get(key);
 							result.addAll(getSQLMapTableCommands(key, value, SQLStatementType.INSERT, descriptionField, null, null, primaryKeyOwner));
@@ -619,7 +619,7 @@ public class SQLPersisterImpl implements SQLPersister {
 				 * não existe A(old) em B(new) gera delete
 				 */
 				if (!found) {
-					if (descriptionField.isCollectionMapTable()) {
+					if (descriptionField.isMapTable()) {
 						Object key = sourceValue.getSource();
 						Object value = ((Map<?, ?>) sourceValue.getValue()).get(key);
 						result.addAll(getSQLMapTableCommands(key, value, SQLStatementType.DELETE, descriptionField, null, null, primaryKeyOwner));
@@ -716,7 +716,7 @@ public class SQLPersisterImpl implements SQLPersister {
 		 */
 		Map<String, Object> foreignKey = null;
 		for (DescriptionField fieldModified : fieldsModified) {
-			if (!fieldModified.isCollection() && !fieldModified.isVersioned() && (!fieldModified.isJoinTable())) {
+			if (!fieldModified.isAnyCollectionOrMap() && !fieldModified.isVersioned() && (!fieldModified.isJoinTable())) {
 				if (fieldModified.isPrimaryKey())
 					throw new SQLSessionException("Não é permitido alterar a chave de um Objeto sendo gerenciado. Verifique o campo "
 							+ fieldModified.getName() + " do objeto da classe " + entityCache.getEntityClass().getName());
@@ -781,7 +781,7 @@ public class SQLPersisterImpl implements SQLPersister {
 		 */
 
 		for (DescriptionField descriptionField : entityCache.getDescriptionFields()) {
-			if (descriptionField.isCollection() || descriptionField.isJoinTable()) {
+			if (descriptionField.isAnyCollectionOrMap() || descriptionField.isJoinTable()) {
 				Object fieldValue = descriptionField.getObjectValue(targetObject);
 				if (fieldValue != null) {
 					String tableName = descriptionField.getTableName();

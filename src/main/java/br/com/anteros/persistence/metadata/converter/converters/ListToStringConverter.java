@@ -16,7 +16,7 @@ public class ListToStringConverter implements AttributeConverter<List<String>, S
         if (attribute == null || attribute.isEmpty()) {
             return "";
         }
-        return StringUtils.join(attribute, ",");
+        return StringUtils.join( ",",attribute.toArray(new String[]{}));
     }
 
     @Override

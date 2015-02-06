@@ -15,9 +15,11 @@ package br.com.anteros.persistence.metadata.configuration;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import br.com.anteros.core.utils.Assert;
@@ -815,6 +817,22 @@ public class FieldConfiguration {
 			}
 		}
 		return null;
+	}
+	
+	public boolean isMap(){
+		return ReflectionUtils.isImplementsInterface(this.getField().getType(), Map.class);
+	}
+	
+	public boolean isCollection(){
+		return ReflectionUtils.isImplementsInterface(this.getField().getType(), Collection.class);
+	}
+
+	public boolean isTransient() {
+		return this.isAnnotationPresent(new Class[] { Transient.class });
+	}
+	
+	public boolean isCollectionOrMap(){
+		return isCollection() || isMap();
 	}
 
 }

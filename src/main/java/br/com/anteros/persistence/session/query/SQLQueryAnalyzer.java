@@ -575,7 +575,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 						 * uma coleção, uma junção ou um Lob configurado com
 						 * Lazy.
 						 */
-						if (!descriptionField.isCollection()
+						if (!descriptionField.isAnyCollectionOrMap()
 								&& !descriptionField.isJoinTable()
 								&& !(descriptionField.isLob() && descriptionField.getFetchType() == FetchType.LAZY)) {
 							for (DescriptionColumn descriptionColumn : descriptionField
@@ -1059,7 +1059,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 						 * expressão
 						 */
 						if (descriptionColumn.hasDescriptionField()) {
-							if (descriptionColumn.getDescriptionField().isCollection()
+							if (descriptionColumn.getDescriptionField().isAnyCollectionOrMap()
 									|| (descriptionColumn.getDescriptionField().isJoinTable() || (descriptionColumn
 											.getDescriptionField()
 											.isRelationShip())))

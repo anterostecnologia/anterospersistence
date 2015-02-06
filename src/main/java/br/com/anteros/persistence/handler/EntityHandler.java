@@ -463,7 +463,7 @@ public class EntityHandler implements ResultSetHandler {
 			 * Gera o valor do field somente se o usuário não incluiu a expressão manualmente no sql. Se ele adicionou a
 			 * expressão será criado o objeto e alimentado apenas com os dados da expressão no método processExpression
 			 */
-			if (descriptionField.isCollection() || descriptionField.isJoinTable() || descriptionField.isRelationShip() || descriptionField.isLob()) {
+			if (descriptionField.isAnyCollectionOrMap() || descriptionField.isJoinTable() || descriptionField.isRelationShip() || descriptionField.isLob()) {
 				Object assignedValue = descriptionField.getObjectValue(targetObject);
 
 				/*
@@ -494,7 +494,7 @@ public class EntityHandler implements ResultSetHandler {
 						 * usar ferramentas de manipulação de bytecode e assim não é possível implementar lazy em alguns
 						 * casos.
 						 */
-						if (AnterosPersistenceHelper.androidIsPresent() && !(descriptionField.isCollection()))
+						if (AnterosPersistenceHelper.androidIsPresent() && !(descriptionField.isAnyCollectionOrMap()))
 							fetchType = FetchType.EAGER;
 
 						/* Se for um campo LOB assume o que estiver configurado. */
@@ -532,7 +532,7 @@ public class EntityHandler implements ResultSetHandler {
 									/*
 									 * Extende o lock para as coleções e tabelas de junção
 									 */
-									if ((descriptionField.isCollection() || descriptionField.isJoinTable())
+									if ((descriptionField.isAnyCollectionOrMap() || descriptionField.isJoinTable())
 											&& (lockOptions.getLockScope() == LockScope.EXTENDED)) {
 										LockOptions lockOpts = LockOptions.copy(lockOptions, new LockOptions());
 										lockOpts.clearAliasesToLock();
@@ -555,7 +555,7 @@ public class EntityHandler implements ResultSetHandler {
 									/*
 									 * Extende o lock para as coleções e tabelas de junção
 									 */
-									if ((descriptionField.isCollection() || descriptionField.isJoinTable())
+									if ((descriptionField.isAnyCollectionOrMap() || descriptionField.isJoinTable())
 											&& (lockOptions.getLockScope() == LockScope.EXTENDED)) {
 										LockOptions lockOpts = LockOptions.copy(lockOptions, new LockOptions());
 										lockOpts.clearAliasesToLock();
@@ -624,9 +624,9 @@ public class EntityHandler implements ResultSetHandler {
 			/*
 			 * Processa se for uma collection que não seja herança de DefaultSQLList our DefaultSQLSet
 			 */
-			if (descriptionField.isCollection() && ((assignedValue instanceof DefaultSQLList) || (assignedValue instanceof DefaultSQLSet)))
+			if (descriptionField.isAnyCollectionOrMap() && ((assignedValue instanceof DefaultSQLList) || (assignedValue instanceof DefaultSQLSet)))
 				process = false;
-			else if (descriptionField.isCollection() || descriptionField.isJoinTable()) {
+			else if (descriptionField.isAnyCollectionOrMap() || descriptionField.isJoinTable()) {
 				process = true;
 			} else if (descriptionField.isRelationShip()) {
 				/*
