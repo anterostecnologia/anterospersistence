@@ -66,6 +66,7 @@ public class CollectionExpressionFieldMapper extends ExpressionFieldMapper {
 
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public void execute(SQLSession session, ResultSet resultSet, EntityManaged entityManaged, Object targetObject, Cache transactionCache)
 			throws Exception {

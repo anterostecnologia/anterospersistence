@@ -128,7 +128,7 @@ public abstract class CommandSQL {
 	public String getObjectId() throws Exception {
 		StringBuilder sb = new StringBuilder();
 		if (entityCache != null) {
-			Map<String, Object> primaryKey = session.getIdentifier(targetObject).getColumns();
+			Map<String, Object> primaryKey = session.getIdentifier(targetObject).getDatabaseColumns();
 			for (String key : primaryKey.keySet())
 				sb.append(key).append("=").append(primaryKey.get(key)).append(" ");
 		}

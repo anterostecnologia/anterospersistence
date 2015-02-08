@@ -1,5 +1,3 @@
-- Terminar implementação de Convert
-
 - Testar OSql e usar
 
 - Forma de fazer paginação de objetos
@@ -14,10 +12,9 @@
            http://www.java2s.com/Tutorial/Java/0355__JPA/AttributeOverridesForEmbeddableID.htm
            http://www.programmingforfuture.com/2013/02/attributeoverrides-annotation-in.html
 
-- Possibilidade de trabalhar as classes do Joda Time e novos tipos de data Java 8
+OK - Possibilidade de trabalhar as classes do Joda Time e novos tipos de data Java 8
 
-
-
+OK - Terminar implementação de Convert
 
 OK - Qdo usar anotação @ForeignKey e não usar @Column ou @Columns usar as colunas da Classe estrangeira. Pra isso será necessário garantir
   que esta classe já tenha sido lida.

@@ -558,7 +558,7 @@ public class DescriptionField {
 	}
 
 	public FieldEntityValue getFieldEntityValue(SQLSession session, Object object) throws Exception {
-		Object fieldValue = ReflectionUtils.getFieldValueByName(object, this.getField().getName());
+		Object fieldValue =  this.getObjectValue(object); 
 		return getFieldEntityValue(session, object, fieldValue);
 	}
 
@@ -573,7 +573,7 @@ public class DescriptionField {
 	public FieldEntityValue getFieldEntityValue(SQLSession session, Object object, Object fieldValue) throws Exception {
 		if (this.isSimple()) {
 			Map<String, Object> tempSimple = new LinkedHashMap<String, Object>();
-			tempSimple.put(this.getDescriptionColumns().get(0).getColumnName(), ObjectUtils.cloneObject(fieldValue));
+			tempSimple.put(this.getSimpleColumn().getColumnName(), ObjectUtils.cloneObject(fieldValue));
 			return new FieldEntityValue(this.getField().getName(), tempSimple, object);
 		}
 		EntityManaged entityManaged = null;
@@ -601,6 +601,7 @@ public class DescriptionField {
 				while (it.hasNext()) {
 					key = it.next();
 					value = ((Map) fieldValue).get(key);
+					
 					newValue = new LinkedHashMap<Object, Object>();
 					newValue.put(ObjectUtils.cloneObject(key), ObjectUtils.cloneObject(value));
 					listTemp.add(new FieldEntityValue(this.getField().getName(), newValue, key));
@@ -612,7 +613,7 @@ public class DescriptionField {
 			if (fieldValue instanceof Collection) {
 				if ((fieldValue != null) && this.isInitialized(session, fieldValue)) {
 					for (Object entity : ((Collection) fieldValue))
-						listTemporary.add(new FieldEntityValue(session.getIdentifier(entity).getUniqueId(), session.getIdentifier(entity)
+						listTemporary.add(new FieldEntityValue(session.getIdentifier(entity).getDatabaseUniqueId(), session.getIdentifier(entity)
 								.getColumns(), entity));
 				}
 				return new FieldEntityValue(this.getField().getName(), listTemporary.toArray(new FieldEntityValue[] {}), ((Collection) fieldValue));
@@ -1013,9 +1014,9 @@ public class DescriptionField {
 		return result;
 	}
 
-	public NamedParameter getNamedParameterFromObjectValue(SQLSession session, Object sourceObject, DescriptionColumn sourceColumn) throws Exception {
+	public NamedParameter getNamedParameterFromDatabaseObjectValue(SQLSession session, Object sourceObject, DescriptionColumn sourceColumn) throws Exception {
 		Map<String, Object> primaryKeyOwner = null;
-		Object columnValue = getObjectValue(sourceObject);
+		Object columnValue = sourceColumn.convertToDatabaseColumn(this.getObjectValue(sourceObject));
 		if (this.isRelationShip()) {
 			if (columnValue != null) {
 				primaryKeyOwner = session.getIdentifier(columnValue).getColumns();
@@ -1080,10 +1081,5 @@ public class DescriptionField {
 		this.propertyAccessor = propertyAccessor;
 	}
 
-	public DescriptionConvert getSimpleConvert() {
-		if ((converts == null) || (converts.size() == 0))
-			return null;
-		return converts.iterator().next();
-	}
 
 }

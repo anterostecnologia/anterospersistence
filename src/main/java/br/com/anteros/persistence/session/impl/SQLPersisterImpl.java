@@ -119,8 +119,8 @@ public class SQLPersisterImpl implements SQLPersister {
 			 * Se o objeto foi selecionado parcialmente não permite alteração
 			 */
 			if (entityManaged.getStatus().equals(EntityStatus.READ_ONLY))
-				throw new SQLSessionException("Objeto " + object.getClass().getSuperclass() + " ID " + session.getIdentifier(object).getColumns()
-						+ " não pode ser salvo pois é somente para leitura.");
+				throw new SQLSessionException("Objeto " + object.getClass().getSuperclass() + " ID "
+						+ session.getIdentifier(object).getDatabaseColumns() + " não pode ser salvo pois é somente para leitura.");
 
 			saveUsingStatement(entityCache, SQLStatementType.UPDATE, object, stackCommands);
 		} else {
@@ -129,7 +129,7 @@ public class SQLPersisterImpl implements SQLPersister {
 			 * no banco de dados
 			 */
 			if (session.getIdentifier(object).hasIdentifier()) {
-				if (!existsRecordInDatabaseTable(entityCache.getTableName(), session.getIdentifier(object).getColumns()))
+				if (!existsRecordInDatabaseTable(entityCache.getTableName(), session.getIdentifier(object).getDatabaseColumns()))
 					saveUsingStatement(entityCache, SQLStatementType.INSERT, object, stackCommands);
 				else
 					saveUsingStatement(entityCache, SQLStatementType.UPDATE, object, stackCommands);
@@ -206,7 +206,7 @@ public class SQLPersisterImpl implements SQLPersister {
 			insertRelationships(targetObject, entityCache);
 			insertObject(targetObject, entityCache, result, namedParameters, identifierPostInsert, identifyColumn);
 			insertChildrenCollections(targetObject, entityCache, result, identifierPostInsert, identifyColumn, session.getIdentifier(targetObject)
-					.getColumns());
+					.getDatabaseColumns());
 		} finally {
 			session.getCacheIdentifier().remove(targetObject);
 		}
@@ -305,7 +305,7 @@ public class SQLPersisterImpl implements SQLPersister {
 			if (!fieldModified.isAnyCollectionOrMap() && !fieldModified.isVersioned() && !fieldModified.isJoinTable()) {
 				for (DescriptionColumn columnModified : fieldModified.getDescriptionColumns()) {
 					if (columnModified.isPrimaryKey()) {
-						namedParameterField = fieldModified.getNamedParameterFromObjectValue(session, targetObject, columnModified);
+						namedParameterField = fieldModified.getNamedParameterFromDatabaseObjectValue(session, targetObject, columnModified);
 						/*
 						 * Se a coluna possuí um Generator e o valor ainda não foi gerado
 						 */
@@ -355,7 +355,7 @@ public class SQLPersisterImpl implements SQLPersister {
 					for (DescriptionColumn columnModified : fieldModified.getDescriptionColumns()) {
 						if (!columnModified.isPrimaryKey()) {
 							namedParameters.put(columnModified.getColumnName(),
-									fieldModified.getNamedParameterFromObjectValue(session, targetObject, columnModified));
+									fieldModified.getNamedParameterFromDatabaseObjectValue(session, targetObject, columnModified));
 						}
 					}
 				}
@@ -393,17 +393,18 @@ public class SQLPersisterImpl implements SQLPersister {
 		} else if ((entityManaged != null) && (entityManaged.containsLockMode(LockMode.OPTIMISTIC, LockMode.READ))) {
 			if (entityCache.isVersioned()) {
 				Identifier<Object> identifier = session.getIdentifier(targetObject);
-				Map<String, Object> params = identifier.getColumnsValues();
+				Map<String, Object> params = identifier.getDatabaseColumnsValues();
 				params.put(entityCache.getVersionColumnName(), entityManaged.getOldVersion());
 				if (!existsRecordInDatabaseTable(entityCache.getTableName(), params)) {
 					throw new OptimisticLockException("Não foi possível alterar a Entidade " + entityCache.getSimpleName()
-							+ " pois foi a mesma não foi encontrada ou possui uma nova versão. Id " + identifier.getValues() + " Versão "
+							+ " pois foi a mesma não foi encontrada ou possui uma nova versão. Id " + identifier.getDatabaseValues() + " Versão "
 							+ entityManaged.getOldVersion());
 				}
 			}
 		}
 
-		updateRelationshipsOnCollectionFields(targetObject, entityCache, result, entityManaged, session.getIdentifier(targetObject).getColumns());
+		updateRelationshipsOnCollectionFields(targetObject, entityCache, result, entityManaged, session.getIdentifier(targetObject)
+				.getDatabaseColumns());
 
 		return result;
 	}
@@ -427,9 +428,8 @@ public class SQLPersisterImpl implements SQLPersister {
 				 */
 				if (descriptionField.isAnyCollectionOrMap() || descriptionField.isJoinTable()) {
 					newColumnValue = descriptionField.getField().get(targetObject);
-					if (session.isProxyObject(newColumnValue)) {
-						if (!session.proxyIsInitialized(newColumnValue))
-							continue;
+					if ((session.isProxyObject(newColumnValue)) && (!session.proxyIsInitialized(newColumnValue))) {
+						continue;
 					}
 
 					lastFieldEntityValue = entityCache.getLastFieldEntityValue(session, targetObject, descriptionField.getName());
@@ -671,7 +671,7 @@ public class SQLPersisterImpl implements SQLPersister {
 		/*
 		 * Gera as chaves do update.
 		 */
-		Map<String, Object> primaryKey = session.getIdentifier(targetObject).getColumns();
+		Map<String, Object> primaryKey = session.getIdentifier(targetObject).getDatabaseColumns();
 		for (DescriptionColumn column : entityCache.getPrimaryKeyColumns()) {
 			if (session.getPersistenceContext().isExistsEntityManaged(targetObject))
 				namedParameters
@@ -731,7 +731,7 @@ public class SQLPersisterImpl implements SQLPersister {
 						foreignKey = new LinkedHashMap<String, Object>();
 						Map<String, Object> foreignKeyTemporary = new LinkedHashMap<String, Object>();
 						if (newColumnValue != null)
-							foreignKeyTemporary = session.getIdentifier(newColumnValue).getColumns();
+							foreignKeyTemporary = session.getIdentifier(newColumnValue).getDatabaseColumns();
 
 						for (String key : foreignKeyTemporary.keySet()) {
 							Object value = foreignKeyTemporary.get(key);
@@ -753,7 +753,7 @@ public class SQLPersisterImpl implements SQLPersister {
 									namedParameters.add(new NamedParameter(columnModified.getColumnName(), foreignKey.get(columnModified
 											.getReferencedColumnName())));
 								else {
-									namedParameters.add(fieldModified.getNamedParameterFromObjectValue(session, targetObject, columnModified));
+									namedParameters.add(fieldModified.getNamedParameterFromDatabaseObjectValue(session, targetObject, columnModified));
 								}
 							}
 						}
@@ -772,7 +772,7 @@ public class SQLPersisterImpl implements SQLPersister {
 		/*
 		 * Gera as chaves do update ou delete. Se for delete remove os itens das coleções antes de remover o objeto.
 		 */
-		Map<String, Object> primaryKeyOwner = session.getIdentifier(targetObject).getColumns();
+		Map<String, Object> primaryKeyOwner = session.getIdentifier(targetObject).getDatabaseColumns();
 		for (String key : primaryKeyOwner.keySet())
 			keyParameters.add(new NamedParameter(key, primaryKeyOwner.get(key), true));
 
@@ -948,7 +948,7 @@ public class SQLPersisterImpl implements SQLPersister {
 						throw new SQLSessionException("Objeto " + value.getClass()
 								+ " não possuí anotação para salvar em cascata e também não possuí identificador. ");
 				}
-				Map<String, Object> foreignKeyRight = session.getIdentifier(value).getColumns();
+				Map<String, Object> foreignKeyRight = session.getIdentifier(value).getDatabaseColumns();
 
 				for (DescriptionColumn descriptionColumn : field.getDescriptionColumns()) {
 					if (descriptionColumn.isForeignKey()) {

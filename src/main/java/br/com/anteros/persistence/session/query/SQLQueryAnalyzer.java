@@ -1191,7 +1191,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 				if (expressionField == null) {
 					/*
 					 * Se o campo for uma coleção criamos aqui um
-					 * CollectionExpressionFieldMapper que irá cria a mesma e
+					 * CollectionExpressionFieldMapper que irá criar a mesma e
 					 * atribuir ao objeto alvo.
 					 */
 					if (descriptionField.isCollectionEntity()) {

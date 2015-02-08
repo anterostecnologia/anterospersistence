@@ -1,21 +1,19 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 
 package br.com.anteros.persistence.metadata;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -23,6 +21,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import br.com.anteros.core.utils.ReflectionUtils;
 
 public class FieldEntityValue implements Comparable<FieldEntityValue> {
 
@@ -57,13 +57,13 @@ public class FieldEntityValue implements Comparable<FieldEntityValue> {
 					return -1;
 			}
 		} else if (value instanceof Map) {
-			if (((Map<?, ?>) value).size() != ((Map<?, ?>) target.getValue()).size()) 
+			if (((Map<?, ?>) value).size() != ((Map<?, ?>) target.getValue()).size())
 				return -1;
-			
+
 			Object targetvalue;
 			Object sourceValue;
-			Map<String,Object> mapValues =((Map<String,Object>) value);
-			for (String sourceKey : mapValues.keySet()){
+			Map<String, Object> mapValues = ((Map<String, Object>) value);
+			for (String sourceKey : mapValues.keySet()) {
 				sourceValue = mapValues.get(sourceKey);
 				targetvalue = ((Map<?, ?>) target.getValue()).get(sourceKey);
 				if ((sourceValue != null) || (targetvalue != null)) {
@@ -79,8 +79,15 @@ public class FieldEntityValue implements Comparable<FieldEntityValue> {
 	}
 
 	private int compareObject(Object source, Object target) {
-		if ((source == null) || (target == null))
+		if ((source == null) && (target == null))
+			return 0;
+
+		if ((source == null) && (target != null))
 			return -1;
+
+		if ((source != null) && (target == null))
+			return 1;
+
 		if (source instanceof String) {
 			return ((String) source).compareTo((String) target);
 		} else if (source instanceof Integer) {
@@ -102,15 +109,30 @@ public class FieldEntityValue implements Comparable<FieldEntityValue> {
 		} else if (source instanceof BigInteger) {
 			return ((BigInteger) source).compareTo((BigInteger) target);
 		} else if (source instanceof BigDecimal) {
-			return ((BigDecimal) source).compareTo((BigDecimal) target);	
+			return ((BigDecimal) source).compareTo((BigDecimal) target);
 		} else if (source instanceof Date) {
-			return ((Date) source).compareTo((Date) target);		
+			return ((Date) source).compareTo((Date) target);
 		} else if (source instanceof Enum) {
 			return ((Enum) source).compareTo((Enum) target);
 		} else if (source instanceof byte[]) {
 			return (Arrays.equals((byte[]) source, (byte[]) target) == true ? 0 : -1);
+		} else {
+			if (source.getClass() != target.getClass())
+				return -1;
+			Field[] allDeclaredFields = ReflectionUtils.getAllDeclaredFields(source.getClass());
+			for (Field field : allDeclaredFields) {
+				try {
+					Object sourceValue = field.get(source);
+					Object targetValue = field.get(target);
+					int result = compareObject(sourceValue, targetValue);
+					if (result != 0)
+						return result;
+				} catch (Exception e) {
+					return -1;
+				}
+			}
+			return 0;
 		}
-		return 0;
 	}
 
 	public String getName() {

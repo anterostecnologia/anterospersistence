@@ -29,6 +29,7 @@ import br.com.anteros.persistence.metadata.annotation.type.EnumType;
 import br.com.anteros.persistence.metadata.annotation.type.GeneratedType;
 import br.com.anteros.persistence.metadata.annotation.type.ReturnType;
 import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
+import br.com.anteros.persistence.metadata.converter.AttributeConverter;
 import br.com.anteros.persistence.metadata.descriptor.type.ColumnType;
 
 /**
@@ -685,5 +686,25 @@ public class DescriptionColumn {
 			}
 		}
 		return null;
+	}
+
+	public Object convertToEntityAttribute(Object value) throws Exception {
+		if (!this.hasConvert())
+			return value;
+		DescriptionConvert convert = this.getConvert();
+		AttributeConverter<?, ?> converter = convert.getConverter();
+		value = ReflectionUtils.invokeMethod(converter, "convertToEntityAttribute", new Object[] { value },
+				new Class[] { convert.getEntityAttributeType() });
+		return value;
+	}
+	
+	public Object convertToDatabaseColumn(Object value) throws Exception {
+		if (!this.hasConvert())
+			return value;
+		DescriptionConvert convert = this.getConvert();
+		AttributeConverter<?, ?> converter = convert.getConverter();
+		value = ReflectionUtils.invokeMethod(converter, "convertToDatabaseColumn", new Object[] { value },
+				new Class[] { convert.getEntityAttributeType() });
+		return value;
 	}
 }

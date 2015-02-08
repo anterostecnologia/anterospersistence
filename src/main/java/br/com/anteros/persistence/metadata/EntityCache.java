@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.metadata;
 
@@ -125,14 +122,14 @@ public class EntityCache {
 	public List<DescriptionField> getDescriptionFields() {
 		return fields;
 	}
-	
+
 	public List<DescriptionField> getDescriptionFieldsExcludingIds() {
 		List<DescriptionField> result = new ArrayList<DescriptionField>();
-		for (DescriptionField f : fields){
+		for (DescriptionField f : fields) {
 			if (!f.isPrimaryKey())
 				result.add(f);
 		}
-		return result;		
+		return result;
 	}
 
 	public void setDescriptionFields(List<DescriptionField> fields) {
@@ -150,8 +147,7 @@ public class EntityCache {
 	public void addDescriptionColumn(DescriptionColumn descriptionColumn) {
 		if (descriptionColumn.getColumnType() == ColumnType.PRIMARY_KEY || descriptionColumn.isCompositeId()) {
 			this.primaryKey.add(descriptionColumn);
-		}
-		else if (descriptionColumn.getColumnType() == ColumnType.DISCRIMINATOR)
+		} else if (descriptionColumn.getColumnType() == ColumnType.DISCRIMINATOR)
 			this.discriminatorColumn = descriptionColumn;
 		this.columns.add(descriptionColumn);
 	}
@@ -200,7 +196,7 @@ public class EntityCache {
 	}
 
 	public List<DescriptionColumn> getPrimaryKeyColumns() {
-		return  Collections.unmodifiableList(primaryKey);
+		return Collections.unmodifiableList(primaryKey);
 	}
 
 	public boolean hasDiscriminatorValue() {
@@ -241,8 +237,7 @@ public class EntityCache {
 	public DescriptionColumn[] getDescriptionColumns(String fieldName) {
 		ArrayList<DescriptionColumn> result = new ArrayList<DescriptionColumn>();
 		for (DescriptionColumn descriptionColumn : columns) {
-			if ((descriptionColumn.getField() != null)
-					&& (fieldName.equalsIgnoreCase(descriptionColumn.getField().getName()))) {
+			if ((descriptionColumn.getField() != null) && (fieldName.equalsIgnoreCase(descriptionColumn.getField().getName()))) {
 				result.add(descriptionColumn);
 			}
 		}
@@ -278,7 +273,7 @@ public class EntityCache {
 
 	@Override
 	public String toString() {
-		return getEntityClass().getName()+":"+tableName+"";
+		return getEntityClass().getName() + ":" + tableName + "";
 	}
 
 	/**
@@ -333,6 +328,24 @@ public class EntityCache {
 		}
 	}
 
+	private void getDatabaseValue(Map<String, Object> map, Object object) throws Exception {
+		for (DescriptionColumn column : this.getDescriptionColumns()) {
+			if (column.isForeignKey() && column.isPrimaryKey()) {
+				try {
+					Object value = column.convertToDatabaseColumn(column.getDescriptionField().getObjectValue(object));
+					column.getDescriptionField().getTargetEntity().getValue(map, value);
+				} catch (Exception ex) {
+				}
+			} else if (column.isPrimaryKey()) {
+				try {
+					Object value = column.convertToDatabaseColumn(column.getDescriptionField().getObjectValue(object));
+					map.put(column.getColumnName(), ObjectUtils.cloneObject(value));
+				} catch (Exception ex) {
+				}
+			}
+		}
+	}
+
 	public Map<String, Object> getPrimaryKeysAndValues(Object object) throws Exception {
 		Map<String, Object> result = new LinkedHashMap<String, Object>();
 
@@ -345,7 +358,28 @@ public class EntityCache {
 				}
 			} else if (column.isPrimaryKey()) {
 				try {
-					Object value = ReflectionUtils.getFieldValueByName(object, column.getField().getName());
+					Object value = column.getDescriptionField().getObjectValue(object);
+					result.put(column.getColumnName(), ObjectUtils.cloneObject(value));
+				} catch (Exception ex) {
+				}
+			}
+		}
+		return result;
+	}
+
+	public Map<String, Object> getPrimaryKeysAndDatabaseValues(Object object) throws Exception {
+		Map<String, Object> result = new LinkedHashMap<String, Object>();
+
+		for (DescriptionColumn column : this.columns) {
+			if (column.isForeignKey() && column.isPrimaryKey()) {
+				try {
+					Object value = column.convertToDatabaseColumn(ReflectionUtils.getFieldValueByName(object, column.getField().getName()));
+					column.getDescriptionField().getTargetEntity().getDatabaseValue(result, value);
+				} catch (Exception ex) {
+				}
+			} else if (column.isPrimaryKey()) {
+				try {
+					Object value = column.convertToDatabaseColumn(column.getDescriptionField().getObjectValue(object));
 					result.put(column.getColumnName(), ObjectUtils.cloneObject(value));
 				} catch (Exception ex) {
 				}
@@ -378,13 +412,13 @@ public class EntityCache {
 		for (DescriptionColumn column : this.columns) {
 			if (column.isForeignKey() && column.isPrimaryKey()) {
 				try {
-					Object value = ReflectionUtils.getFieldValueByName(object, column.getField().getName());
+					Object value = column.getDescriptionField().getObjectValue(object);
 					column.getDescriptionField().getTargetEntity().getValue(result, value);
 				} catch (Exception ex) {
 				}
 			} else {
 				try {
-					Object value = ReflectionUtils.getFieldValueByName(object, column.getField().getName());
+					Object value = column.getDescriptionField().getObjectValue(object);
 					result.put(column.getColumnName(), value);
 				} catch (Exception ex) {
 				}
@@ -444,8 +478,7 @@ public class EntityCache {
 				lastFieldValue = getLastFieldEntityValue(session, object, field.getField().getName());
 				newFieldValue = field.getFieldEntityValue(session, object);
 				if ((lastFieldValue != null) || (newFieldValue != null)) {
-					if (((lastFieldValue == null) && (newFieldValue != null))
-							|| ((lastFieldValue != null) && (newFieldValue == null))
+					if (((lastFieldValue == null) && (newFieldValue != null)) || ((lastFieldValue != null) && (newFieldValue == null))
 							|| (newFieldValue.compareTo(lastFieldValue) != 0))
 						result.add(field);
 				}
@@ -454,8 +487,7 @@ public class EntityCache {
 		return result;
 	}
 
-	public FieldEntityValue getOriginalFieldEntityValue(SQLSession session, Object object, String fieldName)
-			throws Exception {
+	public FieldEntityValue getOriginalFieldEntityValue(SQLSession session, Object object, String fieldName) throws Exception {
 		EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(object);
 		if (entityManaged != null) {
 			for (FieldEntityValue field : entityManaged.getOriginalValues()) {
@@ -466,14 +498,11 @@ public class EntityCache {
 		return null;
 	}
 
-	public Object getOriginalValueByColumn(SQLSession session, Object object, DescriptionColumn column)
-			throws Exception {
-		return getValueByColumn(object, column,
-				getOriginalFieldEntityValue(session, object, column.getField().getName()));
+	public Object getOriginalValueByColumn(SQLSession session, Object object, DescriptionColumn column) throws Exception {
+		return getValueByColumn(object, column, getOriginalFieldEntityValue(session, object, column.getField().getName()));
 	}
 
-	public FieldEntityValue getLastFieldEntityValue(SQLSession session, Object object, String fieldName)
-			throws Exception {
+	public FieldEntityValue getLastFieldEntityValue(SQLSession session, Object object, String fieldName) throws Exception {
 		EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(object);
 		if (entityManaged != null) {
 			for (FieldEntityValue field : entityManaged.getLastValues()) {
@@ -503,8 +532,7 @@ public class EntityCache {
 		return false;
 	}
 
-	private Object getValueByColumn(Object object, DescriptionColumn column, FieldEntityValue fieldEntityValue)
-			throws Exception {
+	private Object getValueByColumn(Object object, DescriptionColumn column, FieldEntityValue fieldEntityValue) throws Exception {
 		Object result = null;
 		if ((fieldEntityValue != null) && (fieldEntityValue.getValue() != null)) {
 			if (column.isDiscriminatorColumn())
@@ -849,8 +877,8 @@ public class EntityCache {
 		for (String fieldName : values.keySet()) {
 			DescriptionField descriptionField = getDescriptionField(fieldName);
 			if (descriptionField == null) {
-				throw new EntityCacheException("Não foi possível atribuir o mapa de valores ao objeto pois o campo "
-						+ fieldName + " não encontrado na classe " + this.getEntityClass().getName());
+				throw new EntityCacheException("Não foi possível atribuir o mapa de valores ao objeto pois o campo " + fieldName
+						+ " não encontrado na classe " + this.getEntityClass().getName());
 			}
 			descriptionField.setObjectValue(fieldName, values.get(fieldName));
 		}
@@ -870,13 +898,12 @@ public class EntityCache {
 		DescriptionField result = getDescriptionFieldWithMappedBy(sourceType, mappedBy);
 		return (result != null);
 	}
-	
-	
+
 	public boolean isIncompletePrimaryKeyValue(Object source) throws Exception {
-		if (source==null)
+		if (source == null)
 			return true;
-		for (DescriptionField descriptionField : this.getPrimaryKeyFields()){
-			if (descriptionField.getObjectValue(source)==null)
+		for (DescriptionField descriptionField : this.getPrimaryKeyFields()) {
+			if (descriptionField.getObjectValue(source) == null)
 				return true;
 		}
 		return false;
@@ -887,20 +914,20 @@ public class EntityCache {
 			return;
 		if (!(source.getClass().equals(target.getClass())))
 			return;
-		
-		for (DescriptionField descriptionField : this.getPrimaryKeyFields()){
+
+		for (DescriptionField descriptionField : this.getPrimaryKeyFields()) {
 			descriptionField.setObjectValue(target, descriptionField.getObjectValue(source));
 		}
 	}
-	
-	public String getSimpleName(){
-		if (entityClass!=null)
+
+	public String getSimpleName() {
+		if (entityClass != null)
 			return entityClass.getSimpleName();
 		return "";
 	}
 
 	public boolean containsDescriptionField(DescriptionField descriptionField) {
-		for (DescriptionField descField : fields){
+		for (DescriptionField descField : fields) {
 			if (descField.equals(descriptionField))
 				return true;
 		}

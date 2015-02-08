@@ -505,7 +505,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 		Select select = new Select(session.getDialect());
 		select.addTableName(identifier.getEntityCache().getTableName());
-		Map<String, Object> columns = identifier.getColumns();
+		Map<String, Object> columns = identifier.getDatabaseColumns();
 		List<NamedParameter> params = new ArrayList<NamedParameter>();
 		boolean appendOperator = false;
 		for (String column : columns.keySet()) {

@@ -63,12 +63,12 @@ public class LockManagerJDBC implements LockManager {
 
 		if (entityManaged.getStatus() == EntityStatus.READ_ONLY) {
 			throw new LockException("Entidade " + entityManaged.getEntityCache().getEntityClass().getSimpleName()
-					+ " somente leitura não é possível realizar o bloqueio. Id " + identifier.getValues());
+					+ " somente leitura não é possível realizar o bloqueio. Id " + identifier.getDatabaseValues());
 		}
 
 		if (entityManaged.getStatus() == EntityStatus.DELETED) {
 			throw new LockException("Entidade " + entityManaged.getEntityCache().getEntityClass().getSimpleName()
-					+ " já foi deletada não é possível realizar o travamento. " + identifier.getValues());
+					+ " já foi deletada não é possível realizar o travamento. " + identifier.getDatabaseValues());
 		}
 
 		/*
@@ -95,12 +95,12 @@ public class LockManagerJDBC implements LockManager {
 						entityManaged.setLockMode(lockOptions.getLockMode());
 					} else 
 						throw new LockAcquisitionException("Entidade " + entityManaged.getEntityCache().getEntityClass().getSimpleName()
-								+ " não foi localizada no banco de dados e por isso não foi possível realizar o bloqueio. Id " + identifier.getValues());
+								+ " não foi localizada no banco de dados e por isso não foi possível realizar o bloqueio. Id " + identifier.getDatabaseValues());
 				} catch (SQLException ex) {
 					throw session.getDialect().convertSQLException(
 							ex,
 							"Não foi possível realizar o bloqueio da entidade " + entityCache.getEntityClass().getSimpleName() + " Id "
-									+ identifier.getValues() + ".", query.getSql());
+									+ identifier.getDatabaseValues() + ".", query.getSql());
 				} finally {
 					if (resultSet != null)
 						resultSet.close();
@@ -153,7 +153,7 @@ public class LockManagerJDBC implements LockManager {
 		 */
 		Select select = new Select(session.getDialect());
 		select.addTableName(identifier.getEntityCache().getTableName());
-		Map<String, Object> columns = identifier.getColumns();
+		Map<String, Object> columns = identifier.getDatabaseColumns();
 		List<NamedParameter> params = new ArrayList<NamedParameter>();
 		boolean appendOperator = false;
 		for (String column : columns.keySet()) {

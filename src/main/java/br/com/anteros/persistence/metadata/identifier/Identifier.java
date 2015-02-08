@@ -164,14 +164,27 @@ public class Identifier<T> implements Serializable {
 	public Map<String, Object> getColumns() throws Exception {
 		return entityCache.getPrimaryKeysAndValues(owner);
 	}
+	
+	public Map<String, Object> getDatabaseColumns() throws Exception {
+		return entityCache.getPrimaryKeysAndDatabaseValues(owner);
+	}
 
 	public Collection<Object> getValues() throws Exception {
 		Map<String, Object> primaryKeysAndValues = entityCache.getPrimaryKeysAndValues(owner);
 		return primaryKeysAndValues.values();
 	}
 	
+	public Collection<Object> getDatabaseValues() throws Exception {
+		Map<String, Object> primaryKeysAndValues = entityCache.getPrimaryKeysAndDatabaseValues(owner);
+		return primaryKeysAndValues.values();
+	}
+	
 	public Map<String,Object> getColumnsValues() throws Exception {
 		return entityCache.getPrimaryKeysAndValues(owner);
+	}
+	
+	public Map<String,Object> getDatabaseColumnsValues() throws Exception {
+		return entityCache.getPrimaryKeysAndDatabaseValues(owner);
 	}
 
 	public boolean hasIdentifier() throws Exception {
@@ -188,6 +201,17 @@ public class Identifier<T> implements Serializable {
 	public String getUniqueId() throws Exception {
 		StringBuilder sb = new StringBuilder("");
 		Map<String, Object> primaryKey = new TreeMap<String, Object>(this.getColumns());
+		for (String key : primaryKey.keySet()) {
+			if (!"".equals(sb.toString()))
+				sb.append("_");
+			sb.append(primaryKey.get(key));
+		}
+		return sb.toString();
+	}
+	
+	public String getDatabaseUniqueId() throws Exception {
+		StringBuilder sb = new StringBuilder("");
+		Map<String, Object> primaryKey = new TreeMap<String, Object>(this.getDatabaseColumns());
 		for (String key : primaryKey.keySet()) {
 			if (!"".equals(sb.toString()))
 				sb.append("_");

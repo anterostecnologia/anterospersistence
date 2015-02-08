@@ -18,7 +18,7 @@ package br.com.anteros.persistence.handler;
 import java.sql.ResultSet;
 
 /**
- * Interface responsável sobre conversão do ResultSet.
+ * Interface responsável sobre conversão do ResultSet para Object.
  * 
  */
 public interface ResultSetHandler {
