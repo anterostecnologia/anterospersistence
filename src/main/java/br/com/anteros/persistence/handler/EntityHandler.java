@@ -162,7 +162,7 @@ public class EntityHandler implements ResultSetHandler {
 							/*
 							 * Cria o objeto
 							 */
-							createObject(targetResultClass, resultSet, result);
+							int count = createObject(targetResultClass, resultSet, result);
 							numberOfRecords++;
 						}
 					}
@@ -189,8 +189,10 @@ public class EntityHandler implements ResultSetHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	protected Object createObject(Class<?> targetClass, ResultSet resultSet, List<Object> result) throws Exception {
+	protected int createObject(Class<?> targetClass, ResultSet resultSet, List<Object> result) throws Exception {
 		EntityCache entityCache = entityCacheManager.getEntityCache(targetClass);
+		
+		int count = 0;
 
 		/*
 		 * Busca chave do objeto no resultSet
@@ -213,6 +215,7 @@ public class EntityHandler implements ResultSetHandler {
 				 * Se não encontrou no cache cria uma nova instância
 				 */
 				mainObject = targetClass.newInstance();
+				count++;
 				result.add(mainObject);
 			} else {
 				/*
@@ -254,7 +257,7 @@ public class EntityHandler implements ResultSetHandler {
 			entityManaged.setCurrentVersion(entityManaged.getOriginalVersion());
 		}
 
-		return mainObject;
+		return count;
 	}
 
 	/**
