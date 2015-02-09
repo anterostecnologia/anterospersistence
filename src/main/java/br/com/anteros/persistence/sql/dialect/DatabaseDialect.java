@@ -55,7 +55,6 @@ import br.com.anteros.persistence.schema.definition.UniqueKeySchema;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 import br.com.anteros.persistence.schema.definition.type.StoredParameterType;
 import br.com.anteros.persistence.session.exception.SQLSessionException;
-import br.com.anteros.persistence.session.lock.LockMode;
 import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.sql.binder.DateParameterBinding;
 import br.com.anteros.persistence.sql.binder.LobParameterBinding;

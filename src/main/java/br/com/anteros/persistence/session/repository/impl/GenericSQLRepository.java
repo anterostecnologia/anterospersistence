@@ -584,27 +584,27 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 
 	@Override
 	public T findOne(ID id, LockOptions lockOptions) {
-		return findOne(id, false);
+		return findOne(id, lockOptions,false);
 	}
 
 	@Override
 	public T findOne(String sql, LockOptions lockOptions) {
-		return findOne(sql, false);
+		return findOne(sql, lockOptions, false);
 	}
 
 	@Override
 	public T findOne(String sql, Object parameters, LockOptions lockOptions) {
-		return findOne(sql, parameters, false);
+		return findOne(sql, parameters, lockOptions, false);
 	}
 
 	@Override
 	public List<T> findAll(LockOptions lockOptions) {
-		return findAll(false);
+		return findAll(lockOptions, false);
 	}
 
 	@Override
 	public Page<T> findAll(Pageable pageable, LockOptions lockOptions) {
-		return findAll(pageable, false);
+		return findAll(pageable, lockOptions, false);
 	}
 
 	@Override
