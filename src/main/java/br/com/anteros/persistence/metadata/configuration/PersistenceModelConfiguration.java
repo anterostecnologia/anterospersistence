@@ -63,6 +63,13 @@ public class PersistenceModelConfiguration {
 		entities.put(sourceClazz, entity);
 		return entity;
 	}
+	
+	public EnumConfiguration addEnum(Class<? extends Serializable> sourceClazz) {
+		EnumConfiguration enumConfiguration = new EnumConfiguration(sourceClazz, this);
+		enumConfiguration.loadAnnotations();
+		entities.put(sourceClazz, enumConfiguration);
+		return enumConfiguration;
+	}
 
 	public ConverterConfiguration addConverter(Class<? extends Serializable> sourceClazz) throws InstantiationException, IllegalAccessException {
 		ConverterConfiguration converter = new ConverterConfiguration(sourceClazz);
