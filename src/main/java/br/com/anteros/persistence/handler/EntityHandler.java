@@ -767,7 +767,7 @@ public class EntityHandler implements ResultSetHandler {
 			return true;
 
 		for (ExpressionFieldMapper expression : expressionsFieldMapper) {
-			if (fieldName.equals(expression.getDescriptionField().getField().getName().equalsIgnoreCase(fieldName))) {
+			if (expression.getDescriptionField().getField().getName().equalsIgnoreCase(fieldName)) {
 				/*
 				 * Armazena no cache para acelerar a próxima busca
 				 */

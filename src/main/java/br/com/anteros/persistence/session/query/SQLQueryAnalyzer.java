@@ -1104,7 +1104,6 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			/*
 			 * Chama o método que cria a expressão.
 			 */
-			System.out.println(Arrays.toString(expression));
 			makeExpressionFieldMapper(null, resultClass, expression, 0, expressions.get(expression));
 		}
 	}
