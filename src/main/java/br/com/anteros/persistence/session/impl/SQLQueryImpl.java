@@ -448,7 +448,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		Map<Integer, NamedParameter> tempNamedParameters = new TreeMap<Integer, NamedParameter>(this.namedParameters);
 		Map<Integer, Object> tempParameters = new TreeMap<Integer, Object>(this.parameters);
 
-		parsedSql = appendLimit(parsedSql, tempParameters, tempNamedParameters);
+	//	parsedSql = appendLimit(parsedSql, tempParameters, tempNamedParameters);
 
 		if (readOnly)
 			lockOptions = LockOptions.NONE;
