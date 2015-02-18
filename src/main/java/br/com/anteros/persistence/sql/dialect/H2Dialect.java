@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.sql.dialect;
 
@@ -26,6 +23,7 @@ import java.util.List;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.H2Templates;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
@@ -35,6 +33,7 @@ import br.com.anteros.persistence.session.lock.LockAcquisitionException;
 import br.com.anteros.persistence.session.lock.LockMode;
 import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.lock.PessimisticLockException;
+import br.com.anteros.persistence.sql.dialect.type.LimitClauseResult;
 
 public class H2Dialect extends DatabaseDialect {
 
@@ -173,25 +172,21 @@ public class H2Dialect extends DatabaseDialect {
 
 	@Override
 	public String getSequenceNextValString(String sequenceName) throws Exception {
-		return new StringBuilder(20 + sequenceName.length()).append("CALL NEXT VALUE FOR ").append(sequenceName)
-				.toString();
+		return new StringBuilder(20 + sequenceName.length()).append("CALL NEXT VALUE FOR ").append(sequenceName).toString();
 	}
 
 	@Override
 	public boolean checkSequenceExists(Connection conn, String sequenceName) throws SQLException, Exception {
 		Statement statement = conn.createStatement();
-		ResultSet resultSet = statement
-				.executeQuery("SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_NAME = '"
-						+ sequenceName.toUpperCase() + "'");
+		ResultSet resultSet = statement.executeQuery("SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_NAME = '"
+				+ sequenceName.toUpperCase() + "'");
 
 		if (resultSet.next()) {
 			return true;
 		}
 
 		statement = conn.createStatement();
-		resultSet = statement
-				.executeQuery("SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_NAME = '"
-						+ sequenceName + "'");
+		resultSet = statement.executeQuery("SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_NAME = '" + sequenceName + "'");
 
 		if (resultSet.next()) {
 			return true;
@@ -204,9 +199,8 @@ public class H2Dialect extends DatabaseDialect {
 	public String[] getColumnNamesFromTable(Connection conn, String tableName) throws SQLException, Exception {
 		List<String> result = new ArrayList<String>();
 		Statement statement = conn.createStatement();
-		ResultSet columns = statement
-				.executeQuery("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME =  '" + tableName
-						+ "' ORDER BY ORDINAL_POSITION");
+		ResultSet columns = statement.executeQuery("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME =  '" + tableName
+				+ "' ORDER BY ORDINAL_POSITION");
 
 		while (columns.next()) {
 			result.add(columns.getString("COLUMN_NAME"));
@@ -231,37 +225,37 @@ public class H2Dialect extends DatabaseDialect {
 
 	@Override
 	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception {
-        int errorCode = extractErrorCode(ex);
+		int errorCode = extractErrorCode(ex);
 
-        if (40001 == errorCode) { // DEADLOCK DETECTED
-            return new LockAcquisitionException(msg, ex, sql);
-        }
+		if (40001 == errorCode) { // DEADLOCK DETECTED
+			return new LockAcquisitionException(msg, ex, sql);
+		}
 
-        if (50200 == errorCode) { // LOCK NOT AVAILABLE
-            return new PessimisticLockException(msg, ex, sql);
-        }
+		if (50200 == errorCode) { // LOCK NOT AVAILABLE
+			return new PessimisticLockException(msg, ex, sql);
+		}
 
-		if ( 90006 == errorCode ) {
+		if (90006 == errorCode) {
 			// NULL not allowed for column [90006-145]
-			final String constraintName = extractConstraintName( ex );
-			return new ConstraintViolationException( msg, ex, sql, constraintName );
+			final String constraintName = extractConstraintName(ex);
+			return new ConstraintViolationException(msg, ex, sql, constraintName);
 		}
 
 		return new SQLSessionException(msg, ex, sql);
 	}
-	
+
 	public String extractConstraintName(SQLException ex) {
 		String constraintName = null;
-		if ( ex.getSQLState().startsWith( "23" ) ) {
+		if (ex.getSQLState().startsWith("23")) {
 			final String message = ex.getMessage();
-			int idx = message.indexOf( "violation: " );
-			if ( idx > 0 ) {
-				constraintName = message.substring( idx + "violation: ".length() );
+			int idx = message.indexOf("violation: ");
+			if (idx > 0) {
+				constraintName = message.substring(idx + "violation: ".length());
 			}
 		}
 		return constraintName;
 	}
-	
+
 	@Override
 	public String applyLock(String sql, LockOptions lockOptions) {
 		LockMode lockMode = lockOptions.getLockMode();
@@ -278,7 +272,21 @@ public class H2Dialect extends DatabaseDialect {
 
 	@Override
 	public String getSetLockTimeoutString(int secondsTimeOut) {
-		return "SET LOCK_TIMEOUT "+secondsTimeOut*1000;
+		return "SET LOCK_TIMEOUT " + secondsTimeOut * 1000;
+	}
+
+	@Override
+	public LimitClauseResult getLimitClause(String sql, int offset, int limit, boolean namedParameter) {
+		LimitClauseResult result;
+		if (namedParameter) {
+			result = new LimitClauseResult(new StringBuilder(sql.length() + 20).append(sql)
+					.append(offset > 0 ? " LIMIT :PLIMIT OFFSET :POFFSET " : " LIMIT :PLIMIT").toString(), "PLIMIT", (offset > 0 ? "POFFSET" : ""),limit, offset);
+		} else {
+			result = new LimitClauseResult(new StringBuilder(sql.length() + 20).append(sql).append(offset > 0 ? " LIMIT ? OFFSET ?" : " LIMIT ?")
+					.toString(), (offset > 0 ? LimitClauseResult.PREVIOUS_PARAMETER : LimitClauseResult.LAST_PARAMETER),
+					(offset > 0 ? LimitClauseResult.LAST_PARAMETER : LimitClauseResult.NONE_PARAMETER),limit, offset);
+		}
+		return result;
 	}
 
 }

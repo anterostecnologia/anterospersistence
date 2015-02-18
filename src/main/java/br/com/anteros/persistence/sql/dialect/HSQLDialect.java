@@ -1,33 +1,29 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.sql.dialect;
 
 import java.sql.Blob;
-import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.HSQLDBTemplates;
-import br.com.anteros.persistence.metadata.annotation.type.CallableType;
-import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.session.lock.LockOptions;
+import br.com.anteros.persistence.sql.dialect.type.LimitClauseResult;
 
 public class HSQLDialect extends DatabaseDialect {
 
@@ -59,6 +55,15 @@ public class HSQLDialect extends DatabaseDialect {
 		registerJavaColumnType(java.util.Date.class, new ColumnDatabaseType("TIMESTAMP", false));
 	}
 
+	public HSQLDialect() {
+		super();
+	}
+
+	public HSQLDialect(String defaultCatalog, String defaultSchema) {
+		super(defaultCatalog, defaultSchema);
+
+	}
+
 	@Override
 	public String getIdentitySelectString() {
 		return null;
@@ -73,7 +78,6 @@ public class HSQLDialect extends DatabaseDialect {
 	public String getSequenceNextValString(String sequenceName) throws Exception {
 		return null;
 	}
-
 
 	@Override
 	public boolean supportInCondition() {
@@ -167,6 +171,20 @@ public class HSQLDialect extends DatabaseDialect {
 	@Override
 	public String getSetLockTimeoutString(int secondsTimeOut) {
 		return null;
+	}
+
+	@Override
+	public LimitClauseResult getLimitClause(String sql, int offset, int limit, boolean namedParameter) {
+		LimitClauseResult result;
+		if (namedParameter) {
+			result = new LimitClauseResult(new StringBuilder(sql.length() + 20).append(sql)
+					.append(offset > 0 ? " LIMIT :PLIMIT OFFSET :POFFSET " : " LIMIT :PLIMIT").toString(), "PLIMIT", (offset > 0 ? "POFFSET" : ""),limit, offset);
+		} else {
+			result = new LimitClauseResult(new StringBuilder(sql.length() + 20).append(sql).append(offset > 0 ? " LIMIT ? OFFSET ?" : " LIMIT ?")
+					.toString(), (offset > 0 ? LimitClauseResult.PREVIOUS_PARAMETER : LimitClauseResult.LAST_PARAMETER),
+					(offset > 0 ? LimitClauseResult.LAST_PARAMETER : LimitClauseResult.NONE_PARAMETER),limit, offset);
+		}
+		return result;
 	}
 
 }

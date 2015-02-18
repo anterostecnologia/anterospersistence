@@ -46,6 +46,7 @@ import br.com.anteros.persistence.session.lock.LockAcquisitionException;
 import br.com.anteros.persistence.session.lock.LockMode;
 import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.lock.LockTimeoutException;
+import br.com.anteros.persistence.sql.dialect.type.LimitClauseResult;
 
 public class OracleDialect extends DatabaseDialect {
 
@@ -537,18 +538,20 @@ public class OracleDialect extends DatabaseDialect {
 				appendDelimiter = true;
 			}
 			if (!(StringUtils.isEmpty(aliases)))
-				aliases = " OF "+aliases;
+				aliases = " OF " + aliases;
 		}
 		switch (lockMode) {
 		case PESSIMISTIC_READ:
 			return sql
-					+ " FOR UPDATE "+aliases
+					+ " FOR UPDATE "
+					+ aliases
 					+ (lockOptions.getTimeOut() >= LockOptions.NO_WAIT ? (lockOptions.getTimeOut() > 0 ? " WAIT " + lockOptions.getTimeOut()
 							: " NOWAIT ") : "");
 		case PESSIMISTIC_WRITE:
 		case PESSIMISTIC_FORCE_INCREMENT:
 			return sql
-					+ " FOR UPDATE "+aliases
+					+ " FOR UPDATE "
+					+ aliases
 					+ (lockOptions.getTimeOut() >= LockOptions.NO_WAIT ? (lockOptions.getTimeOut() > 0 ? " WAIT " + lockOptions.getTimeOut()
 							: " NOWAIT ") : "");
 		default:
@@ -559,6 +562,52 @@ public class OracleDialect extends DatabaseDialect {
 	@Override
 	public String getSetLockTimeoutString(int secondsTimeOut) {
 		return null;
+	}
+
+	@Override
+	public LimitClauseResult getLimitClause(String sql, int offset, int limit, boolean namedParameter) {
+		LimitClauseResult result;
+		sql = sql.trim();
+		boolean isForUpdate = false;
+		if (sql.toUpperCase().endsWith(" FOR UPDATE")) {
+			sql = sql.substring(0, sql.length() - 11);
+			isForUpdate = true;
+		}
+		
+
+		StringBuilder select = new StringBuilder(sql.length() + 100);
+		if (offset > 0) {
+			select.append("SELECT * FROM ( SELECT RDS_.*, ROWNUM ROW_NUM FROM ( ");
+		} else {
+			select.append("SELECT * FROM ( ");
+		}
+		select.append(sql);
+		if (offset > 0) {
+			if (namedParameter) {
+				select.append(" ) RDS_ ) WHERE ROW_NUM <= :PLIMIT  AND ROWNUM_ >= :POFFSET");
+			} else {
+				select.append(" ) RDS_ ) WHERE ROW_NUM <= ? AND ROWNUM_ >= ?");
+			}
+		} else {
+			if (namedParameter) {
+				select.append(" ) WHERE ROWNUM <= :PLIMIT");
+			} else {
+				select.append(" ) WHERE ROWNUM <= ?");
+			}
+		}
+
+		if (isForUpdate) {
+			select.append(" FOR UPDATE");
+		}
+		
+		if (namedParameter) {
+			result = new LimitClauseResult(select.toString(), "PLIMIT", (offset > 0 ? "POFFSET" : ""),limit, offset);
+		} else {
+			result = new LimitClauseResult(select.toString(), (offset > 0 ? LimitClauseResult.PREVIOUS_PARAMETER : LimitClauseResult.LAST_PARAMETER),
+					(offset > 0 ? LimitClauseResult.LAST_PARAMETER : LimitClauseResult.NONE_PARAMETER),limit, offset);
+		}
+
+		return result;
 	}
 
 }

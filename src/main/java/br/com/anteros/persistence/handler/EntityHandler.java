@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2012 Anteros Tecnologia
+ * 0 * Copyright 2012 Anteros Tecnologia
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -115,58 +115,47 @@ public class EntityHandler implements ResultSetHandler {
 			/*
 			 * Se o ResultSet não estiver vazio
 			 */
-			int numberOfRow = 0;
-			int numberOfRecords = 0;
 			if (resultSet.next()) {
 				/*
 				 * Faz o loop para processar os registros do ResultSet
 				 */
 				do {
-					if (numberOfRow >= firstResult) {
-						if ((maxResults == 0) || (numberOfRecords < maxResults)) {
-							/*
-							 * Se a classe passada para o handler for uma entidade abstrata localiza no entityCache a
-							 * classe correspondente ao discriminator colum
-							 */
+					/*
+					 * Se a classe passada para o handler for uma entidade abstrata localiza no entityCache a classe
+					 * correspondente ao discriminator colum
+					 */
 
-							Class<?> targetResultClass = resultClass;
-							EntityCache entityCache = entityCacheManager.getEntityCache(resultClass);
-							try {
-								/*
-								 * Verifica se a classe é abstrat e busca o tipo da classe concreta
-								 */
-								if (entityCache.hasDiscriminatorColumn() && ReflectionUtils.isAbstractClass(entityCache.getEntityClass())) {
-									String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache.getDiscriminatorColumn()
-											.getColumnName()));
-									entityCache = entityCacheManager.getEntityCache(resultClass, dsValue);
-									targetResultClass = entityCache.getEntityClass();
-								} else if (entityCache.hasDiscriminatorColumn()) {
-									String dsValue = resultSet.getString(getAliasColumnName(entityCache, entityCache.getDiscriminatorColumn()
-											.getColumnName()));
-									if (!entityCache.getDiscriminatorValue().equals(dsValue)) {
-										continue;
-									}
-								}
-							} catch (Exception e) {
-								throw new EntityHandlerException(
-										"Para que seja criado o objeto da classe "
-												+ entityCache.getEntityClass().getName()
-												+ " será necessário adicionar no sql a coluna "
-												+ entityCache.getDiscriminatorColumn().getColumnName()
-												+ " que informe que tipo de classe será usada para instanciar o objeto. Verifique também se o discriminator value "
-												+ resultSet.getString(getAliasColumnName(entityCache, entityCache.getDiscriminatorColumn()
-														.getColumnName())) + " é o mesmo que está configurado na classe herdada.");
+					Class<?> targetResultClass = resultClass;
+					EntityCache entityCache = entityCacheManager.getEntityCache(resultClass);
+					try {
+						/*
+						 * Verifica se a classe é abstrat e busca o tipo da classe concreta
+						 */
+						if (entityCache.hasDiscriminatorColumn() && ReflectionUtils.isAbstractClass(entityCache.getEntityClass())) {
+							String dsValue = resultSet
+									.getString(getAliasColumnName(entityCache, entityCache.getDiscriminatorColumn().getColumnName()));
+							entityCache = entityCacheManager.getEntityCache(resultClass, dsValue);
+							targetResultClass = entityCache.getEntityClass();
+						} else if (entityCache.hasDiscriminatorColumn()) {
+							String dsValue = resultSet
+									.getString(getAliasColumnName(entityCache, entityCache.getDiscriminatorColumn().getColumnName()));
+							if (!entityCache.getDiscriminatorValue().equals(dsValue)) {
+								continue;
 							}
-							if (result == null)
-								result = new ArrayList<Object>();
-							/*
-							 * Cria o objeto
-							 */
-							int count = createObject(targetResultClass, resultSet, result);
-							numberOfRecords++;
 						}
+					} catch (Exception e) {
+						throw new EntityHandlerException("Para que seja criado o objeto da classe " + entityCache.getEntityClass().getName()
+								+ " será necessário adicionar no sql a coluna " + entityCache.getDiscriminatorColumn().getColumnName()
+								+ " que informe que tipo de classe será usada para instanciar o objeto. Verifique também se o discriminator value "
+								+ resultSet.getString(getAliasColumnName(entityCache, entityCache.getDiscriminatorColumn().getColumnName()))
+								+ " é o mesmo que está configurado na classe herdada.");
 					}
-					numberOfRow++;
+					if (result == null)
+						result = new ArrayList<Object>();
+					/*
+					 * Cria o objeto
+					 */
+					int count = createObject(targetResultClass, resultSet, result);
 
 				} while (resultSet.next());
 			}
@@ -191,7 +180,7 @@ public class EntityHandler implements ResultSetHandler {
 	 */
 	protected int createObject(Class<?> targetClass, ResultSet resultSet, List<Object> result) throws Exception {
 		EntityCache entityCache = entityCacheManager.getEntityCache(targetClass);
-		
+
 		int count = 0;
 
 		/*
@@ -466,7 +455,8 @@ public class EntityHandler implements ResultSetHandler {
 			 * Gera o valor do field somente se o usuário não incluiu a expressão manualmente no sql. Se ele adicionou a
 			 * expressão será criado o objeto e alimentado apenas com os dados da expressão no método processExpression
 			 */
-			if (descriptionField.isAnyCollectionOrMap() || descriptionField.isJoinTable() || descriptionField.isRelationShip() || descriptionField.isLob()) {
+			if (descriptionField.isAnyCollectionOrMap() || descriptionField.isJoinTable() || descriptionField.isRelationShip()
+					|| descriptionField.isLob()) {
 				Object assignedValue = descriptionField.getObjectValue(targetObject);
 
 				/*
@@ -604,8 +594,8 @@ public class EntityHandler implements ResultSetHandler {
 	}
 
 	/**
-	 * Verifica se um determinado campo em uma entidade tem necessidade de ser processado para criar o objeto. No caso de
-	 * chaves estrangeiras que não foram trazidas no SQL e objetos com chave parcial devem ser considerados como
+	 * Verifica se um determinado campo em uma entidade tem necessidade de ser processado para criar o objeto. No caso
+	 * de chaves estrangeiras que não foram trazidas no SQL e objetos com chave parcial devem ser considerados como
 	 * necessário criar o objeto do campo novamente.
 	 * 
 	 * @param entityCache
@@ -619,8 +609,12 @@ public class EntityHandler implements ResultSetHandler {
 	 */
 	private boolean checkNeedsProcessDescriptionField(EntityCache entityCache, DescriptionField descriptionField, Object assignedValue)
 			throws Exception {
+		if (firstResult>0 || maxResults>0)
+			return true;
+		
 		Boolean process = (assignedValue == null);
-		Boolean existsExpression = existsExpressionForProcessing(entityCache, descriptionField.getField().getName());
+		Boolean existsExpression = existsExpressionForProcessing(entityCache, descriptionField.getField().getName());		
+		
 		isIncompleteKey = false;
 
 		if (assignedValue != null) {
@@ -648,7 +642,6 @@ public class EntityHandler implements ResultSetHandler {
 						existsExpression = false;
 					}
 				}
-
 			}
 		}
 

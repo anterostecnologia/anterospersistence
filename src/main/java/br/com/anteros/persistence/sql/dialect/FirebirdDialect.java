@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.sql.dialect;
 
@@ -24,6 +21,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.FirebirdTemplates;
 import br.com.anteros.persistence.schema.definition.SequenceGeneratorSchema;
@@ -31,16 +29,14 @@ import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.session.lock.LockMode;
 import br.com.anteros.persistence.session.lock.LockOptions;
+import br.com.anteros.persistence.sql.dialect.type.LimitClauseResult;
 
 public class FirebirdDialect extends DatabaseDialect {
 
-	private final String GET_CLIENT_INFO_SQL = "SELECT "
-			+ "    rdb$get_context('USER_SESSION', ?) session_context "
-			+ "  , rdb$get_context('USER_TRANSACTION', ?) tx_context "
-			+ "FROM rdb$database";
+	private final String GET_CLIENT_INFO_SQL = "SELECT " + "    rdb$get_context('USER_SESSION', ?) session_context "
+			+ "  , rdb$get_context('USER_TRANSACTION', ?) tx_context " + "FROM rdb$database";
 
-	private final String SET_CLIENT_INFO_SQL = "SELECT rdb$set_context('USER_SESSION', ?, ?) session_context "
-			+ "FROM rdb$database";
+	private final String SET_CLIENT_INFO_SQL = "SELECT rdb$set_context('USER_SESSION', ?, ?) session_context " + "FROM rdb$database";
 
 	@Override
 	protected void initializeTypes() {
@@ -227,8 +223,7 @@ public class FirebirdDialect extends DatabaseDialect {
 	}
 
 	/**
-	 * Executa o SQL que define variáveis da sessão do banco de dados com
-	 * informações do cliente.
+	 * Executa o SQL que define variáveis da sessão do banco de dados com informações do cliente.
 	 * 
 	 * @param stmt
 	 * @param name
@@ -242,8 +237,7 @@ public class FirebirdDialect extends DatabaseDialect {
 		ResultSet rs = stmt.executeQuery();
 		try {
 			if (!rs.next())
-				throw new SQLException(
-						"Expected result from RDB$SET_CONTEXT call");
+				throw new SQLException("Expected result from RDB$SET_CONTEXT call");
 
 			// needed, since the value is set on fetch!!!
 			rs.getInt(1);
@@ -312,4 +306,25 @@ public class FirebirdDialect extends DatabaseDialect {
 		return null;
 	}
 
+	@Override
+	public LimitClauseResult getLimitClause(String sql, int offset, int limit, boolean namedParameter) {
+		LimitClauseResult result;
+		if (namedParameter) {
+			result = new LimitClauseResult(new StringBuilder(sql.length() + 20).append(sql)
+					.append(offset > 0 ? " FIRST :PLIMIT SKIP :POFFSET " : " FIRST :PLIMIT").toString(), "PLIMIT", (offset > 0 ? "POFFSET" : ""), limit, offset);
+		} else {
+			result = new LimitClauseResult(new StringBuilder(sql.length() + 20).append(sql).append(offset > 0 ? " LIMIT ? OFFSET ?" : " LIMIT ?")
+					.toString(), LimitClauseResult.FIRST_PARAMETER, (offset > 0 ? LimitClauseResult.SECOND_PARAMETER
+					: LimitClauseResult.NONE_PARAMETER),limit, offset);
+		}
+		return result;
+	}
+
+	public boolean bindLimitParametersFirst() {
+		return true;
+	}
+
+	public boolean bindLimitParametersInReverseOrder() {
+		return true;
+	}
 }

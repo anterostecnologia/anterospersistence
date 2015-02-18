@@ -59,6 +59,7 @@ import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.sql.binder.DateParameterBinding;
 import br.com.anteros.persistence.sql.binder.LobParameterBinding;
 import br.com.anteros.persistence.sql.binder.ParameterBinding;
+import br.com.anteros.persistence.sql.dialect.type.LimitClauseResult;
 
 public abstract class DatabaseDialect {
 
@@ -1676,6 +1677,18 @@ public abstract class DatabaseDialect {
 		}
 		return sqlState;
 	}
+	
+	public abstract LimitClauseResult getLimitClause(String sql, int offset, int limit, boolean namedParameter);
+	
+	public boolean bindLimitParametersFirst() {
+		return false;
+	}
+
+	public boolean bindLimitParametersInReverseOrder() {
+		return false;
+	}
+
+	
 
 	// public abstract List<ProcedureMetadata> getNativeFunctions() throws
 	// Exception;

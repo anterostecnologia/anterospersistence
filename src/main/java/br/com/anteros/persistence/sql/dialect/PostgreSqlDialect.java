@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.sql.dialect;
 
@@ -24,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.PostgresTemplates;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
@@ -32,6 +30,7 @@ import br.com.anteros.persistence.session.lock.LockAcquisitionException;
 import br.com.anteros.persistence.session.lock.LockMode;
 import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.lock.PessimisticLockException;
+import br.com.anteros.persistence.sql.dialect.type.LimitClauseResult;
 
 public class PostgreSqlDialect extends DatabaseDialect {
 
@@ -270,7 +269,7 @@ public class PostgreSqlDialect extends DatabaseDialect {
 			return null;
 		}
 	}
-	
+
 	@Override
 	public String applyLock(String sql, LockOptions lockOptions) {
 		LockMode lockMode = lockOptions.getLockMode();
@@ -288,5 +287,19 @@ public class PostgreSqlDialect extends DatabaseDialect {
 	@Override
 	public String getSetLockTimeoutString(int secondsTimeOut) {
 		return null;
+	}
+
+	@Override
+	public LimitClauseResult getLimitClause(String sql, int offset, int limit, boolean namedParameter) {
+		LimitClauseResult result;
+		if (namedParameter) {
+			result = new LimitClauseResult(new StringBuilder(sql.length() + 20).append(sql)
+					.append(offset > 0 ? " LIMIT :PLIMIT OFFSET :POFFSET " : " LIMIT :PLIMIT").toString(), "PLIMIT", (offset > 0 ? "POFFSET" : ""),limit, offset);
+		} else {
+			result = new LimitClauseResult(new StringBuilder(sql.length() + 20).append(sql).append(offset > 0 ? " LIMIT ? OFFSET ?" : " LIMIT ?")
+					.toString(), (offset > 0 ? LimitClauseResult.PREVIOUS_PARAMETER : LimitClauseResult.LAST_PARAMETER),
+					(offset > 0 ? LimitClauseResult.LAST_PARAMETER : LimitClauseResult.NONE_PARAMETER),limit, offset);
+		}
+		return result;
 	}
 }
