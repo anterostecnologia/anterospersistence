@@ -584,9 +584,9 @@ public class OracleDialect extends DatabaseDialect {
 		select.append(sql);
 		if (offset > 0) {
 			if (namedParameter) {
-				select.append(" ) RDS_ ) WHERE ROW_NUM <= :PLIMIT  AND ROWNUM_ >= :POFFSET");
+				select.append(" ) RDS_ ) WHERE ROW_NUM <= :PLIMIT  AND ROW_NUM >= :POFFSET");
 			} else {
-				select.append(" ) RDS_ ) WHERE ROW_NUM <= ? AND ROWNUM_ >= ?");
+				select.append(" ) RDS_ ) WHERE ROW_NUM <= ? AND ROW_NUM >= ?");
 			}
 		} else {
 			if (namedParameter) {
