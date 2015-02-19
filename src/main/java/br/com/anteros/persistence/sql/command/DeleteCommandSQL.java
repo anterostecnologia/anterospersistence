@@ -95,7 +95,7 @@ public class DeleteCommandSQL extends CommandSQL {
 					session.getPersistenceContext().removeEntityManaged(targetObject);
 				}
 			} catch (SQLException ex) {
-				session.getDialect().convertSQLException(ex, "", sql);
+				throw session.getDialect().convertSQLException(ex, "", sql);
 			}
 		}
 	}

@@ -102,7 +102,7 @@ public class UpdateCommandSQL extends CommandSQL {
 				if (targetObject == null)
 					return;
 			} catch (SQLException ex) {
-				session.getDialect().convertSQLException(ex, "", sql);
+				throw session.getDialect().convertSQLException(ex, "", sql);
 			}
 		}
 		setEntityManaged();
