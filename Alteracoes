@@ -1,6 +1,8 @@
 - Testar OSql e usar
 
-- Forma de fazer paginação de objetos usando ScrollableResult, setFirst, setMaxResults
+- Forma de fazer paginação de objetos usando ScrollableResult,
+
+OK - Forma de fazer paginação de objetos setFirst, setMaxResults
 
 - Implementar comandos sql para sugestão de indices
 
