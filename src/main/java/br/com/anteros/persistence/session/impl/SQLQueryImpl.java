@@ -66,6 +66,7 @@ import br.com.anteros.persistence.session.query.SQLQueryNoResultException;
 import br.com.anteros.persistence.session.query.SQLQueryNonUniqueResultException;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
 import br.com.anteros.persistence.sql.command.Select;
+import br.com.anteros.persistence.sql.dialect.type.LimitClauseResult;
 import br.com.anteros.persistence.sql.lob.AnterosBlob;
 import br.com.anteros.persistence.sql.lob.AnterosClob;
 import br.com.anteros.persistence.sql.statement.NamedParameterStatement;
@@ -446,7 +447,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		Map<Integer, NamedParameter> tempNamedParameters = new TreeMap<Integer, NamedParameter>(this.namedParameters);
 		Map<Integer, Object> tempParameters = new TreeMap<Integer, Object>(this.parameters);
 
-	//	parsedSql = appendLimit(parsedSql, tempParameters, tempNamedParameters);
+		parsedSql = appendLimit(parsedSql, tempParameters, tempNamedParameters);
 
 		if (readOnly)
 			lockOptions = LockOptions.NONE;
