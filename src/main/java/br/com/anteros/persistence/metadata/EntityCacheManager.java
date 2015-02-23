@@ -2144,6 +2144,17 @@ public class EntityCacheManager {
 	public EntityCache[] getEntitiesBySuperClassIncluding(EntityCache cache) {
 		return getEntitiesBySuperClassIncluding(cache.getEntityClass());
 	}
+	
+	public DescriptionField getDescriptionFieldByTableName(String tableName) {
+		for (EntityCache entityCache : entities.values()) {
+			for (DescriptionField descField : entityCache.getDescriptionFields()){
+				if ((descField.getTableName() != null) && (descField.getTableName().equalsIgnoreCase(tableName))){
+					return descField;
+				}
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * Retorna EntityCache da Classe
