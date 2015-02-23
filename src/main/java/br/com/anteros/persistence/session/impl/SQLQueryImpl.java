@@ -55,7 +55,6 @@ import br.com.anteros.persistence.session.SQLSessionResult;
 import br.com.anteros.persistence.session.cache.Cache;
 import br.com.anteros.persistence.session.cache.PersistenceMetadataCache;
 import br.com.anteros.persistence.session.cache.SQLCache;
-import br.com.anteros.persistence.session.exception.SQLSessionException;
 import br.com.anteros.persistence.session.lock.LockMode;
 import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.query.SQLQuery;
@@ -448,7 +447,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		Map<Integer, NamedParameter> tempNamedParameters = new TreeMap<Integer, NamedParameter>(this.namedParameters);
 		Map<Integer, Object> tempParameters = new TreeMap<Integer, Object>(this.parameters);
 
-	//	parsedSql = appendLimit(parsedSql, tempParameters, tempNamedParameters);
+		parsedSql = appendLimit(parsedSql, tempParameters, tempNamedParameters);
 
 		if (readOnly)
 			lockOptions = LockOptions.NONE;
