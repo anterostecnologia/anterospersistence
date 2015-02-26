@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-/*
+
+/*******************************************************************************
  * Copyright (c) 2007 - 2009 ZIGEN
  * Eclipse Public License - v 1.0
  * http://www.eclipse.org/legal/epl-v10.html
- */
+ *******************************************************************************/
+
 package br.com.anteros.persistence.sql.parser.node;
 
 import java.util.ArrayList;
@@ -29,7 +31,6 @@ import br.com.anteros.persistence.sql.parser.Node;
 
 
 public class OperatorNode extends Node {
-//public class ASTOperator extends ASTAlias {
 
 	public static final String[] OPERATOR = { "!=", "<", "<=", "<>", "=", ">", ">=", "^=" };
 
@@ -37,11 +38,11 @@ public class OperatorNode extends Node {
 
 	public static final String[] OPERATOR2 = { "*", "/" };
 
-	static Map map = new HashMap();
+	static Map<String,String> map = new HashMap<String,String>();
 
-	static Map map1 = new HashMap();
+	static Map<String,String> map1 = new HashMap<String,String>();
 
-	static Map map2 = new HashMap();
+	static Map<String,String> map2 = new HashMap<String,String>();
 	static {
 		for (int i = 0; i < OPERATOR.length; i++) {
 			map.put(OPERATOR[i], OPERATOR[i]);
@@ -77,7 +78,7 @@ public class OperatorNode extends Node {
 	public void addChild(INode n) {
 		if (n != null) {
 			if (children == null) {
-				children = new ArrayList();
+				children = new ArrayList<INode>();
 			}
 
 			if (hasRightChild()) {

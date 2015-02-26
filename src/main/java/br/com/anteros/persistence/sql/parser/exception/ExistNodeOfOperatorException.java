@@ -13,6 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
+/*******************************************************************************
+ * Copyright (c) 2007 - 2009 ZIGEN
+ * Eclipse Public License - v 1.0
+ * http://www.eclipse.org/legal/epl-v10.html
+ *******************************************************************************/
 package br.com.anteros.persistence.sql.parser.exception;
 
 public class ExistNodeOfOperatorException extends ParserException {
