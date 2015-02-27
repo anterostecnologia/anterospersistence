@@ -155,17 +155,6 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	public <RT> List<RT> list(EntityPathBase<RT> expr, Expression<?>... rest) {
-		try {
-			validateExpressions(rest);
-			TypedSQLQuery<?> query = createQuery(expr, rest);
-			return (List<RT>) getResultList(query);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	protected void validateExpressions(Expression<?>... args) {
 		for (Expression<?> arg : args) {
 			if (ReflectionUtils.isCollection(arg.getType())) {
@@ -216,17 +205,6 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	public <RT> RT uniqueResult(EntityPathBase<RT> expr, Expression<?>... rest) {
-		try {
-			validateExpressions(rest);
-			TypedSQLQuery<?> query = createQuery(expr, rest);
-			return (RT) getSingleResult(query);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	@Override
 	public Tuple uniqueResult(Expression<?>... args) {
 		validateExpressions(args);
@@ -264,13 +242,6 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		queryMixin.addProjection(adaptExpressionPatternAnteros(expr1));
 		queryMixin.addProjection(adaptExpressionPatternAnteros(expr2));
 		queryMixin.addProjection(adaptExpressionPatternAnteros(rest));
-		return createQuery(getMetadata().getModifiers(), false, getResultClassByExpression(expr1));
-	}
-
-	public TypedSQLQuery<?> createQuery(EntityPathBase<?> expr1, Expression<?>... rest) throws Exception {
-		queryMixin.addProjection(adaptExpressionPatternAnteros(expr1));
-		queryMixin.addProjection(adaptExpressionPatternAnteros(rest));
-
 		return createQuery(getMetadata().getModifiers(), false, getResultClassByExpression(expr1));
 	}
 
