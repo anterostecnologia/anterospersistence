@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
@@ -41,7 +38,6 @@ import br.com.anteros.persistence.dsl.osql.types.Order;
 import br.com.anteros.persistence.dsl.osql.types.OrderSpecifier;
 import br.com.anteros.persistence.dsl.osql.types.ParamExpression;
 import br.com.anteros.persistence.dsl.osql.types.Path;
-import br.com.anteros.persistence.dsl.osql.types.PathMetadata;
 import br.com.anteros.persistence.dsl.osql.types.PathType;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
@@ -54,6 +50,7 @@ import br.com.anteros.persistence.dsl.osql.types.path.EntityPathBase;
 import br.com.anteros.persistence.dsl.osql.util.LiteralUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
+import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 
 import com.google.common.base.Strings;
@@ -89,9 +86,13 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	private boolean inJoin = false;
 
+	private boolean inOperation = false;
+
 	private boolean useLiterals = false;
 
 	private EntityCacheManager entityCacheManager;
+
+	private SQLAnalyser analyser;
 
 	public SQLSerializer(EntityCacheManager entityCacheManager, SQLTemplates templates) {
 		super(templates);
@@ -99,51 +100,13 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		this.entityCacheManager = entityCacheManager;
 	}
 
-	private void appendAsColumnName(Path<?> path) {
-		if ((path.getMetadata().getPathType() == PathType.VARIABLE) && (stage==Stage.SELECT) && (path instanceof EntityPathBase)) {
-			EntityCache entityCache = entityCacheManager.getEntityCache(path.getRoot().getType());
-			Expression<?>[] expressions;
-			try {
-				expressions = getAllFieldExpressions((EntityPathBase<?>) path);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-			boolean appendSep = false;
-			String fields = "";
-			for (Expression<?> e1 : expressions) {
-				DescriptionField descriptionField = entityCache.getDescriptionField(((Path<?>)e1).getMetadata().getName());
-				if (appendSep)
-				fields = fields + COMMA;
-				fields = fields + path.getMetadata().getName()+"."+descriptionField.getSimpleColumn().getColumnName();
-				appendSep = true;
-			}
-			append(fields);
-		} else if ((path.getMetadata().getPathType() == PathType.VARIABLE) && (inJoin)) {
-			append(templates.quoteIdentifier(path.getMetadata().getName()));
-		} else if ((path.getMetadata().getPathType() == PathType.VARIABLE) && (path.getMetadata().isRoot())) {
-			EntityCache entityCache = entityCacheManager.getEntityCache(path.getRoot().getType());
-			// Vai faltar tratar aqui chave composta
-			DescriptionField[] primaryKeyFields = entityCache.getPrimaryKeyFields();
-			if (primaryKeyFields.length > 1) {
-				throw new OSQLException(
-						"A classe "
-								+ entityCache.getClass().getName()
-								+ " possuí chave composta. Informe os campos da chave de forma individual nas junções e filtros. ");
-			}
-			append(path.toString()).append(".").append(
-					templates.quoteIdentifier(primaryKeyFields[0].getSimpleColumn().getColumnName()));
-		} else if ((path.getMetadata().getPathType() == PathType.VARIABLE)) {
-			append(templates.quoteIdentifier(path.getMetadata().getName()));
-		} else if (path.getMetadata().getPathType() == PathType.PROPERTY) {
-			EntityCache entityCache = entityCacheManager.getEntityCache(path.getRoot().getType());
-			DescriptionField descriptionField = entityCache.getDescriptionField(path.getMetadata().getName());
-			// Vai faltar tratar aqui chave composta
-			append(templates.quoteIdentifier(path.getMetadata().getRoot().getMetadata().getName())).append(".").append(
-					templates.quoteIdentifier(descriptionField.getSimpleColumn().getColumnName()));
-		}
-
+	public SQLSerializer(EntityCacheManager entityCacheManager, SQLTemplates templates, SQLAnalyser analyser) {
+		super(templates);
+		this.templates = templates;
+		this.entityCacheManager = entityCacheManager;
+		this.analyser = analyser;
 	}
-	
+
 	protected Expression<?>[] getAllFieldExpressions(EntityPathBase<?> path) throws Exception {
 		List<Expression<?>> result = new ArrayList<Expression<?>>();
 
@@ -163,40 +126,12 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		return result.toArray(new Expression<?>[] {});
 	}
 
-
 	public List<Object> getConstants() {
 		return constants;
 	}
 
 	public List<Path<?>> getConstantPaths() {
 		return constantPaths;
-	}
-
-	/**
-	 * Return a list of expressions that can be used to uniquely define the
-	 * query sources
-	 *
-	 * @param joins
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	private List<Expression<?>> getIdentifierColumns(List<JoinExpression> joins, boolean alias) {
-		if (joins.size() == 1) {
-			JoinExpression join = joins.get(0);
-			System.out.println("1) INSTANCE OF de Join.getTarget " + join.getTarget().getClass().getName());
-			return Collections.emptyList();
-
-		} else {
-			List<Expression<?>> rv = Lists.newArrayList();
-			int counter = 0;
-			for (JoinExpression join : joins) {
-				System.out.println("2) INSTANCE OF de Join.getTarget " + join.getTarget().getClass().getName());
-				// not able to provide a distinct list of columns
-				return Collections.emptyList();
-			}
-			return rv;
-		}
-
 	}
 
 	protected SQLTemplates getTemplates() {
@@ -211,7 +146,6 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		if ((je.getTarget() instanceof EntityPath) && (templates.isSupportsAlias())) {
 			if (((EntityPath<?>) je.getTarget()).getMetadata().getParent() == null) {
 				if (templates.isPrintSchema()) {
-					// appendSchemaName(schemaAndTable.getSchema());
 					append(".");
 				}
 				EntityCache entityCache = getEntityCacheByPath((EntityPath<?>) je.getTarget());
@@ -229,8 +163,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 	}
 
 	public void serializeForQuery(QueryMetadata metadata, boolean forCountRow) {
-		boolean oldSkipParent = skipParent;
-		skipParent = false;
+		skipParent = true;
 		final List<? extends Expression<?>> select = metadata.getProjection();
 		final List<JoinExpression> joins = metadata.getJoins();
 		final Predicate where = metadata.getWhere();
@@ -308,7 +241,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			} else {
 				List<? extends Expression<?>> columns;
 				if (sqlSelect.isEmpty()) {
-					columns = getIdentifierColumns(joins, !templates.isCountDistinctMultipleColumns());
+					throw new SQLSerializerException("Informe uma clausula para o select.");
 				} else {
 					columns = sqlSelect;
 				}
@@ -340,9 +273,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			if (hasFlags) {
 				serialize(Position.AFTER_SELECT, flags);
 			}
-			skipParent = true;
 			handle(COMMA, sqlSelect);
-			skipParent = false;
 		}
 		if (hasFlags) {
 			serialize(Position.AFTER_PROJECTION, flags);
@@ -413,7 +344,6 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 		// reset stage
 		stage = oldStage;
-		skipParent = oldSkipParent;
 	}
 
 	protected void handleOrderBy(List<OrderSpecifier<?>> orderBy) {
@@ -562,7 +492,6 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			stage = Stage.ORDER_BY;
 			append(templates.getOrderBy());
 			boolean first = true;
-			skipParent = true;
 			for (OrderSpecifier<?> os : orderBy) {
 				if (!first) {
 					append(COMMA);
@@ -571,7 +500,6 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 				append(os.getOrder() == Order.ASC ? templates.getAsc() : templates.getDesc());
 				first = false;
 			}
-			skipParent = false;
 			if (hasFlags) {
 				serialize(Position.AFTER_ORDER, flags);
 			}
@@ -651,12 +579,71 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	@Override
 	public Void visit(Path<?> path, Void context) {
-		final PathMetadata<?> metadata = path.getMetadata();
-		if (metadata.getParent() != null && (!skipParent)) {
-			visit(metadata.getParent(), context);
-			append(".");
+		if (path.getMetadata().getPathType() == PathType.VARIABLE) {
+			if (inOperation) {
+				EntityCache sourceEntityCache = entityCacheManager.getEntityCache(getClassByEntityPath((EntityPath<?>) path));
+				String alias = path.getMetadata().getName();
+				for (DescriptionField descriptionField : sourceEntityCache.getPrimaryKeyFields()) {
+					if (descriptionField.isSimple())
+						append(templates.quoteIdentifier(alias)).append(".").append(
+								templates.quoteIdentifier(descriptionField.getSimpleColumn().getColumnName()));
+					else if (descriptionField.isAnyCollection()) {
+						throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " " + sourceEntityCache.getEntityClass()
+								+ " não pode ser usado para criação da consulta pois é uma coleção. Use uma junção para isto. ");
+					} else if (descriptionField.isRelationShip()) {
+						boolean appendSep = false;
+						for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
+							if (appendSep) {
+								append(" AND ");
+							}
+							append(alias).append(".").append(column.getColumnName());
+							appendSep = true;
+						}
+					}
+				}
+			} else {
+				append(templates.quoteIdentifier(path.getMetadata().getName()));
+			}
+		} else if (path.getMetadata().getPathType() == PathType.PROPERTY) {
+			EntityPath<?> entityPath = analyser.getAliasByEntityPath(path);
+			String alias = entityPath.getMetadata().getName();
+
+			EntityCache sourceEntityCache = entityCacheManager.getEntityCache(getClassByEntityPath(entityPath));
+			if (sourceEntityCache == null)
+				throw new SQLSerializerException("A classe " + getClassByEntityPath(entityPath)
+						+ " não foi encontrada na lista de entidades gerenciadas.");
+			if (path instanceof EntityPath<?>) {
+				append("**AQUI**");
+			} else {
+				DescriptionField descriptionField = sourceEntityCache.getDescriptionField(path.getMetadata().getName());
+				if (descriptionField == null)
+					throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " não foi encontrado na classe "
+							+ getClassByEntityPath(entityPath) + ". ");
+
+				if (descriptionField.isSimple())
+					append(templates.quoteIdentifier(alias)).append(".").append(
+							templates.quoteIdentifier(descriptionField.getSimpleColumn().getColumnName()));
+				else if (descriptionField.isAnyCollection()) {
+					throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " " + getClassByEntityPath(entityPath)
+							+ " não pode ser usado para criação da consulta pois é uma coleção. Use uma junção para isto. ");
+				} else if (descriptionField.isRelationShip()) {
+					boolean appendSep = false;
+					for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
+						if (appendSep) {
+							if (stage == Stage.SELECT) {
+								append(" , ");
+							} else if (stage == Stage.FROM) {
+								append(" AND ");
+							}
+						}
+						append(alias).append(".").append(column.getColumnName());
+						appendSep = true;
+					}
+				} else
+					append(path.getMetadata().getName());
+			}
 		}
-		appendAsColumnName(path);
+
 		return null;
 	}
 
@@ -686,55 +673,58 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	@Override
 	protected void visitOperation(Class<?> type, Operator<?> operator, List<? extends Expression<?>> args) {
-		if (args.size() == 2 && !useLiterals && args.get(0) instanceof Path<?> && args.get(1) instanceof Constant<?>
-				&& operator != Ops.NUMCAST) {
-			for (Element element : templates.getTemplate(operator).getElements()) {
-				if (element instanceof Template.ByIndex && ((Template.ByIndex) element).getIndex() == 1) {
-					constantPaths.add((Path<?>) args.get(0));
-					break;
+		try {
+			inOperation = true;
+			if (args.size() == 2 && !useLiterals && args.get(0) instanceof Path<?> && args.get(1) instanceof Constant<?> && operator != Ops.NUMCAST) {
+				for (Element element : templates.getTemplate(operator).getElements()) {
+					if (element instanceof Template.ByIndex && ((Template.ByIndex) element).getIndex() == 1) {
+						constantPaths.add((Path<?>) args.get(0));
+						break;
+					}
 				}
 			}
-		}
 
-		if (operator == SQLOps.UNION || operator == SQLOps.UNION_ALL) {
-			boolean oldUnion = inUnion;
-			inUnion = true;
-			super.visitOperation(type, operator, args);
-			inUnion = oldUnion;
-
-		} else if (operator == Ops.LIKE && args.get(1) instanceof Constant) {
-			final String escape = String.valueOf(templates.getEscapeChar());
-			final String escaped = args.get(1).toString().replace(escape, escape + escape);
-			super.visitOperation(String.class, Ops.LIKE, ImmutableList.of(args.get(0), ConstantImpl.create(escaped)));
-
-		} else if (operator == Ops.STRING_CAST) {
-			final String typeName = templates.getTypeForCast(String.class);
-			super.visitOperation(String.class, SQLOps.CAST,
-					ImmutableList.of(args.get(0), ConstantImpl.create(typeName)));
-
-		} else if (operator == Ops.NUMCAST) {
-			final Class<?> targetType = (Class<?>) ((Constant<?>) args.get(1)).getConstant();
-			final String typeName = templates.getTypeForCast(targetType);
-			super.visitOperation(targetType, SQLOps.CAST, ImmutableList.of(args.get(0), ConstantImpl.create(typeName)));
-
-		} else if (operator == Ops.ALIAS) {
-			if (stage == Stage.SELECT || stage == Stage.FROM) {
+			if (operator == SQLOps.UNION || operator == SQLOps.UNION_ALL) {
+				boolean oldUnion = inUnion;
+				inUnion = true;
 				super.visitOperation(type, operator, args);
+				inUnion = oldUnion;
+
+			} else if (operator == Ops.LIKE && args.get(1) instanceof Constant) {
+				final String escape = String.valueOf(templates.getEscapeChar());
+				final String escaped = args.get(1).toString().replace(escape, escape + escape);
+				super.visitOperation(String.class, Ops.LIKE, ImmutableList.of(args.get(0), ConstantImpl.create(escaped)));
+
+			} else if (operator == Ops.STRING_CAST) {
+				final String typeName = templates.getTypeForCast(String.class);
+				super.visitOperation(String.class, SQLOps.CAST, ImmutableList.of(args.get(0), ConstantImpl.create(typeName)));
+
+			} else if (operator == Ops.NUMCAST) {
+				final Class<?> targetType = (Class<?>) ((Constant<?>) args.get(1)).getConstant();
+				final String typeName = templates.getTypeForCast(targetType);
+				super.visitOperation(targetType, SQLOps.CAST, ImmutableList.of(args.get(0), ConstantImpl.create(typeName)));
+
+			} else if (operator == Ops.ALIAS) {
+				if (stage == Stage.SELECT || stage == Stage.FROM) {
+					super.visitOperation(type, operator, args);
+				} else {
+					// handle only target
+					handle(args.get(1));
+				}
+
+			} else if (operator == SQLOps.WITH_COLUMNS) {
+				boolean oldSkipParent = skipParent;
+				skipParent = true;
+				super.visitOperation(type, operator, args);
+				skipParent = oldSkipParent;
+
 			} else {
-				// handle only target
-				handle(args.get(1));
+				skipParent = true;
+				super.visitOperation(type, operator, args);
+				skipParent = false;
 			}
-
-		} else if (operator == SQLOps.WITH_COLUMNS) {
-			boolean oldSkipParent = skipParent;
-			skipParent = true;
-			super.visitOperation(type, operator, args);
-			skipParent = oldSkipParent;
-
-		} else {
-			skipParent = true;
-			super.visitOperation(type, operator, args);
-			skipParent = false;
+		} finally {
+			inOperation = false;
 		}
 	}
 
@@ -750,6 +740,11 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		Type mySuperclass = path.getClass().getGenericSuperclass();
 		Class<?> tType = (Class<?>) ((ParameterizedType) mySuperclass).getActualTypeArguments()[0];
 		return entityCacheManager.getEntityCache(tType);
+	}
+
+	public Class<?> getClassByEntityPath(EntityPath<?> path) {
+		Type mySuperclass = path.getClass().getGenericSuperclass();
+		return (Class<?>) ((ParameterizedType) mySuperclass).getActualTypeArguments()[0];
 	}
 
 }

@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
@@ -55,8 +52,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	private static Logger logger = LoggerProvider.getInstance().getLogger(AbstractOSQLQuery.class.getName());
 
-	private static final QueryFlag rowCountFlag = new QueryFlag(QueryFlag.Position.AFTER_PROJECTION,
-			", count(*) over() ");
+	private static final QueryFlag rowCountFlag = new QueryFlag(QueryFlag.Position.AFTER_PROJECTION, ", count(*) over() ");
 
 	private final SQLSession session;
 
@@ -72,6 +68,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	protected boolean lastJoinConditionAdded = false;
 
+	protected SQLAnalyser analyser;
+
 	public AbstractOSQLQuery(SQLSession session, SQLTemplates templates) {
 		this(session, templates, new DefaultQueryMetadata().noValidate());
 	}
@@ -83,9 +81,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	/**
-	 * If you use forUpdate() with a backend that uses page or row locks, rows
-	 * examined by the query are write-locked until the end of the current
-	 * transaction.
+	 * If you use forUpdate() with a backend that uses page or row locks, rows examined by the query are write-locked
+	 * until the end of the current transaction.
 	 *
 	 * Not supported for SQLite and CUBRID
 	 *
@@ -96,9 +93,17 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	protected SQLSerializer createSerializer() {
-		SQLSerializer serializer = new SQLSerializer(session.getEntityCacheManager(), templates);
+		SQLSerializer serializer = new SQLSerializer(session.getEntityCacheManager(), templates, getAnalyser());
 		serializer.setUseLiterals(useLiterals);
 		return serializer;
+	}
+
+	protected SQLAnalyser getAnalyser() {
+		if (analyser == null) {
+			analyser = new SQLAnalyser(this);
+			analyser.process();
+		}
+		return analyser;
 	}
 
 	public void setUseLiterals(boolean useLiterals) {
@@ -144,7 +149,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	public <RT> List<RT> list(Expression<RT> expr) {
 		try {
 			TypedSQLQuery<?> query = createQuery(expr);
-			return (List<RT>) getResultList(query); 
+			return (List<RT>) getResultList(query);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -153,10 +158,22 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@SuppressWarnings("unchecked")
 	public <RT> List<RT> list(EntityPathBase<RT> expr, Expression<?>... rest) {
 		try {
+			validateExpressions(rest);
 			TypedSQLQuery<?> query = createQuery(expr, rest);
 			return (List<RT>) getResultList(query);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	protected void validateExpressions(Expression<?>... args) {
+		for (Expression<?> arg : args) {
+			if (ReflectionUtils.isCollection(arg.getType())) {
+				throw new OSQLException(
+						"A expressão "
+								+ arg
+								+ " não pode ser usado para criação da consulta pois é uma coleção. Use uma junção para isto ou use o método List passando apenas a expressão que representa a coleção.");
+			}
 		}
 	}
 
@@ -173,8 +190,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 					List<Object> values = new ArrayList<Object>();
 					EntityCache entityCache = session.getEntityCacheManager().getEntityCache(o.getClass());
 					for (Expression<?> arg : projection.getArgs()) {
-						DescriptionField field = entityCache.getDescriptionField(((Path<?>) arg).getMetadata()
-								.getElement().toString());
+						DescriptionField field = entityCache.getDescriptionField(((Path<?>) arg).getMetadata().getElement().toString());
 						values.add(field.getObjectValue(o));
 					}
 					rv.add(projection.newInstance(values.toArray()));
@@ -203,6 +219,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@SuppressWarnings("unchecked")
 	public <RT> RT uniqueResult(EntityPathBase<RT> expr, Expression<?>... rest) {
 		try {
+			validateExpressions(rest);
 			TypedSQLQuery<?> query = createQuery(expr, rest);
 			return (RT) getSingleResult(query);
 		} catch (Exception e) {
@@ -212,6 +229,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	@Override
 	public Tuple uniqueResult(Expression<?>... args) {
+		validateExpressions(args);
 		return uniqueResult(queryMixin.createProjection(args));
 	}
 
@@ -233,6 +251,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	@Override
 	public List<Tuple> list(Expression<?>... args) {
+		validateExpressions(args);
 		return list(queryMixin.createProjection(args));
 	}
 
@@ -241,8 +260,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		return createQuery(getMetadata().getModifiers(), false, getResultClassByExpression(expr));
 	}
 
-	public TypedSQLQuery<?> createQuery(Expression<?> expr1, Expression<?> expr2, Expression<?>... rest)
-			throws Exception {
+	public TypedSQLQuery<?> createQuery(Expression<?> expr1, Expression<?> expr2, Expression<?>... rest) throws Exception {
 		queryMixin.addProjection(adaptExpressionPatternAnteros(expr1));
 		queryMixin.addProjection(adaptExpressionPatternAnteros(expr2));
 		queryMixin.addProjection(adaptExpressionPatternAnteros(rest));
@@ -296,8 +314,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 		FactoryExpression<?> wrapped = projection.size() > 1 ? FactoryExpressionUtils.wrap(projection) : null;
 
-		if (!forCount
-				&& ((projection.size() == 1 && projection.get(0) instanceof FactoryExpression) || wrapped != null)) {
+		if (!forCount && ((projection.size() == 1 && projection.get(0) instanceof FactoryExpression) || wrapped != null)) {
 			this.projection = (FactoryExpression<?>) projection.get(0);
 			if (wrapped != null) {
 				this.projection = wrapped;
@@ -328,7 +345,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		return result.toArray(new Expression<?>[] {});
 	}
 
-	protected Class<?> getClassByEntityPath(EntityPath<?> path) {
+	public Class<?> getClassByEntityPath(EntityPath<?> path) {
 		Type mySuperclass = path.getClass().getGenericSuperclass();
 		return (Class<?>) ((ParameterizedType) mySuperclass).getActualTypeArguments()[0];
 	}
@@ -348,9 +365,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	/*
-	 * Sobrescrevendo métodos para controlar quando não foi adicionado condição
-	 * para o Join. Desta forma assume que o join será feito com a primeira
-	 * tabela do From e adiciona-se o Join automagicamente.
+	 * Sobrescrevendo métodos para controlar quando não foi adicionado condição para o Join. Desta forma assume que o
+	 * join será feito com a primeira tabela do From e adiciona-se o Join automagicamente.
 	 */
 	@Override
 	public Q groupBy(Expression<?>... o) {
@@ -521,6 +537,10 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@Override
 	public <RT> SearchResults<RT> listResults(Expression<RT> projection) {
 		throw new UnsupportedOperationException();
+	}
+
+	public SQLSession getSession() {
+		return session;
 	}
 
 }
