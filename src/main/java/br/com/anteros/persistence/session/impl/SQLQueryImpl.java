@@ -450,7 +450,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 		parsedSql = appendLimit(parsedSql, tempParameters, tempNamedParameters);
 
-		if (readOnly)
+		if (readOnly || lockOptions == null)
 			lockOptions = LockOptions.NONE;
 
 		try {
@@ -465,11 +465,11 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				 * Cria um cópia do LockOptions e adiciona as colunas dos aliases caso o usuário tenha informado pegando
 				 * o nome das colunas do resultado da análise do SQL.
 				 */
+				
 				LockOptions lockOpts = lockOptions.copy(lockOptions, new LockOptions());
 				lockOpts.setAliasesToLock(analyzerResult.getColumnNamesToLock(lockOptions.getAliasesToLock()));
-
 				parsedSql = (session.getDialect().supportsLock() ? session.applyLock(parsedSql, resultClass, lockOpts) : parsedSql);
-
+				
 				handler = session.createNewEntityHandler(getResultClass(), analyzerResult.getExpressionsFieldMapper(),
 						analyzerResult.getColumnAliases(), transactionCache, allowDuplicateObjects, objectToRefresh, firstResult, maxResults,
 						readOnly, lockOptions);

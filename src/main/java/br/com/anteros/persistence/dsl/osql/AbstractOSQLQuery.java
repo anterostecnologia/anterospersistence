@@ -72,7 +72,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	protected SQLAnalyser analyser;
 
-	private LockOptions lockOptions;
+	private LockOptions lockOptions = LockOptions.NONE;
 
 	public AbstractOSQLQuery(SQLSession session, SQLTemplates templates) {
 		this(session, templates, new DefaultQueryMetadata().noValidate());
