@@ -34,6 +34,7 @@ import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.handler.BeanHandler;
 import br.com.anteros.persistence.handler.ElementCollectionHandler;
 import br.com.anteros.persistence.handler.ElementMapHandler;
+import br.com.anteros.persistence.handler.MultiSelectHandler;
 import br.com.anteros.persistence.handler.ResultSetHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityManaged;
@@ -436,7 +437,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(
 				getResultClass().getName() + ":" + sql);
 		if (analyzerResult == null) {
-			analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect()).analyze(sql, getResultClass());
+			analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect(), !SQLQueryAnalyzer.IGNORE_NOT_USED_ALIAS_TABLE).analyze(sql, getResultClass());
 			PersistenceMetadataCache.getInstance().put(getResultClass().getName() + ":" + sql, analyzerResult);
 		}
 
@@ -635,8 +636,11 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 		Object result = null;
 		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
+		String parsedSql = sql;
+		if (handler instanceof MultiSelectHandler)
+			parsedSql = ((MultiSelectHandler)handler).getParsedSql();
 
-		String parsedSql = (session.getDialect().supportsLock() ? session.applyLock(sql, resultClass, lockOptions) : sql);
+		parsedSql = (session.getDialect().supportsLock() ? session.applyLock(parsedSql, resultClass, lockOptions) : parsedSql);
 
 		if (this.parameters.size() > 0)
 			result = session.getRunner().query(session.getConnection(), parsedSql, handler, parameters.values().toArray(), showSql, formatSql,
@@ -1298,7 +1302,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(
 					resultClass.getName() + ":" + sql);
 			if (analyzerResult == null) {
-				analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect()).analyze(sql, resultClass);
+				analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect(), !SQLQueryAnalyzer.IGNORE_NOT_USED_ALIAS_TABLE).analyze(sql, resultClass);
 				PersistenceMetadataCache.getInstance().put(resultClass.getName() + ":" + sql, analyzerResult);
 			}
 
@@ -1342,7 +1346,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(
 						getResultClass().getName() + ":" + sql);
 				if (analyzerResult == null) {
-					analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect()).analyze(sql, resultClass);
+					analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect(), !SQLQueryAnalyzer.IGNORE_NOT_USED_ALIAS_TABLE).analyze(sql, resultClass);
 					PersistenceMetadataCache.getInstance().put(resultClass.getName() + ":" + sql, analyzerResult);
 				}
 				handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressionsFieldMapper(), analyzerResult.getColumnAliases(),
@@ -1440,7 +1444,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(
 				getResultClass().getName() + ":" + sql);
 		if (analyzerResult == null) {
-			analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect()).analyze(sql, getResultClass());
+			analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect(), !SQLQueryAnalyzer.IGNORE_NOT_USED_ALIAS_TABLE).analyze(sql, getResultClass());
 			PersistenceMetadataCache.getInstance().put(getResultClass().getName() + ":" + sql, analyzerResult);
 		}
 

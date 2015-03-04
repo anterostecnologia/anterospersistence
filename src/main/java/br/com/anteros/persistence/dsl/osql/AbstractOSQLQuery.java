@@ -12,8 +12,6 @@
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.ResultSet;
@@ -29,16 +27,14 @@ import br.com.anteros.persistence.dsl.osql.types.EntityPath;
 import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpressionUtils;
+import br.com.anteros.persistence.dsl.osql.types.IndexHint;
 import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
-import br.com.anteros.persistence.dsl.osql.types.path.CollectionPathBase;
-import br.com.anteros.persistence.dsl.osql.types.path.EntityPathBase;
-import br.com.anteros.persistence.metadata.EntityCache;
-import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
+import br.com.anteros.persistence.handler.MultiSelectHandler;
 import br.com.anteros.persistence.session.SQLSession;
+import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.query.SQLQuery;
-import br.com.anteros.persistence.session.query.TypedSQLQuery;
 
 /**
  * AbstractSQLQuery is the base type for SQL query implementations
@@ -70,6 +66,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	protected SQLAnalyser analyser;
 
+	private LockOptions lockOptions;
+
 	public AbstractOSQLQuery(SQLSession session, SQLTemplates templates) {
 		this(session, templates, new DefaultQueryMetadata().noValidate());
 	}
@@ -93,12 +91,17 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	protected SQLSerializer createSerializer() {
-		SQLSerializer serializer = new SQLSerializer(session.getEntityCacheManager(), templates, getAnalyser());
-		serializer.setUseLiterals(useLiterals);
-		return serializer;
+		try {
+			SQLSerializer serializer = new SQLSerializer(session.getEntityCacheManager(), templates, getAnalyser());
+
+			serializer.setUseLiterals(useLiterals);
+			return serializer;
+		} catch (Exception ex) {
+			throw new OSQLQueryException(ex);
+		}
 	}
 
-	protected SQLAnalyser getAnalyser() {
+	protected SQLAnalyser getAnalyser() throws Exception {
 		if (analyser == null) {
 			analyser = new SQLAnalyser(this);
 			analyser.process();
@@ -125,7 +128,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	@Override
 	public long count() {
-		TypedSQLQuery<?> query = createQuery(null, true, null);
+		SQLQuery query = createQuery(null, true);
 		reset();
 		try {
 			ResultSet rs = query.executeQuery();
@@ -148,7 +151,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@SuppressWarnings("unchecked")
 	public <RT> List<RT> list(Expression<RT> expr) {
 		try {
-			TypedSQLQuery<?> query = createQuery(expr);
+			SQLQuery query = createQuery(expr);
 			return (List<RT>) getResultList(query);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -158,7 +161,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	protected void validateExpressions(Expression<?>... args) {
 		for (Expression<?> arg : args) {
 			if (ReflectionUtils.isCollection(arg.getType())) {
-				throw new OSQLException(
+				throw new OSQLQueryException(
 						"A expressão "
 								+ arg
 								+ " não pode ser usado para criação da consulta pois é uma coleção. Use uma junção para isto ou use o método List passando apenas a expressão que representa a coleção.");
@@ -166,30 +169,23 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		}
 	}
 
-	private List<?> getResultList(TypedSQLQuery<?> query) throws Exception {
+	private List<?> getResultList(SQLQuery query) throws Exception {
+		query.allowDuplicateObjects(true);
 		if (projection != null) {
-			if (projection instanceof FactoryExpression) {
-				query.allowDuplicateObjects(true);
-				List<?> results = query.getResultList();
-				for (Object o : results)
-					System.out.println(o);
-				List<Object> rv = new ArrayList<Object>(results.size());
-
-				for (Object o : results) {
-					List<Object> values = new ArrayList<Object>();
-					EntityCache entityCache = session.getEntityCacheManager().getEntityCache(o.getClass());
-					for (Expression<?> arg : projection.getArgs()) {
-						DescriptionField field = entityCache.getDescriptionField(((Path<?>) arg).getMetadata().getElement().toString());
-						values.add(field.getObjectValue(o));
+			List<?> results = query.getResultList();
+			List<Object> rv = new ArrayList<Object>(results.size());
+			for (Object o : results) {
+				if (o != null) {
+					if (!o.getClass().isArray()) {
+						o = new Object[] { o };
 					}
-					rv.add(projection.newInstance(values.toArray()));
+					rv.add(projection.newInstance((Object[]) o));
+				} else {
+					rv.add(null);
 				}
-
-				return rv;
-			} else
-				return null;
+			}
+			return rv;
 		} else {
-			query.allowDuplicateObjects(true);
 			return query.getResultList();
 		}
 	}
@@ -198,7 +194,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@Override
 	public <RT> RT uniqueResult(Expression<RT> expr) {
 		try {
-			TypedSQLQuery<?> query = createQuery(expr);
+			SQLQuery query = createQuery(expr);
 			return (RT) getSingleResult(query);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -233,29 +229,16 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		return list(queryMixin.createProjection(args));
 	}
 
-	public TypedSQLQuery<?> createQuery(Expression<?> expr) throws Exception {
-		queryMixin.addProjection(adaptExpressionPatternAnteros(expr));
-		return createQuery(getMetadata().getModifiers(), false, getResultClassByExpression(expr));
+	public SQLQuery createQuery(Expression<?> expr) throws Exception {
+		queryMixin.addProjection(expr);
+		return createQuery(getMetadata().getModifiers(), false);
 	}
 
-	public TypedSQLQuery<?> createQuery(Expression<?> expr1, Expression<?> expr2, Expression<?>... rest) throws Exception {
-		queryMixin.addProjection(adaptExpressionPatternAnteros(expr1));
-		queryMixin.addProjection(adaptExpressionPatternAnteros(expr2));
-		queryMixin.addProjection(adaptExpressionPatternAnteros(rest));
-		return createQuery(getMetadata().getModifiers(), false, getResultClassByExpression(expr1));
-	}
-
-	protected Class<?> getResultClassByExpression(Expression<?>... expr) {
-		if (expr.length > 0) {
-			if (expr[0] instanceof EntityPathBase) {
-				return getClassByEntityPath((EntityPath<?>) expr[0]);
-			}
-			if (queryMixin.getMetadata().getJoins().size() > 0) {
-				JoinExpression expression = queryMixin.getMetadata().getJoins().get(0);
-				return getClassByEntityPath((EntityPath<?>) expression.getTarget());
-			}
-		}
-		return null;
+	public SQLQuery createQuery(Expression<?> expr1, Expression<?> expr2, Expression<?>... rest) throws Exception {
+		queryMixin.addProjection(expr1);
+		queryMixin.addProjection(expr2);
+		queryMixin.addProjection(rest);
+		return createQuery(getMetadata().getModifiers(), false);
 	}
 
 	/**
@@ -264,21 +247,26 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	 * @param args
 	 * @return
 	 */
-	public TypedSQLQuery<?> createQuery(Expression<?>[] args) {
+	public SQLQuery createQuery(Expression<?>[] args) {
 		queryMixin.addProjection(args);
-		return createQuery(getMetadata().getModifiers(), false, getResultClassByExpression(args));
+		return createQuery(getMetadata().getModifiers(), false);
 	}
 
-	private TypedSQLQuery<?> createQuery(QueryModifiers modifiers, boolean forCount, Class<?> resultClass) {
-		SQLSerializer serializer = serialize(forCount);
-		String queryString = serializer.toString();
-		System.out.println(queryString);
-		System.out.println("---------------------------------");
-		TypedSQLQuery<?> query;
+	private SQLQuery createQuery(QueryModifiers modifiers, boolean forCount) {
+		SQLQuery query = null;
 		try {
-			query = session.createQuery(queryString, resultClass);
+			SQLSerializer serializer = serialize(forCount);
+			String sql = serializer.toString();
+			System.out.println("Aqui");
+			System.out.println(sql);
+			System.out.println();
+			query = session.createQuery(sql);
+			query.setLockOptions(lockOptions);
+			query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions()));
+
 		} catch (Exception e) {
-			throw new OSQLException("Não foi possível criar a query. ", e);
+			throw new OSQLQueryException("Não foi possível criar a query. ", e);
+		} finally {
 		}
 
 		List<? extends Expression<?>> projection = getMetadata().getProjection();
@@ -297,42 +285,9 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		return query;
 	}
 
-	protected Expression<?>[] getAllFieldExpressions(EntityPathBase<?> path) throws Exception {
-		List<Expression<?>> result = new ArrayList<Expression<?>>();
-
-		Field[] fields = ReflectionUtils.getAllDeclaredFields(path.getClass());
-
-		for (Field field : fields) {
-			if (Modifier.isPublic(field.getModifiers())) {
-				if ((ReflectionUtils.isExtendsClass(Path.class, field.getType()))
-						&& (!ReflectionUtils.isExtendsClass(EntityPath.class, field.getType()))
-						&& ((!ReflectionUtils.isExtendsClass(CollectionPathBase.class, field.getType())))) {
-					Expression<?> expr = (Expression<?>) field.get(path);
-					result.add(expr);
-				}
-			}
-		}
-
-		return result.toArray(new Expression<?>[] {});
-	}
-
 	public Class<?> getClassByEntityPath(EntityPath<?> path) {
 		Type mySuperclass = path.getClass().getGenericSuperclass();
 		return (Class<?>) ((ParameterizedType) mySuperclass).getActualTypeArguments()[0];
-	}
-
-	protected Expression<?>[] adaptExpressionPatternAnteros(Expression<?>... expr) throws Exception {
-		List<Expression<?>> result = new ArrayList<Expression<?>>();
-		for (Expression<?> e : expr) {
-			if (e instanceof EntityPathBase) {
-				Expression<?>[] expressions = getAllFieldExpressions((EntityPathBase<?>) e);
-				for (Expression<?> e1 : expressions) {
-					result.add(e1);
-				}
-			} else
-				result.add(e);
-		}
-		return result.toArray(new Expression<?>[] {});
 	}
 
 	/*
@@ -482,7 +437,9 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	private void checkLastJoinAdded() {
-		// Verifica se foi adicionado Join porém não foi adicionado condição
+		/*
+		 * Verifica se foi adicionado Join porém não foi adicionado condição
+		 */
 		if ((lastJoinAdded != null) && (!lastJoinConditionAdded) && (joinTarget != null)) {
 			if ((lastJoinAdded instanceof EntityPath) && (joinTarget instanceof EntityPath)) {
 			}
@@ -513,5 +470,32 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	public SQLSession getSession() {
 		return session;
 	}
+	
+
+	public AbstractOSQLQuery<Q> setLockOptions(LockOptions lockOptions) {
+		this.lockOptions = lockOptions;
+		return this;
+	}
+
+	public LockOptions getLockOptions() {
+		return lockOptions;
+	}
+
+	public AbstractOSQLQuery<Q> addIndexHint(IndexHint... indexes) {
+		String teste = "/*index(ORD PK)*/";
+		for (IndexHint index : indexes){
+			
+		}
+		addFlag(QueryFlag.Position.AFTER_SELECT,teste);
+		return this;
+	}
+	
+	public AbstractOSQLQuery<Q> addIndexHint(String alias, String indexName) {
+		String teste = "/*index(ORD PK)*/";
+		addFlag(QueryFlag.Position.AFTER_SELECT,teste);
+		return this;
+	}
+	
+	
 
 }

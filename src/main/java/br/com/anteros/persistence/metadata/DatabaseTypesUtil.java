@@ -15,9 +15,6 @@
  *******************************************************************************/
 package br.com.anteros.persistence.metadata;
 
-import java.lang.reflect.Field;
-
-import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.annotation.Column;
 import br.com.anteros.persistence.metadata.annotation.Columns;
 import br.com.anteros.persistence.metadata.annotation.CompositeId;

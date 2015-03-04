@@ -201,7 +201,7 @@ public class EntityCacheManager {
 					SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(
 							namedQuery.getResultClass().getName() + ":" + namedQuery.getQuery());
 					if (analyzerResult == null) {
-						analyzerResult = new SQLQueryAnalyzer(this, databaseDialect).analyze(namedQuery.getQuery(), namedQuery.getResultClass());
+						analyzerResult = new SQLQueryAnalyzer(this, databaseDialect, !SQLQueryAnalyzer.IGNORE_NOT_USED_ALIAS_TABLE).analyze(namedQuery.getQuery(), namedQuery.getResultClass());
 						PersistenceMetadataCache.getInstance().put(namedQuery.getResultClass().getName() + ":" + namedQuery.getQuery(),
 								analyzerResult);
 					}
@@ -2305,6 +2305,10 @@ public class EntityCacheManager {
 
 	public boolean isEntity(Object value) {
 		return getEntityCache(value.getClass()) != null;
+	}
+	
+	public boolean isEntity(Class<?> clazz) {
+		return getEntityCache(clazz) != null;
 	}
 
 	public boolean isCompositeId(Object value) {

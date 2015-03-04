@@ -65,6 +65,8 @@ public abstract class SerializerBase<S extends SerializerBase<S>> implements Vis
     
     private boolean strict = true;
     
+    private int currentIndex = 0;
+    
     public SerializerBase(Templates templates) {
         this.templates = templates;
         this.escape = templates.getEscapeChar();
@@ -123,21 +125,25 @@ public abstract class SerializerBase<S extends SerializerBase<S>> implements Vis
     }
 
     public final S handle(final String sep, final Expression<?>[] expressions) {
+    	currentIndex = 0;
         for (int i = 0; i< expressions.length; i++) {
             if (i != 0) {
                 append(sep);
             }
             handle(expressions[i]);
+            currentIndex++;
         }
         return self;
     }
     
     public final S handle(final String sep, final List<?> expressions) {
+    	currentIndex = 0;
         for (int i = 0; i < expressions.size(); i++) {
             if (i != 0) {
                 append(sep);
             }
             handle((Expression<?>)expressions.get(i));
+            currentIndex++;
         }
         return self;
     }
@@ -300,5 +306,9 @@ public abstract class SerializerBase<S extends SerializerBase<S>> implements Vis
             append(")");
         }        
     }
+
+	public int getCurrentIndex() {
+		return currentIndex;
+	}
 
 }

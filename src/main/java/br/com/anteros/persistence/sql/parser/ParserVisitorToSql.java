@@ -1,23 +1,18 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 
 /*******************************************************************************
- * Copyright (c) 2007 - 2009 ZIGEN
- * Eclipse Public License - v 1.0
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2007 - 2009 ZIGEN Eclipse Public License - v 1.0 http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
 package br.com.anteros.persistence.sql.parser;
@@ -32,17 +27,16 @@ import br.com.anteros.persistence.sql.parser.node.InnerAliasNode;
 import br.com.anteros.persistence.sql.parser.node.OperatorNode;
 import br.com.anteros.persistence.sql.parser.node.OutfileNode;
 import br.com.anteros.persistence.sql.parser.node.ParenthesesNode;
-import br.com.anteros.persistence.sql.parser.node.RootNode;
 import br.com.anteros.persistence.sql.parser.node.SelectStatementNode;
 import br.com.anteros.persistence.sql.parser.node.TableNode;
 
 public class ParserVisitorToSql implements IVisitor {
-	
+
 	private static Logger LOG = LoggerProvider.getInstance().getLogger(ParserVisitorToSql.class.getName());
 
 	StringBuilder sb = new StringBuilder();
 
-	boolean isShowAs = false;
+	boolean isShowAs = true;
 
 	public ParserVisitorToSql() {
 	}
@@ -70,7 +64,7 @@ public class ParserVisitorToSql implements IVisitor {
 
 	public Object visit(INode node, Object data) {
 
-		if (node instanceof SelectStatementNode || node instanceof InnerAliasNode || node instanceof ExpressionNode) {
+		if (node instanceof SelectStatementNode || node instanceof ExpressionNode) {
 
 			node.childrenAccept(this, data);
 
@@ -86,9 +80,7 @@ public class ParserVisitorToSql implements IVisitor {
 			FunctionNode function = (FunctionNode) node;
 			sb.append(function.getName() + "");
 			node.childrenAccept(this, data);
-
-			setAliasName(function);
-
+			
 		} else if (node instanceof ParenthesesNode) {
 			ParenthesesNode p = (ParenthesesNode) node;
 			sb.append("(");
@@ -133,6 +125,10 @@ public class ParserVisitorToSql implements IVisitor {
 			sb.append(node.getName() + " ");
 			sb.append(outfile.getFilePath());
 			sb.append(" ");
+		} else if (node instanceof InnerAliasNode) {
+			if (isShowAs)
+				sb.append("AS ");
+			sb.append(node.getName() + " ");
 		} else {
 			sb.append(node.getName() + " ");
 			node.childrenAccept(this, data);

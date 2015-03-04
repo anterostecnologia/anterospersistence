@@ -205,4 +205,8 @@ public class ColumnNode extends AliasNode {
 		return true;
 	}
 
+	public void setTableName(String tableName) {
+		this.tableName = tableName;
+	}
+
 }

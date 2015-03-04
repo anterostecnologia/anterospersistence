@@ -15,6 +15,8 @@
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql.types;
 
+import java.util.List;
+
 /**
  * EntityPath is the common interface for entity path expressions
  *
@@ -31,5 +33,18 @@ public interface EntityPath<T> extends Path<T> {
      * @return
      */
     Object getMetadata(Path<?> property);
+    
+    /**
+     * Retorna lista de Path's para projeção.
+     * @return
+     */
+    List<Path<?>> getCustomProjection();
+    
+    /**
+     * Atribui uma lista de Path's para projeção permitindo assim criar objetos parciais.
+     * @param args
+     */
+    EntityPath<T> setCustomProjection(Path<?>... args);
+    
 
 }

@@ -51,13 +51,13 @@ import br.com.anteros.persistence.util.AnterosPersistenceHelper;
  * 
  */
 public class EntityHandler implements ResultSetHandler {
+	public static final boolean LOAD_ALL_FIELDS = true;
 	protected Class<?> resultClass;
 	protected transient EntityCacheManager entityCacheManager;
 	protected SQLSession session;
 	protected Cache transactionCache;
 	protected EntityManaged entityManaged;
 	protected Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases;
-	protected Object mainObject;
 	protected Object objectToRefresh;
 	protected LazyLoadFactory proxyFactory;
 	protected boolean allowDuplicateObjects = false;
@@ -98,24 +98,13 @@ public class EntityHandler implements ResultSetHandler {
 	public Object handle(ResultSet resultSet) throws Exception {
 		List<Object> result = null;
 		try {
-			Set<String> columns = new HashSet<String>();
-			/*
-			 * Verifica a existência de colunas duplicadas
-			 */
-			for (int i = 1; i <= resultSet.getMetaData().getColumnCount(); i++) {
-				String columnName = resultSet.getMetaData().getColumnLabel(i);
-				if (columns.contains(columnName)) {
-					throw new EntityHandlerException(
-							"Não é possível instanciar objetos a partir de um ResultSet que contenha nomes de colunas duplicadas. Classe "
-									+ resultClass.getName() + " coluna " + resultSet.getMetaData().getColumnName(i));
-				}
-				columns.add(resultSet.getMetaData().getColumnLabel(i).toUpperCase());
-			}
+			EntityHandler.validateDuplicateColumns(resultSet, resultClass);
 
 			/*
 			 * Se o ResultSet não estiver vazio
 			 */
 			if (resultSet.next()) {
+				result = new ArrayList<Object>();
 				/*
 				 * Faz o loop para processar os registros do ResultSet
 				 */
@@ -124,45 +113,83 @@ public class EntityHandler implements ResultSetHandler {
 					 * Se a classe passada para o handler for uma entidade abstrata localiza no entityCache a classe
 					 * correspondente ao discriminator colum
 					 */
-
-					Class<?> targetResultClass = resultClass;
-					EntityCache entityCache = entityCacheManager.getEntityCache(resultClass);
-					try {
-						/*
-						 * Verifica se a classe é abstrat e busca o tipo da classe concreta
-						 */
-						if (entityCache.hasDiscriminatorColumn() && ReflectionUtils.isAbstractClass(entityCache.getEntityClass())) {
-							String dsValue = resultSet
-									.getString(getAliasColumnName(entityCache, entityCache.getDiscriminatorColumn().getColumnName()));
-							entityCache = entityCacheManager.getEntityCache(resultClass, dsValue);
-							targetResultClass = entityCache.getEntityClass();
-						} else if (entityCache.hasDiscriminatorColumn()) {
-							String dsValue = resultSet
-									.getString(getAliasColumnName(entityCache, entityCache.getDiscriminatorColumn().getColumnName()));
-							if (!entityCache.getDiscriminatorValue().equals(dsValue)) {
-								continue;
-							}
-						}
-					} catch (Exception e) {
-						throw new EntityHandlerException("Para que seja criado o objeto da classe " + entityCache.getEntityClass().getName()
-								+ " será necessário adicionar no sql a coluna " + entityCache.getDiscriminatorColumn().getColumnName()
-								+ " que informe que tipo de classe será usada para instanciar o objeto. Verifique também se o discriminator value "
-								+ resultSet.getString(getAliasColumnName(entityCache, entityCache.getDiscriminatorColumn().getColumnName()))
-								+ " é o mesmo que está configurado na classe herdada.");
-					}
-					if (result == null)
-						result = new ArrayList<Object>();
+					EntityCache entityCache = getEntityCacheByResultSetRow(resultClass, resultSet);
 					/*
-					 * Cria o objeto
+					 * Processa a linha do resultSet montando o objeto da classe de resultado
 					 */
-					int count = createObject(targetResultClass, resultSet, result);
-
+					if (entityCache != null)
+						handleRow(resultSet, result, entityCache, LOAD_ALL_FIELDS);
 				} while (resultSet.next());
 			}
 		} catch (SQLException ex) {
 			throw new EntityHandlerException("Erro processando handler para criação da classe " + resultClass.getName() + ". " + ex.getMessage());
 		}
 
+		return result;
+	}
+
+	static void validateDuplicateColumns(ResultSet resultSet, Class<?> resultClass) throws SQLException, EntityHandlerException {
+		Set<String> columns = new HashSet<String>();
+		/*
+		 * Verifica a existência de colunas duplicadas
+		 */
+		for (int i = 1; i <= resultSet.getMetaData().getColumnCount(); i++) {
+			String columnName = resultSet.getMetaData().getColumnLabel(i);
+			if (columns.contains(columnName)) {
+				String msg = "Não é possível instanciar objetos a partir de um ResultSet que contenha nomes de colunas duplicadas.";
+				if (resultClass != null)
+					msg += " Classe " + resultClass.getName() + " coluna " + resultSet.getMetaData().getColumnName(i);
+				else
+					msg += " coluna " + resultSet.getMetaData().getColumnName(i);
+				throw new EntityHandlerException(msg);
+			}
+			columns.add(resultSet.getMetaData().getColumnLabel(i).toUpperCase());
+		}
+	}
+
+	Object handleRow(ResultSet resultSet, List<Object> result, EntityCache entityCache, boolean loadAllFields) throws EntityHandlerException,
+			SQLException, Exception {
+		/*
+		 * Cria o objeto
+		 */
+		Object createdOject = createObject(entityCache.getEntityClass(), resultSet, result);
+
+		/*
+		 * Carrega coleções e relacionamentos. Preenche a árvore do objeto considerando as estratégias configuradas em
+		 * cada field com ForeignKey e Fetch
+		 */
+		if (loadAllFields)
+			loadCollectionsRelationShipAndLob(createdOject, entityCache, resultSet);
+
+		return createdOject;
+	}
+
+	EntityCache getEntityCacheByResultSetRow(Class<?> resultClass, ResultSet resultSet) throws EntityHandlerException, SQLException {
+		EntityCache result = entityCacheManager.getEntityCache(resultClass);
+		try {
+			/*
+			 * Verifica se a classe é abstrat e busca o tipo da classe concreta
+			 */
+			if (result.hasDiscriminatorColumn() && ReflectionUtils.isAbstractClass(result.getEntityClass())) {
+				String dsValue = resultSet.getString(getAliasColumnName(result, result.getDiscriminatorColumn().getColumnName()));
+				result = entityCacheManager.getEntityCache(resultClass, dsValue);
+			} else if (result.hasDiscriminatorColumn()) {
+				String dsValue = resultSet.getString(getAliasColumnName(result, result.getDiscriminatorColumn().getColumnName()));
+				if (!result.getDiscriminatorValue().equals(dsValue)) {
+					/*
+					 * Se retornar nulo é porque a linha do resultSet contém um classe cujo discrimintator column é
+					 * diferente do esperado
+					 */
+					return null;
+				}
+			}
+		} catch (SQLException e) {
+			throw new EntityHandlerException("Para que seja criado o objeto da classe " + result.getEntityClass().getName()
+					+ " será necessário adicionar no sql a coluna " + result.getDiscriminatorColumn().getColumnName()
+					+ " que informe que tipo de classe será usada para instanciar o objeto. Verifique também se o discriminator value "
+					+ resultSet.getString(getAliasColumnName(result, result.getDiscriminatorColumn().getColumnName()))
+					+ " é o mesmo que está configurado na classe herdada.");
+		}
 		return result;
 	}
 
@@ -178,10 +205,10 @@ public class EntityHandler implements ResultSetHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	protected int createObject(Class<?> targetClass, ResultSet resultSet, List<Object> result) throws Exception {
+	protected Object createObject(Class<?> targetClass, ResultSet resultSet, List<Object> result) throws Exception {
 		EntityCache entityCache = entityCacheManager.getEntityCache(targetClass);
 
-		int count = 0;
+		Object mainObject = null;
 
 		/*
 		 * Busca chave do objeto no resultSet
@@ -204,7 +231,6 @@ public class EntityHandler implements ResultSetHandler {
 				 * Se não encontrou no cache cria uma nova instância
 				 */
 				mainObject = targetClass.newInstance();
-				count++;
 				result.add(mainObject);
 			} else {
 				/*
@@ -232,12 +258,7 @@ public class EntityHandler implements ResultSetHandler {
 		 * processamento
 		 */
 
-		addObjectToCache(entityCache, mainObject, entityCache.getCacheUniqueId(mainObject));
-
-		/*
-		 * Preenche a árvore do objeto considerando as estratégias configuradas em cada field com ForeignKey e Fetch
-		 */
-		loadCollectionsRelationShipAndLob(mainObject, entityCache, resultSet);
+		addObjectToCache(entityCache, mainObject, uniqueId);
 
 		if (entityCache.isVersioned()) {
 			entityManaged.setOriginalVersion(ObjectUtils.cloneObject(ReflectionUtils.getFieldValueByName(mainObject, entityCache.getVersionColumn()
@@ -246,7 +267,7 @@ public class EntityHandler implements ResultSetHandler {
 			entityManaged.setCurrentVersion(entityManaged.getOriginalVersion());
 		}
 
-		return count;
+		return mainObject;
 	}
 
 	/**
@@ -609,12 +630,12 @@ public class EntityHandler implements ResultSetHandler {
 	 */
 	private boolean checkNeedsProcessDescriptionField(EntityCache entityCache, DescriptionField descriptionField, Object assignedValue)
 			throws Exception {
-		if (firstResult>0 || maxResults>0)
+		if (firstResult > 0 || maxResults > 0)
 			return true;
-		
+
 		Boolean process = (assignedValue == null);
-		Boolean existsExpression = existsExpressionForProcessing(entityCache, descriptionField.getField().getName());		
-		
+		Boolean existsExpression = existsExpressionForProcessing(entityCache, descriptionField.getField().getName());
+
 		isIncompleteKey = false;
 
 		if (assignedValue != null) {

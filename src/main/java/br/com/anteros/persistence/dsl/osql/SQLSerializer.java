@@ -19,11 +19,11 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import br.com.anteros.core.utils.ReflectionUtils;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.QueryFlag.Position;
 import br.com.anteros.persistence.dsl.osql.support.Expressions;
 import br.com.anteros.persistence.dsl.osql.support.SerializerBase;
@@ -31,7 +31,6 @@ import br.com.anteros.persistence.dsl.osql.types.Constant;
 import br.com.anteros.persistence.dsl.osql.types.ConstantImpl;
 import br.com.anteros.persistence.dsl.osql.types.EntityPath;
 import br.com.anteros.persistence.dsl.osql.types.Expression;
-import br.com.anteros.persistence.dsl.osql.types.FactoryExpression;
 import br.com.anteros.persistence.dsl.osql.types.Operator;
 import br.com.anteros.persistence.dsl.osql.types.Ops;
 import br.com.anteros.persistence.dsl.osql.types.Order;
@@ -55,7 +54,6 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 /**
  * SqlSerializer serializes Querydsl queries into SQL
@@ -68,7 +66,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		SELECT, FROM, WHERE, GROUP_BY, HAVING, ORDER_BY, MODIFIERS
 	}
 
-	private static final Expression Q = Expressions.template(Object.class, "?");
+	private static final Expression<?> Q = Expressions.template(Object.class, "?");
 
 	private static final String COMMA = ", ";
 
@@ -174,26 +172,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		final boolean hasFlags = !flags.isEmpty();
 		String suffix = null;
 
-		List<Expression<?>> sqlSelect;
-		if (select.size() == 1) {
-			final Expression<?> first = select.get(0);
-			if (first instanceof FactoryExpression) {
-				sqlSelect = ((FactoryExpression<?>) first).getArgs();
-			} else {
-				sqlSelect = (List) select;
-			}
-		} else {
-			sqlSelect = new ArrayList<Expression<?>>(select.size());
-			for (Expression<?> selectExpr : select) {
-				if (selectExpr instanceof FactoryExpression) {
-					// transforms constructor arguments into individual select
-					// expressions
-					sqlSelect.addAll(((FactoryExpression<?>) selectExpr).getArgs());
-				} else {
-					sqlSelect.add(selectExpr);
-				}
-			}
-		}
+		List<Expression<?>> sqlSelect = analyser.getIndividualExpressions();
 
 		// with
 		if (hasFlags) {
@@ -579,9 +558,9 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	@Override
 	public Void visit(Path<?> path, Void context) {
-		if (path.getMetadata().getPathType() == PathType.VARIABLE) {
+		if ((path.getMetadata().getPathType() == PathType.VARIABLE) && (path instanceof EntityPath<?>)) {
 			if (inOperation) {
-				EntityCache sourceEntityCache = entityCacheManager.getEntityCache(getClassByEntityPath((EntityPath<?>) path));
+				EntityCache sourceEntityCache = entityCacheManager.getEntityCache(analyser.getClassByEntityPath((EntityPath<?>) path));
 				String alias = path.getMetadata().getName();
 				for (DescriptionField descriptionField : sourceEntityCache.getPrimaryKeyFields()) {
 					if (descriptionField.isSimple())
@@ -602,49 +581,92 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 					}
 				}
 			} else {
-				append(templates.quoteIdentifier(path.getMetadata().getName()));
+				if ((stage == Stage.SELECT) || (stage == Stage.GROUP_BY)) {
+					appendAllColumnsForPath(this.getCurrentIndex());
+				} else {
+					append(templates.quoteIdentifier(path.getMetadata().getName()));
+				}
 			}
 		} else if (path.getMetadata().getPathType() == PathType.PROPERTY) {
 			EntityPath<?> entityPath = analyser.getAliasByEntityPath(path);
 			String alias = entityPath.getMetadata().getName();
 
-			EntityCache sourceEntityCache = entityCacheManager.getEntityCache(getClassByEntityPath(entityPath));
+			EntityCache sourceEntityCache = entityCacheManager.getEntityCache(analyser.getClassByEntityPath(entityPath));
 			if (sourceEntityCache == null)
-				throw new SQLSerializerException("A classe " + getClassByEntityPath(entityPath)
+				throw new SQLSerializerException("A classe " + analyser.getClassByEntityPath(entityPath)
 						+ " não foi encontrada na lista de entidades gerenciadas.");
 			if (path instanceof EntityPath<?>) {
-				append("**AQUI**");
+				if ((stage == Stage.SELECT) || (stage == Stage.GROUP_BY))
+					appendAllColumnsForPath(this.getCurrentIndex());
+				else
+					appendAllDescriptionFields(path, alias, sourceEntityCache);
 			} else {
 				DescriptionField descriptionField = sourceEntityCache.getDescriptionField(path.getMetadata().getName());
 				if (descriptionField == null)
 					throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " não foi encontrado na classe "
-							+ getClassByEntityPath(entityPath) + ". ");
-
-				if (descriptionField.isSimple())
-					append(templates.quoteIdentifier(alias)).append(".").append(
-							templates.quoteIdentifier(descriptionField.getSimpleColumn().getColumnName()));
-				else if (descriptionField.isAnyCollection()) {
-					throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " " + getClassByEntityPath(entityPath)
-							+ " não pode ser usado para criação da consulta pois é uma coleção. Use uma junção para isto. ");
-				} else if (descriptionField.isRelationShip()) {
-					boolean appendSep = false;
-					for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
-						if (appendSep) {
-							if (stage == Stage.SELECT) {
-								append(" , ");
-							} else if (stage == Stage.FROM) {
-								append(" AND ");
-							}
-						}
-						append(alias).append(".").append(column.getColumnName());
-						appendSep = true;
-					}
-				} else
-					append(path.getMetadata().getName());
+							+ analyser.getClassByEntityPath(entityPath) + ". ");
+				if (stage == Stage.SELECT)
+					appendAllColumnsForPath(this.getCurrentIndex());
+				else
+					appendDescriptionField(path, entityPath, alias, descriptionField);
 			}
+		} else {
+			append(path.getMetadata().getName());
 		}
 
 		return null;
+	}
+
+	protected void appendAllDescriptionFields(Path<?> path, String alias, EntityCache sourceEntityCache) {
+		boolean appendSep = false;
+		for (DescriptionField descriptionField : sourceEntityCache.getDescriptionFields()) {
+			if (descriptionField.isAnyCollection())
+				continue;
+			if (appendSep)
+				append(COMMA);
+			if (appendDescriptionField(path, (EntityPath<?>) path, alias, descriptionField))
+				appendSep = true;
+		}
+	}
+
+	protected boolean appendDescriptionField(Path<?> path, EntityPath<?> entityPath, String alias, DescriptionField descriptionField) {
+		if (descriptionField.isSimple()) {
+			append(templates.quoteIdentifier(alias)).append(".")
+					.append(templates.quoteIdentifier(descriptionField.getSimpleColumn().getColumnName()));
+			return true;
+		} else if (descriptionField.isRelationShip()) {
+			boolean appendSep = false;
+			for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
+				if (appendSep) {
+					if (stage == Stage.SELECT) {
+						append(COMMA);
+					} else if (stage == Stage.FROM) {
+						append(" AND ");
+					}
+				}
+				append(alias).append(".").append(column.getColumnName());
+				appendSep = true;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	protected void appendAllColumnsForPath(Integer index) {
+		boolean appendSep = false;
+		if (analyser.getColumns().containsKey(index)) {
+			Set<SQLAnalyserColumn> columns = analyser.getColumns().get(index);
+			for (SQLAnalyserColumn column : columns) {
+				if (appendSep)
+					append(COMMA);
+
+				append(templates.quoteIdentifier(column.getAliasTableName())).append(".").append(templates.quoteIdentifier(column.getColumnName()));
+				if ((stage == Stage.SELECT) && (!StringUtils.isEmpty(column.getAliasColumnName()) && !column.equals(column.getAliasColumnName()))
+						&& (!column.isUserAliasDefined()))
+					append(" AS ").append(column.getAliasColumnName());
+				appendSep = true;
+			}
+		}
 	}
 
 	@Override
@@ -740,11 +762,6 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		Type mySuperclass = path.getClass().getGenericSuperclass();
 		Class<?> tType = (Class<?>) ((ParameterizedType) mySuperclass).getActualTypeArguments()[0];
 		return entityCacheManager.getEntityCache(tType);
-	}
-
-	public Class<?> getClassByEntityPath(EntityPath<?> path) {
-		Type mySuperclass = path.getClass().getGenericSuperclass();
-		return (Class<?>) ((ParameterizedType) mySuperclass).getActualTypeArguments()[0];
 	}
 
 }

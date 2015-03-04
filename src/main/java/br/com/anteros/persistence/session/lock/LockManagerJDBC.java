@@ -78,7 +78,7 @@ public class LockManagerJDBC implements LockManager {
 			/*
 			 * Realiza a validação da estratégia de bloqueio a ser usada para realizar o travamento da entidade.
 			 */
-			validateLockOptions(lockOptions, entityCache);
+			validateLockOptions(session, lockOptions, entityCache.getEntityClass());
 
 			/*
 			 * Realiza um consulta no banco de dados para realizar o travamento somente se a estratégia for pessimista
@@ -93,9 +93,10 @@ public class LockManagerJDBC implements LockManager {
 					resultSet = query.executeQuery();
 					if (resultSet.next()) {
 						entityManaged.setLockMode(lockOptions.getLockMode());
-					} else 
+					} else
 						throw new LockAcquisitionException("Entidade " + entityManaged.getEntityCache().getEntityClass().getSimpleName()
-								+ " não foi localizada no banco de dados e por isso não foi possível realizar o bloqueio. Id " + identifier.getDatabaseValues());
+								+ " não foi localizada no banco de dados e por isso não foi possível realizar o bloqueio. Id "
+								+ identifier.getDatabaseValues());
 				} catch (SQLException ex) {
 					throw session.getDialect().convertSQLException(
 							ex,
@@ -122,14 +123,26 @@ public class LockManagerJDBC implements LockManager {
 	 * @param entityCache
 	 *            Entidade
 	 */
-	protected void validateLockOptions(LockOptions lockOptions, EntityCache entityCache) {
-		if ((!entityCache.isVersioned())
-				&& (lockOptions.contains(LockMode.OPTIMISTIC, LockMode.OPTIMISTIC_FORCE_INCREMENT, LockMode.PESSIMISTIC_FORCE_INCREMENT))) {
-			throw new LockException(
-					"Tipo de travamento ["
-							+ lockOptions.getLockMode()
-							+ "] inválido para a entidade pois ela não possue um controle de versão. Somente um bloqueio do tipo PESSIMISTA poderá ser usado em entidades sem controle de versão. Classe "
-							+ entityCache.getEntityClass());
+	protected void validateLockOptions(SQLSession session, LockOptions lockOptions, Class<?> resultClass) {
+		if (resultClass == null) {
+			if (lockOptions.contains(LockMode.OPTIMISTIC, LockMode.OPTIMISTIC_FORCE_INCREMENT, LockMode.PESSIMISTIC_FORCE_INCREMENT)) {
+				throw new LockException(
+						"Tipo de travamento ["
+								+ lockOptions.getLockMode()
+								+ "] inválido para o sql. Somente um bloqueio do tipo PESSIMISTA poderá ser usado em seleções sem classe de resultado ou de várias entidades diferentes.");
+			}
+		} else {
+			EntityCache entityCache = session.getEntityCacheManager().getEntityCache(resultClass);
+			if (entityCache != null) {
+				if ((!entityCache.isVersioned())
+						&& (lockOptions.contains(LockMode.OPTIMISTIC, LockMode.OPTIMISTIC_FORCE_INCREMENT, LockMode.PESSIMISTIC_FORCE_INCREMENT))) {
+					throw new LockException(
+							"Tipo de travamento ["
+									+ lockOptions.getLockMode()
+									+ "] inválido para a entidade pois ela não possue um controle de versão. Somente um bloqueio do tipo PESSIMISTA poderá ser usado em entidades sem controle de versão. Classe "
+									+ entityCache.getEntityClass());
+				}
+			}
 		}
 	}
 
@@ -178,9 +191,7 @@ public class LockManagerJDBC implements LockManager {
 	 */
 	@Override
 	public String applyLock(SQLSession session, String sql, Class<?> resultClass, LockOptions lockOptions) throws Exception {
-		if (resultClass==null)
-			return sql;
-		validateLockOptions(lockOptions, session.getEntityCacheManager().getEntityCache(resultClass));
+		validateLockOptions(session, lockOptions, resultClass);
 		return session.getDialect().applyLock(sql, lockOptions);
 	}
 

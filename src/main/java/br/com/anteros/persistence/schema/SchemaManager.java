@@ -1224,7 +1224,6 @@ public class SchemaManager implements Comparator<TableSchema> {
 		 */
 		boolean writeCommentCreateTable = true;
 		for (TableSchema tableSchema : tables) {
-			// System.out.println("EXTENDENDO TABELA "+tableSchema.getName());
 			if (!session.getDialect().checkTableExists(session.getConnection(), tableSchema.getName())) {
 				try {
 					/*
@@ -1238,14 +1237,11 @@ public class SchemaManager implements Comparator<TableSchema> {
 					}
 				}
 			} else {
-				// System.out.println("  BUSCANDO INDICES");
 				Map<String, IndexMetadata> allIndexes = session.getDialect().getAllIndexesByTable(session.getConnection(), tableSchema.getName());
-				// System.out.println("  BUSCOU INDICES");
 
 				/*
 				 * Verifica se a coluna existe na tabela. Se não existir adiciona.
 				 */
-				// System.out.println("  BUSCANDO COLUNAS");
 				String[] columnNames = session.getDialect().getColumnNamesFromTable(session.getConnection(), tableSchema.getName());
 				for (ColumnSchema columnSchema : tableSchema.getColumns()) {
 					boolean found = false;
@@ -1274,13 +1270,11 @@ public class SchemaManager implements Comparator<TableSchema> {
 						}
 					}
 				}
-				// System.out.println("  VERIFICOU COLUNAS");
 
 				/*
 				 * Verifica se existe o índice. Se não existir cria.
 				 */
 				for (IndexSchema indexSchema : tableSchema.getIndexes()) {
-					// System.out.println("  CHECANDO INDICE "+indexSchema.getName());
 					if (!checkIndexExists(indexSchema.getName(), indexSchema.getColumnNames().toArray(new String[] {}), allIndexes)) {
 						try {
 							if (isWriteToDatabase()) {
@@ -1299,13 +1293,11 @@ public class SchemaManager implements Comparator<TableSchema> {
 			}
 		}
 
-		// System.out.println("CONCLUÍU EXTEND TABELAS");
 		/*
 		 * Verifica as constraints
 		 */
 		boolean writeCommentUniqueConstraint = true;
 		for (TableSchema tableSchema : tables) {
-			// System.out.println("VERIFICANDO UNIQUE CONSTRAINTS "+tableSchema.getName());
 			Map<String, IndexMetadata> allIndexes = session.getDialect().getAllIndexesByTable(session.getConnection(), tableSchema.getName());
 			/*
 			 * Verifica se existe a chave única. Se não existir cria.
@@ -1335,7 +1327,6 @@ public class SchemaManager implements Comparator<TableSchema> {
 
 		boolean writeCommentForeignKey = true;
 		for (TableSchema tableSchema : tables) {
-			// System.out.println("VERIFICANDO FOREIGNKEY CONSTRAINTS "+tableSchema.getName());
 			Map<String, ForeignKeyMetadata> allFks = session.getDialect().getAllForeignKeysByTable(session.getConnection(), tableSchema.getName());
 
 			/*

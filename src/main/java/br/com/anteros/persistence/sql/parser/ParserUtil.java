@@ -88,7 +88,7 @@ public class ParserUtil {
 			return null;
 		}
 	}
-
+	
 	public static INode[] findChildren(INode node, String type) {
 		List<INode> list = new ArrayList<INode>();
 		if (node != null) {
