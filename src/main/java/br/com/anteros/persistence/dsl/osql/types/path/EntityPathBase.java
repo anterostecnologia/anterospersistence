@@ -73,7 +73,7 @@ public class EntityPathBase<T> extends BeanPath<T> implements EntityPath<T> {
 	}
 
 	@Override
-	public EntityPath<T> setCustomProjection(Path<?>... args) {
+	public EntityPath<T> customProjection(Path<?>... args) {
 		for (Path<?> arg : args) {
 			customProjectionList.add(arg);
 		}

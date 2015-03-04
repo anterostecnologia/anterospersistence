@@ -44,7 +44,7 @@ public interface EntityPath<T> extends Path<T> {
      * Atribui uma lista de Path's para projeção permitindo assim criar objetos parciais.
      * @param args
      */
-    EntityPath<T> setCustomProjection(Path<?>... args);
+    EntityPath<T> customProjection(Path<?>... args);
     
 
 }

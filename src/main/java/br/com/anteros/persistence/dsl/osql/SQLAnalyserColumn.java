@@ -1,6 +1,7 @@
 package br.com.anteros.persistence.dsl.osql;
 
 import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 
 public class SQLAnalyserColumn {
 
@@ -8,12 +9,14 @@ public class SQLAnalyserColumn {
 	private String columnName;
 	private String aliasColumnName;
 	private boolean userAliasDefined = false;
+	private DescriptionField descriptionField;
 
-	public SQLAnalyserColumn(String aliasTableName, String columnName, String aliasColumnName) {
+	public SQLAnalyserColumn(String aliasTableName, String columnName, String aliasColumnName, DescriptionField descriptionField) {
 		super();
 		this.aliasTableName = aliasTableName;
 		this.columnName = columnName;
 		this.aliasColumnName = aliasColumnName;
+		this.descriptionField = descriptionField;
 	}
 
 	public String getAliasTableName() {
@@ -83,5 +86,9 @@ public class SQLAnalyserColumn {
 
 	public void setUserAliasDefined(boolean userAliasDefined) {
 		this.userAliasDefined = userAliasDefined;
+	}
+
+	public DescriptionField getDescriptionField() {
+		return descriptionField;
 	}
 }

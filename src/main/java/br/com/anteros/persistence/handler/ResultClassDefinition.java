@@ -1,19 +1,18 @@
 package br.com.anteros.persistence.handler;
 
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
-import com.google.common.collect.ImmutableList;
+import br.com.anteros.persistence.dsl.osql.SQLAnalyserColumn;
+
 import com.google.common.collect.ImmutableSet;
 
 public class ResultClassDefinition {
 
 	private Class<?> resultClass;
 
-	private Set<String> columns;
+	private Set<SQLAnalyserColumn> columns;
 
-	public ResultClassDefinition(Class<?> resultClass, List<String> columns) {
+	public ResultClassDefinition(Class<?> resultClass, Set<SQLAnalyserColumn> columns) {
 		super();
 		this.resultClass = resultClass;
 		this.columns = ImmutableSet.copyOf(columns);
@@ -27,7 +26,7 @@ public class ResultClassDefinition {
 		this.resultClass = resultClass;
 	}
 
-	public Set<String> getColumns() {
+	public Set<SQLAnalyserColumn> getColumns() {
 		return columns;
 	}
 	
@@ -59,6 +58,12 @@ public class ResultClassDefinition {
 		} else if (!resultClass.equals(other.resultClass))
 			return false;
 		return true;
+	}
+	
+	public SQLAnalyserColumn getSimpleColumn(){
+		if (columns.size()==0)
+			return null;
+		return columns.iterator().next();
 	}
 
 }

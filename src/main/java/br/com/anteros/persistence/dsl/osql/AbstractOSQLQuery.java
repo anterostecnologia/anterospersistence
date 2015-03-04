@@ -22,6 +22,7 @@ import java.util.Map;
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.ReflectionUtils;
+import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.lang.CloseableIterator;
 import br.com.anteros.persistence.dsl.osql.support.QueryMixin;
 import br.com.anteros.persistence.dsl.osql.types.EntityPath;
@@ -34,6 +35,8 @@ import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
 import br.com.anteros.persistence.handler.MultiSelectHandler;
+import br.com.anteros.persistence.handler.ResultClassDefinition;
+import br.com.anteros.persistence.handler.SingleValueHandler;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.lock.LockOptions;
@@ -261,9 +264,23 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			SQLSerializer serializer = serialize(forCount);
 			String sql = serializer.toString();
 			System.out.println(sql);
-			query = session.createQuery(sql);
+			List<ResultClassDefinition> definitions = analyser.getResultClassDefinitions();
+			if (definitions.size() == 1) {
+				if (session.getEntityCacheManager().isEntity(definitions.get(0).getResultClass())) {
+					query = session.createQuery(sql, definitions.get(0).getResultClass());
+				} else {
+					query = session.createQuery(sql);
+					SQLAnalyserColumn simpleColumn = definitions.get(0).getSimpleColumn();
+					String aliasColumnName = (StringUtils.isEmpty(simpleColumn.getAliasColumnName()) ? simpleColumn.getColumnName() : simpleColumn
+							.getAliasColumnName());
+					query.resultSetHandler(new SingleValueHandler(definitions.get(0).getResultClass(), simpleColumn.getDescriptionField(),
+							aliasColumnName));
+				}
+			} else {
+				query = session.createQuery(sql);
+				query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions()));
+			}
 			query.setLockOptions(lockOptions);
-			query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions()));
 			query.setParameters(getParameters());
 
 		} catch (Exception e) {

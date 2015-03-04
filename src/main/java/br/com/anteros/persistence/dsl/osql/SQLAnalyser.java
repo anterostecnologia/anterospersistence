@@ -164,7 +164,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			String aliasColumnName = "";
 			if (makeAlias)
 				aliasColumnName = makeNextAliasName(alias, descriptionField.getSimpleColumn().getColumnName());
-			lastColumnAdded = new SQLAnalyserColumn(alias, descriptionField.getSimpleColumn().getColumnName(), aliasColumnName);
+			lastColumnAdded = new SQLAnalyserColumn(alias, descriptionField.getSimpleColumn().getColumnName(), aliasColumnName, descriptionField);
 			columnsForPath.add(lastColumnAdded);
 			return true;
 		} else if (descriptionField.isRelationShip()) {
@@ -172,7 +172,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 				String aliasColumnName = "";
 				if (makeAlias)
 					aliasColumnName = makeNextAliasName(alias, column.getColumnName());
-				lastColumnAdded = new SQLAnalyserColumn(alias, column.getColumnName(), aliasColumnName);
+				lastColumnAdded = new SQLAnalyserColumn(alias, column.getColumnName(), aliasColumnName, descriptionField);
 				columnsForPath.add(lastColumnAdded);
 			}
 			return true;
@@ -420,9 +420,9 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 					columns.addAll(getColumnsForPathAsString(index));
 					index++;
 				}
-				result.add(new ResultClassDefinition(resultClass, columns));
+				result.add(new ResultClassDefinition(resultClass, getColumnsListForPath(index)));
 			} else {
-				result.add(new ResultClassDefinition(expr.getType(), getColumnsForPathAsString(index)));
+				result.add(new ResultClassDefinition(expr.getType(), getColumnsListForPath(index)));
 				index++;
 			}
 		}

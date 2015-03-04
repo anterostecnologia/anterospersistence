@@ -54,7 +54,7 @@ public class ComparableEntityPath<T extends Comparable> extends ComparablePath<T
 	}
 
 	@Override
-	public EntityPath<T> setCustomProjection(Path<?>... args) {
+	public EntityPath<T> customProjection(Path<?>... args) {
 		throw new UnsupportedOperationException();		
 	}
 }
