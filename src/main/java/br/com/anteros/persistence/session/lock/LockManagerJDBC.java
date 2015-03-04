@@ -124,6 +124,9 @@ public class LockManagerJDBC implements LockManager {
 	 *            Entidade
 	 */
 	protected void validateLockOptions(SQLSession session, LockOptions lockOptions, Class<?> resultClass) {
+		if (lockOptions == null)
+			return;
+		
 		if (resultClass == null) {
 			if (lockOptions.contains(LockMode.OPTIMISTIC, LockMode.OPTIMISTIC_FORCE_INCREMENT, LockMode.PESSIMISTIC_FORCE_INCREMENT)) {
 				throw new LockException(
@@ -191,6 +194,8 @@ public class LockManagerJDBC implements LockManager {
 	 */
 	@Override
 	public String applyLock(SQLSession session, String sql, Class<?> resultClass, LockOptions lockOptions) throws Exception {
+		if (lockOptions == null)
+			return sql;
 		validateLockOptions(session, lockOptions, resultClass);
 		return session.getDialect().applyLock(sql, lockOptions);
 	}
