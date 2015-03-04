@@ -17,6 +17,7 @@ import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
@@ -28,10 +29,12 @@ import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpressionUtils;
 import br.com.anteros.persistence.dsl.osql.types.IndexHint;
+import br.com.anteros.persistence.dsl.osql.types.ParamExpression;
 import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
 import br.com.anteros.persistence.handler.MultiSelectHandler;
+import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.query.SQLQuery;
@@ -257,12 +260,11 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		try {
 			SQLSerializer serializer = serialize(forCount);
 			String sql = serializer.toString();
-			System.out.println("Aqui");
 			System.out.println(sql);
-			System.out.println();
 			query = session.createQuery(sql);
 			query.setLockOptions(lockOptions);
 			query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions()));
+			query.setParameters(getParameters());
 
 		} catch (Exception e) {
 			throw new OSQLQueryException("Não foi possível criar a query. ", e);
@@ -283,6 +285,21 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		}
 
 		return query;
+	}
+
+	private Object getParameters() {
+		List<Object> result = new ArrayList<Object>();
+		Map<ParamExpression<?>, Object> params = getMetadata().getParams();
+		if (analyser.isNamedParameter()) {
+			for (ParamExpression<?> param : params.keySet()) {
+				result.add(new NamedParameter(param.getName(), params.get(param)));
+			}
+		} else {
+			for (ParamExpression<?> param : params.keySet()) {
+				result.add(params.get(param));
+			}
+		}
+		return (result.size() == 0 ? null : result);
 	}
 
 	public Class<?> getClassByEntityPath(EntityPath<?> path) {
@@ -470,7 +487,6 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	public SQLSession getSession() {
 		return session;
 	}
-	
 
 	public AbstractOSQLQuery<Q> setLockOptions(LockOptions lockOptions) {
 		this.lockOptions = lockOptions;
@@ -483,19 +499,17 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	public AbstractOSQLQuery<Q> addIndexHint(IndexHint... indexes) {
 		String teste = "/*index(ORD PK)*/";
-		for (IndexHint index : indexes){
-			
+		for (IndexHint index : indexes) {
+
 		}
-		addFlag(QueryFlag.Position.AFTER_SELECT,teste);
+		addFlag(QueryFlag.Position.AFTER_SELECT, teste);
 		return this;
 	}
-	
+
 	public AbstractOSQLQuery<Q> addIndexHint(String alias, String indexName) {
 		String teste = "/*index(ORD PK)*/";
-		addFlag(QueryFlag.Position.AFTER_SELECT,teste);
+		addFlag(QueryFlag.Position.AFTER_SELECT, teste);
 		return this;
 	}
-	
-	
 
 }

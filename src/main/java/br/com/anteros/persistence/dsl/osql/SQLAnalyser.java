@@ -45,6 +45,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	private SQLAnalyserColumn lastColumnAdded = null;
 
 	private boolean inOperation = false;
+	private Boolean namedParameter = null;
 	private int currentIndex;
 
 	public SQLAnalyser(AbstractOSQLQuery<?> query) {
@@ -79,6 +80,13 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 	@Override
 	public Void visit(ParamExpression<?> expr, Void context) {
+		if (namedParameter != null) {
+			if (namedParameter != (!expr.isAnon())) {
+				throw new SQLAnalyserException(
+						"Foram encontrados parâmetros nomeados e não nomeados. Use apenas um formato de parâmetros na consulta.");
+			}
+		}
+		this.namedParameter = !expr.isAnon();
 		return null;
 	}
 
@@ -219,11 +227,11 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		processExpressions(metadata, MAKE_ALIASES);
 		processExpressions(metadata, MAKE_COLUMNS);
 
-//		for (Integer index : columns.keySet()) {
-//			Set<SQLAnalyserColumn> list = columns.get(index);
-//			for (SQLAnalyserColumn col : list)
-//				System.out.println(index + "-> " + col);
-//		}
+		// for (Integer index : columns.keySet()) {
+		// Set<SQLAnalyserColumn> list = columns.get(index);
+		// for (SQLAnalyserColumn col : list)
+		// System.out.println(index + "-> " + col);
+		// }
 	}
 
 	public static List<Expression<?>> extractIndividualColumnsExpression(QueryMetadata metadata) {
@@ -419,5 +427,9 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			}
 		}
 		return result;
+	}
+
+	public boolean isNamedParameter() {
+		return (namedParameter == null ? false : namedParameter);
 	}
 }

@@ -548,7 +548,11 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	@Override
 	public Void visit(ParamExpression<?> param, Void context) {
-		append("?");
+		if (analyser.isNamedParameter()) {
+			append(":").append(param.getName());
+		} else {
+			append("?");
+		}
 		constants.add(param);
 		if (constantPaths.size() < constants.size()) {
 			constantPaths.add(null);
