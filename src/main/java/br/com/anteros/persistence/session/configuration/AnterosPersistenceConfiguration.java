@@ -28,7 +28,6 @@ import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.ResourceUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
-import br.com.anteros.persistence.metadata.accessor.impl.PropertyAcessorFactoryImpl;
 import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
 import br.com.anteros.persistence.sql.datasource.JDBCDataSource;
 import br.com.anteros.persistence.sql.datasource.JNDIDataSourceFactory;

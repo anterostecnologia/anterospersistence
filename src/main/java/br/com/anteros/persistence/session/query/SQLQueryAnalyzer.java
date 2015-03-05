@@ -42,6 +42,7 @@ import br.com.anteros.persistence.sql.parser.SqlParser;
 import br.com.anteros.persistence.sql.parser.node.BindNode;
 import br.com.anteros.persistence.sql.parser.node.ColumnNode;
 import br.com.anteros.persistence.sql.parser.node.CommaNode;
+import br.com.anteros.persistence.sql.parser.node.CommentNode;
 import br.com.anteros.persistence.sql.parser.node.FromNode;
 import br.com.anteros.persistence.sql.parser.node.GroupbyNode;
 import br.com.anteros.persistence.sql.parser.node.OperatorNode;
@@ -405,7 +406,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 					} else {
 						replaceColumnNameByAlias(newColumns, distinctNewColumns, selectNodeChild);
 					}
-				} else if (!(selectNodeChild instanceof CommaNode)) {
+				} else if ((!(selectNodeChild instanceof CommaNode)) && (!(selectNodeChild instanceof CommentNode))) {
 					/*
 					 * Adiciona as demais projeções do select
 					 */
@@ -432,8 +433,16 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			/*
 			 * Remove as colunas atuais do Select e do GroupBy
 			 */
-			while (select.getChildrenSize() > 0)
-				select.removeChild(select.getChild(0));
+			List<INode> listToRemove = new ArrayList<INode>();
+			for (INode child : select.getChildren()) {
+				if (!(child instanceof CommentNode)) {
+					listToRemove.add(child);
+				}
+			}
+			for (INode item : listToRemove) {
+				select.removeChild(item);
+			}
+
 			if (groupBy != null) {
 				while (groupBy.getChildrenSize() > 0)
 					groupBy.removeChild(groupBy.getChild(0));

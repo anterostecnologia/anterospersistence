@@ -30,10 +30,13 @@ import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpressionUtils;
 import br.com.anteros.persistence.dsl.osql.types.IndexHint;
+import br.com.anteros.persistence.dsl.osql.types.Ops;
 import br.com.anteros.persistence.dsl.osql.types.ParamExpression;
 import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
+import br.com.anteros.persistence.dsl.osql.types.expr.NumberExpression;
+import br.com.anteros.persistence.dsl.osql.types.expr.NumberOperation;
 import br.com.anteros.persistence.handler.MultiSelectHandler;
 import br.com.anteros.persistence.handler.ResultClassDefinition;
 import br.com.anteros.persistence.handler.SingleValueHandler;
@@ -157,6 +160,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@SuppressWarnings("unchecked")
 	public <RT> List<RT> list(Expression<RT> expr) {
 		try {
+			//hydrateNumberOperations(expr);
 			SQLQuery query = createQuery(expr);
 			return (List<RT>) getResultList(query);
 		} catch (Exception e) {
@@ -200,6 +204,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@Override
 	public <RT> RT uniqueResult(Expression<RT> expr) {
 		try {
+			//hydrateNumberOperations(expr);
 			SQLQuery query = createQuery(expr);
 			return (RT) getSingleResult(query);
 		} catch (Exception e) {
@@ -209,6 +214,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	@Override
 	public Tuple uniqueResult(Expression<?>... args) {
+		//hydrateNumberOperations(args);
 		validateExpressions(args);
 		return uniqueResult(queryMixin.createProjection(args));
 	}
@@ -231,9 +237,27 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	@Override
 	public List<Tuple> list(Expression<?>... args) {
+		//hydrateNumberOperations(args);
 		validateExpressions(args);
 		return list(queryMixin.createProjection(args));
 	}
+
+	private Expression<?> hydrateNumberOperation(Expression<?> expr) {
+
+		if (expr instanceof NumberOperation<?>) {
+			if (((NumberOperation) expr).getOperator() != Ops.ALIAS) {
+				return ((NumberOperation) expr).as("TESTE");
+			}
+		}
+		return expr;
+	}
+
+//	private Expression<?>[] hydrateOperations(Expression<?>... args) {
+//List<Expression<?>> result = new ArrayList<Expression<?>>();
+//		for (Expression<?> expr : args) {
+//			result.add
+//		}
+//	}
 
 	public SQLQuery createQuery(Expression<?> expr) throws Exception {
 		queryMixin.addProjection(expr);
