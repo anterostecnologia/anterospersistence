@@ -240,9 +240,9 @@ public class Token
     buffer.append(" valueOnlyInParen: ");
     buffer.append(this.valueOnlyInParen);
     buffer.append(" parentTokenInParen: ");
-    buffer.append("『" + (
+    buffer.append("[" + (
       this.parentTokenInParen != null ? 
-      this.parentTokenInParen.getCustom() : "null") + "』");
+      this.parentTokenInParen.getCustom() : "null") + "]");
     buffer.append(" depthParen: ");
     buffer.append(this.depthParen);
     buffer.append(" indent: ");

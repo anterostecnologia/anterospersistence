@@ -203,12 +203,22 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 	protected void processAllDescriptionFields(EntityPath<?> entityPath, String alias, EntityCache sourceEntityCache) {
 
+		List<Path<?>> excludeProjection = entityPath.getExcludeProjection();
 		for (DescriptionField descriptionField : sourceEntityCache.getDescriptionFields()) {
-			if (descriptionField.isAnyCollection())
+			if (descriptionField.isAnyCollection() || hasPathForDescriptionFieldToExclude(excludeProjection, descriptionField))
 				continue;
 
 			processDescriptionField(currentIndex, alias, descriptionField, true);
 		}
+	}
+
+	private boolean hasPathForDescriptionFieldToExclude(List<Path<?>> excludeProjection, DescriptionField descriptionField) {
+		for (Path<?> path : excludeProjection) {
+			if (path.getMetadata().getName().equals(descriptionField.getField().getName())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override

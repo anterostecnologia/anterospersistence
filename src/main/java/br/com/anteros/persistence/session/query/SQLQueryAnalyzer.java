@@ -45,6 +45,7 @@ import br.com.anteros.persistence.sql.parser.node.CommaNode;
 import br.com.anteros.persistence.sql.parser.node.FromNode;
 import br.com.anteros.persistence.sql.parser.node.GroupbyNode;
 import br.com.anteros.persistence.sql.parser.node.OperatorNode;
+import br.com.anteros.persistence.sql.parser.node.ParenthesesNode;
 import br.com.anteros.persistence.sql.parser.node.SelectNode;
 import br.com.anteros.persistence.sql.parser.node.SelectStatementNode;
 import br.com.anteros.persistence.sql.parser.node.TableNode;
@@ -93,6 +94,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 	 * @throws SQLQueryAnalyzerException
 	 */
 	public SQLQueryAnalyzerResult analyze(String sql, Class<?> resultClass) throws SQLQueryAnalyzerException {
+
 		this.sql = sql;
 		this.resultClass = resultClass;
 		/*
@@ -104,6 +106,10 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		 */
 		SQLQueryAnalyzerResult result = new SQLQueryAnalyzerResult(getParsedSQL(), aliases, expressionsFieldMapper, columnAliases,
 				allowApplyLockStrategy);
+
+		System.out.println("==================================================");
+		System.out.println(result.getParsedSql());
+		System.out.println("==================================================");
 		return result;
 	}
 
@@ -119,6 +125,8 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		SqlParser parser = new SqlParser(sql, new SqlFormatRule());
 		INode node = new Node("root");
 		parser.parse(node);
+
+		((Node) node).dump("");
 
 		allowApplyLockStrategy = false;
 		INode[] children = ParserUtil.findChildren(getFirstSelectStatement(node), ColumnNode.class.getSimpleName());
@@ -360,13 +368,13 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			 * Obtém as posições do Select dentro do SQL.
 			 */
 			int offsetSelect = select.getOffset();
-			int offSetSelectFinal = getLastPositionNode(select);
+			int offSetSelectFinal = select.getMaxOffset();
 			int offsetGroupBy = 0;
 			int offSetGroupByFinal = 0;
 
 			if (groupBy != null) {
 				offsetGroupBy = groupBy.getOffset();
-				offSetGroupByFinal = getLastPositionNode(groupBy);
+				offSetGroupByFinal = groupBy.getMaxOffset();
 			}
 			/*
 			 * Guarda o Select e o GroupBy antigo
@@ -411,7 +419,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			SQLQueryAnalyserAlias aliasResultClass = getAliasResultClass();
 
 			/*
-			 * Associa o pai a cada alias filho usado no Select montando assim um caminho para montar o objeto da classe
+			 * Associa o pai a cada alias filho usado no Select formando assim um caminho para montar o objeto da classe
 			 * de resultado.
 			 */
 			findAndSetOwnerToChildAlias(getFirstSelectStatement(node), aliasResultClass);
@@ -640,31 +648,6 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 				}
 			}
 		}
-	}
-
-	/**
-	 * Retorna a posição final (offset) do Select.
-	 * 
-	 * @param node
-	 *            Select
-	 * @return Posição final
-	 */
-	private int getLastPositionNode(INode node) {
-		INode lastChild = getLastChild(node);
-		if (lastChild != null) {
-			return (lastChild.getOffset() + lastChild.getLength());
-		}
-		return 0;
-	}
-
-	private INode getLastChild(INode node) {
-		INode result = node.getLastChild();
-		if (result != null)
-			result = getLastChild(result);
-		if (result == null)
-			return node;
-		return result;
-
 	}
 
 	/**

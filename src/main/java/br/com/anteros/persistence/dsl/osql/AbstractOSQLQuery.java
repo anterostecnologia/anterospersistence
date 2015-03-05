@@ -527,7 +527,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		return lockOptions;
 	}
 
-	public AbstractOSQLQuery<Q> addIndexHint(IndexHint... indexes) {
+	public AbstractOSQLQuery<Q> indexHint(IndexHint... indexes) {
 		String teste = "/*index(ORD PK)*/";
 		for (IndexHint index : indexes) {
 

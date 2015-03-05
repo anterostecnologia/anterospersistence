@@ -609,7 +609,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 				if (descriptionField == null)
 					throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " não foi encontrado na classe "
 							+ analyser.getClassByEntityPath(entityPath) + ". ");
-				if (stage == Stage.SELECT)
+				if ((stage == Stage.SELECT) && (!inOperation))
 					appendAllColumnsForPath(this.getCurrentIndex());
 				else
 					appendDescriptionField(path, entityPath, alias, descriptionField);

@@ -265,43 +265,43 @@ public class TokenUtil
     String str = "";
     switch (type) {
     case 0:
-      str = "開始SQL";
+      str = "BEGIN_SQL";
       break;
     case 60:
-      str = "コメント";
+      str = "COMMENT";
       break;
     case 90:
-      str = "空行";
+      str = "EMPTY_LINE";
       break;
     case 100:
-      str = "終了SQL";
+      str = "END_SQL";
       break;
     case 10:
-      str = "キーワード";
+      str = "KEYWORD";
       break;
     case 40:
-      str = "名称";
+      str = "NAME";
       break;
     case 70:
-      str = "改行";
+      str = "NEW_LINE";
       break;
     case 30:
-      str = "演算子";
+      str = "OPERATOR";
       break;
     case 80:
-      str = "SQL区切り文字";
+      str = "SQL_SEPARATE";
       break;
     case 20:
-      str = "記号";
+      str = "SYMBOL";
       break;
     case 50:
-      str = "値";
+      str = "VALUE";
       break;
     case -1:
-      str = "不明";
+      str = "UNKNOWN";
     }
 
-    return "『" + str + "』";
+    return "[" + str + "]";
   }
 
   public static String debugSubTypeString(int subType)
@@ -309,31 +309,31 @@ public class TokenUtil
     String str = "";
     switch (subType) {
     case 62:
-      str = "複数行";
+      str = "COMMENT_MULTI";
       break;
     case 61:
-      str = "一行";
+      str = "COMMENT_SINGLE";
       break;
     case 0:
-      str = "";
+      str = "DEFAULT";
       break;
     case 11:
-      str = "データ型";
+      str = "KEYWORD_DATATYPE";
       break;
     case 12:
-      str = "関数";
+      str = "KEYWORD_FUNCTION";
       break;
     case 53:
-      str = "バインド変数";
+      str = "VALUE_BIND";
       break;
     case 52:
-      str = "数値";
+      str = "VALUE_NUMERIC";
       break;
     case 51:
-      str = "文字値";
+      str = "VALUE_STRING";
     }
 
-    return "『" + str + "』";
+    return "[" + str + "]";
   }
 
   public static String debugString(String str)
@@ -343,7 +343,7 @@ public class TokenUtil
       debugString = debugString.replaceAll(NEW_LINES[i], 
         DEBUG_NEW_LINES[i]);
     }
-    return "『" + debugString + "』";
+    return "[" + debugString + "]";
   }
 
   public static boolean isNewLineChar(char c)
