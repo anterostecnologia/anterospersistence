@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,7 +40,7 @@ public class NamedParameterStatement {
 	private final PreparedStatement statement;
 
 	private final Map<?, ?> indexMap;
-	
+
 	private String substitutedSql;
 
 	public String getSubstitutedSql() {
