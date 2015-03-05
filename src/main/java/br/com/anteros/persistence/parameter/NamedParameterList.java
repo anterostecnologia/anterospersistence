@@ -21,7 +21,6 @@ import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
 import br.com.anteros.persistence.parameter.type.EnumeratedFormatSQL;
 import br.com.anteros.persistence.schema.definition.type.StoredParameterType;
 
-
 public class NamedParameterList extends ArrayList<NamedParameter> {
 
 	private static final long serialVersionUID = 1L;
@@ -30,7 +29,7 @@ public class NamedParameterList extends ArrayList<NamedParameter> {
 		this.add(new NamedParameter(name, value));
 		return this;
 	}
-	
+
 	public NamedParameterList addParameter(String name, Object value, TemporalType type) {
 		this.add(new NamedParameter(name, value, type));
 		return this;
@@ -41,16 +40,21 @@ public class NamedParameterList extends ArrayList<NamedParameter> {
 		return this;
 	}
 
-	public NamedParameterList addEnumeratedParameter(String name, Enum<?>[] value, EnumeratedFormatSQL format) {
-		this.add(new EnumeratedParameter(name, value, format));
+	public NamedParameterList addEnumeratedParameter(String name, EnumeratedFormatSQL format, Enum<?>... value) {
+		this.add(new EnumeratedParameter(name, format, value));
 		return this;
 	}
-	
+
+	public NamedParameterList addEnumeratedParameter(String name, Enum<?>... value) {
+		this.add(new EnumeratedParameter(name, value));
+		return this;
+	}
+
 	public NamedParameterList addOutputParameter(String name) {
 		this.add(new OutputNamedParameter(name, StoredParameterType.OUT));
 		return this;
 	}
-	
+
 	public NamedParameterList addInputOutputParameter(String name, Object value) {
 		OutputNamedParameter parameter = new OutputNamedParameter(name, StoredParameterType.OUT);
 		parameter.setValue(value);
@@ -63,7 +67,7 @@ public class NamedParameterList extends ArrayList<NamedParameter> {
 		result = (NamedParameter[]) this.toArray(result);
 		return result;
 	}
-	
+
 	public NamedParameter[] toArray() {
 		NamedParameter[] result = new NamedParameter[] {};
 		result = (NamedParameter[]) this.toArray(result);
