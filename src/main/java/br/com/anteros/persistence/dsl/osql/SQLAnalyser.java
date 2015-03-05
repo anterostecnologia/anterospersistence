@@ -237,12 +237,6 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		this.individualExpressions = extractIndividualColumnsExpression(metadata);
 		processExpressions(metadata, MAKE_ALIASES);
 		processExpressions(metadata, MAKE_COLUMNS);
-
-		// for (Integer index : columns.keySet()) {
-		// Set<SQLAnalyserColumn> list = columns.get(index);
-		// for (SQLAnalyserColumn col : list)
-		// System.out.println(index + "-> " + col);
-		// }
 	}
 
 	public static List<Expression<?>> extractIndividualColumnsExpression(QueryMetadata metadata) {

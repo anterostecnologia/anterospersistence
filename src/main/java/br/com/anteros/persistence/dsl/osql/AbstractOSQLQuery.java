@@ -162,7 +162,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@SuppressWarnings("unchecked")
 	public <RT> List<RT> list(Expression<RT> expr) {
 		try {
-			SQLQuery query = createQuery(expr);
+			validateExpressions(expr);
+			SQLQuery query = createQuery(hydrateOperations(expr));
 			return (List<RT>) getResultList(query);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -298,7 +299,6 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			analyser.process();
 			SQLSerializer serializer = serialize(forCount);
 			String sql = serializer.toString();
-			System.out.println(sql);
 			List<ResultClassDefinition> definitions = analyser.getResultClassDefinitions();
 			if (definitions.size() == 1) {
 				if (session.getEntityCacheManager().isEntity(definitions.get(0).getResultClass())) {
