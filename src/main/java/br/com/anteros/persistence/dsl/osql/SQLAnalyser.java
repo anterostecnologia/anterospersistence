@@ -26,6 +26,7 @@ import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
 import br.com.anteros.persistence.dsl.osql.types.Visitor;
 import br.com.anteros.persistence.dsl.osql.types.expr.BooleanExpression;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorColumnPath;
+import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorValuePath;
 import br.com.anteros.persistence.handler.ResultClassDefinition;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
@@ -311,7 +312,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	}
 
 	protected void makePossibleJoins(Path<?> expr) throws Exception {
-		if ((expr instanceof DiscriminatorColumnPath) || (expr.getMetadata().isRoot()))
+		if ((expr instanceof DiscriminatorValuePath) || (expr instanceof DiscriminatorColumnPath) || (expr.getMetadata().isRoot()))
 			return;
 		makePossibleJoins(expr.getMetadata().getParent());
 		if (expr instanceof EntityPath) {

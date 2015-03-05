@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql.types.path;
 
@@ -160,8 +157,8 @@ public class BeanPath<T> extends SimpleExpression<T> implements Path<T> {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	protected <A, Q extends SimpleExpression<? super A>> CollectionPath<A, Q> createCollection(String property,
-			Class<? super A> type, Class<? super Q> queryType, PathInits inits) {
+	protected <A, Q extends SimpleExpression<? super A>> CollectionPath<A, Q> createCollection(String property, Class<? super A> type,
+			Class<? super Q> queryType, PathInits inits) {
 		return add(new CollectionPath<A, Q>(type, (Class) queryType, forProperty(property), inits));
 	}
 
@@ -225,8 +222,8 @@ public class BeanPath<T> extends SimpleExpression<T> implements Path<T> {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	protected <A, E extends SimpleExpression<? super A>> ListPath<A, E> createList(String property,
-			Class<? super A> type, Class<? super E> queryType, PathInits inits) {
+	protected <A, E extends SimpleExpression<? super A>> ListPath<A, E> createList(String property, Class<? super A> type,
+			Class<? super E> queryType, PathInits inits) {
 		return add(new ListPath<A, E>(type, (Class) queryType, forProperty(property), inits));
 	}
 
@@ -243,8 +240,8 @@ public class BeanPath<T> extends SimpleExpression<T> implements Path<T> {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	protected <K, V, E extends SimpleExpression<? super V>> MapPath<K, V, E> createMap(String property,
-			Class<? super K> key, Class<? super V> value, Class<? super E> queryType) {
+	protected <K, V, E extends SimpleExpression<? super V>> MapPath<K, V, E> createMap(String property, Class<? super K> key, Class<? super V> value,
+			Class<? super E> queryType) {
 		return add(new MapPath<K, V, E>(key, value, (Class) queryType, forProperty(property)));
 	}
 
@@ -270,8 +267,8 @@ public class BeanPath<T> extends SimpleExpression<T> implements Path<T> {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	protected <A, E extends SimpleExpression<? super A>> SetPath<A, E> createSet(String property,
-			Class<? super A> type, Class<? super E> queryType, PathInits inits) {
+	protected <A, E extends SimpleExpression<? super A>> SetPath<A, E> createSet(String property, Class<? super A> type, Class<? super E> queryType,
+			PathInits inits) {
 		return add(new SetPath<A, E>(type, (Class) queryType, forProperty(property), inits));
 	}
 
@@ -333,8 +330,8 @@ public class BeanPath<T> extends SimpleExpression<T> implements Path<T> {
 	 * @return
 	 */
 	public <B extends T> BooleanExpression instanceOf(Class<B> type) {
-		return BooleanOperation.create(Ops.INSTANCE_OF, pathMixin, new DiscriminatorColumnPath(pathMixin,type),
-				ConstantImpl.create(type));
+		return BooleanOperation.create(Ops.INSTANCE_OF, pathMixin, new DiscriminatorColumnPath(pathMixin, type), new DiscriminatorValuePath(
+				pathMixin, type));
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

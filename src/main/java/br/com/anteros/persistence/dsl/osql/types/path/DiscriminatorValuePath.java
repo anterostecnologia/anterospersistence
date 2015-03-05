@@ -6,7 +6,7 @@ import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.PathMetadata;
 import br.com.anteros.persistence.dsl.osql.types.Visitor;
 
-public class DiscriminatorColumnPath implements Path<String> {
+public class DiscriminatorValuePath implements Path<String> {
 
 	private static final long serialVersionUID = 1L;
 	private Class<?> discriminatorClass;
@@ -16,7 +16,7 @@ public class DiscriminatorColumnPath implements Path<String> {
 		return discriminatorClass;
 	}
 
-	public DiscriminatorColumnPath(Path<?> root, Class<?> discriminatorClass) {
+	public DiscriminatorValuePath(Path<?> root, Class<?> discriminatorClass) {
 		this.discriminatorClass = discriminatorClass;
 		this.root = root;
 	}
