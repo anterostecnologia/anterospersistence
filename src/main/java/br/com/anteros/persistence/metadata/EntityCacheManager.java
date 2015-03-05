@@ -2339,5 +2339,16 @@ public class EntityCacheManager {
 		else
 			return allConcrete[0].getEntityClass();
 	}
+	
+	public String convertEnumToValue(Enum<?> en){
+		for (EntityCache entityCache : getEntities().values()){
+			for (DescriptionField descriptionField : entityCache.getDescriptionFields()){
+				if (descriptionField.getFieldClass()==en.getClass()){
+					return descriptionField.getEnumValue(en.toString());
+				}
+			}
+		}
+		return  en.toString();
+	}
 
 }
