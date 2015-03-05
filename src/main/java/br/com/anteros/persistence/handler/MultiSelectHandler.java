@@ -26,11 +26,13 @@ public class MultiSelectHandler implements ResultSetHandler {
 	private SQLSession session;
 	private String sql;
 	private String parsedSql;
+	private int numberOfColumnAlias;
 
-	public MultiSelectHandler(SQLSession session, String sql, List<ResultClassDefinition> definitions) throws SQLQueryAnalyzerException {
+	public MultiSelectHandler(SQLSession session, String sql, List<ResultClassDefinition> definitions, int numberOfColumnAlias) throws SQLQueryAnalyzerException {
 		this.definitions = definitions;
 		this.session = session;
 		this.sql = sql;
+		this.numberOfColumnAlias = numberOfColumnAlias;
 		this.parsedSql = parseSqlForResultClass();
 	}
 
@@ -82,7 +84,6 @@ public class MultiSelectHandler implements ResultSetHandler {
 							else
 								record.add(null);
 						} else {
-							System.out.println(rcd.getSimpleColumn());
 							Object value = resultSet.getObject(rcd.getSimpleColumn().getAliasColumnName());
 							record.add(ObjectUtils.convert(value, rcd.getResultClass()));
 						}

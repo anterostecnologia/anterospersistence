@@ -60,8 +60,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	private static Logger logger = LoggerProvider.getInstance().getLogger(AbstractOSQLQuery.class.getName());
 
-	private static final QueryFlag rowCountFlag = new QueryFlag(QueryFlag.Position.AFTER_PROJECTION,
-			", count(*) over() ");
+	private static final QueryFlag rowCountFlag = new QueryFlag(QueryFlag.Position.AFTER_PROJECTION, ", count(*) over() ");
 
 	private final SQLSession session;
 
@@ -77,7 +76,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	protected boolean lastJoinConditionAdded = false;
 
-	protected SQLAnalyser analyser;
+	protected SQLAnalyser analyser = new SQLAnalyser(this);
 
 	private LockOptions lockOptions = LockOptions.NONE;
 
@@ -92,9 +91,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	/**
-	 * If you use forUpdate() with a backend that uses page or row locks, rows
-	 * examined by the query are write-locked until the end of the current
-	 * transaction.
+	 * If you use forUpdate() with a backend that uses page or row locks, rows examined by the query are write-locked
+	 * until the end of the current transaction.
 	 *
 	 * Not supported for SQLite and CUBRID
 	 *
@@ -116,10 +114,6 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	protected SQLAnalyser getAnalyser() throws Exception {
-		if (analyser == null) {
-			analyser = new SQLAnalyser(this);
-			analyser.process();
-		}
 		return analyser;
 	}
 
@@ -165,7 +159,6 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@SuppressWarnings("unchecked")
 	public <RT> List<RT> list(Expression<RT> expr) {
 		try {
-			//hydrateNumberOperations(expr);
 			SQLQuery query = createQuery(expr);
 			return (List<RT>) getResultList(query);
 		} catch (Exception e) {
@@ -209,8 +202,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@Override
 	public <RT> RT uniqueResult(Expression<RT> expr) {
 		try {
-			//hydrateNumberOperations(expr);
-			SQLQuery query = createQuery(expr);
+			SQLQuery query = createQuery(hydrateOperations(expr));
 			return (RT) getSingleResult(query);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -219,9 +211,14 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	@Override
 	public Tuple uniqueResult(Expression<?>... args) {
-		//hydrateNumberOperations(args);
-		validateExpressions(args);
-		return uniqueResult(queryMixin.createProjection(args));
+		try {
+			args = hydrateOperations(args);
+			validateExpressions(args);
+			return uniqueResult(queryMixin.createProjection(args));
+		} catch (Exception e) {
+			throw new OSQLQueryException(e);
+		}
+
 	}
 
 	private Object getSingleResult(SQLQuery query) throws Exception {
@@ -242,11 +239,32 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	@Override
 	public List<Tuple> list(Expression<?>... args) {
-		//hydrateNumberOperations(args);
-		validateExpressions(args);
-		return list(queryMixin.createProjection(args));
+		try {
+			Expression<?> newArgs[] = hydrateOperations(args);
+			validateExpressions(newArgs);
+			return list(queryMixin.createProjection(newArgs));
+		} catch (Exception e) {
+			throw new OSQLQueryException(e);
+		}
 	}
 
+	private Expression<?> hydrateNumberOperation(Expression<?> expr) throws Exception {
+		if (expr instanceof NumberOperation<?>) {
+			if (((NumberOperation<?>) expr).getOperator() != Ops.ALIAS) {
+				return ((NumberOperation<?>) expr).as(getAnalyser().makeNextAliasName("O_P_R"));
+			}
+		}
+		return expr;
+	}
+
+	private Expression<?>[] hydrateOperations(Expression<?>... args) throws Exception {
+		int i = 0;
+		for (Expression<?> expr : args) {
+			args[i] = hydrateNumberOperation(expr);
+			i++;
+		}
+		return args;
+	}
 
 	public SQLQuery createQuery(Expression<?> expr) throws Exception {
 		queryMixin.addProjection(expr);
@@ -274,6 +292,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	private SQLQuery createQuery(QueryModifiers modifiers, boolean forCount) {
 		SQLQuery query = null;
 		try {
+			analyser.process();
 			SQLSerializer serializer = serialize(forCount);
 			String sql = serializer.toString();
 			System.out.println(sql);
@@ -284,14 +303,14 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 				} else {
 					query = session.createQuery(sql);
 					SQLAnalyserColumn simpleColumn = definitions.get(0).getSimpleColumn();
-					String aliasColumnName = (StringUtils.isEmpty(simpleColumn.getAliasColumnName()) ? simpleColumn
-							.getColumnName() : simpleColumn.getAliasColumnName());
-					query.resultSetHandler(new SingleValueHandler(definitions.get(0).getResultClass(), simpleColumn
-							.getDescriptionField(), aliasColumnName));
+					String aliasColumnName = (StringUtils.isEmpty(simpleColumn.getAliasColumnName()) ? simpleColumn.getColumnName() : simpleColumn
+							.getAliasColumnName());
+					query.resultSetHandler(new SingleValueHandler(definitions.get(0).getResultClass(), simpleColumn.getDescriptionField(),
+							aliasColumnName));
 				}
 			} else {
 				query = session.createQuery(sql);
-				query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions()));
+				query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions(), analyser.getNextAliasColumnName()));
 			}
 			query.setLockOptions(lockOptions);
 			query.setParameters(getParameters());
@@ -305,8 +324,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 		FactoryExpression<?> wrapped = projection.size() > 1 ? FactoryExpressionUtils.wrap(projection) : null;
 
-		if (!forCount
-				&& ((projection.size() == 1 && projection.get(0) instanceof FactoryExpression) || wrapped != null)) {
+		if (!forCount && ((projection.size() == 1 && projection.get(0) instanceof FactoryExpression) || wrapped != null)) {
 			this.projection = (FactoryExpression<?>) projection.get(0);
 			if (wrapped != null) {
 				this.projection = wrapped;
@@ -344,9 +362,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	/*
-	 * Sobrescrevendo métodos para controlar quando não foi adicionado condição
-	 * para o Join. Desta forma assume que o join será feito com a primeira
-	 * tabela do From e adiciona-se o Join automagicamente.
+	 * Sobrescrevendo métodos para controlar quando não foi adicionado condição para o Join. Desta forma assume que o
+	 * join será feito com a primeira tabela do From e adiciona-se o Join automagicamente.
 	 */
 	@Override
 	public Q groupBy(Expression<?>... o) {

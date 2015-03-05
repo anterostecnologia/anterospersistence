@@ -82,7 +82,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		this.databaseDialect = databaseDialect;
 		this.ignoreNotUsedAliasTable = ignoreNotUsedAliasTable;
 	}
-
+	
 	/**
 	 * Analisa um SQL validando se sua estrutura permite montar objetos para classe de resultado. Monta uma lista de
 	 * expressões que serão utilizadas na montagem dos objetos pelo EntityHandler.
@@ -108,9 +108,6 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		SQLQueryAnalyzerResult result = new SQLQueryAnalyzerResult(getParsedSQL(), aliases, expressionsFieldMapper, columnAliases,
 				allowApplyLockStrategy);
 
-		System.out.println("==================================================");
-		System.out.println(result.getParsedSql());
-		System.out.println("==================================================");
 		return result;
 	}
 
@@ -126,8 +123,6 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		SqlParser parser = new SqlParser(sql, new SqlFormatRule());
 		INode node = new Node("root");
 		parser.parse(node);
-
-		((Node) node).dump("");
 
 		allowApplyLockStrategy = false;
 		INode[] children = ParserUtil.findChildren(getFirstSelectStatement(node), ColumnNode.class.getSimpleName());

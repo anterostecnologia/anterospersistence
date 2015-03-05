@@ -163,7 +163,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		if (descriptionField.isSimple()) {
 			String aliasColumnName = "";
 			if (makeAlias)
-				aliasColumnName = makeNextAliasName(alias, descriptionField.getSimpleColumn().getColumnName());
+				aliasColumnName = makeNextAliasName(alias);
 			lastColumnAdded = new SQLAnalyserColumn(alias, descriptionField.getSimpleColumn().getColumnName(), aliasColumnName, descriptionField);
 			columnsForPath.add(lastColumnAdded);
 			return true;
@@ -171,7 +171,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
 				String aliasColumnName = "";
 				if (makeAlias)
-					aliasColumnName = makeNextAliasName(alias, column.getColumnName());
+					aliasColumnName = makeNextAliasName(alias);
 				lastColumnAdded = new SQLAnalyserColumn(alias, column.getColumnName(), aliasColumnName, descriptionField);
 				columnsForPath.add(lastColumnAdded);
 			}
@@ -359,7 +359,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		return result;
 	}
 
-	private String makeNextAliasName(String alias, String columnName) {
+	public String makeNextAliasName(String alias) {
 		nextAliasColumnName++;
 		return adpatAliasColumnName(alias) + "_COL_" + String.valueOf(nextAliasColumnName);
 	}
@@ -441,5 +441,9 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 	public boolean isNamedParameter() {
 		return (namedParameter == null ? false : namedParameter);
+	}
+
+	public int getNextAliasColumnName() {
+		return nextAliasColumnName;
 	}
 }
