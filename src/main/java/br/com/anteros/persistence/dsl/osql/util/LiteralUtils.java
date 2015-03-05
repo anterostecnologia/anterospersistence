@@ -34,21 +34,23 @@ public class LiteralUtils {
 
 	public static String asLiteral(Object value) {
 		if (value instanceof Calendar) {
-			return "'" +dateTimeFormatter.print(((Calendar) value).getTimeInMillis())+"'";
+			return "'" + dateTimeFormatter.print(((Calendar) value).getTimeInMillis()) + "'";
 		} else if (value instanceof DateTime) {
-			return "'" +dateTimeFormatter.print((DateTime) value)+"'";
+			return "'" + dateTimeFormatter.print((DateTime) value) + "'";
 		} else if (value instanceof Date) {
-			return "'" +dateFormatter.print(((Date) value).getTime())+"'";
+			return "'" + dateFormatter.print(((Date) value).getTime()) + "'";
 		} else if (value instanceof java.sql.Date) {
-			return "'" +dateFormatter.print(((java.sql.Date) value).getTime())+"'";
+			return "'" + dateFormatter.print(((java.sql.Date) value).getTime()) + "'";
 		} else if (value instanceof InputStream) {
 			return value.toString();
 		} else if (value instanceof Timestamp) {
-			return "(timestamp '" + dateTimeFormatter.print(((Timestamp) value).getTime())+"')";
+			return "(timestamp '" + dateTimeFormatter.print(((Timestamp) value).getTime()) + "')";
 		} else if (value instanceof Time) {
-			return "(time '"+timeFormatter.print(((Time) value).getTime())+"')";
+			return "(time '" + timeFormatter.print(((Time) value).getTime()) + "')";
 		} else if (value instanceof String) {
 			return "'" + escapeLiteral(value.toString()) + "'";
+		} else if (value instanceof Enum<?>) {
+			return "'" + value.toString() + "'";
 		}
 		return value.toString();
 	}
