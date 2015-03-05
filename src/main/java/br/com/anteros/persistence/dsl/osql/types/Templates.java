@@ -91,7 +91,7 @@ public class Templates {
         // various
         add(Ops.EQ, "{0} = {1}", 18);
         add(Ops.EQ_IGNORE_CASE, "eqIc({0},{1})", 18);
-        add(Ops.INSTANCE_OF, "{0}.class = {1}");
+        add(Ops.INSTANCE_OF, "{0}.{1} = {2}");
         add(Ops.NE, "{0} != {1}", 25);
         add(Ops.IN, "{0} in {1}", 27);
         add(Ops.NOT_IN, "{0} not in {1}", 27);

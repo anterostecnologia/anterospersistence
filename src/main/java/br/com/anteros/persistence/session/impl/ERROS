@@ -1,2 +1,0 @@
-- Quando usa SUM sem ALIAS está colocando o apelido da coluna dentro do parênteses so SUM: SUM(P.QT_TOTAL AS qtdePrevista)
-- Quando coloca uma Collection no método list não consegue criar a query, no QueryDsl funciona. (Obs: funciona apenas quando tem uma Collection, caso tenha uma collection e mais um outro atributo não funciona também)

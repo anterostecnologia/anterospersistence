@@ -46,6 +46,7 @@ import br.com.anteros.persistence.dsl.osql.types.Template.Element;
 import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
 import br.com.anteros.persistence.dsl.osql.types.TemplateFactory;
 import br.com.anteros.persistence.dsl.osql.types.path.CollectionPathBase;
+import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorColumnPath;
 import br.com.anteros.persistence.dsl.osql.types.path.EntityPathBase;
 import br.com.anteros.persistence.dsl.osql.util.LiteralUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
@@ -568,7 +569,17 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	@Override
 	public Void visit(Path<?> path, Void context) {
-		if ((path.getMetadata().getPathType() == PathType.VARIABLE) && (path instanceof EntityPath<?>)) {
+		if (path instanceof DiscriminatorColumnPath) {
+			EntityCache sourceEntityCache = entityCacheManager.getEntityCache(((DiscriminatorColumnPath)path).getDiscriminatorClass());
+			if (sourceEntityCache == null)
+				throw new SQLSerializerException("A classe " + ((DiscriminatorColumnPath)path).getDiscriminatorClass()
+						+ " não foi encontrada na lista de entidades gerenciadas.");
+			
+			if (sourceEntityCache.getDiscriminatorColumn()==null)
+				throw new SQLSerializerException("A classe " + ((DiscriminatorColumnPath)path).getDiscriminatorClass()
+						+ " não possuí um discriminator column.");
+			append(sourceEntityCache.getDiscriminatorColumn().getColumnName());
+		} else if ((path.getMetadata().getPathType() == PathType.VARIABLE) && (path instanceof EntityPath<?>)) {
 			if (inOperation) {
 				EntityCache sourceEntityCache = entityCacheManager.getEntityCache(analyser
 						.getClassByEntityPath((EntityPath<?>) path));
@@ -715,6 +726,9 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 	@Override
 	protected void visitOperation(Class<?> type, Operator<?> operator, List<? extends Expression<?>> args) {
 		try {
+			System.out.println("=============maiko===============");
+			System.out.println("tipo = " + type + "  Operator = " + operator + "  expression = " + args);
+			System.out.println("=============maiko==============");
 			inOperation = true;
 			if (args.size() == 2 && !useLiterals && args.get(0) instanceof Path<?>
 					&& args.get(1) instanceof Constant<?> && operator != Ops.NUMCAST) {
