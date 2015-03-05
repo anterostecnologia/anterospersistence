@@ -16,6 +16,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -34,9 +35,12 @@ import br.com.anteros.persistence.dsl.osql.types.ParamExpression;
 import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
+import br.com.anteros.persistence.dsl.osql.types.expr.params.DateParam;
+import br.com.anteros.persistence.dsl.osql.types.expr.params.DateTimeParam;
 import br.com.anteros.persistence.handler.MultiSelectHandler;
 import br.com.anteros.persistence.handler.ResultClassDefinition;
 import br.com.anteros.persistence.handler.SingleValueHandler;
+import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.lock.LockOptions;
@@ -54,7 +58,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	private static Logger logger = LoggerProvider.getInstance().getLogger(AbstractOSQLQuery.class.getName());
 
-	private static final QueryFlag rowCountFlag = new QueryFlag(QueryFlag.Position.AFTER_PROJECTION, ", count(*) over() ");
+	private static final QueryFlag rowCountFlag = new QueryFlag(QueryFlag.Position.AFTER_PROJECTION,
+			", count(*) over() ");
 
 	private final SQLSession session;
 
@@ -85,8 +90,9 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	/**
-	 * If you use forUpdate() with a backend that uses page or row locks, rows examined by the query are write-locked
-	 * until the end of the current transaction.
+	 * If you use forUpdate() with a backend that uses page or row locks, rows
+	 * examined by the query are write-locked until the end of the current
+	 * transaction.
 	 *
 	 * Not supported for SQLite and CUBRID
 	 *
@@ -271,10 +277,10 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 				} else {
 					query = session.createQuery(sql);
 					SQLAnalyserColumn simpleColumn = definitions.get(0).getSimpleColumn();
-					String aliasColumnName = (StringUtils.isEmpty(simpleColumn.getAliasColumnName()) ? simpleColumn.getColumnName() : simpleColumn
-							.getAliasColumnName());
-					query.resultSetHandler(new SingleValueHandler(definitions.get(0).getResultClass(), simpleColumn.getDescriptionField(),
-							aliasColumnName));
+					String aliasColumnName = (StringUtils.isEmpty(simpleColumn.getAliasColumnName()) ? simpleColumn
+							.getColumnName() : simpleColumn.getAliasColumnName());
+					query.resultSetHandler(new SingleValueHandler(definitions.get(0).getResultClass(), simpleColumn
+							.getDescriptionField(), aliasColumnName));
 				}
 			} else {
 				query = session.createQuery(sql);
@@ -292,7 +298,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 		FactoryExpression<?> wrapped = projection.size() > 1 ? FactoryExpressionUtils.wrap(projection) : null;
 
-		if (!forCount && ((projection.size() == 1 && projection.get(0) instanceof FactoryExpression) || wrapped != null)) {
+		if (!forCount
+				&& ((projection.size() == 1 && projection.get(0) instanceof FactoryExpression) || wrapped != null)) {
 			this.projection = (FactoryExpression<?>) projection.get(0);
 			if (wrapped != null) {
 				this.projection = wrapped;
@@ -309,7 +316,12 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		Map<ParamExpression<?>, Object> params = getMetadata().getParams();
 		if (analyser.isNamedParameter()) {
 			for (ParamExpression<?> param : params.keySet()) {
-				result.add(new NamedParameter(param.getName(), params.get(param)));
+				if (param instanceof DateParam)
+					result.add(new NamedParameter(param.getName(), params.get(param), TemporalType.DATE));
+				else if ((param instanceof DateTimeParam) || (param.getType() == Date.class))
+					result.add(new NamedParameter(param.getName(), params.get(param), TemporalType.DATE_TIME));
+				else
+					result.add(new NamedParameter(param.getName(), params.get(param)));
 			}
 		} else {
 			for (ParamExpression<?> param : params.keySet()) {
@@ -325,8 +337,9 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	/*
-	 * Sobrescrevendo métodos para controlar quando não foi adicionado condição para o Join. Desta forma assume que o
-	 * join será feito com a primeira tabela do From e adiciona-se o Join automagicamente.
+	 * Sobrescrevendo métodos para controlar quando não foi adicionado condição
+	 * para o Join. Desta forma assume que o join será feito com a primeira
+	 * tabela do From e adiciona-se o Join automagicamente.
 	 */
 	@Override
 	public Q groupBy(Expression<?>... o) {
