@@ -154,6 +154,7 @@ public class Node implements INode {
 
 	public void dump(String prefix) {
 		LOG.info(toString(prefix));
+		System.out.println(toString(prefix));
 		if (children != null) {
 			for (int i = 0; i < children.size(); ++i) {
 				Node n = (Node) children.get(i);
@@ -370,5 +371,31 @@ public class Node implements INode {
 
 	public final int getScope() {
 		return scope;
+	}
+	
+	public int getMaxOffset() {
+		int result = 0;
+		Node lastChild = (Node) this.getLastChild();
+
+		if (lastChild != null) {
+			int offSetLastChild = lastChild.getOffset();
+			int lengthLastChild = lastChild.getLength();
+
+			if (lastChild instanceof ParenthesesNode) {
+				offSetLastChild = ((ParenthesesNode) lastChild).getEndOffset();
+			}
+			result = lastChild.getMaxOffset();
+			result = Math.max(result, offSetLastChild + lengthLastChild);
+		} else {
+			int offSetNode = this.getOffset();
+			int lengthNode = this.getLength();
+
+			if (this instanceof ParenthesesNode) {
+				offSetNode = ((ParenthesesNode) this).getEndOffset();
+			}
+			result = offSetNode + lengthNode;
+		}
+		return result;
+
 	}
 }

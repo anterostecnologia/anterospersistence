@@ -82,6 +82,7 @@ public class MultiSelectHandler implements ResultSetHandler {
 							else
 								record.add(null);
 						} else {
+							System.out.println(rcd.getSimpleColumn());
 							Object value = resultSet.getObject(rcd.getSimpleColumn().getAliasColumnName());
 							record.add(ObjectUtils.convert(value, rcd.getResultClass()));
 						}

@@ -41,10 +41,22 @@ public interface EntityPath<T> extends Path<T> {
     List<Path<?>> getCustomProjection();
     
     /**
+     * Retorna lista de Path's para exclusão da projeção.
+     * @return
+     */
+    List<Path<?>> getExcludeProjection();
+    
+    /**
      * Atribui uma lista de Path's para projeção permitindo assim criar objetos parciais.
      * @param args
      */
     EntityPath<T> customProjection(Path<?>... args);
+    
+    /**
+     * Atribui uma lista de Path's para exclusão da projeção permitindo assim omitir campos e assim criar objetos parciais.
+     * @param args
+     */
+    EntityPath<T> excludeProjection(Path<?>... args);
     
 
 }

@@ -38,6 +38,7 @@ public class EntityPathBase<T> extends BeanPath<T> implements EntityPath<T> {
 	private final Map<Path<?>, ColumnMetadata> columnMetadata = Maps.newLinkedHashMap();
 
 	private final List<Path<?>> customProjectionList = new ArrayList<Path<?>>();
+	private final List<Path<?>> excludeProjectionList = new ArrayList<Path<?>>();
 
 	public EntityPathBase(Class<? extends T> type, String variable) {
 		super(type, variable);
@@ -71,11 +72,24 @@ public class EntityPathBase<T> extends BeanPath<T> implements EntityPath<T> {
 	public List<Path<?>> getCustomProjection() {
 		return customProjectionList;
 	}
+	
+	@Override
+	public List<Path<?>> getExcludeProjection() {
+		return excludeProjectionList;
+	}
 
 	@Override
 	public EntityPath<T> customProjection(Path<?>... args) {
 		for (Path<?> arg : args) {
 			customProjectionList.add(arg);
+		}
+		return this;
+	}
+	
+	@Override
+	public EntityPath<T> excludeProjection(Path<?>... args) {
+		for (Path<?> arg : args) {
+			excludeProjectionList.add(arg);
 		}
 		return this;
 	}

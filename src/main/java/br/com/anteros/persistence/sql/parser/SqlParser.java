@@ -1,23 +1,18 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 
 /*******************************************************************************
- * Copyright (c) 2007 - 2009 ZIGEN
- * Eclipse Public License - v 1.0
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2007 - 2009 ZIGEN Eclipse Public License - v 1.0 http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
 package br.com.anteros.persistence.sql.parser;
@@ -38,6 +33,7 @@ import br.com.anteros.persistence.sql.parser.node.CaseCauseNode;
 import br.com.anteros.persistence.sql.parser.node.CaseNode;
 import br.com.anteros.persistence.sql.parser.node.ColumnNode;
 import br.com.anteros.persistence.sql.parser.node.CommaNode;
+import br.com.anteros.persistence.sql.parser.node.CommentNode;
 import br.com.anteros.persistence.sql.parser.node.CreateStatementNode;
 import br.com.anteros.persistence.sql.parser.node.DeleteStatementNode;
 import br.com.anteros.persistence.sql.parser.node.DropStatementNode;
@@ -289,13 +285,12 @@ public class SqlParser implements ISqlParser {
 					parseCase(cc);
 					break;
 
-				} else if ("then".equalsIgnoreCase(getToken()) || "when".equalsIgnoreCase(getToken())
-						|| "else".equalsIgnoreCase(getToken()) || "end".equalsIgnoreCase(getToken())) {
+				} else if ("then".equalsIgnoreCase(getToken()) || "when".equalsIgnoreCase(getToken()) || "else".equalsIgnoreCase(getToken())
+						|| "end".equalsIgnoreCase(getToken())) {
 					if (node instanceof CaseCauseNode) {
 						tokenizer.pushBack();
 						parseCase((CaseCauseNode) node);
-					} else if (node instanceof CaseNode || node instanceof WhenNode || node instanceof ThenNode
-							|| node instanceof ElseNode) {
+					} else if (node instanceof CaseNode || node instanceof WhenNode || node instanceof ThenNode || node instanceof ElseNode) {
 						tokenizer.pushBack();
 						parseCase((CaseCauseNode) node.getParent());
 						return;
@@ -389,8 +384,7 @@ public class SqlParser implements ISqlParser {
 							func.setAliasName(getToken(), offset, length);
 							parse(func.getParent());
 						} else {
-							if ("OVER".equalsIgnoreCase(getToken())
-									&& "ROW_NUMBER".equalsIgnoreCase(lastNode.getName())) {
+							if ("OVER".equalsIgnoreCase(getToken()) && "ROW_NUMBER".equalsIgnoreCase(lastNode.getName())) {
 								node.addChild(new FunctionNode(getToken(), offset, length, scope));
 							} else {
 								((AliasNode) lastNode).setAliasName(getToken(), offset, length);
@@ -546,6 +540,11 @@ public class SqlParser implements ISqlParser {
 					ColumnNode col = new ColumnNode(getToken(), offset, length, scope);
 					node.addChild(col);
 				}
+				break;
+			case TokenUtil.TYPE_COMMENT:
+				String sComment = getToken();
+				CommentNode comment = new CommentNode(sComment, offset, length, scope);
+				node.addChild(comment);
 				break;
 			case TokenUtil.TYPE_KEYWORD:
 				if ("select".equalsIgnoreCase(getToken())) {
@@ -1047,7 +1046,7 @@ public class SqlParser implements ISqlParser {
 			case TokenUtil.TYPE_VALUE:
 				node.addChild(new ValueNode(getToken(), offset, length, scope));
 				break;
-				
+
 			case TokenUtil.TYPE_NAME:
 				INode lastNode = node.getLastChild();
 				if (lastNode instanceof AliasNode) {
@@ -1688,8 +1687,7 @@ public class SqlParser implements ISqlParser {
 				OperatorNode ope = new OperatorNode(getToken(), offset, length, scope);
 
 				INode lastNode = node.getLastChild();
-				if (lastNode instanceof CaseNode || lastNode instanceof WhenNode || lastNode instanceof ThenNode
-						|| lastNode instanceof ElseNode) {
+				if (lastNode instanceof CaseNode || lastNode instanceof WhenNode || lastNode instanceof ThenNode || lastNode instanceof ElseNode) {
 					tokenizer.pushBack();
 					parseExpression(lastNode);
 					return;
@@ -1706,8 +1704,8 @@ public class SqlParser implements ISqlParser {
 
 					parseExpression(changeNode(p.getFunction(), ope));
 
-				} else if (lastNode instanceof ColumnNode || lastNode instanceof ValueNode
-						|| lastNode instanceof FunctionNode || lastNode instanceof ParenthesesNode) {
+				} else if (lastNode instanceof ColumnNode || lastNode instanceof ValueNode || lastNode instanceof FunctionNode
+						|| lastNode instanceof ParenthesesNode) {
 
 					if (node.getParent() instanceof ExpressionNode) {
 
