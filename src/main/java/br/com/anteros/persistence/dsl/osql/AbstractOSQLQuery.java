@@ -39,11 +39,14 @@ import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
 import br.com.anteros.persistence.dsl.osql.types.expr.NumberOperation;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.DateParam;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.DateTimeParam;
+import br.com.anteros.persistence.dsl.osql.types.expr.params.EnumParam;
 import br.com.anteros.persistence.handler.MultiSelectHandler;
 import br.com.anteros.persistence.handler.ResultClassDefinition;
 import br.com.anteros.persistence.handler.SingleValueHandler;
 import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
+import br.com.anteros.persistence.parameter.EnumeratedParameter;
 import br.com.anteros.persistence.parameter.NamedParameter;
+import br.com.anteros.persistence.parameter.type.EnumeratedFormatSQL;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.query.SQLQuery;
@@ -345,6 +348,13 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 					result.add(new NamedParameter(param.getName(), params.get(param), TemporalType.DATE));
 				else if ((param instanceof DateTimeParam) || (param.getType() == Date.class))
 					result.add(new NamedParameter(param.getName(), params.get(param), TemporalType.DATE_TIME));
+				else if (param.getType() == Enum.class)
+					if (param instanceof EnumParam)
+						result.add(new EnumeratedParameter(param.getName(), ((EnumParam) param).getFormat(),
+								(Enum) params.get(param)));
+					else
+						result.add(new EnumeratedParameter(param.getName(), EnumeratedFormatSQL.STRING, (Enum) params
+								.get(param)));
 				else
 					result.add(new NamedParameter(param.getName(), params.get(param)));
 			}
@@ -355,7 +365,6 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		}
 		return (result.size() == 0 ? null : result);
 	}
-
 	public Class<?> getClassByEntityPath(EntityPath<?> path) {
 		Type mySuperclass = path.getClass().getGenericSuperclass();
 		return (Class<?>) ((ParameterizedType) mySuperclass).getActualTypeArguments()[0];

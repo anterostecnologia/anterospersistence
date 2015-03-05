@@ -33,7 +33,7 @@ public class EnumeratedParameter extends SubstitutedParameter {
 
 	public EnumeratedParameter(String name, Enum<?>... value) {
 		super(name, value);
-		this.format = EnumeratedFormatSQL.ALPHA_NUMERIC;
+		this.format = EnumeratedFormatSQL.STRING;
 	}
 
 	@Override
@@ -61,7 +61,7 @@ public class EnumeratedParameter extends SubstitutedParameter {
 			} else
 				newValue = ev.toString();
 
-			if (format.equals(EnumeratedFormatSQL.NUMERIC))
+			if (format.equals(EnumeratedFormatSQL.ORDINAL))
 				result += newValue;
 			else
 				result += "'" + newValue + "'";

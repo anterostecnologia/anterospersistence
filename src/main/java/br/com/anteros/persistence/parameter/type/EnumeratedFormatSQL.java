@@ -17,6 +17,6 @@ package br.com.anteros.persistence.parameter.type;
 
 public enum EnumeratedFormatSQL {
 
-	NUMERIC,
-	ALPHA_NUMERIC;
+	ORDINAL,
+	STRING;
 }
