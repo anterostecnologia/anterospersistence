@@ -23,7 +23,7 @@ import java.util.List;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
-import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.dsl.osql.QueryFlag.Position;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.H2Templates;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
@@ -280,13 +280,24 @@ public class H2Dialect extends DatabaseDialect {
 		LimitClauseResult result;
 		if (namedParameter) {
 			result = new LimitClauseResult(new StringBuilder(sql.length() + 20).append(sql)
-					.append(offset > 0 ? " LIMIT :PLIMIT OFFSET :POFFSET " : " LIMIT :PLIMIT").toString(), "PLIMIT", (offset > 0 ? "POFFSET" : ""),limit, offset);
+					.append(offset > 0 ? " LIMIT :PLIMIT OFFSET :POFFSET " : " LIMIT :PLIMIT").toString(), "PLIMIT", (offset > 0 ? "POFFSET" : ""),
+					limit, offset);
 		} else {
 			result = new LimitClauseResult(new StringBuilder(sql.length() + 20).append(sql).append(offset > 0 ? " LIMIT ? OFFSET ?" : " LIMIT ?")
 					.toString(), (offset > 0 ? LimitClauseResult.PREVIOUS_PARAMETER : LimitClauseResult.LAST_PARAMETER),
-					(offset > 0 ? LimitClauseResult.LAST_PARAMETER : LimitClauseResult.NONE_PARAMETER),limit, offset);
+					(offset > 0 ? LimitClauseResult.LAST_PARAMETER : LimitClauseResult.NONE_PARAMETER), limit, offset);
 		}
 		return result;
+	}
+
+	@Override
+	public String getIndexHint(String indexName, String alias) {
+		return "";
+	}
+
+	@Override
+	public Position getIndexHintPosition() {
+		return Position.AFTER_SELECT;
 	}
 
 }

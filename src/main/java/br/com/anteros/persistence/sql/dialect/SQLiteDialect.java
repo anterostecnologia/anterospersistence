@@ -17,6 +17,7 @@ import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import br.com.anteros.persistence.dsl.osql.QueryFlag.Position;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.SQLiteTemplates;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
@@ -220,5 +221,15 @@ public class SQLiteDialect extends DatabaseDialect {
 					(offset > 0 ? LimitClauseResult.LAST_PARAMETER : LimitClauseResult.NONE_PARAMETER),limit, offset);
 		}
 		return result;
+	}
+
+	@Override
+	public String getIndexHint(String indexName, String alias) {
+		return "";
+	}
+
+	@Override
+	public Position getIndexHintPosition() {
+		return Position.AFTER_SELECT;
 	}
 }

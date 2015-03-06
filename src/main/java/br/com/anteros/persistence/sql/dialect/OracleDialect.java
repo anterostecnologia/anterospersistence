@@ -35,6 +35,7 @@ import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.IOUtils;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.dsl.osql.QueryFlag.Position;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.OracleTemplates;
 import br.com.anteros.persistence.schema.definition.ColumnSchema;
@@ -573,7 +574,6 @@ public class OracleDialect extends DatabaseDialect {
 			sql = sql.substring(0, sql.length() - 11);
 			isForUpdate = true;
 		}
-		
 
 		StringBuilder select = new StringBuilder(sql.length() + 100);
 		if (offset > 0) {
@@ -599,15 +599,26 @@ public class OracleDialect extends DatabaseDialect {
 		if (isForUpdate) {
 			select.append(" FOR UPDATE");
 		}
-		
+
 		if (namedParameter) {
-			result = new LimitClauseResult(select.toString(), "PLIMIT", (offset > 0 ? "POFFSET" : ""),limit, offset);
+			result = new LimitClauseResult(select.toString(), "PLIMIT", (offset > 0 ? "POFFSET" : ""), limit, offset);
 		} else {
 			result = new LimitClauseResult(select.toString(), (offset > 0 ? LimitClauseResult.PREVIOUS_PARAMETER : LimitClauseResult.LAST_PARAMETER),
-					(offset > 0 ? LimitClauseResult.LAST_PARAMETER : LimitClauseResult.NONE_PARAMETER),limit, offset);
+					(offset > 0 ? LimitClauseResult.LAST_PARAMETER : LimitClauseResult.NONE_PARAMETER), limit, offset);
 		}
 
 		return result;
+	}
+
+	@Override
+	public String getIndexHint(String indexName, String alias) {
+		StringBuilder sb = new StringBuilder();
+		return sb.append("/*+index(").append(indexName).append(" ").append(alias).append(")*/").toString();
+	}
+
+	@Override
+	public Position getIndexHintPosition() {
+		return Position.AFTER_SELECT;
 	}
 
 }

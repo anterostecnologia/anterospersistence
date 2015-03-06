@@ -21,7 +21,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.dsl.osql.QueryFlag.Position;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.FirebirdTemplates;
 import br.com.anteros.persistence.schema.definition.SequenceGeneratorSchema;
@@ -326,5 +326,15 @@ public class FirebirdDialect extends DatabaseDialect {
 
 	public boolean bindLimitParametersInReverseOrder() {
 		return true;
+	}
+
+	@Override
+	public String getIndexHint(String indexName, String alias) {
+		return "";
+	}
+
+	@Override
+	public Position getIndexHintPosition() {
+		return Position.AFTER_SELECT;
 	}
 }

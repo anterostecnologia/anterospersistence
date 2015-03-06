@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.sql.dialect;
 
@@ -38,6 +35,7 @@ import java.util.Set;
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.dsl.osql.QueryFlag;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.parameter.NamedParameter;
@@ -1191,8 +1189,8 @@ public abstract class DatabaseDialect {
 	public boolean supportsIdentity() {
 		return false;
 	}
-	
-	public boolean supportsLock(){
+
+	public boolean supportsLock() {
 		return true;
 	}
 
@@ -1354,7 +1352,7 @@ public abstract class DatabaseDialect {
 	public String getIdentitySelectString() {
 		return "";
 	}
-	
+
 	public abstract String getSetLockTimeoutString(int secondsTimeOut);
 
 	public abstract String applyLock(String sql, LockOptions lockOptions);
@@ -1639,22 +1637,21 @@ public abstract class DatabaseDialect {
 	public abstract SQLTemplates getTemplateSQL();
 
 	public abstract SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception;
-	
-	
+
 	protected int extractErrorCode(SQLException sqlException) {
 		int errorCode = sqlException.getErrorCode();
 		SQLException nested = sqlException.getNextException();
-		while ( errorCode == 0 && nested != null ) {
+		while (errorCode == 0 && nested != null) {
 			errorCode = nested.getErrorCode();
 			nested = nested.getNextException();
 		}
 		return errorCode;
 	}
-	
+
 	public String extractConstraintName(SQLException ex) {
 		return null;
 	}
-	
+
 	protected String extractUsingTemplate(String templateStart, String templateEnd, String message) {
 		int templateStartPosition = message.indexOf(templateStart);
 		if (templateStartPosition < 0) {
@@ -1667,19 +1664,23 @@ public abstract class DatabaseDialect {
 		}
 		return message.substring(start, end);
 	}
-	
+
 	public static String extractSqlState(SQLException sqlException) {
 		String sqlState = sqlException.getSQLState();
 		SQLException nested = sqlException.getNextException();
-		while ( sqlState == null && nested != null ) {
+		while (sqlState == null && nested != null) {
 			sqlState = nested.getSQLState();
 			nested = nested.getNextException();
 		}
 		return sqlState;
 	}
-	
+
 	public abstract LimitClauseResult getLimitClause(String sql, int offset, int limit, boolean namedParameter);
+
+	public abstract String getIndexHint(String indexName, String alias);
 	
+	public abstract QueryFlag.Position getIndexHintPosition();
+
 	public boolean bindLimitParametersFirst() {
 		return false;
 	}
@@ -1687,8 +1688,6 @@ public abstract class DatabaseDialect {
 	public boolean bindLimitParametersInReverseOrder() {
 		return false;
 	}
-
-	
 
 	// public abstract List<ProcedureMetadata> getNativeFunctions() throws
 	// Exception;

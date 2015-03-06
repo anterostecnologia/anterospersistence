@@ -350,11 +350,9 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 					result.add(new NamedParameter(param.getName(), params.get(param), TemporalType.DATE_TIME));
 				else if (param.getType() == Enum.class)
 					if (param instanceof EnumParam)
-						result.add(new EnumeratedParameter(param.getName(), ((EnumParam) param).getFormat(),
-								(Enum) params.get(param)));
+						result.add(new EnumeratedParameter(param.getName(), ((EnumParam) param).getFormat(), (Enum) params.get(param)));
 					else
-						result.add(new EnumeratedParameter(param.getName(), EnumeratedFormatSQL.STRING, (Enum) params
-								.get(param)));
+						result.add(new EnumeratedParameter(param.getName(), EnumeratedFormatSQL.STRING, (Enum) params.get(param)));
 				else
 					result.add(new NamedParameter(param.getName(), params.get(param)));
 			}
@@ -365,6 +363,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		}
 		return (result.size() == 0 ? null : result);
 	}
+
 	public Class<?> getClassByEntityPath(EntityPath<?> path) {
 		Type mySuperclass = path.getClass().getGenericSuperclass();
 		return (Class<?>) ((ParameterizedType) mySuperclass).getActualTypeArguments()[0];
@@ -561,17 +560,17 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	public AbstractOSQLQuery<Q> indexHint(IndexHint... indexes) {
-		String teste = "/*index(ORD PK)*/";
 		for (IndexHint index : indexes) {
-
+			addIndexHint(index.getAlias(), index.getIndexName());
 		}
-		addFlag(QueryFlag.Position.AFTER_SELECT, teste);
 		return this;
 	}
 
 	public AbstractOSQLQuery<Q> addIndexHint(String alias, String indexName) {
-		String teste = "/*index(ORD PK)*/";
-		addFlag(QueryFlag.Position.AFTER_SELECT, teste);
+		String indexHint = session.getDialect().getIndexHint(indexName, alias);
+		if (!StringUtils.isEmpty(indexHint)) {
+			addFlag(QueryFlag.Position.AFTER_SELECT, indexHint);
+		}
 		return this;
 	}
 

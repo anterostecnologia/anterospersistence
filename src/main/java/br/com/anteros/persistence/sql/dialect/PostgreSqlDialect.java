@@ -21,7 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 
-import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.dsl.osql.QueryFlag.Position;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
 import br.com.anteros.persistence.dsl.osql.templates.PostgresTemplates;
 import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
@@ -301,5 +301,15 @@ public class PostgreSqlDialect extends DatabaseDialect {
 					(offset > 0 ? LimitClauseResult.LAST_PARAMETER : LimitClauseResult.NONE_PARAMETER),limit, offset);
 		}
 		return result;
+	}
+
+	@Override
+	public String getIndexHint(String indexName, String alias) {
+		return "";
+	}
+
+	@Override
+	public Position getIndexHintPosition() {
+		return Position.AFTER_SELECT;
 	}
 }

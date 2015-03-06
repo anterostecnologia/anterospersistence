@@ -33,7 +33,7 @@ public class DiscriminatorColumnPath implements Path<String> {
 
 	@Override
 	public PathMetadata<?> getMetadata() {
-		throw new UnsupportedOperationException();
+		return null;
 	}
 
 	@Override

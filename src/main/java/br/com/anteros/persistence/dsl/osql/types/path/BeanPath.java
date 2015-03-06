@@ -17,7 +17,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
-import br.com.anteros.persistence.dsl.osql.types.ConstantImpl;
 import br.com.anteros.persistence.dsl.osql.types.ExpressionException;
 import br.com.anteros.persistence.dsl.osql.types.Ops;
 import br.com.anteros.persistence.dsl.osql.types.Path;
