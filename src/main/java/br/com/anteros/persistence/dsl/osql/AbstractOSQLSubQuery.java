@@ -16,28 +16,31 @@
 package br.com.anteros.persistence.dsl.osql;
 
 import br.com.anteros.persistence.metadata.EntityCacheManager;
+import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 
 
 /**
  * Abstract superclass for SubQuery implementations
  *
- * @author tiwe
+ * @author tiwe modified by: Edson Martins
  *
  */
 public abstract class AbstractOSQLSubQuery<Q extends AbstractOSQLSubQuery<Q>> extends DetachableSQLQuery<Q>
 {
 
 	protected EntityCacheManager entityCacheManager;
+	protected DatabaseDialect dialect;
 	
-    public AbstractOSQLSubQuery(EntityCacheManager entityCacheManager, SQLTemplates templates, QueryMetadata metadata)
+    public AbstractOSQLSubQuery(DatabaseDialect dialect, EntityCacheManager entityCacheManager, SQLTemplates templates, QueryMetadata metadata)
     {
         super(templates, metadata);
         this.entityCacheManager = entityCacheManager;
+        this.dialect = dialect;
     }
 
     protected SQLSerializer createSerializer()
     {
-        return new SQLSerializer(entityCacheManager, templates);
+        return new SQLSerializer(dialect, entityCacheManager, templates);
     }
 
 }

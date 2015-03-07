@@ -26,7 +26,7 @@ import com.google.common.collect.Maps;
 /**
  * EntityPathBase provides a base class for EntityPath implementations
  *
- * @author tiwe
+ * @author tiwe  modified by: Edson Martins
  *
  * @param <T>
  *            entity type
@@ -68,16 +68,25 @@ public class EntityPathBase<T> extends BeanPath<T> implements EntityPath<T> {
 		return all;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public List<Path<?>> getCustomProjection() {
 		return customProjectionList;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public List<Path<?>> getExcludeProjection() {
 		return excludeProjectionList;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public EntityPath<T> customProjection(Path<?>... args) {
 		for (Path<?> arg : args) {
@@ -86,6 +95,9 @@ public class EntityPathBase<T> extends BeanPath<T> implements EntityPath<T> {
 		return this;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public EntityPath<T> excludeProjection(Path<?>... args) {
 		for (Path<?> arg : args) {

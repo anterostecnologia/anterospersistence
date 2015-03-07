@@ -16,23 +16,24 @@
 package br.com.anteros.persistence.dsl.osql;
 
 import br.com.anteros.persistence.metadata.EntityCacheManager;
+import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 
 
 /**
  * SQLSubQuery is a subquery implementation for SQL queries
  *
- * @author tiwe
+ * @author tiwe modified by: Edson Martins
  *
  */
 public class OSQLSubQuery extends AbstractOSQLSubQuery<OSQLSubQuery> implements Cloneable {
 
-    public OSQLSubQuery(EntityCacheManager entityCacheManager, SQLTemplates templates, QueryMetadata metadata) {
-        super(entityCacheManager, templates, metadata);
+    public OSQLSubQuery(DatabaseDialect dialect, EntityCacheManager entityCacheManager, SQLTemplates templates, QueryMetadata metadata) {
+        super(dialect, entityCacheManager, templates, metadata);
     }
 
     @Override
     public OSQLSubQuery clone() {
-        OSQLSubQuery subQuery = new OSQLSubQuery(entityCacheManager, templates, getMetadata());
+        OSQLSubQuery subQuery = new OSQLSubQuery(dialect, entityCacheManager, templates, getMetadata());
         return subQuery;
     }
 

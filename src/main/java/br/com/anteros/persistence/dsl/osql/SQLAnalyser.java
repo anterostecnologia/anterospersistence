@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2012 Anteros Tecnologia
+ *  
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *  
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
 import java.lang.reflect.ParameterizedType;
@@ -32,6 +47,13 @@ import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 
+/**
+ * Visitor que analisa as expressões da consulta processando os nomes path's criando junções e colunas 
+ * que serão usadas na serialização para SQL pela classe {@link SQLSerializer}.
+ * 
+ * @author edson
+ *
+ */
 public class SQLAnalyser implements Visitor<Void, Void> {
 
 	private static int MAKE_ALIASES = 1;
@@ -106,7 +128,15 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		return null;
 	}
 
+	/**
+	 * Processa o caminho e monta os nomes das colunas que serão usadas na serialização do SQL.
+	 * 
+	 * @param path Caminho
+	 */
 	private void processColumns(Path<?> path) {
+		/*
+		 * Ser for uma variável e for uma entidade
+		 */
 		if ((path.getMetadata().getPathType() == PathType.VARIABLE) && (path instanceof EntityPath<?>)) {
 			EntityCache sourceEntityCache = this.query.getSession().getEntityCacheManager()
 					.getEntityCache(getClassByEntityPath((EntityPath<?>) path));
@@ -125,6 +155,9 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			} else
 				processAllDescriptionFields((EntityPath<?>) path, alias, sourceEntityCache);
 		} else if (path.getMetadata().getPathType() == PathType.PROPERTY) {
+			/*
+			 * Se for uma propriedade
+			 */
 			EntityPath<?> entityPath = this.getAliasByEntityPath(path);
 			String alias = entityPath.getMetadata().getName();
 
@@ -132,6 +165,11 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			if (sourceEntityCache == null)
 				throw new SQLSerializerException("A classe " + getClassByEntityPath(entityPath)
 						+ " não foi encontrada na lista de entidades gerenciadas.");
+			/*
+			 * Se o caminho for uma entidade processa os campos da entidade gerando colunas. Se foi
+			 * configurado projeções customizadas ou para serem excluidas processa apenas os caminhos
+			 * filtrados.
+			 */
 			if (path instanceof EntityPath<?>) {
 				if (((EntityPath<?>) path).getCustomProjection().size() > 0) {
 					for (Path<?> customPath : ((EntityPath<?>) path).getCustomProjection()) {
@@ -143,6 +181,9 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 				} else
 					processAllDescriptionFields((EntityPath<?>) path, alias, sourceEntityCache);
 			} else {
+				/*
+				 * Processa apenas a propriedade
+				 */
 				DescriptionField descriptionField = sourceEntityCache.getDescriptionField(path.getMetadata().getName());
 				if (descriptionField == null)
 					throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " não foi encontrado na classe "
@@ -150,6 +191,10 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 				processDescriptionField(currentIndex, alias, descriptionField, true);
 			}
 		} else if (path.getMetadata().getPathType() == PathType.VARIABLE) {
+			/*
+			 * Se o estágio da análise for MAKE_COLUMNS e havia sido adicionado uma coluna associa o alias atribuido pelo 
+			 * usuário sobrepondo o gerado e marca que o usuário atribui um alias.
+			 */
 			if (level == MAKE_COLUMNS) {
 				if (lastColumnAdded != null) {
 					lastColumnAdded.setAliasColumnName(path.getMetadata().getName());
@@ -160,6 +205,15 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 	}
 
+	/**
+	 * Processa o campo da entidade e gera um coluna para o mesmo. Processa apenas campos simples e relacionamentos.
+	 * 
+	 * @param index Indice dentro da lista de expressões.
+	 * @param alias alias da tabela
+	 * @param descriptionField campo da entidade
+	 * @param makeAlias criar um alias?
+	 * @return verdadeiro se conseguiu criar a coluna
+	 */
 	protected boolean processDescriptionField(Integer index, String alias, DescriptionField descriptionField, boolean makeAlias) {
 		Set<SQLAnalyserColumn> columnsForPath = getColumnsListForPath(index);
 		if (descriptionField.isSimple()) {
@@ -182,6 +236,13 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		return false;
 	}
 
+	/**
+	 * Retorna uma lista de colunas para um indice dentro das expressões armazenadas no cache. Se não encontrar
+	 * retorna uma nova lista.
+	 * 
+	 * @param index Índice
+	 * @return Lista de colunas
+	 */
 	private Set<SQLAnalyserColumn> getColumnsListForPath(Integer index) {
 		Set<SQLAnalyserColumn> result = null;
 		if (columns.containsKey(index))
@@ -194,6 +255,12 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		return result;
 	}
 
+	/**
+	 * Retorna a lista de colunas para o indice dentro das expressões no formato String.
+	 * 
+	 * @param index Índice
+	 * @return Lista de colunas
+	 */
 	private List<String> getColumnsForPathAsString(Integer index) {
 		List<String> result = new ArrayList<String>();
 		Set<SQLAnalyserColumn> columns = getColumnsListForPath(index);
@@ -203,10 +270,20 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		return result;
 	}
 
+	/**
+	 * Processa todos os campos de caminho (entidade) e gera as colunas.
+	 * 
+	 * @param entityPath Entidade
+	 * @param alias alias da tabela
+	 * @param sourceEntityCache Representação da entidade no dicionário 
+	 */
 	protected void processAllDescriptionFields(EntityPath<?> entityPath, String alias, EntityCache sourceEntityCache) {
 
 		List<Path<?>> excludeProjection = entityPath.getExcludeProjection();
 		for (DescriptionField descriptionField : sourceEntityCache.getDescriptionFields()) {
+			/*
+			 * Não processa nenhum tipo de coleção e caminhos excluídos da projeção
+			 */
 			if (descriptionField.isAnyCollection() || hasPathForDescriptionFieldToExclude(excludeProjection, descriptionField))
 				continue;
 
@@ -214,6 +291,12 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		}
 	}
 
+	/**
+	 * Retorna se um caminho for excluído da projeção de uma entidade através do método {@link EntityPath#excludeProjection(Path...)}
+	 * @param excludeProjection
+	 * @param descriptionField
+	 * @return Verdadeiro se o campo faz parte da lista de exclusão.
+	 */
 	private boolean hasPathForDescriptionFieldToExclude(List<Path<?>> excludeProjection, DescriptionField descriptionField) {
 		for (Path<?> path : excludeProjection) {
 			if (path.getMetadata().getName().equals(descriptionField.getField().getName())) {
@@ -233,6 +316,11 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		return null;
 	}
 
+	/**
+	 * Realiza a análise das expressões.
+	 * 
+	 * @throws Exception
+	 */
 	public void process() throws Exception {
 		QueryMetadata metadata = query.getMetadata();
 		this.individualExpressions = extractIndividualColumnsExpression(metadata);
@@ -240,6 +328,13 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		processExpressions(metadata, MAKE_COLUMNS);
 	}
 
+	/**
+	 * Extrai a lista de expressões de forma individualizada para serem processadas. Expressões contidas
+	 * em fábricas de expressões serão retornadas de forma individual.
+	 * 
+	 * @param metadata Metadata contendo as expressões
+	 * @return Lista de expressões.
+	 */
 	public static List<Expression<?>> extractIndividualColumnsExpression(QueryMetadata metadata) {
 		List<Expression<?>> select = metadata.getProjection();
 		List<Expression<?>> sqlSelect;
@@ -264,6 +359,13 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		return sqlSelect;
 	}
 
+	/**
+	 * Processa lista de expressões individuais de acordo como nível(estágio) da análise.
+	 * 
+	 * @param metadata Metadata contendo expressões.
+	 * @param level Nível/estágio
+	 * @throws Exception Exceção ocorrida durante processamento
+	 */
 	protected void processExpressions(QueryMetadata metadata, int level) throws Exception {
 		this.level = level;
 		final List<Expression<?>> select = this.individualExpressions;
@@ -272,6 +374,9 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		final List<OrderSpecifier<?>> orderBy = metadata.getOrderBy();
 		final List<Expression<?>> groupBy = metadata.getGroupBy();
 
+		/*
+		 * Processa apenas o Select criando aliases colunas e junções
+		 */
 		if ((this.level == MAKE_ALIASES) || (this.level == MAKE_COLUMNS)) {
 			currentIndex = 0;
 			for (Expression<?> expr : select) {
@@ -291,6 +396,9 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 				currentIndex++;
 			}
 		}
+		/*
+		 * Processa demais cláusulas somente criando os aliases das colunas
+		 */
 		if (this.level == MAKE_ALIASES) {
 			if (where != null)
 				where.accept(this, null);
@@ -311,6 +419,12 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		}
 	}
 
+	/**
+	 * Verifica se é possível criar uma junção para um caminho utilizado nas expressões.
+	 * 
+	 * @param expr Expressão.
+	 * @throws Exception Exceção ocorrida durante criação da junção.
+	 */
 	protected void makePossibleJoins(Path<?> expr) throws Exception {
 		if ((expr instanceof DiscriminatorValuePath) || (expr instanceof DiscriminatorColumnPath) || (expr.getMetadata().isRoot()))
 			return;
@@ -326,10 +440,19 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		}
 	}
 
+	/**
+	 * Lista de aliases gerados na análise das expressões.
+	 * @return
+	 */
 	public Map<Path<?>, EntityPath<?>> getAliases() {
 		return aliases;
 	}
 
+	/**
+	 * Retorna a entidade(alias) de um caminho.
+	 * @param path Caminho
+	 * @return Alias encontrado
+	 */
 	public EntityPath<?> getAliasByEntityPath(Path<?> path) {
 		EntityPath<?> result = null;
 		if (path instanceof EntityPath<?>) {
@@ -344,17 +467,33 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		return result;
 	}
 
+	/**
+	 * Retorna a classe de uma caminho.
+	 * 
+	 * @param path Caminho
+	 * @return Classe
+	 */
 	public Class<?> getClassByEntityPath(EntityPath<?> path) {
 		Type mySuperclass = path.getClass().getGenericSuperclass();
 		return (Class<?>) ((ParameterizedType) mySuperclass).getActualTypeArguments()[0];
 	}
 
+	/**
+	 * Gera um alias aleatório para uso nas tabelas do SQL.
+	 * @return
+	 */
 	private String makeNextAliasTableName() {
 		nextAliasTableName++;
 		String result = "TB_" + String.valueOf(nextAliasTableName);
 		return result;
 	}
 
+	/**
+	 * Gera um alias aleatório para um alias de uma tabela para uso em uma coluna.
+	 * 
+	 * @param alias Alias da tabela
+	 * @return Alias para coluna gerado.
+	 */
 	public String makeNextAliasName(String alias) {
 		nextAliasColumnName++;
 		return adpatAliasColumnName(alias) + "_COL_" + String.valueOf(nextAliasColumnName);
@@ -366,7 +505,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 * 
 	 * @param aliasColumnNamePrefix
 	 *            Prefixo do nome da coluna
-	 * @return
+	 * @return Alias ajustado
 	 */
 	private String adpatAliasColumnName(String aliasColumnNamePrefix) {
 		int maximumNameLength = query.getSession().getDialect().getMaxColumnNameSize() - 8;
@@ -390,6 +529,12 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		return result;
 	}
 
+	/**
+	 * Ajusta o nome fazendo algumas correções.
+	 * 
+	 * @param name Nome
+	 * @return Nome ajustado
+	 */
 	private String adjustName(String name) {
 		String adjustedName = name;
 		if (adjustedName.indexOf(' ') != -1 || adjustedName.indexOf('\"') != -1 || adjustedName.indexOf('`') != -1) {
@@ -409,10 +554,19 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		return columns;
 	}
 
+	/**
+	 * Retorna a lista de expressões individuais usadas na análise.
+	 * @return Lista de expressões.
+	 */
 	public List<Expression<?>> getIndividualExpressions() {
 		return individualExpressions;
 	}
 
+	/**
+	 * Retorna uma lista de definições das classes de resultado que será usado na montagem dos objetos.
+	 * 
+	 * @return Lista de definições das classes
+	 */
 	public List<ResultClassDefinition> getResultClassDefinitions() {
 		List<Expression<?>> select = getIndividualExpressions();
 		List<ResultClassDefinition> result = new ArrayList<ResultClassDefinition>();
@@ -435,10 +589,18 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		return result;
 	}
 
+	/**
+	 * Retorna se a análise concluíu que os usuário utilizou parâmetros nomeados.
+	 * @return
+	 */
 	public boolean isNamedParameter() {
 		return (namedParameter == null ? false : namedParameter);
 	}
 
+	/**
+	 * Retorna número do próximo alias de coluna.
+	 * @return Próximo número
+	 */
 	public int getNextAliasColumnName() {
 		return nextAliasColumnName;
 	}

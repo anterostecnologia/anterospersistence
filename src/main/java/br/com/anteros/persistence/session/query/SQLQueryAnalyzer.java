@@ -123,6 +123,8 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		SqlParser parser = new SqlParser(sql, new SqlFormatRule());
 		INode node = new Node("root");
 		parser.parse(node);
+		
+		parser.dump(node);
 
 		allowApplyLockStrategy = false;
 		INode[] children = ParserUtil.findChildren(getFirstSelectStatement(node), ColumnNode.class.getSimpleName());

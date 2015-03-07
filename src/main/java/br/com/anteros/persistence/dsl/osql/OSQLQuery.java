@@ -21,7 +21,7 @@ import br.com.anteros.persistence.session.SQLSession;
  * SQLQuery is a JDBC based implementation of the {@link SQLCommonQuery}
  * interface
  *
- * @author tiwe
+ * @author tiwe modified by: Edson Martins
  */
 public class OSQLQuery extends AbstractOSQLQuery<OSQLQuery> {
 

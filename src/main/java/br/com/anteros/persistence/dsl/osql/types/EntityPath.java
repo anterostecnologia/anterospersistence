@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * EntityPath is the common interface for entity path expressions
  *
- * @author tiwe
+ * @author tiwe modified by: Edson Martins
  *
  * @param <T> entity type
  */

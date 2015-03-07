@@ -617,6 +617,10 @@ public class SqlParser implements ISqlParser {
 
 					parseCase(cc);
 					break;
+//				} else if ("cast".equalsIgnoreCase(getToken())) {
+//					FunctionNode col = new FunctionNode(getToken(), offset, length, scope);
+//					node.addChild(col);
+//					parseCastClause(col);
 
 				} else {
 					if (token.getSubType() == TokenUtil.SUBTYPE_KEYWORD_FUNCTION) {
@@ -1060,6 +1064,51 @@ public class SqlParser implements ISqlParser {
 			case TokenUtil.TYPE_KEYWORD:
 				tokenizer.pushBack();
 				return;
+			default:
+				break;
+			}
+		}
+	}
+
+	protected void parseCastClause(FunctionNode node) throws ParserException {
+		INode lastNode=null;
+		for (;;) {
+			if (isCanceled())
+				return;
+
+			int next = nextToken();
+			switch (next) {
+			case TokenUtil.TYPE_END_SQL:
+				return;
+
+			case TokenUtil.TYPE_SYMBOL:
+				if (")".equals(getToken())) {
+					ParenthesesNode begin = (ParenthesesNode) lastNode;
+					begin.setEndOffset(offset);
+					scope = begin.getScope();
+					//parse(begin.getParent());
+					return;
+				} else if ("(".equals(getToken())) {
+					ParenthesesNode p = new ParenthesesNode(offset, length, scope);
+					lastNode = p;
+					node.addChild(p);
+					break;
+				} else if (",".equals(getToken())) {
+					node.addChild(new CommaNode(offset, length, scope));
+				}
+				break;
+
+			case TokenUtil.TYPE_VALUE:
+				node.addChild(new ValueNode(getToken(), offset, length, scope));
+				break;
+
+			case TokenUtil.TYPE_NAME:
+				lastNode.addChild(new ColumnNode(getToken(), offset, length, scope));
+				break;
+
+			case TokenUtil.TYPE_KEYWORD:
+				lastNode.addChild(new KeywordNode(getToken(), offset, length, scope));
+				break;
 			default:
 				break;
 			}

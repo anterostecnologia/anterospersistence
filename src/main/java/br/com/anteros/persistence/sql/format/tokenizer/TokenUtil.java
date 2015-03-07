@@ -85,7 +85,7 @@ public class TokenUtil
     "VARCHAR", "VARCHAR2" };
 
   public static final String[] KEYWORD_FUNCTION = { "ABS", "ACOS", 
-    "ADD_MONTHS", "ASCII", "ASIN", "ATAN", "AVG", "CEIL", 
+    "ADD_MONTHS", "ASCII", "ASIN", "ATAN", "AVG", "CAST", "CEIL", 
     "CHARTOROWID", "CHECK", "CHR", "COALESCE", "CONCAT", "CONVERT", 
     "COS", "COSH", "COUNT", "DECODE", "DUMP", "EXP", "FLOOR", 
     "GREATEST", "HEXTORAW", "INITCAP", "INSTR", "INSTRB", "LAST_DAY", 

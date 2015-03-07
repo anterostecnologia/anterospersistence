@@ -1,14 +1,17 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
+ *  
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
- * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
+ *  
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
@@ -54,7 +57,7 @@ import br.com.anteros.persistence.session.query.SQLQuery;
 /**
  * AbstractSQLQuery is the base type for SQL query implementations
  *
- * @author tiwe
+ * @author tiwe modified by: Edson Martins
  *
  * @param <Q>
  *            concrete subtype
@@ -107,7 +110,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	protected SQLSerializer createSerializer() {
 		try {
-			SQLSerializer serializer = new SQLSerializer(session.getEntityCacheManager(), templates, getAnalyser());
+			SQLSerializer serializer = new SQLSerializer(session.getDialect(), session.getEntityCacheManager(), templates, getAnalyser());
 
 			serializer.setUseLiterals(useLiterals);
 			return serializer;
@@ -252,11 +255,13 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		}
 	}
 
-	private Expression<?> hydrateNumberOperation(Expression<?> expr) throws Exception {
+	private Expression<?> hydrateExpression(Expression<?> expr) throws Exception {
 		if (expr instanceof NumberOperation<?>) {
 			if (((NumberOperation<?>) expr).getOperator() != Ops.ALIAS) {
 				return ((NumberOperation<?>) expr).as(getAnalyser().makeNextAliasName("O_P_R"));
 			}
+//		} else if (expr instanceof NumberExpression<?>) {
+//			return ((NumberExpression<?>) expr).as(getAnalyser().makeNextAliasName("O_P_R"));
 		}
 		return expr;
 	}
@@ -264,7 +269,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	private Expression<?>[] hydrateOperations(Expression<?>... args) throws Exception {
 		int i = 0;
 		for (Expression<?> expr : args) {
-			args[i] = hydrateNumberOperation(expr);
+			args[i] = hydrateExpression(expr);
 			i++;
 		}
 		return args;
@@ -296,14 +301,33 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	private SQLQuery createQuery(QueryModifiers modifiers, boolean forCount) {
 		SQLQuery query = null;
 		try {
+			/*
+			 * Analisa as expressões
+			 */
 			analyser.process();
+			/*
+			 * Serializa o SQL.
+			 */
 			SQLSerializer serializer = serialize(forCount);
 			String sql = serializer.toString();
+			System.out.println(sql);
+			/*
+			 * Monta os objetos usando o handler adequado para o resultado esperado.
+			 */
 			List<ResultClassDefinition> definitions = analyser.getResultClassDefinitions();
+			/*
+			 * Se for apenas um resultado
+			 */
 			if (definitions.size() == 1) {
+				/*
+				 * Se o resultado esperado for uma entidade
+				 */
 				if (session.getEntityCacheManager().isEntity(definitions.get(0).getResultClass())) {
 					query = session.createQuery(sql, definitions.get(0).getResultClass());
 				} else {
+					/*
+					 * Se forem valores simples
+					 */
 					query = session.createQuery(sql);
 					SQLAnalyserColumn simpleColumn = definitions.get(0).getSimpleColumn();
 					String aliasColumnName = (StringUtils.isEmpty(simpleColumn.getAliasColumnName()) ? simpleColumn.getColumnName() : simpleColumn
@@ -312,15 +336,20 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 							aliasColumnName));
 				}
 			} else {
+				/*
+				 * Se o resultado for múltiplos valores
+				 */
 				query = session.createQuery(sql);
 				query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions(), analyser.getNextAliasColumnName()));
 			}
 			query.setLockOptions(lockOptions);
+			/*
+			 * Converte os parâmetros no formato de expressão para o formato da query.
+			 */
 			query.setParameters(getParameters());
 
 		} catch (Exception e) {
 			throw new OSQLQueryException("Não foi possível criar a query. ", e);
-		} finally {
 		}
 
 		List<? extends Expression<?>> projection = getMetadata().getProjection();
@@ -339,6 +368,11 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		return query;
 	}
 
+	/**
+	 * Converte os parâmetros no formato de expressão para o formato da query de consulta.
+	 * 
+	 * @return Lista de parâmetros convertidos.
+	 */
 	private Object getParameters() {
 		List<Object> result = new ArrayList<Object>();
 		Map<ParamExpression<?>, Object> params = getMetadata().getParams();
@@ -362,11 +396,6 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			}
 		}
 		return (result.size() == 0 ? null : result);
-	}
-
-	public Class<?> getClassByEntityPath(EntityPath<?> path) {
-		Type mySuperclass = path.getClass().getGenericSuperclass();
-		return (Class<?>) ((ParameterizedType) mySuperclass).getActualTypeArguments()[0];
 	}
 
 	/*

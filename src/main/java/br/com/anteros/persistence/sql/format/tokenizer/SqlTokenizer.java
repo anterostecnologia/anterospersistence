@@ -227,15 +227,17 @@ public class SqlTokenizer implements Iterator<Token> {
 				} while ((TokenUtil.isNameChar(c)) /*&& (c != '￿')*/);
 
 				String upper = sb.toString().toUpperCase();
+				
+				System.out.println(upper);
 
 				if (this.rule.isKeyword(upper)) {
 					if (TokenUtil.isSpecialValue(upper))
-						type = 50;
+						type = TokenUtil.TYPE_VALUE;
 					else {
-						type = 10;
+						type = TokenUtil.TYPE_KEYWORD;
 					}
 				} else {
-					type = 40;
+					type = TokenUtil.TYPE_NAME;
 				}
 			} else {
 				sb.append(this.scanner.next());
