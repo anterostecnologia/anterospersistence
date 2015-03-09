@@ -92,6 +92,8 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	private DatabaseDialect dialect;
 
+	private List<? extends Expression<?>> currentArgsOperation;
+
 	public SQLSerializer(DatabaseDialect dialect, EntityCacheManager entityCacheManager, SQLTemplates templates) {
 		super(templates);
 		this.templates = templates;
@@ -605,14 +607,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 							throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " " + sourceEntityCache.getEntityClass()
 									+ " não pode ser usado para criação da consulta pois é uma coleção. Use uma junção para isto. ");
 						} else if (descriptionField.isRelationShip()) {
-							boolean appendSep = false;
-							for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
-								if (appendSep) {
-									append(" AND ");
-								}
-								append(alias).append(".").append(column.getColumnName());
-								appendSep = true;
-							}
+							appendDescriptionField(path, alias, descriptionField);
 						}
 					}
 				}
@@ -645,17 +640,31 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			 * Se a propriedade da entidade for uma relacionamento, ou seja, uma outra entidade.
 			 */
 			if (path instanceof EntityPath<?>) {
-				/*
-				 * Se estiver no Select/Group by gera os nomes das colunas com os aliases
-				 */
-				if ((stage == Stage.SELECT) || (stage == Stage.GROUP_BY))
+				if (inOperation) {
+					for (DescriptionField descriptionField : sourceEntityCache.getPrimaryKeyFields()) {
+						if (descriptionField.isSimple())
+							append(templates.quoteIdentifier(alias)).append(".").append(
+									templates.quoteIdentifier(descriptionField.getSimpleColumn().getColumnName()));
+						else if (descriptionField.isAnyCollection()) {
+							throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " " + sourceEntityCache.getEntityClass()
+									+ " não pode ser usado para criação da consulta pois é uma coleção. Use uma junção para isto. ");
+						} else if (descriptionField.isRelationShip()) {
+							appendDescriptionField(path, alias, descriptionField);
+						}
+					}
+				} else {
 					/*
-					 * Adiciona apenas as colunas finais já consideradas as projeções customizadas e excluídas na
-					 * análise.
+					 * Se estiver no Select/Group by gera os nomes das colunas com os aliases
 					 */
-					appendAllColumnsForPath(this.getCurrentIndex());
-				else
-					appendAllDescriptionFields(path, alias, sourceEntityCache);
+					if ((stage == Stage.SELECT) || (stage == Stage.GROUP_BY))
+						/*
+						 * Adiciona apenas as colunas finais já consideradas as projeções customizadas e excluídas na
+						 * análise.
+						 */
+						appendAllColumnsForPath(this.getCurrentIndex());
+					else
+						appendAllDescriptionFields(path, alias, sourceEntityCache);
+				}
 			} else {
 				DescriptionField descriptionField = sourceEntityCache.getDescriptionField(path.getMetadata().getName());
 				if (descriptionField == null)
@@ -668,7 +677,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 				if ((stage == Stage.SELECT) && (!inOperation))
 					appendAllColumnsForPath(this.getCurrentIndex());
 				else
-					appendDescriptionField(path, entityPath, alias, descriptionField);
+					appendDescriptionField(path, alias, descriptionField);
 			}
 		} else {
 			append(path.getMetadata().getName());
@@ -694,7 +703,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 				continue;
 			if (appendSep)
 				append(COMMA);
-			if (appendDescriptionField(path, (EntityPath<?>) path, alias, descriptionField))
+			if (appendDescriptionField(path, alias, descriptionField))
 				appendSep = true;
 		}
 	}
@@ -712,19 +721,22 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 	 *            Campo da entidade
 	 * @return Verdadeiro se foi possível adicionar o campo no sql.
 	 */
-	protected boolean appendDescriptionField(Path<?> path, EntityPath<?> entityPath, String alias, DescriptionField descriptionField) {
+	protected boolean appendDescriptionField(Path<?> path, String alias, DescriptionField descriptionField) {
 		if (descriptionField.isSimple()) {
 			append(templates.quoteIdentifier(alias)).append(".")
 					.append(templates.quoteIdentifier(descriptionField.getSimpleColumn().getColumnName()));
 			return true;
 		} else if (descriptionField.isRelationShip()) {
+			if ((descriptionField.getDescriptionColumns().size() > 1) && (stage == Stage.FROM))
+				throw new SQLSerializerException(
+						"Ao usar ID's  ou entidades que tenham chave composta informe o caminho completo de cada parte da chave. Caminho "
+								+ Arrays.toString(currentArgsOperation.toArray()));
+
 			boolean appendSep = false;
 			for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
 				if (appendSep) {
 					if (stage == Stage.SELECT) {
 						append(COMMA);
-					} else if (stage == Stage.FROM) {
-						append(" AND ");
 					}
 				}
 				append(alias).append(".").append(column.getColumnName());
@@ -785,6 +797,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 	protected void visitOperation(Class<?> type, Operator<?> operator, List<? extends Expression<?>> args) {
 		try {
 			inOperation = true;
+			currentArgsOperation = args;
 			if (args.size() == 2 && !useLiterals && args.get(0) instanceof Path<?> && args.get(1) instanceof Constant<?> && operator != Ops.NUMCAST) {
 				for (Element element : templates.getTemplate(operator).getElements()) {
 					if (element instanceof Template.ByIndex && ((Template.ByIndex) element).getIndex() == 1) {
