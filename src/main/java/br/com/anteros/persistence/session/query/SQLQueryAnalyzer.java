@@ -39,6 +39,7 @@ import br.com.anteros.persistence.sql.parser.Node;
 import br.com.anteros.persistence.sql.parser.ParserUtil;
 import br.com.anteros.persistence.sql.parser.ParserVisitorToSql;
 import br.com.anteros.persistence.sql.parser.SqlParser;
+import br.com.anteros.persistence.sql.parser.node.AliasNode;
 import br.com.anteros.persistence.sql.parser.node.BindNode;
 import br.com.anteros.persistence.sql.parser.node.ColumnNode;
 import br.com.anteros.persistence.sql.parser.node.CommaNode;
@@ -63,6 +64,7 @@ import br.com.anteros.persistence.sql.parser.node.ValueNode;
  */
 public class SQLQueryAnalyzer implements Comparator<String[]> {
 
+	private static final boolean GENERATE_ALIAS_TO_COLUM = true;
 	public static final boolean IGNORE_NOT_USED_ALIAS_TABLE = true;
 	private String sql;
 	private EntityCacheManager entityCacheManager;
@@ -81,7 +83,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		this.databaseDialect = databaseDialect;
 		this.ignoreNotUsedAliasTable = ignoreNotUsedAliasTable;
 	}
-	
+
 	/**
 	 * Analisa um SQL validando se sua estrutura permite montar objetos para classe de resultado. Monta uma lista de
 	 * expressões que serão utilizadas na montagem dos objetos pelo EntityHandler.
@@ -122,8 +124,8 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		SqlParser parser = new SqlParser(sql, new SqlFormatRule());
 		INode node = new Node("root");
 		parser.parse(node);
-		
-		//System.out.println(parser.dump(node));
+
+		System.out.println(parser.dump(node));
 
 		allowApplyLockStrategy = false;
 		INode[] children = ParserUtil.findChildren(getFirstSelectStatement(node), ColumnNode.class.getSimpleName());
@@ -328,10 +330,6 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 	protected INode parseColumns(INode node) throws SQLQueryAnalyzerException {
 		SqlParser parser;
 		/*
-		 * Lista temporária de aliases do select
-		 */
-		Set<SQLQueryAnalyserAlias> aliasesTemporary;
-		/*
 		 * Busca todos os nós do tipo Select
 		 */
 		SelectStatementNode[] selectStatements = getAllSelectStatement(node);
@@ -339,12 +337,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		 * Cria um Mapa de strings que irão guardar as colunas que precisam ter seus nomes(aliases) alterados no sql
 		 */
 		Map<String, String> replaceStrings = new LinkedHashMap<String, String>();
-		/*
-		 * Cria uma lista para guardar as novas colunas a serem adicionadas no SQL
-		 */
-		Set<ColumnNode> newColumns = new LinkedHashSet<ColumnNode>();
-		Set<Node> newOthersProjections = new LinkedHashSet<Node>();
-		Set<String> distinctNewColumns = new CompactHashSet<String>();
+
 		/*
 		 * Analisa os Select's encontrados pelo parser.
 		 */
@@ -356,152 +349,31 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			validateColumnsAndWhereCondition(selectStatement);
 
 			/*
-			 * Busca o groupBy do Select se houver
+			 * Processa Select
+			 */
+			SelectNode select = (SelectNode) ParserUtil.findFirstChild(selectStatement, "SelectNode");
+			processSelectOrGroupByColumns(node, replaceStrings, selectStatement, select,
+					GENERATE_ALIAS_TO_COLUM);
+
+			/*
+			 * Processa Group By se houver
 			 */
 			GroupbyNode groupBy = (GroupbyNode) ParserUtil.findFirstChild(selectStatement, "GroupbyNode");
-			SelectNode select = (SelectNode) ParserUtil.findFirstChild(selectStatement, "SelectNode");
-
-			/*
-			 * Obtém as posições do Select dentro do SQL.
-			 */
-			int offsetSelect = select.getOffset();
-			int offSetSelectFinal = select.getMaxOffset();
-			int offsetGroupBy = 0;
-			int offSetGroupByFinal = 0;
-
-			if (groupBy != null) {
-				offsetGroupBy = groupBy.getOffset();
-				offSetGroupByFinal = groupBy.getMaxOffset();
-			}
-			/*
-			 * Guarda o Select e o GroupBy antigo
-			 */
-			String oldSelect = sql.substring(offsetSelect, offSetSelectFinal);
-			String oldGroupBy = sql.substring(offsetGroupBy, offSetGroupByFinal);
-			newColumns.clear();
-			newOthersProjections.clear();
-			distinctNewColumns.clear();
-
-			/*
-			 * Obtém a lista de aliases das tabelas usadas no Select.
-			 */
-			aliasesTemporary = getTableAliasesFromSelectNode(selectStatement);
-			/*
-			 * Substituiu * pelos nomes das colunas
-			 */
-			for (INode selectNodeChild : ((SelectNode) selectStatement.getChild(0)).getChildren()) {
-				/*
-				 * Se o nó filho for uma coluna
-				 */
-				if (selectNodeChild instanceof ColumnNode) {
-					/*
-					 * Se o nome da coluna for * (asterisco)
-					 */
-					if ("*".equals(((ColumnNode) selectNodeChild).getColumnName())) {
-						replaceAsteriskByAliasColumnName(aliasesTemporary, newColumns, distinctNewColumns, selectNodeChild);
-					} else {
-						replaceColumnNameByAlias(newColumns, distinctNewColumns, selectNodeChild);
-					}
-				} else if ((!(selectNodeChild instanceof CommaNode)) && (!(selectNodeChild instanceof CommentNode))) {
-					/*
-					 * Adiciona as demais projeções do select
-					 */
-					newOthersProjections.add((Node) selectNodeChild);
-				}
-			}
-
-			/*
-			 * Busca o alias da classe de resultado
-			 */
-			SQLQueryAnalyserAlias aliasResultClass = getAliasResultClass();
-
-			/*
-			 * Associa o pai a cada alias filho usado no Select formando assim um caminho para montar o objeto da classe
-			 * de resultado.
-			 */
-			findAndSetOwnerToChildAlias(getFirstSelectStatement(node), aliasResultClass);
-
-			/*
-			 * Adiciona as colunas da chave primária do alias(tabela) e discriminator column caso não existam no Select.
-			 */
-			addPkAndDiscriminatorColumnsIfNotExists(aliases, node, newColumns, selectStatement);
-
-			/*
-			 * Remove as colunas atuais do Select e do GroupBy
-			 */
-			List<INode> listToRemove = new ArrayList<INode>();
-			for (INode child : select.getChildren()) {
-				if (!(child instanceof CommentNode)) {
-					listToRemove.add(child);
-				}
-			}
-			for (INode item : listToRemove) {
-				select.removeChild(item);
-			}
-
-			if (groupBy != null) {
-				while (groupBy.getChildrenSize() > 0)
-					groupBy.removeChild(groupBy.getChild(0));
-			}
-
-			/*
-			 * Adiciona as novas colunas no Select
-			 */
-			INode oldColumn = null;
-			for (ColumnNode newColumn : newColumns) {
-				if (oldColumn != null)
-					select.addChild(new CommaNode(0, 0, 0));
-				select.addChild(newColumn);
-				oldColumn = newColumn;
-			}
-			/*
-			 * Adiciona as demais projeções no Select
-			 */
-			for (Node otherProjection : newOthersProjections) {
-				if (oldColumn != null)
-					select.addChild(new CommaNode(0, 0, 0));
-				((SelectNode) selectStatement.getChild(0)).addChild(otherProjection);
-				oldColumn = otherProjection;
-			}
-
-			if (groupBy != null) {
-				/*
-				 * Adiciona as novas colunas no GroupBy
-				 */
-				ColumnNode oldColumnGroupby = null;
-				for (ColumnNode newColumn : newColumns) {
-					if (oldColumnGroupby != null)
-						groupBy.addChild(new CommaNode(0, 0, 0));
-					oldColumnGroupby = new ColumnNode(newColumn.getColumnName(), 0, 0, 0);
-					oldColumnGroupby.setTableName(newColumn.getTableName());
-					groupBy.addChild(oldColumnGroupby);
-				}
-			}
-
-			/*
-			 * Converte o Select em uma string SQL
-			 */
-			ParserVisitorToSql v = new ParserVisitorToSql();
-			v.visit(select, sql);
-			String newSelect = v.toString();
-			/*
-			 * Armazena a string do Select antigo a ser substituída pelo novo Select
-			 */
-			replaceStrings.put(oldSelect, newSelect);
-
-			if (groupBy != null) {
-				/*
-				 * Converte o GroupBy em uma string SQL
-				 */
-				v = new ParserVisitorToSql();
-				v.visit(groupBy, sql);
-				String newGroupBy = v.toString();
-				/*
-				 * Armazena a string do GroupBy antigo a ser substituída pelo novo GroupBy
-				 */
-				replaceStrings.put(oldGroupBy, newGroupBy);
-			}
+			if (groupBy != null)
+				processSelectOrGroupByColumns(node, replaceStrings, selectStatement, groupBy,
+						!GENERATE_ALIAS_TO_COLUM);
 		}
+
+		/*
+		 * Busca o alias da classe de resultado
+		 */
+		SQLQueryAnalyserAlias aliasResultClass = getAliasResultClass();
+
+		/*
+		 * Associa o pai a cada alias filho usado no Select formando assim um caminho para montar o objeto da classe de
+		 * resultado.
+		 */
+		findAndSetOwnerToChildAlias(getFirstSelectStatement(node), aliasResultClass);
 
 		/*
 		 * Subtitui as strings no sql
@@ -526,7 +398,110 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		return node;
 	}
 
-	protected void replaceColumnNameByAlias(Set<ColumnNode> newColumns, Set<String> distinctNewColumns, INode selectNodeChild) {
+	protected void processSelectOrGroupByColumns(INode mainNode, Map<String, String> replaceStrings, SelectStatementNode selectStatement,
+			Node processNode, boolean generateAliasToColum) throws SQLQueryAnalyzerException {
+
+		/*
+		 * Cria uma lista para guardar as novas colunas a serem adicionadas no SQL
+		 */
+		Set<INode> newColumns = new LinkedHashSet<INode>();
+		Set<String> distinctNewColumns = new CompactHashSet<String>();
+
+		/*
+		 * Lista temporária de aliases do Select/Group by
+		 */
+		Set<SQLQueryAnalyserAlias> aliasesTemporary;
+		/*
+		 * Obtém as posições do Select/Group by dentro do SQL.
+		 */
+		int offsetProcessNode = processNode.getOffset();
+		int offSetProcessNodeFinal = processNode.getMaxOffset();
+
+		/*
+		 * Guarda o Select/Group By antigo
+		 */
+		String oldSelectOrGroupBy = sql.substring(offsetProcessNode, offSetProcessNodeFinal);
+
+		/*
+		 * Obtém a lista de aliases das tabelas usadas no Select/Group by
+		 */
+		aliasesTemporary = getTableAliasesFromSelectNode(selectStatement);
+
+		/*
+		 * Gera os nomes das colunas do select/Group by
+		 */
+		makeColumnNameAliases(aliasesTemporary, newColumns, distinctNewColumns, processNode, generateAliasToColum);
+
+		/*
+		 * Adiciona as colunas da chave primária do alias(tabela) e discriminator column caso não existam no
+		 * Select/GroupBy.
+		 */
+		addPkAndDiscriminatorColumnsIfNotExists(aliases, mainNode, newColumns, processNode, generateAliasToColum);
+
+		/*
+		 * Remove as colunas atuais do Select/GroupBy
+		 */
+		List<INode> listToRemove = new ArrayList<INode>();
+		for (INode child : processNode.getChildren()) {
+			if (!(child instanceof CommentNode)) {
+				listToRemove.add(child);
+			}
+		}
+		for (INode item : listToRemove) {
+			processNode.removeChild(item);
+		}
+
+		/*
+		 * Adiciona as novas colunas no Select/GroupBy
+		 */
+		INode oldColumn = null;
+		for (INode newColumn : newColumns) {
+			if (oldColumn != null)
+				processNode.addChild(new CommaNode(0, 0, 0));
+			processNode.addChild(newColumn);
+			oldColumn = newColumn;
+		}
+
+		/*
+		 * Converte o Select/GroupBy em uma string SQL
+		 */
+		ParserVisitorToSql v = new ParserVisitorToSql();
+		v.visit(processNode, sql);
+		String newSelectGroupBy = v.toString();
+		/*
+		 * Armazena a string do Select/GroupBy antigo a ser substituída pelo novo Select/GroupBy
+		 */
+		replaceStrings.put(oldSelectOrGroupBy, newSelectGroupBy);
+	}
+
+	void makeColumnNameAliases(Set<SQLQueryAnalyserAlias> aliasesTemporary, Set<INode> newColumns, Set<String> distinctNewColumns, INode node,
+			boolean generateAliasToColum) throws SQLQueryAnalyzerException {
+		/*
+		 * Substituiu * pelos nomes das colunas
+		 */
+		for (INode selectNodeChild : node.getChildren()) {
+			/*
+			 * Se o nó filho for uma coluna
+			 */
+			if (selectNodeChild instanceof ColumnNode) {
+				/*
+				 * Se o nome da coluna for * (asterisco)
+				 */
+				if ("*".equals(((ColumnNode) selectNodeChild).getColumnName())) {
+					replaceAsteriskByAliasColumnName(aliasesTemporary, newColumns, distinctNewColumns, selectNodeChild, generateAliasToColum);
+				} else {
+					replaceColumnNameByAlias(newColumns, distinctNewColumns, selectNodeChild, generateAliasToColum);
+				}
+			} else if ((!(selectNodeChild instanceof CommaNode)) && (!(selectNodeChild instanceof CommentNode))) {
+				/*
+				 * Adiciona as demais projeções do select
+				 */
+				newColumns.add((Node) selectNodeChild);
+			}
+		}
+	}
+
+	protected void replaceColumnNameByAlias(Set<INode> newColumns, Set<String> distinctNewColumns, INode selectNodeChild, boolean generateAliasToColum) {
 		/*
 		 * Caso não seja uma coluna com "*"
 		 */
@@ -546,7 +521,8 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 				 * Cria a nova coluna e adiciona na lista para ser adicionada no Select posteriormente
 				 */
 				ColumnNode newColumn = new ColumnNode(columnName, 0, 0, 0);
-				newColumn.setAliasName(aliasColumnName, 0, 0);
+				if (generateAliasToColum)
+					newColumn.setAliasName(aliasColumnName, 0, 0);
 				newColumn.setTableName(tableName);
 				newColumns.add(newColumn);
 				distinctNewColumns.add(tableName + "." + columnName);
@@ -559,8 +535,8 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		}
 	}
 
-	protected void replaceAsteriskByAliasColumnName(Set<SQLQueryAnalyserAlias> aliasesTemporary, Set<ColumnNode> newColumns,
-			Set<String> distinctNewColumns, INode selectNodeChild) throws SQLQueryAnalyzerException {
+	protected void replaceAsteriskByAliasColumnName(Set<SQLQueryAnalyserAlias> aliasesTemporary, Set<INode> newColumns,
+			Set<String> distinctNewColumns, INode selectNodeChild, boolean generateAliasToColum) throws SQLQueryAnalyzerException {
 		SQLQueryAnalyserAlias[] cacheAliases = null;
 		/*
 		 * Se o "*" não possuí um alias de tabela é válido para todas as tabelas do Select e será substituído pelo nomes
@@ -622,7 +598,8 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 									 * posteriormente
 									 */
 									ColumnNode newColumn = new ColumnNode(descriptionColumn.getColumnName(), 0, 0, 0);
-									newColumn.setAliasName(aliasColumnName, 0, 0);
+									if (generateAliasToColum)
+										newColumn.setAliasName(aliasColumnName, 0, 0);
 									newColumn.setTableName(alias.getAlias());
 									newColumns.add(newColumn);
 									distinctNewColumns.add(originalColumnName);
@@ -644,7 +621,8 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 							 * Cria a nova coluna e adiciona na lista para ser adicionada no Select posteriormente
 							 */
 							ColumnNode newColumn = new ColumnNode(cache.getDiscriminatorColumn().getColumnName(), 0, 0, 0);
-							newColumn.setAliasName(aliasColumnName, 0, 0);
+							if (generateAliasToColum)
+								newColumn.setAliasName(aliasColumnName, 0, 0);
 							newColumn.setTableName(alias.getAlias());
 							newColumns.add(newColumn);
 							distinctNewColumns.add(originalColumnName);
@@ -664,12 +642,13 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 	 *            Node que representa o SQL
 	 * @param newColumns
 	 *            Lista onde deverão ser adicionadas as novas colunas
+	 * @param generateAliasToColum
 	 * @param selectStatement
 	 *            Nó do SelectStatement
 	 * @throws SQLQueryAnalyzerException
 	 */
-	private void addPkAndDiscriminatorColumnsIfNotExists(Set<SQLQueryAnalyserAlias> aliases, INode node, Set<ColumnNode> newColumns,
-			SelectStatementNode selectStatement) throws SQLQueryAnalyzerException {
+	private void addPkAndDiscriminatorColumnsIfNotExists(Set<SQLQueryAnalyserAlias> aliases, INode node, Set<INode> newColumns, INode select,
+			boolean generateAliasToColum) throws SQLQueryAnalyzerException {
 		/*
 		 * Adiciona colunas da chave da tabelas(alias) e colunas DISCRIMINATOR caso não existam
 		 */
@@ -688,7 +667,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 					 * ID e nem criar as classes concretas sem saber o valor do discriminator column.
 					 */
 					for (DescriptionColumn descriptionColumn : columns) {
-						if (!existsColumnByAlias(selectStatement, alias.getAlias(), descriptionColumn.getColumnName())) {
+						if (!existsColumnByAlias(select, alias.getAlias(), descriptionColumn.getColumnName())) {
 							/*
 							 * Gera um alias para a coluna
 							 */
@@ -697,7 +676,8 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 							 * Cria a nova coluna e adiciona na lista para ser adicionada no Select posteriormente
 							 */
 							ColumnNode newColumn = new ColumnNode(descriptionColumn.getColumnName(), 0, 0, 0);
-							newColumn.setAliasName(aliasColumnName, 0, 0);
+							if (generateAliasToColum)
+								newColumn.setAliasName(aliasColumnName, 0, 0);
 							newColumn.setTableName(alias.getAlias());
 							newColumns.add(newColumn);
 						}
@@ -962,11 +942,11 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 	 * @return Verdadeiro se existe a coluna
 	 * @throws SQLQueryAnalyzerException
 	 */
-	private boolean existsColumnByAlias(SelectStatementNode selectStatement, String alias, String columnName) throws SQLQueryAnalyzerException {
+	private boolean existsColumnByAlias(INode select, String alias, String columnName) throws SQLQueryAnalyzerException {
 		/*
 		 * Localiza os nós do tipo ColumnNode no Select
 		 */
-		INode[] columns = ParserUtil.findChildren(selectStatement, ColumnNode.class.getSimpleName());
+		INode[] columns = ParserUtil.findChildren(select, ColumnNode.class.getSimpleName());
 		for (INode column : columns) {
 			/*
 			 * Somente as colunas que foram usadas no Select

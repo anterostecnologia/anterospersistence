@@ -366,9 +366,13 @@ public class SqlParser implements ISqlParser {
 					}
 
 				} else if (token.getSubType() == TokenUtil.SUBTYPE_KEYWORD_FUNCTION) {
-					FunctionNode function = new FunctionNode(getToken(), offset, length, scope);
-					node.addChild(function);
-
+					if ("cast".equalsIgnoreCase(getToken())) {
+						CastFunctionNode col = new CastFunctionNode(getToken(), offset, length, scope);
+						node.addChild(col);
+					} else {
+						FunctionNode function = new FunctionNode(getToken(), offset, length, scope);
+						node.addChild(function);
+					}
 				} else if ("LEFT JOIN".equalsIgnoreCase(getToken()) || "LEFT OUTER JOIN".equalsIgnoreCase(getToken())
 						|| "RIGHT JOIN".equalsIgnoreCase(getToken()) || "RIGHT OUTER JOIN".equalsIgnoreCase(getToken())
 						|| "INNER JOIN".equalsIgnoreCase(getToken())) {
@@ -987,9 +991,15 @@ public class SqlParser implements ISqlParser {
 
 				} else {
 					if (token.getSubType() == TokenUtil.SUBTYPE_KEYWORD_FUNCTION) {
-						FunctionNode col = new FunctionNode(getToken(), offset, length, scope);
-						node.addChild(col);
-						parse(col);
+						if ("cast".equalsIgnoreCase(getToken())) {
+							CastFunctionNode col = new CastFunctionNode(getToken(), offset, length, scope);
+							node.addChild(col);
+							parse(col);
+						} else {
+							FunctionNode col = new FunctionNode(getToken(), offset, length, scope);
+							node.addChild(col);
+							parse(col);
+						}
 					} else {
 						tokenizer.pushBack();
 						parse(node);
