@@ -37,7 +37,7 @@ import br.com.anteros.persistence.sql.format.SqlFormatRule;
 import br.com.anteros.persistence.sql.parser.INode;
 import br.com.anteros.persistence.sql.parser.Node;
 import br.com.anteros.persistence.sql.parser.ParserUtil;
-import br.com.anteros.persistence.sql.parser.ParserVisitorToString;
+import br.com.anteros.persistence.sql.parser.ParserVisitorToSql;
 import br.com.anteros.persistence.sql.parser.SqlParser;
 import br.com.anteros.persistence.sql.parser.node.BindNode;
 import br.com.anteros.persistence.sql.parser.node.ColumnNode;
@@ -481,7 +481,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			/*
 			 * Converte o Select em uma string SQL
 			 */
-			ParserVisitorToString v = new ParserVisitorToString();
+			ParserVisitorToSql v = new ParserVisitorToSql();
 			v.visit(select, sql);
 			String newSelect = v.toString();
 			/*
@@ -493,7 +493,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 				/*
 				 * Converte o GroupBy em uma string SQL
 				 */
-				v = new ParserVisitorToString();
+				v = new ParserVisitorToSql();
 				v.visit(groupBy, sql);
 				String newGroupBy = v.toString();
 				/*

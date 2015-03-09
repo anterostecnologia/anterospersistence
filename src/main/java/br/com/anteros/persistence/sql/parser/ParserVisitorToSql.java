@@ -38,13 +38,13 @@ import br.com.anteros.persistence.sql.parser.node.SelectStatementNode;
 import br.com.anteros.persistence.sql.parser.node.TableNode;
 import br.com.anteros.persistence.sql.parser.node.WhereNode;
 
-public class ParserVisitorToString implements IVisitor {
+public class ParserVisitorToSql implements IVisitor {
 
 	protected enum Stage {
 		SELECT, FROM, WHERE, GROUP_BY, HAVING, ORDER_BY, MODIFIERS
 	}
 
-	private static Logger LOG = LoggerProvider.getInstance().getLogger(ParserVisitorToString.class.getName());
+	private static Logger LOG = LoggerProvider.getInstance().getLogger(ParserVisitorToSql.class.getName());
 
 	StringBuilder sb = new StringBuilder();
 
@@ -52,10 +52,10 @@ public class ParserVisitorToString implements IVisitor {
 
 	private Stage stage = Stage.SELECT;
 
-	public ParserVisitorToString() {
+	public ParserVisitorToSql() {
 	}
 
-	public ParserVisitorToString(boolean isShowAs) {
+	public ParserVisitorToSql(boolean isShowAs) {
 		this.isShowAs = isShowAs;
 	}
 
