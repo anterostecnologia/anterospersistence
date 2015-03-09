@@ -70,6 +70,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 	private boolean inOperation = false;
 	private Boolean namedParameter = null;
+	private Boolean hasParameters = false;
 	private int currentIndex;
 
 	public SQLAnalyser(AbstractOSQLQuery<?> query) {
@@ -111,6 +112,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			}
 		}
 		this.namedParameter = !expr.isAnon();
+		this.hasParameters = true;
 		return null;
 	}
 
@@ -603,5 +605,9 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 */
 	public int getNextAliasColumnName() {
 		return nextAliasColumnName;
+	}
+
+	public Boolean hasParameters() {
+		return hasParameters;
 	}
 }

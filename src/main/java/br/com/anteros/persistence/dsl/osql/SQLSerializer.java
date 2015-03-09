@@ -585,26 +585,34 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 				 * Se estiver dentro de uma operação gera os nomes das colunas sem o alias
 				 */
 				EntityCache sourceEntityCache = null;
+				Class<?> sourceClass = null;
 				if (path instanceof EntityPath)
-					sourceEntityCache = entityCacheManager.getEntityCache(analyser.getClassByEntityPath((EntityPath<?>) path));
+					sourceClass = analyser.getClassByEntityPath((EntityPath<?>) path);
 				else
-					sourceEntityCache = entityCacheManager.getEntityCache(path.getType());
-				String alias = path.getMetadata().getName();
-				for (DescriptionField descriptionField : sourceEntityCache.getPrimaryKeyFields()) {
-					if (descriptionField.isSimple())
-						append(templates.quoteIdentifier(alias)).append(".").append(
-								templates.quoteIdentifier(descriptionField.getSimpleColumn().getColumnName()));
-					else if (descriptionField.isAnyCollection()) {
-						throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " " + sourceEntityCache.getEntityClass()
-								+ " não pode ser usado para criação da consulta pois é uma coleção. Use uma junção para isto. ");
-					} else if (descriptionField.isRelationShip()) {
-						boolean appendSep = false;
-						for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
-							if (appendSep) {
-								append(" AND ");
+					sourceClass = path.getType();
+
+				sourceEntityCache = entityCacheManager.getEntityCache(sourceClass);
+
+				if (sourceEntityCache == null)
+					append(path.getMetadata().getName());
+				else {
+					String alias = path.getMetadata().getName();
+					for (DescriptionField descriptionField : sourceEntityCache.getPrimaryKeyFields()) {
+						if (descriptionField.isSimple())
+							append(templates.quoteIdentifier(alias)).append(".").append(
+									templates.quoteIdentifier(descriptionField.getSimpleColumn().getColumnName()));
+						else if (descriptionField.isAnyCollection()) {
+							throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " " + sourceEntityCache.getEntityClass()
+									+ " não pode ser usado para criação da consulta pois é uma coleção. Use uma junção para isto. ");
+						} else if (descriptionField.isRelationShip()) {
+							boolean appendSep = false;
+							for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
+								if (appendSep) {
+									append(" AND ");
+								}
+								append(alias).append(".").append(column.getColumnName());
+								appendSep = true;
 							}
-							append(alias).append(".").append(column.getColumnName());
-							appendSep = true;
 						}
 					}
 				}

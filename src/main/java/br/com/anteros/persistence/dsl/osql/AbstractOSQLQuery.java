@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
@@ -258,8 +255,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			if (((NumberOperation<?>) expr).getOperator() != Ops.ALIAS) {
 				return ((NumberOperation<?>) expr).as(getAnalyser().makeNextAliasName("O_P_R"));
 			}
-//		} else if (expr instanceof NumberExpression<?>) {
-//			return ((NumberExpression<?>) expr).as(getAnalyser().makeNextAliasName("O_P_R"));
+			// } else if (expr instanceof NumberExpression<?>) {
+			// return ((NumberExpression<?>) expr).as(getAnalyser().makeNextAliasName("O_P_R"));
 		}
 		return expr;
 	}
@@ -344,7 +341,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			/*
 			 * Converte os parâmetros no formato de expressão para o formato da query.
 			 */
-			query.setParameters(getParameters());
+			if (analyser.hasParameters())
+				query.setParameters(getParameters());
 
 		} catch (Exception e) {
 			throw new OSQLQueryException("Não foi possível criar a query. ", e);
