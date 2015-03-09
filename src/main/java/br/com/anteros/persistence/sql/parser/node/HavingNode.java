@@ -23,11 +23,11 @@ package br.com.anteros.persistence.sql.parser.node;
 
 import br.com.anteros.persistence.sql.parser.ParserVisitor;
 
-public class HavingByNode extends OrderbyNode {
+public class HavingNode extends OrderbyNode {
 
-	public HavingByNode(int offset, int length, int scope) {
+	public HavingNode(int offset, int length, int scope) {
 		super(offset, length, scope);
-		super.name = "having by";
+		super.name = "having";
 	}
 
 	public Object accept(ParserVisitor visitor, Object data) {

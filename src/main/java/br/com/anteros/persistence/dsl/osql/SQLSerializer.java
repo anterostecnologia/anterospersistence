@@ -15,8 +15,6 @@
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -25,7 +23,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.QueryFlag.Position;
 import br.com.anteros.persistence.dsl.osql.support.Expressions;
@@ -47,10 +44,8 @@ import br.com.anteros.persistence.dsl.osql.types.Template;
 import br.com.anteros.persistence.dsl.osql.types.Template.Element;
 import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
 import br.com.anteros.persistence.dsl.osql.types.TemplateFactory;
-import br.com.anteros.persistence.dsl.osql.types.path.CollectionPathBase;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorColumnPath;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorValuePath;
-import br.com.anteros.persistence.dsl.osql.types.path.EntityPathBase;
 import br.com.anteros.persistence.dsl.osql.util.LiteralUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;

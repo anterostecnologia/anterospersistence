@@ -281,8 +281,6 @@ public class SqlFormatRule implements ISqlFormatRule {
 	}
 
 	public boolean isKeyword(String str) {
-		if (str.equalsIgnoreCase("CAST"))
-			System.out.println("achou o CAST");
 		return (Arrays.binarySearch(TokenUtil.KEYWORD, str) >= 0) || (Arrays.binarySearch(this.functions, str) >= 0)
 				|| (Arrays.binarySearch(this.dataTypes, str) >= 0);
 	}

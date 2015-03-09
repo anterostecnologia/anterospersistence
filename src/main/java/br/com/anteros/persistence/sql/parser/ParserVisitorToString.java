@@ -21,23 +21,36 @@ import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.persistence.sql.parser.node.AliasNode;
 import br.com.anteros.persistence.sql.parser.node.CaseCauseNode;
+import br.com.anteros.persistence.sql.parser.node.ColumnNode;
 import br.com.anteros.persistence.sql.parser.node.ExpressionNode;
+import br.com.anteros.persistence.sql.parser.node.FromNode;
 import br.com.anteros.persistence.sql.parser.node.FunctionNode;
+import br.com.anteros.persistence.sql.parser.node.GroupbyNode;
+import br.com.anteros.persistence.sql.parser.node.HavingNode;
 import br.com.anteros.persistence.sql.parser.node.InnerAliasNode;
 import br.com.anteros.persistence.sql.parser.node.OperatorNode;
+import br.com.anteros.persistence.sql.parser.node.OrderbyNode;
 import br.com.anteros.persistence.sql.parser.node.OutfileNode;
 import br.com.anteros.persistence.sql.parser.node.ParenthesesNode;
 import br.com.anteros.persistence.sql.parser.node.RootNode;
+import br.com.anteros.persistence.sql.parser.node.SelectNode;
 import br.com.anteros.persistence.sql.parser.node.SelectStatementNode;
 import br.com.anteros.persistence.sql.parser.node.TableNode;
+import br.com.anteros.persistence.sql.parser.node.WhereNode;
 
 public class ParserVisitorToString implements IVisitor {
+
+	protected enum Stage {
+		SELECT, FROM, WHERE, GROUP_BY, HAVING, ORDER_BY, MODIFIERS
+	}
 
 	private static Logger LOG = LoggerProvider.getInstance().getLogger(ParserVisitorToString.class.getName());
 
 	StringBuilder sb = new StringBuilder();
 
-	boolean isShowAs = false;
+	boolean isShowAs = true;
+
+	private Stage stage = Stage.SELECT;
 
 	public ParserVisitorToString() {
 	}
@@ -56,16 +69,30 @@ public class ParserVisitorToString implements IVisitor {
 
 	private void setAliasName(AliasNode target) {
 		if (target.hasAlias()) {
-			if (isShowAs) {
-				sb.append("AS ");
+			if (stage == Stage.SELECT) {
+				if (isShowAs) {
+					sb.append("AS ");
+				}
 			}
 			sb.append(target.getAliasName() + " ");
 		}
 	}
 
 	public Object visit(INode node, Object data) {
+		if (node instanceof SelectNode)
+			stage = Stage.SELECT;
+		else if (node instanceof FromNode)
+			stage = Stage.FROM;
+		else if (node instanceof WhereNode)
+			stage = Stage.WHERE;
+		else if (node instanceof GroupbyNode)
+			stage = Stage.GROUP_BY;
+		else if (node instanceof OrderbyNode)
+			stage = Stage.ORDER_BY;
+		else if (node instanceof HavingNode)
+			stage = Stage.HAVING;
 
-		if (node instanceof RootNode || node instanceof SelectStatementNode  || node instanceof ExpressionNode) {
+		if (node instanceof RootNode || node instanceof SelectStatementNode || node instanceof ExpressionNode || node instanceof InnerAliasNode) {
 
 			node.childrenAccept(this, data);
 
@@ -80,13 +107,17 @@ public class ParserVisitorToString implements IVisitor {
 		} else if (node instanceof FunctionNode) {
 			FunctionNode function = (FunctionNode) node;
 			sb.append(function.getName() + "");
+			Stage oldStage = stage;
 			node.childrenAccept(this, data);
-
+			stage = oldStage;
+			setAliasName(function);
 
 		} else if (node instanceof ParenthesesNode) {
 			ParenthesesNode p = (ParenthesesNode) node;
 			sb.append("(");
+			Stage oldStage = stage;
 			node.childrenAccept(this, data);
+			stage = oldStage;
 			sb.deleteCharAt(sb.toString().length() - 1);
 			sb.append(") ");
 
@@ -113,7 +144,9 @@ public class ParserVisitorToString implements IVisitor {
 
 		} else if (node instanceof CaseCauseNode) {
 			CaseCauseNode cc = (CaseCauseNode) node;
+			Stage oldStage = stage;
 			node.childrenAccept(this, data);
+			stage = oldStage;
 			sb.deleteCharAt(sb.toString().length() - 1);
 
 			if (cc.isComplete()) {
@@ -127,16 +160,19 @@ public class ParserVisitorToString implements IVisitor {
 			sb.append(node.getName() + " ");
 			sb.append(outfile.getFilePath());
 			sb.append(" ");
-		} else if (node instanceof InnerAliasNode) {
-			if (isShowAs)
-				sb.append("AS ");
-			sb.append(node.getName() + " ");
+		} else if (node instanceof ColumnNode) {
+			ColumnNode column = (ColumnNode) node;
+			sb.append(column.getName() + " ");
+			setAliasName(column);
 		} else {
 			sb.append(node.getName() + " ");
+			Stage oldStage = stage;
 			node.childrenAccept(this, data);
+			stage = oldStage;
 		}
 
 		return data;
+
 	}
 
 	public String toString() {

@@ -37,7 +37,7 @@ import br.com.anteros.persistence.sql.format.SqlFormatRule;
 import br.com.anteros.persistence.sql.parser.INode;
 import br.com.anteros.persistence.sql.parser.Node;
 import br.com.anteros.persistence.sql.parser.ParserUtil;
-import br.com.anteros.persistence.sql.parser.ParserVisitorToSql;
+import br.com.anteros.persistence.sql.parser.ParserVisitorToString;
 import br.com.anteros.persistence.sql.parser.SqlParser;
 import br.com.anteros.persistence.sql.parser.node.BindNode;
 import br.com.anteros.persistence.sql.parser.node.ColumnNode;
@@ -46,7 +46,6 @@ import br.com.anteros.persistence.sql.parser.node.CommentNode;
 import br.com.anteros.persistence.sql.parser.node.FromNode;
 import br.com.anteros.persistence.sql.parser.node.GroupbyNode;
 import br.com.anteros.persistence.sql.parser.node.OperatorNode;
-import br.com.anteros.persistence.sql.parser.node.ParenthesesNode;
 import br.com.anteros.persistence.sql.parser.node.SelectNode;
 import br.com.anteros.persistence.sql.parser.node.SelectStatementNode;
 import br.com.anteros.persistence.sql.parser.node.TableNode;
@@ -124,7 +123,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		INode node = new Node("root");
 		parser.parse(node);
 		
-		parser.dump(node);
+		//System.out.println(parser.dump(node));
 
 		allowApplyLockStrategy = false;
 		INode[] children = ParserUtil.findChildren(getFirstSelectStatement(node), ColumnNode.class.getSimpleName());
@@ -451,7 +450,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			INode oldColumn = null;
 			for (ColumnNode newColumn : newColumns) {
 				if (oldColumn != null)
-					oldColumn.addChild(new CommaNode(0, 0, 0));
+					select.addChild(new CommaNode(0, 0, 0));
 				select.addChild(newColumn);
 				oldColumn = newColumn;
 			}
@@ -460,7 +459,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			 */
 			for (Node otherProjection : newOthersProjections) {
 				if (oldColumn != null)
-					oldColumn.addChild(new CommaNode(0, 0, 0));
+					select.addChild(new CommaNode(0, 0, 0));
 				((SelectNode) selectStatement.getChild(0)).addChild(otherProjection);
 				oldColumn = otherProjection;
 			}
@@ -472,7 +471,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 				ColumnNode oldColumnGroupby = null;
 				for (ColumnNode newColumn : newColumns) {
 					if (oldColumnGroupby != null)
-						oldColumnGroupby.addChild(new CommaNode(0, 0, 0));
+						groupBy.addChild(new CommaNode(0, 0, 0));
 					oldColumnGroupby = new ColumnNode(newColumn.getColumnName(), 0, 0, 0);
 					oldColumnGroupby.setTableName(newColumn.getTableName());
 					groupBy.addChild(oldColumnGroupby);
@@ -482,7 +481,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			/*
 			 * Converte o Select em uma string SQL
 			 */
-			ParserVisitorToSql v = new ParserVisitorToSql();
+			ParserVisitorToString v = new ParserVisitorToString();
 			v.visit(select, sql);
 			String newSelect = v.toString();
 			/*
@@ -494,7 +493,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 				/*
 				 * Converte o GroupBy em uma string SQL
 				 */
-				v = new ParserVisitorToSql();
+				v = new ParserVisitorToString();
 				v.visit(groupBy, sql);
 				String newGroupBy = v.toString();
 				/*

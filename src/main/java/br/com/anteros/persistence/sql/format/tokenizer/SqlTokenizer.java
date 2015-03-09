@@ -43,6 +43,7 @@ public class SqlTokenizer implements Iterator<Token> {
 		parse();
 
 		optimize();
+		
 
 		this.it = this.getTokenList().iterator();
 	}
@@ -228,8 +229,6 @@ public class SqlTokenizer implements Iterator<Token> {
 
 				String upper = sb.toString().toUpperCase();
 				
-				System.out.println(upper);
-
 				if (this.rule.isKeyword(upper)) {
 					if (TokenUtil.isSpecialValue(upper))
 						type = TokenUtil.TYPE_VALUE;

@@ -24,6 +24,7 @@ import java.util.List;
 
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.handler.EntityHandler;
 import br.com.anteros.persistence.handler.EntityHandlerException;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityManaged;

@@ -28,7 +28,7 @@ import java.util.List;
 import br.com.anteros.persistence.sql.parser.node.ExpressionNode;
 import br.com.anteros.persistence.sql.parser.node.FunctionNode;
 import br.com.anteros.persistence.sql.parser.node.GroupbyNode;
-import br.com.anteros.persistence.sql.parser.node.HavingByNode;
+import br.com.anteros.persistence.sql.parser.node.HavingNode;
 import br.com.anteros.persistence.sql.parser.node.OperatorNode;
 import br.com.anteros.persistence.sql.parser.node.ParenthesesNode;
 import br.com.anteros.persistence.sql.parser.node.SelectNode;
@@ -121,7 +121,7 @@ public class ParserUtil {
 			result = node.getParent();
 		else if (node.getParent() instanceof GroupbyNode)
 			result = node.getParent();
-		else if (node.getParent() instanceof HavingByNode)
+		else if (node.getParent() instanceof HavingNode)
 			result = node.getParent();
 		else if (node.getParent() instanceof SelectNode)
 			result = node.getParent();

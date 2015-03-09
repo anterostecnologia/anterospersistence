@@ -14,11 +14,9 @@ package br.com.anteros.persistence.session.query;
 
 import java.sql.ResultSet;
 
-import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityManaged;
 import br.com.anteros.persistence.metadata.FieldEntityValue;
-import br.com.anteros.persistence.metadata.converter.AttributeConverter;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.metadata.type.EntityStatus;
 import br.com.anteros.persistence.session.SQLSession;

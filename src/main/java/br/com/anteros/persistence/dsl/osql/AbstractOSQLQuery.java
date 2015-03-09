@@ -15,8 +15,6 @@
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;

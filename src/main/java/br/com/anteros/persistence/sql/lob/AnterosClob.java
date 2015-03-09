@@ -21,9 +21,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.sql.Clob;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-
-import org.apache.log4j.spi.ErrorCode;
 
 import br.com.anteros.core.utils.KMPSearchAlgorithm;
 

@@ -17,7 +17,6 @@ package br.com.anteros.persistence.schema.definition;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 public abstract class ConstraintSchema extends ObjectSchema {

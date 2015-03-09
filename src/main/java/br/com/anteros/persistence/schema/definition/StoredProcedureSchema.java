@@ -17,7 +17,6 @@ package br.com.anteros.persistence.schema.definition;
 
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
