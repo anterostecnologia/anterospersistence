@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
@@ -568,7 +565,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			append(sourceEntityCache.getDiscriminatorColumn().getColumnName());
 		} else if (path instanceof DiscriminatorValuePath) {
 			/*
-			 * Se for um caminho para o valor do discriminator gera o valor 
+			 * Se for um caminho para o valor do discriminator gera o valor
 			 */
 			EntityCache sourceEntityCache = entityCacheManager.getEntityCache(((DiscriminatorValuePath) path).getDiscriminatorClass());
 			if (sourceEntityCache == null)
@@ -579,7 +576,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 				throw new SQLSerializerException("A classe " + ((DiscriminatorValuePath) path).getDiscriminatorClass()
 						+ " não possuí um discriminator value.");
 			append("'").append(sourceEntityCache.getDiscriminatorValue()).append("'");
-		} else if ((path.getMetadata().getPathType() == PathType.VARIABLE) && (path instanceof EntityPath<?>)) {
+		} else if ((path.getMetadata().getPathType() == PathType.VARIABLE) && ((path instanceof EntityPath<?>) || (path.getMetadata().isRoot()))) {
 			/*
 			 * Se for uma variável e uma entidade
 			 */
@@ -587,7 +584,11 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 				/*
 				 * Se estiver dentro de uma operação gera os nomes das colunas sem o alias
 				 */
-				EntityCache sourceEntityCache = entityCacheManager.getEntityCache(analyser.getClassByEntityPath((EntityPath<?>) path));
+				EntityCache sourceEntityCache = null;
+				if (path instanceof EntityPath)
+					sourceEntityCache = entityCacheManager.getEntityCache(analyser.getClassByEntityPath((EntityPath<?>) path));
+				else
+					sourceEntityCache = entityCacheManager.getEntityCache(path.getType());
 				String alias = path.getMetadata().getName();
 				for (DescriptionField descriptionField : sourceEntityCache.getPrimaryKeyFields()) {
 					if (descriptionField.isSimple())
@@ -613,7 +614,8 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 				 */
 				if ((stage == Stage.SELECT) || (stage == Stage.GROUP_BY)) {
 					/*
-					 * Adiciona apenas as colunas finais já consideradas as projeções customizadas e excluídas na análise.
+					 * Adiciona apenas as colunas finais já consideradas as projeções customizadas e excluídas na
+					 * análise.
 					 */
 					appendAllColumnsForPath(this.getCurrentIndex());
 				} else {
@@ -640,7 +642,8 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 				 */
 				if ((stage == Stage.SELECT) || (stage == Stage.GROUP_BY))
 					/*
-					 * Adiciona apenas as colunas finais já consideradas as projeções customizadas e excluídas na análise.
+					 * Adiciona apenas as colunas finais já consideradas as projeções customizadas e excluídas na
+					 * análise.
 					 */
 					appendAllColumnsForPath(this.getCurrentIndex());
 				else
@@ -651,7 +654,8 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 					throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " não foi encontrado na classe "
 							+ analyser.getClassByEntityPath(entityPath) + ". ");
 				/*
-				 * Se estiver no Select/Group by e não estiver dentro de uma operação gera os nomes das colunas com os aliases
+				 * Se estiver no Select/Group by e não estiver dentro de uma operação gera os nomes das colunas com os
+				 * aliases
 				 */
 				if ((stage == Stage.SELECT) && (!inOperation))
 					appendAllColumnsForPath(this.getCurrentIndex());
@@ -667,9 +671,13 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	/**
 	 * Adiciona todos os campos da entidade no SQL.
-	 * @param path Caminho
- 	 * @param alias alias da tabela
- 	 * @param sourceEntityCache Representação da entidade no dicionário.
+	 * 
+	 * @param path
+	 *            Caminho
+	 * @param alias
+	 *            alias da tabela
+	 * @param sourceEntityCache
+	 *            Representação da entidade no dicionário.
 	 */
 	protected void appendAllDescriptionFields(Path<?> path, String alias, EntityCache sourceEntityCache) {
 		boolean appendSep = false;
@@ -685,10 +693,15 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	/**
 	 * Adiciona o campo no SQL.
-	 * @param path Caminho
-	 * @param entityPath Entidade 
-	 * @param alias alias da tabela
-	 * @param descriptionField Campo da entidade
+	 * 
+	 * @param path
+	 *            Caminho
+	 * @param entityPath
+	 *            Entidade
+	 * @param alias
+	 *            alias da tabela
+	 * @param descriptionField
+	 *            Campo da entidade
 	 * @return Verdadeiro se foi possível adicionar o campo no sql.
 	 */
 	protected boolean appendDescriptionField(Path<?> path, EntityPath<?> entityPath, String alias, DescriptionField descriptionField) {
