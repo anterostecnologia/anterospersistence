@@ -729,7 +729,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		} else if (descriptionField.isRelationShip()) {
 			if ((descriptionField.getDescriptionColumns().size() > 1) && (stage == Stage.FROM))
 				throw new SQLSerializerException(
-						"Ao usar ID's  ou entidades que tenham chave composta informe o caminho completo de cada parte da chave. Caminho "
+						"Ao usar ID's  ou entidades que tenham chave composta em operações ou junções informe o caminho completo de cada parte da chave. Caminho "
 								+ Arrays.toString(currentArgsOperation.toArray()));
 
 			boolean appendSep = false;
