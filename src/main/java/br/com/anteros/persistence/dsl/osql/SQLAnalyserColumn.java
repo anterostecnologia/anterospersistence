@@ -58,16 +58,23 @@ public class SQLAnalyserColumn {
 		this.aliasColumnName = aliasColumnName;
 	}
 
-	@Override
-	public String toString() {
-		return aliasTableName + "." + columnName
-				+ ((columnName.equals(aliasColumnName) || StringUtils.isEmpty(aliasColumnName) ? "" : " AS " + aliasColumnName));
+	public boolean isUserAliasDefined() {
+		return userAliasDefined;
+	}
+
+	public void setUserAliasDefined(boolean userAliasDefined) {
+		this.userAliasDefined = userAliasDefined;
+	}
+
+	public DescriptionField getDescriptionField() {
+		return descriptionField;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + ((aliasColumnName == null) ? 0 : aliasColumnName.hashCode());
 		result = prime * result + ((aliasTableName == null) ? 0 : aliasTableName.hashCode());
 		result = prime * result + ((columnName == null) ? 0 : columnName.hashCode());
 		return result;
@@ -82,6 +89,11 @@ public class SQLAnalyserColumn {
 		if (getClass() != obj.getClass())
 			return false;
 		SQLAnalyserColumn other = (SQLAnalyserColumn) obj;
+		if (aliasColumnName == null) {
+			if (other.aliasColumnName != null)
+				return false;
+		} else if (!aliasColumnName.equals(other.aliasColumnName))
+			return false;
 		if (aliasTableName == null) {
 			if (other.aliasTableName != null)
 				return false;
@@ -94,16 +106,10 @@ public class SQLAnalyserColumn {
 			return false;
 		return true;
 	}
-
-	public boolean isUserAliasDefined() {
-		return userAliasDefined;
+	
+	@Override
+	public String toString() {
+		return aliasTableName+"."+columnName+" AS "+aliasColumnName;
 	}
 
-	public void setUserAliasDefined(boolean userAliasDefined) {
-		this.userAliasDefined = userAliasDefined;
-	}
-
-	public DescriptionField getDescriptionField() {
-		return descriptionField;
-	}
 }

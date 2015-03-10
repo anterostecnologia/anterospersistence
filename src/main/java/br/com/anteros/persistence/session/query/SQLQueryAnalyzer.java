@@ -233,7 +233,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 						DescriptionField descriptionField = cache
 								.getDescriptionFieldUsesColumns(aliasChild.getEntity().getEntityClass(), columnNames);
 						/*
-						 * Se encontrar o campo set o alias pai no filho pois eles possuem um relacionamento
+						 * Se encontrar o campo seta do alias pai no filho pois eles possuem um relacionamento
 						 */
 						if (descriptionField != null) {
 							aliasChild.setOwner(new SQLQueryAnalyserOwner(aliasOwner, aliasOwner.getEntity(), descriptionField));
@@ -404,7 +404,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		/*
 		 * Cria uma lista para guardar as novas colunas a serem adicionadas no SQL
 		 */
-		Set<INode> newColumns = new LinkedHashSet<INode>();
+		List<INode> newColumns = new ArrayList<INode>();
 		Set<String> distinctNewColumns = new CompactHashSet<String>();
 
 		/*
@@ -474,7 +474,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		replaceStrings.put(oldSelectOrGroupBy, newSelectGroupBy);
 	}
 
-	void makeColumnNameAliases(Set<SQLQueryAnalyserAlias> aliasesTemporary, Set<INode> newColumns, Set<String> distinctNewColumns, INode node,
+	void makeColumnNameAliases(Set<SQLQueryAnalyserAlias> aliasesTemporary, List<INode> newColumns, Set<String> distinctNewColumns, INode node,
 			boolean generateAliasToColum) throws SQLQueryAnalyzerException {
 		/*
 		 * Substituiu * pelos nomes das colunas
@@ -501,7 +501,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		}
 	}
 
-	protected void replaceColumnNameByAlias(Set<INode> newColumns, Set<String> distinctNewColumns, INode selectNodeChild, boolean generateAliasToColum) {
+	protected void replaceColumnNameByAlias(List<INode> newColumns, Set<String> distinctNewColumns, INode selectNodeChild, boolean generateAliasToColum) {
 		/*
 		 * Caso não seja uma coluna com "*"
 		 */
@@ -535,7 +535,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		}
 	}
 
-	protected void replaceAsteriskByAliasColumnName(Set<SQLQueryAnalyserAlias> aliasesTemporary, Set<INode> newColumns,
+	protected void replaceAsteriskByAliasColumnName(Set<SQLQueryAnalyserAlias> aliasesTemporary, List<INode> newColumns,
 			Set<String> distinctNewColumns, INode selectNodeChild, boolean generateAliasToColum) throws SQLQueryAnalyzerException {
 		SQLQueryAnalyserAlias[] cacheAliases = null;
 		/*
@@ -647,7 +647,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 	 *            Nó do SelectStatement
 	 * @throws SQLQueryAnalyzerException
 	 */
-	private void addPkAndDiscriminatorColumnsIfNotExists(Set<SQLQueryAnalyserAlias> aliases, INode node, Set<INode> newColumns, INode select,
+	private void addPkAndDiscriminatorColumnsIfNotExists(Set<SQLQueryAnalyserAlias> aliases, INode node, List<INode> newColumns, INode select,
 			boolean generateAliasToColum) throws SQLQueryAnalyzerException {
 		/*
 		 * Adiciona colunas da chave da tabelas(alias) e colunas DISCRIMINATOR caso não existam

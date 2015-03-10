@@ -28,6 +28,7 @@ import br.com.anteros.persistence.dsl.osql.types.Constant;
 import br.com.anteros.persistence.dsl.osql.types.ConstantImpl;
 import br.com.anteros.persistence.dsl.osql.types.EntityPath;
 import br.com.anteros.persistence.dsl.osql.types.Expression;
+import br.com.anteros.persistence.dsl.osql.types.Operation;
 import br.com.anteros.persistence.dsl.osql.types.Operator;
 import br.com.anteros.persistence.dsl.osql.types.Ops;
 import br.com.anteros.persistence.dsl.osql.types.Order;
@@ -578,7 +579,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 				throw new SQLSerializerException("A classe " + ((DiscriminatorValuePath) path).getDiscriminatorClass()
 						+ " não possuí um discriminator value.");
 			append("'").append(sourceEntityCache.getDiscriminatorValue()).append("'");
-		} else if ((path.getMetadata().getPathType() == PathType.VARIABLE) && ((path instanceof EntityPath<?>) || (path.getMetadata().isRoot()))) {
+		} else if ((path.getMetadata().getPathType() == PathType.VARIABLE) && ((path instanceof EntityPath<?>))) {
 			/*
 			 * Se for uma variável e uma entidade
 			 */
@@ -791,6 +792,16 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			super.visit(expr, context);
 		}
 		return null;
+	}
+
+	@Override
+	public Void visit(Operation<?> expr, Void context) {
+		String booleanAsString = analyser.getBooleanDefinitions().get(expr);
+		if (booleanAsString != null) {
+			append(booleanAsString);
+			return null;
+		} else
+			return super.visit(expr, context);
 	}
 
 	@Override

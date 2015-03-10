@@ -15,6 +15,7 @@ package br.com.anteros.persistence.dsl.osql;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,6 +35,7 @@ import br.com.anteros.persistence.dsl.osql.types.ParamExpression;
 import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
+import br.com.anteros.persistence.dsl.osql.types.expr.BooleanExpression;
 import br.com.anteros.persistence.dsl.osql.types.expr.NumberOperation;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.DateParam;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.DateTimeParam;
@@ -255,8 +257,6 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			if (((NumberOperation<?>) expr).getOperator() != Ops.ALIAS) {
 				return ((NumberOperation<?>) expr).as(getAnalyser().makeNextAliasName("O_P_R"));
 			}
-			// } else if (expr instanceof NumberExpression<?>) {
-			// return ((NumberExpression<?>) expr).as(getAnalyser().makeNextAliasName("O_P_R"));
 		}
 		return expr;
 	}
@@ -306,6 +306,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			SQLSerializer serializer = serialize(forCount);
 			String sql = serializer.toString();
 			System.out.println(sql);
+			System.out.println();
 			/*
 			 * Monta os objetos usando o handler adequado para o resultado esperado.
 			 */

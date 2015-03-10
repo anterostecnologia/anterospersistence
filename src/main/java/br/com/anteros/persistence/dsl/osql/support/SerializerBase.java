@@ -57,7 +57,7 @@ public abstract class SerializerBase<S extends SerializerBase<S>> implements Vis
 
     private boolean normalize = true;
     
-    private boolean strict = true;
+    protected boolean strict = true;
     
     private int currentIndex = 0;
     
