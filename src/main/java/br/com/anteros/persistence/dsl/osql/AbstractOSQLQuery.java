@@ -278,11 +278,14 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		for (Expression<?> expr : args) {
 			if (expr instanceof FactoryExpression<?>) {
 				FactoryExpression<?> f = ((FactoryExpression<?>) expr);
+				List<Expression<?>> newArgs = new ArrayList<Expression<?>>();
 				for (int j = 0; j < f.getArgs().size(); j++) {
 					Expression<?> e = f.getArgs().get(j);
-					f.getArgs().set(j, hydrateExpression(e));
+					newArgs.add(hydrateExpression(e));
 				}
-				args[i] = expr;
+				FactoryExpression<?> factoryExpression = ReflectionUtils.invokeConstructor(f.getClass(), f.getType(), newArgs);
+
+				args[i] = factoryExpression;
 			} else
 				args[i] = hydrateExpression(expr);
 			i++;
