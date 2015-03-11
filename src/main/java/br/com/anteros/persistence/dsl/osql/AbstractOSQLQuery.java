@@ -15,7 +15,6 @@ package br.com.anteros.persistence.dsl.osql;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,19 +23,21 @@ import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.lang.CloseableIterator;
+import br.com.anteros.persistence.dsl.osql.support.Expressions;
 import br.com.anteros.persistence.dsl.osql.support.QueryMixin;
+import br.com.anteros.persistence.dsl.osql.types.Constant;
 import br.com.anteros.persistence.dsl.osql.types.EntityPath;
 import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpressionUtils;
 import br.com.anteros.persistence.dsl.osql.types.IndexHint;
+import br.com.anteros.persistence.dsl.osql.types.Operation;
 import br.com.anteros.persistence.dsl.osql.types.Ops;
 import br.com.anteros.persistence.dsl.osql.types.ParamExpression;
 import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
-import br.com.anteros.persistence.dsl.osql.types.expr.BooleanExpression;
-import br.com.anteros.persistence.dsl.osql.types.expr.NumberOperation;
+import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.DateParam;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.DateTimeParam;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.EnumParam;
@@ -253,11 +254,21 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	private Expression<?> hydrateExpression(Expression<?> expr) throws Exception {
-		if (expr instanceof NumberOperation<?>) {
-			if (((NumberOperation<?>) expr).getOperator() != Ops.ALIAS) {
-				return ((NumberOperation<?>) expr).as(getAnalyser().makeNextAliasName("O_P_R"));
+		try {
+			if (ReflectionUtils.isImplementsInterface(expr.getClass(), Operation.class)) {
+				if (((Operation<?>) expr).getOperator() != Ops.ALIAS) {
+					return (Expression<?>) ReflectionUtils.invokeMethod(expr, "as", getAnalyser().makeNextAliasName("O_P_R"));
+				}
+			} else if (ReflectionUtils.isImplementsInterface(expr.getClass(), TemplateExpression.class)) {
+				return (Expression<?>) ReflectionUtils.invokeMethod(expr, "as", getAnalyser().makeNextAliasName("T_E_R"));
+			} else if (expr instanceof Constant<?>) {
+				return Expressions.as(expr, getAnalyser().makeNextAliasName("C_S_T"));
 			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+
 		return expr;
 	}
 

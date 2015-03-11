@@ -35,6 +35,7 @@ import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.PathType;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
+import br.com.anteros.persistence.dsl.osql.types.Template;
 import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
 import br.com.anteros.persistence.dsl.osql.types.Visitor;
 import br.com.anteros.persistence.dsl.osql.types.expr.BooleanExpression;
@@ -80,6 +81,11 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 	@Override
 	public Void visit(Constant<?> expr, Void context) {
+		if (this.level == MAKE_COLUMNS) {
+			Set<SQLAnalyserColumn> columnsForPath = getColumnsListForPath(currentIndex);
+			lastColumnAdded = new SQLAnalyserColumn("", "", "", null);
+			columnsForPath.add(lastColumnAdded);
+		}
 		return null;
 	}
 
@@ -95,7 +101,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	public Void visit(Operation<?> expr, Void context) {
 		try {
 			inOperation = true;
-
+			lastColumnAdded = null;
 			for (Expression<?> arg : expr.getArgs()) {
 				arg.accept(this, null);
 			}
@@ -456,6 +462,11 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 	@Override
 	public Void visit(TemplateExpression<?> expr, Void context) {
+		if (this.level == MAKE_COLUMNS) {
+			Set<SQLAnalyserColumn> columnsForPath = getColumnsListForPath(currentIndex);
+			lastColumnAdded = new SQLAnalyserColumn("", "", "", null);
+			columnsForPath.add(lastColumnAdded);
+		}
 		return null;
 	}
 
