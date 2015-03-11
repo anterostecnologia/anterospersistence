@@ -58,7 +58,7 @@ public class QBean<T> extends ExpressionBase<T> implements FactoryExpression<T> 
                 Operation<?> operation = (Operation<?>)expr;
                 if (operation.getOperator() == Ops.ALIAS && operation.getArg(1) instanceof Path<?>) {
                     Path<?> path = (Path<?>)operation.getArg(1);
-                    rv.put(path.getMetadata().getName(), operation.getArg(0));
+                    rv.put(path.getMetadata().getName(), expr);
                 } else {
                     throw new IllegalArgumentException("Unsupported expression " + expr);
                 }
