@@ -166,7 +166,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	public <RT> List<RT> list(Expression<RT> expr) {
 		try {
 			validateExpressions(expr);
-			SQLQuery query = createQuery(hydrateOperations(expr));
+			SQLQuery query = createQuery(expr);
 			return (List<RT>) getResultList(query);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -209,7 +209,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@Override
 	public <RT> RT uniqueResult(Expression<RT> expr) {
 		try {
-			SQLQuery query = createQuery(hydrateOperations(expr));
+			SQLQuery query = createQuery(expr);
 			return (RT) getSingleResult(query);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -219,7 +219,6 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@Override
 	public Tuple uniqueResult(Expression<?>... args) {
 		try {
-			args = hydrateOperations(args);
 			validateExpressions(args);
 			return uniqueResult(queryMixin.createProjection(args));
 		} catch (Exception e) {
@@ -247,56 +246,11 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@Override
 	public List<Tuple> list(Expression<?>... args) {
 		try {
-			Expression<?> newArgs[] = hydrateOperations(args);
-			validateExpressions(newArgs);
-			return list(queryMixin.createProjection(newArgs));
+			validateExpressions(args);
+			return list(queryMixin.createProjection(args));
 		} catch (Exception e) {
 			throw new OSQLQueryException(e);
 		}
-	}
-
-	private Expression<?> hydrateExpression(Expression<?> expr) throws Exception {
-		try {
-			if (ReflectionUtils.isImplementsInterface(expr.getClass(), Operation.class)) {
-				if (((Operation<?>) expr).getOperator() != Ops.ALIAS) {
-					return (Expression<?>) ReflectionUtils.invokeMethod(expr, "as", getAnalyser().makeNextAliasName("O_P_R"));
-				}
-			} else if (ReflectionUtils.isImplementsInterface(expr.getClass(), TemplateExpression.class)) {
-				return (Expression<?>) ReflectionUtils.invokeMethod(expr, "as", getAnalyser().makeNextAliasName("T_E_R"));
-			} else if (expr instanceof Constant<?>) {
-				return Expressions.as(expr, getAnalyser().makeNextAliasName("C_S_T"));
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return expr;
-	}
-
-	private Expression<?>[] hydrateOperations(Expression<?>... args) throws Exception {
-		int i = 0;
-		for (Expression<?> expr : args) {
-//			if (expr instanceof FactoryExpression<?>) {
-//				FactoryExpression<?> f = ((FactoryExpression<?>) expr);
-//				List<Expression<?>> newArgs = new ArrayList<Expression<?>>();
-//				for (int j = 0; j < f.getArgs().size(); j++) {
-//					Expression<?> e = f.getArgs().get(j);
-//					newArgs.add(hydrateExpression(e));
-//				}
-//				FactoryExpression<?> factoryExpression = null;
-//				Expression<?>[] expressions = newArgs.toArray(new Expression<?>[] {});
-//				if (ReflectionUtils.hasMatchingAccessibleConstructor(f.getClass(), f.getType(), expressions))
-//					factoryExpression = ReflectionUtils.invokeConstructor(f.getClass(), f.getType(), newArgs.toArray(new Expression<?>[] {}));
-//				else if (ReflectionUtils.hasMatchingAccessibleConstructor(f.getClass(), expressions))
-//					factoryExpression = ReflectionUtils.invokeConstructor(f.getClass(), f.getType(), newArgs.toArray(new Expression<?>[] {}));
-//
-//				args[i] = factoryExpression;
-//			} else
-				args[i] =  expr; //hydrateExpression(expr);
-			i++;
-		}
-		return args;
 	}
 
 	public SQLQuery createQuery(Expression<?> expr) throws Exception {
