@@ -9,7 +9,7 @@
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql.types.path;
 
-import java.util.List;
+import java.util.Set;
 
 import br.com.anteros.persistence.dsl.osql.types.EntityPath;
 import br.com.anteros.persistence.dsl.osql.types.Path;
@@ -45,7 +45,7 @@ public class ComparableEntityPath<T extends Comparable> extends ComparablePath<T
 	}
 
 	@Override
-	public List<Path<?>> getCustomProjection() {
+	public Set<Path<?>> getCustomProjection() {
 		throw new UnsupportedOperationException();
 	}
 
@@ -55,7 +55,7 @@ public class ComparableEntityPath<T extends Comparable> extends ComparablePath<T
 	}
 
 	@Override
-	public List<Path<?>> getExcludeProjection() {
+	public Set<Path<?>> getExcludeProjection() {
 		throw new UnsupportedOperationException();	
 	}
 

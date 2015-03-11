@@ -12,6 +12,7 @@
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
+import java.lang.reflect.Constructor;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
@@ -276,18 +277,23 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	private Expression<?>[] hydrateOperations(Expression<?>... args) throws Exception {
 		int i = 0;
 		for (Expression<?> expr : args) {
-			if (expr instanceof FactoryExpression<?>) {
-				FactoryExpression<?> f = ((FactoryExpression<?>) expr);
-				List<Expression<?>> newArgs = new ArrayList<Expression<?>>();
-				for (int j = 0; j < f.getArgs().size(); j++) {
-					Expression<?> e = f.getArgs().get(j);
-					newArgs.add(hydrateExpression(e));
-				}
-				FactoryExpression<?> factoryExpression = ReflectionUtils.invokeConstructor(f.getClass(), f.getType(), newArgs.toArray(new Expression<?>[]{}));
-
-				args[i] = factoryExpression;
-			} else
-				args[i] = hydrateExpression(expr);
+//			if (expr instanceof FactoryExpression<?>) {
+//				FactoryExpression<?> f = ((FactoryExpression<?>) expr);
+//				List<Expression<?>> newArgs = new ArrayList<Expression<?>>();
+//				for (int j = 0; j < f.getArgs().size(); j++) {
+//					Expression<?> e = f.getArgs().get(j);
+//					newArgs.add(hydrateExpression(e));
+//				}
+//				FactoryExpression<?> factoryExpression = null;
+//				Expression<?>[] expressions = newArgs.toArray(new Expression<?>[] {});
+//				if (ReflectionUtils.hasMatchingAccessibleConstructor(f.getClass(), f.getType(), expressions))
+//					factoryExpression = ReflectionUtils.invokeConstructor(f.getClass(), f.getType(), newArgs.toArray(new Expression<?>[] {}));
+//				else if (ReflectionUtils.hasMatchingAccessibleConstructor(f.getClass(), expressions))
+//					factoryExpression = ReflectionUtils.invokeConstructor(f.getClass(), f.getType(), newArgs.toArray(new Expression<?>[] {}));
+//
+//				args[i] = factoryExpression;
+//			} else
+				args[i] =  expr; //hydrateExpression(expr);
 			i++;
 		}
 		return args;

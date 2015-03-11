@@ -13,8 +13,10 @@
 package br.com.anteros.persistence.dsl.osql.types.path;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import br.com.anteros.persistence.dsl.osql.ColumnMetadata;
 import br.com.anteros.persistence.dsl.osql.types.EntityPath;
@@ -37,8 +39,8 @@ public class EntityPathBase<T> extends BeanPath<T> implements EntityPath<T> {
 
 	private final Map<Path<?>, ColumnMetadata> columnMetadata = Maps.newLinkedHashMap();
 
-	private final List<Path<?>> customProjectionList = new ArrayList<Path<?>>();
-	private final List<Path<?>> excludeProjectionList = new ArrayList<Path<?>>();
+	private final Set<Path<?>> customProjection = new LinkedHashSet<Path<?>>();
+	private final Set<Path<?>> excludeProjection = new LinkedHashSet<Path<?>>();
 
 	public EntityPathBase(Class<? extends T> type, String variable) {
 		super(type, variable);
@@ -72,16 +74,16 @@ public class EntityPathBase<T> extends BeanPath<T> implements EntityPath<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public List<Path<?>> getCustomProjection() {
-		return customProjectionList;
+	public Set<Path<?>> getCustomProjection() {
+		return customProjection;
 	}
 	
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public List<Path<?>> getExcludeProjection() {
-		return excludeProjectionList;
+	public Set<Path<?>> getExcludeProjection() {
+		return excludeProjection;
 	}
 
 	/**
@@ -90,7 +92,7 @@ public class EntityPathBase<T> extends BeanPath<T> implements EntityPath<T> {
 	@Override
 	public EntityPath<T> customProjection(Path<?>... args) {
 		for (Path<?> arg : args) {
-			customProjectionList.add(arg);
+			customProjection.add(arg);
 		}
 		return this;
 	}
@@ -101,7 +103,7 @@ public class EntityPathBase<T> extends BeanPath<T> implements EntityPath<T> {
 	@Override
 	public EntityPath<T> excludeProjection(Path<?>... args) {
 		for (Path<?> arg : args) {
-			excludeProjectionList.add(arg);
+			excludeProjection.add(arg);
 		}
 		return this;
 	}

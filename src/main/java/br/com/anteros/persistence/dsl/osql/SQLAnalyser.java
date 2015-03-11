@@ -436,7 +436,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 */
 	protected void processAllDescriptionFields(EntityPath<?> entityPath, String alias, EntityCache sourceEntityCache) {
 
-		List<Path<?>> excludeProjection = entityPath.getExcludeProjection();
+		Set<Path<?>> excludeProjection = entityPath.getExcludeProjection();
 		for (DescriptionField descriptionField : sourceEntityCache.getDescriptionFields()) {
 			/*
 			 * Não processa nenhum tipo de coleção e caminhos excluídos da projeção
@@ -456,7 +456,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 * @param descriptionField
 	 * @return Verdadeiro se o campo faz parte da lista de exclusão.
 	 */
-	private boolean hasPathForDescriptionFieldToExclude(List<Path<?>> excludeProjection, DescriptionField descriptionField) {
+	private boolean hasPathForDescriptionFieldToExclude(Set<Path<?>> excludeProjection, DescriptionField descriptionField) {
 		for (Path<?> path : excludeProjection) {
 			if (path.getMetadata().getName().equals(descriptionField.getField().getName())) {
 				return true;
@@ -551,16 +551,11 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			for (Expression<?> expr : select) {
 				expr.accept(this, null);
 				if (expr instanceof EntityPath<?>) {
-					List<Path<?>> customProjection = ((EntityPath<?>) expr).getCustomProjection();
+					Set<Path<?>> customProjection = ((EntityPath<?>) expr).getCustomProjection();
 					for (Path<?> path : customProjection) {
 						if (!(path.equals(expr)))
 							makePossibleJoins(path);
 					}
-					for (Path<?> path : customProjection) {
-						if (!(path.equals(expr)))
-							processColumns(path);
-					}
-
 				}
 				currentIndex++;
 			}
