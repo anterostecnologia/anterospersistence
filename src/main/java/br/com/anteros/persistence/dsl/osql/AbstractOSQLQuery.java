@@ -15,6 +15,7 @@ package br.com.anteros.persistence.dsl.osql;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -277,10 +278,11 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		for (Expression<?> expr : args) {
 			if (expr instanceof FactoryExpression<?>) {
 				FactoryExpression<?> f = ((FactoryExpression<?>) expr);
-				for (Expression<?> e : f.getArgs()) {
-					hydrateExpression(e);
+				for (int j = 0; j < f.getArgs().size(); j++) {
+					Expression<?> e = f.getArgs().get(j);
+					f.getArgs().set(j, hydrateExpression(e));
 				}
-
+				args[i] = expr;
 			} else
 				args[i] = hydrateExpression(expr);
 			i++;
