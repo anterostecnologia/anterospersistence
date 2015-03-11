@@ -55,7 +55,7 @@ public interface ISqlParser {
 
 	public final static int SCOPE_DROP = 60;
 
-	public final static int SCOPE_TARGET = 70; 
+	public final static int SCOPE_TARGET = 70;
 
 	public abstract void parse(INode node) throws ParserException;
 

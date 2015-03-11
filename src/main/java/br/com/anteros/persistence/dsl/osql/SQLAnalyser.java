@@ -35,7 +35,6 @@ import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.PathType;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
-import br.com.anteros.persistence.dsl.osql.types.Template;
 import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
 import br.com.anteros.persistence.dsl.osql.types.Visitor;
 import br.com.anteros.persistence.dsl.osql.types.expr.BooleanExpression;
@@ -107,7 +106,8 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			}
 
 			if (expr.getType() == Boolean.class) {
-				if ((expr.getOperator() == Ops.EQ) || (expr.getOperator() == Ops.NE)) {
+				if ((expr.getOperator() == Ops.EQ) || (expr.getOperator() == Ops.NE) || (expr.getOperator() == Ops.GT)
+						|| (expr.getOperator() == Ops.GOE) || (expr.getOperator() == Ops.LT) || (expr.getOperator() == Ops.LOE)) {
 					analyzeEqualsOperation(expr);
 				} else if ((expr.getOperator() == Ops.IS_NOT_NULL) || (expr.getOperator() == Ops.IS_NULL)) {
 					analyzeNullOperation(expr);
@@ -161,13 +161,23 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 				for (int i = 0; i < leftColumns.size(); i++) {
 					if (appendAnd)
 						booleanAsString.append(" AND ");
-					booleanAsString.append(leftAlias).append(".").append(leftColumns.get(i).getColumnName());
-					if (expr.getOperator() == Ops.EQ)
-						booleanAsString.append(" = ");
-					else if (expr.getOperator() == Ops.NE)
-						booleanAsString.append(" != ");
+					booleanAsString.append(leftAlias).append(".").append(leftColumns.get(i).getColumnName()).append(" ");
 
-					booleanAsString.append(rightAlias).append(".").append(rightColumns.get(i).getColumnName());
+					if (expr.getOperator() == Ops.EQ) {
+						booleanAsString.append("=");
+					} else if (expr.getOperator() == Ops.NE) {
+						booleanAsString.append("<>");
+					} else if (expr.getOperator() == Ops.GT) {
+						booleanAsString.append(">");
+					} else if (expr.getOperator() == Ops.GOE) {
+						booleanAsString.append(">=");
+					} else if (expr.getOperator() == Ops.LT) {
+						booleanAsString.append("<");
+					} else if (expr.getOperator() == Ops.LOE) {
+						booleanAsString.append("<=");
+					}
+
+					booleanAsString.append(" ").append(rightAlias).append(".").append(rightColumns.get(i).getColumnName());
 					appendAnd = true;
 				}
 

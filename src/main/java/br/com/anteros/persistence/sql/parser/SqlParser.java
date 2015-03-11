@@ -100,6 +100,7 @@ public class SqlParser implements ISqlParser {
 
 	public void parse(INode node) throws ParserException {
 		INode x;
+
 		for (;;) {
 			if (isCanceled())
 				return;
@@ -453,7 +454,12 @@ public class SqlParser implements ISqlParser {
 						parse(func.getParent());
 						return;
 					} else {
-						((AliasNode) lastNode2).setAliasName(getToken(), offset, length);
+						if ((lastNode2 instanceof ColumnNode) && ((ColumnNode) lastNode2).isConcating()) {
+							ColumnNode col = (ColumnNode) lastNode2;
+							col.addConcat(getToken(), offset, length);
+							col.setConcating(false);
+						} else
+							((AliasNode) lastNode2).setAliasName(getToken(), offset, length);
 					}
 				} else if (lastNode2 instanceof OperatorNode) {
 					throw new UnexpectedTokenException(getToken(), offset, length);

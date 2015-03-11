@@ -125,7 +125,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		INode node = new Node("root");
 		parser.parse(node);
 
-		//System.out.println(parser.dump(node));
+		System.out.println(parser.dump(node));
 
 		allowApplyLockStrategy = false;
 		INode[] children = ParserUtil.findChildren(getFirstSelectStatement(node), ColumnNode.class.getSimpleName());

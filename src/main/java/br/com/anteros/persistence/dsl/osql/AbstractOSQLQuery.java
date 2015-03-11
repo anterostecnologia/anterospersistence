@@ -275,7 +275,14 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	private Expression<?>[] hydrateOperations(Expression<?>... args) throws Exception {
 		int i = 0;
 		for (Expression<?> expr : args) {
-			args[i] = hydrateExpression(expr);
+			if (expr instanceof FactoryExpression<?>) {
+				FactoryExpression<?> f = ((FactoryExpression<?>) expr);
+				for (Expression<?> e : f.getArgs()) {
+					hydrateExpression(e);
+				}
+
+			} else
+				args[i] = hydrateExpression(expr);
 			i++;
 		}
 		return args;
