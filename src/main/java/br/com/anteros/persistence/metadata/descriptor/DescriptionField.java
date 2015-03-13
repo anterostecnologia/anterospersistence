@@ -162,7 +162,7 @@ public class DescriptionField {
 	public boolean isAnyCollectionOrMap() {
 		return this.fieldType == FieldType.COLLECTION_ENTITY || isMapTable() || isCollectionTable();
 	}
-	
+
 	public boolean isAnyCollection() {
 		return this.fieldType == FieldType.COLLECTION_ENTITY || isCollectionTable();
 	}
@@ -558,7 +558,7 @@ public class DescriptionField {
 	}
 
 	public FieldEntityValue getFieldEntityValue(SQLSession session, Object object) throws Exception {
-		Object fieldValue =  this.getObjectValue(object); 
+		Object fieldValue = this.getObjectValue(object);
 		return getFieldEntityValue(session, object, fieldValue);
 	}
 
@@ -601,7 +601,7 @@ public class DescriptionField {
 				while (it.hasNext()) {
 					key = it.next();
 					value = ((Map) fieldValue).get(key);
-					
+
 					newValue = new LinkedHashMap<Object, Object>();
 					newValue.put(ObjectUtils.cloneObject(key), ObjectUtils.cloneObject(value));
 					listTemp.add(new FieldEntityValue(this.getField().getName(), newValue, key));
@@ -745,6 +745,14 @@ public class DescriptionField {
 				if (descriptionColumn.isPrimaryKey())
 					return true;
 			}
+		}
+		return false;
+	}
+
+	public boolean isCompositeId() {
+		for (DescriptionColumn descriptionColumn : columns) {
+			if (descriptionColumn.isCompositeId())
+				return true;
 		}
 		return false;
 	}
@@ -1014,7 +1022,8 @@ public class DescriptionField {
 		return result;
 	}
 
-	public NamedParameter getNamedParameterFromDatabaseObjectValue(SQLSession session, Object sourceObject, DescriptionColumn sourceColumn) throws Exception {
+	public NamedParameter getNamedParameterFromDatabaseObjectValue(SQLSession session, Object sourceObject, DescriptionColumn sourceColumn)
+			throws Exception {
 		Map<String, Object> primaryKeyOwner = null;
 		Object columnValue = sourceColumn.convertToDatabaseColumn(this.getObjectValue(sourceObject));
 		if (this.isRelationShip()) {
@@ -1080,6 +1089,5 @@ public class DescriptionField {
 	public void setPropertyAccessor(PropertyAccessor propertyAccessor) {
 		this.propertyAccessor = propertyAccessor;
 	}
-
 
 }

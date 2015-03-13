@@ -12,11 +12,9 @@
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
-import java.lang.reflect.Constructor;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -25,21 +23,16 @@ import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.lang.CloseableIterator;
-import br.com.anteros.persistence.dsl.osql.support.Expressions;
 import br.com.anteros.persistence.dsl.osql.support.QueryMixin;
-import br.com.anteros.persistence.dsl.osql.types.Constant;
 import br.com.anteros.persistence.dsl.osql.types.EntityPath;
 import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpressionUtils;
 import br.com.anteros.persistence.dsl.osql.types.IndexHint;
-import br.com.anteros.persistence.dsl.osql.types.Operation;
-import br.com.anteros.persistence.dsl.osql.types.Ops;
 import br.com.anteros.persistence.dsl.osql.types.ParamExpression;
 import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
-import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.DateParam;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.DateTimeParam;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.EnumParam;

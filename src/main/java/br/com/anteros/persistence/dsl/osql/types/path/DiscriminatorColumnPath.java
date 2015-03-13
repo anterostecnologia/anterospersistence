@@ -18,7 +18,9 @@ package br.com.anteros.persistence.dsl.osql.types.path;
 import java.lang.reflect.AnnotatedElement;
 
 import br.com.anteros.persistence.dsl.osql.types.Path;
+import br.com.anteros.persistence.dsl.osql.types.PathImpl;
 import br.com.anteros.persistence.dsl.osql.types.PathMetadata;
+import br.com.anteros.persistence.dsl.osql.types.PathMetadataFactory;
 import br.com.anteros.persistence.dsl.osql.types.Visitor;
 
 /**
@@ -32,6 +34,7 @@ public class DiscriminatorColumnPath implements Path<String> {
 	private static final long serialVersionUID = 1L;
 	private Class<?> discriminatorClass;
 	private Path<?> root;
+	private final PathMetadata<String> metadata;
 
 	public Class<?> getDiscriminatorClass() {
 		return discriminatorClass;
@@ -40,6 +43,7 @@ public class DiscriminatorColumnPath implements Path<String> {
 	public DiscriminatorColumnPath(Path<?> root, Class<?> discriminatorClass) {
 		this.discriminatorClass = discriminatorClass;
 		this.root = root;
+		this.metadata = PathMetadataFactory.forVariable(discriminatorClass.getName());
 	}
 
 	@Override
@@ -54,7 +58,7 @@ public class DiscriminatorColumnPath implements Path<String> {
 
 	@Override
 	public PathMetadata<?> getMetadata() {
-		return null;
+		return metadata;
 	}
 
 	@Override

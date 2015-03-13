@@ -25,13 +25,15 @@ public class SQLAnalyserColumn {
 	private String aliasColumnName;
 	private boolean userAliasDefined = false;
 	private DescriptionField descriptionField;
+	private int columnIndex;
 
-	public SQLAnalyserColumn(String aliasTableName, String columnName, String aliasColumnName, DescriptionField descriptionField) {
+	public SQLAnalyserColumn(String aliasTableName, String columnName, String aliasColumnName, DescriptionField descriptionField, int columnIndex) {
 		super();
 		this.aliasTableName = aliasTableName;
 		this.columnName = columnName;
 		this.aliasColumnName = aliasColumnName;
 		this.descriptionField = descriptionField;
+		this.columnIndex = columnIndex;
 	}
 
 	public String getAliasTableName() {
@@ -109,7 +111,15 @@ public class SQLAnalyserColumn {
 	
 	@Override
 	public String toString() {
-		return aliasTableName+"."+columnName+" AS "+aliasColumnName;
+		return aliasTableName+"."+columnName+" AS "+aliasColumnName+"  index: "+columnIndex;
+	}
+
+	public int getColumnIndex() {
+		return columnIndex;
+	}
+
+	public void setColumnIndex(int columnIndex) {
+		this.columnIndex = columnIndex;
 	}
 
 }
