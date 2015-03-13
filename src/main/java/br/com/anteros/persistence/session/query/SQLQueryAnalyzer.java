@@ -39,7 +39,6 @@ import br.com.anteros.persistence.sql.parser.Node;
 import br.com.anteros.persistence.sql.parser.ParserUtil;
 import br.com.anteros.persistence.sql.parser.ParserVisitorToSql;
 import br.com.anteros.persistence.sql.parser.SqlParser;
-import br.com.anteros.persistence.sql.parser.node.AliasNode;
 import br.com.anteros.persistence.sql.parser.node.BindNode;
 import br.com.anteros.persistence.sql.parser.node.ColumnNode;
 import br.com.anteros.persistence.sql.parser.node.CommaNode;
@@ -323,16 +322,16 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 	 * da tabela. Verifica a ausência e adiciona as colunas que fazem parte da chave da tabela e também as colunas que
 	 * representam o discriminator column das entidades no caso de classes abstratas.
 	 * 
-	 * @param node
+	 * @param mainNode
 	 * @return
 	 * @throws SQLQueryAnalyzerException
 	 */
-	protected INode parseColumns(INode node) throws SQLQueryAnalyzerException {
+	protected INode parseColumns(INode mainNode) throws SQLQueryAnalyzerException {
 		SqlParser parser;
 		/*
 		 * Busca todos os nós do tipo Select
 		 */
-		SelectStatementNode[] selectStatements = getAllSelectStatement(node);
+		SelectStatementNode[] selectStatements = getAllSelectStatement(mainNode);
 		/*
 		 * Cria um Mapa de strings que irão guardar as colunas que precisam ter seus nomes(aliases) alterados no sql
 		 */
@@ -352,7 +351,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			 * Processa Select
 			 */
 			SelectNode select = (SelectNode) ParserUtil.findFirstChild(selectStatement, "SelectNode");
-			processSelectOrGroupByColumns(node, replaceStrings, selectStatement, select,
+			processSelectOrGroupByColumns(mainNode, replaceStrings, selectStatement, select,
 					GENERATE_ALIAS_TO_COLUM);
 
 			/*
@@ -360,20 +359,11 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			 */
 			GroupbyNode groupBy = (GroupbyNode) ParserUtil.findFirstChild(selectStatement, "GroupbyNode");
 			if (groupBy != null)
-				processSelectOrGroupByColumns(node, replaceStrings, selectStatement, groupBy,
+				processSelectOrGroupByColumns(mainNode, replaceStrings, selectStatement, groupBy,
 						!GENERATE_ALIAS_TO_COLUM);
 		}
 
-		/*
-		 * Busca o alias da classe de resultado
-		 */
-		SQLQueryAnalyserAlias aliasResultClass = getAliasResultClass();
-
-		/*
-		 * Associa o pai a cada alias filho usado no Select formando assim um caminho para montar o objeto da classe de
-		 * resultado.
-		 */
-		findAndSetOwnerToChildAlias(getFirstSelectStatement(node), aliasResultClass);
+		
 
 		/*
 		 * Subtitui as strings no sql
@@ -389,13 +379,13 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		 */
 		if (reload) {
 			parser = new SqlParser(sql, new SqlFormatRule());
-			node = new Node("root");
-			parser.parse(node);
+			mainNode = new Node("root");
+			parser.parse(mainNode);
 		}
 		/*
 		 * Retorna a nova estrutura(árvore do sql) já com as novas colunas.
 		 */
-		return node;
+		return mainNode;
 	}
 
 	protected void processSelectOrGroupByColumns(INode mainNode, Map<String, String> replaceStrings, SelectStatementNode selectStatement,
@@ -431,7 +421,18 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		 * Gera os nomes das colunas do select/Group by
 		 */
 		makeColumnNameAliases(aliasesTemporary, newColumns, distinctNewColumns, processNode, generateAliasToColum);
+		
+		/*
+		 * Busca o alias da classe de resultado
+		 */
+		SQLQueryAnalyserAlias aliasResultClass = getAliasResultClass();
 
+		/*
+		 * Associa o pai a cada alias filho usado no Select formando assim um caminho para montar o objeto da classe de
+		 * resultado.
+		 */
+		findAndSetOwnerToChildAlias(getFirstSelectStatement(mainNode), aliasResultClass);
+		
 		/*
 		 * Adiciona as colunas da chave primária do alias(tabela) e discriminator column caso não existam no
 		 * Select/GroupBy.
