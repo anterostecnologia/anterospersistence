@@ -305,7 +305,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 					String aliasColumnName = (StringUtils.isEmpty(simpleColumn.getAliasColumnName()) ? simpleColumn.getColumnName() : simpleColumn
 							.getAliasColumnName());
 					query.resultSetHandler(new SingleValueHandler(definitions.get(0).getResultClass(), simpleColumn.getDescriptionField(),
-							aliasColumnName));
+							aliasColumnName, simpleColumn.getColumnIndex()));
 				}
 			} else {
 				/*

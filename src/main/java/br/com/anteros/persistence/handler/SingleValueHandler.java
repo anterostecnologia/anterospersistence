@@ -13,11 +13,13 @@ public class SingleValueHandler implements ResultSetHandler {
 	private Class type;
 	private String aliasColumnName;
 	private DescriptionField descriptionField;
+	private int columIndex;
 
-	public SingleValueHandler(Class type, DescriptionField descriptionField, String aliasColumName) {
+	public SingleValueHandler(Class type, DescriptionField descriptionField, String aliasColumName, int columnIndex) {
 		this.type = type;
 		this.aliasColumnName = aliasColumName;
 		this.descriptionField = descriptionField;
+		this.columIndex = columnIndex;
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -27,7 +29,7 @@ public class SingleValueHandler implements ResultSetHandler {
 		if (rs.next()) {
 			result = new ArrayList();
 			do {
-				Object value = rs.getObject(aliasColumnName);
+				Object value = rs.getObject(columIndex);
 				if (descriptionField.hasConverts())
 					value = descriptionField.getSimpleColumn().convertToEntityAttribute(value);
 				else
