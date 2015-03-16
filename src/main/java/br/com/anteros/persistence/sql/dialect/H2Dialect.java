@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
@@ -298,6 +299,12 @@ public class H2Dialect extends DatabaseDialect {
 	@Override
 	public Position getIndexHintPosition() {
 		return Position.AFTER_SELECT;
+	}
+
+	@Override
+	public String getIndexHint(Map<String, String> indexes) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

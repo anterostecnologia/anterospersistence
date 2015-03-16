@@ -1,6 +1,6 @@
 /*******************************************************************************
  * Copyright 2011, Mysema Ltd
- *  
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by
  * applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,289 +45,299 @@ import com.google.common.collect.ImmutableList;
  */
 public abstract class DetachableSQLQuery<Q extends DetachableSQLQuery<Q>> extends DetachableQuery<Q> implements SQLCommonQuery<Q> {
 
-    protected final SQLTemplates templates;
-    
-    @SuppressWarnings("unchecked")
-    public DetachableSQLQuery(SQLTemplates templates, QueryMetadata metadata) {
-        super(new QueryMixin<Q>(metadata));
-        this.queryMixin.setSelf((Q)this);
-        this.templates = templates;
-    }
+	protected final SQLTemplates templates;
 
-    /**
-     * Add the given prefix and expression as a general query flag
-     *
-     * @param position position of the flag
-     * @param prefix prefix for the flag
-     * @param expr expression of the flag
-     * @return
-     */
-    @Override
-    public Q addFlag(Position position, String prefix, Expression<?> expr) {
-        Expression<?> flag = TemplateExpressionImpl.create(expr.getType(), prefix + "{0}", expr);
-        return queryMixin.addFlag(new QueryFlag(position, flag));
-    }
+	public DetachableSQLQuery() {
+		this(SQLTemplates.DEFAULT, new DefaultQueryMetadata().noValidate());
+	}
+	
+	
+	public DetachableSQLQuery(SQLTemplates templates) {
+		this(templates, new DefaultQueryMetadata().noValidate());
+	}
 
-    /**
-     * Add the given String literal as a query flag
-     *
-     * @param position
-     * @param flag
-     * @return
-     */
-    @Override
-    public Q addFlag(Position position, String flag) {
-        return queryMixin.addFlag(new QueryFlag(position, flag));
-    }
+	@SuppressWarnings("unchecked")
+	public DetachableSQLQuery(SQLTemplates templates, QueryMetadata metadata) {
+		super(new QueryMixin<Q>(metadata));
+		this.queryMixin.setSelf((Q) this);
+		this.templates = templates;
+	}
 
-    /**
-     * Add the given Expression as a query flag
-     *
-     * @param position
-     * @param flag
-     * @return
-     */
-    @Override
-    public Q addFlag(Position position, Expression<?> flag) {
-        return queryMixin.addFlag(new QueryFlag(position, flag));
-    }
+	/**
+	 * Add the given prefix and expression as a general query flag
+	 *
+	 * @param position
+	 *            position of the flag
+	 * @param prefix
+	 *            prefix for the flag
+	 * @param expr
+	 *            expression of the flag
+	 * @return
+	 */
+	@Override
+	public Q addFlag(Position position, String prefix, Expression<?> expr) {
+		Expression<?> flag = TemplateExpressionImpl.create(expr.getType(), prefix + "{0}", expr);
+		return queryMixin.addFlag(new QueryFlag(position, flag));
+	}
 
-    /**
-     * Add the given String literal as a join flag to the last added join with the
-     * position BEFORE_TARGET
-     *
-     * @param flag
-     * @return
-     */
-    @Override
-    public Q addJoinFlag(String flag) {
-        return addJoinFlag(flag, JoinFlag.Position.BEFORE_TARGET);
-    }
+	/**
+	 * Add the given String literal as a query flag
+	 *
+	 * @param position
+	 * @param flag
+	 * @return
+	 */
+	@Override
+	public Q addFlag(Position position, String flag) {
+		return queryMixin.addFlag(new QueryFlag(position, flag));
+	}
 
-    /**
-     * Add the given String literal as a join flag to the last added join
-     *
-     * @param flag
-     * @param position
-     * @return
-     */
-    @Override
-    @SuppressWarnings("unchecked")
-    public Q addJoinFlag(String flag, JoinFlag.Position position) {
-        queryMixin.addJoinFlag(new JoinFlag(flag, position));
-        return (Q)this;
-    }
+	/**
+	 * Add the given Expression as a query flag
+	 *
+	 * @param position
+	 * @param flag
+	 * @return
+	 */
+	@Override
+	public Q addFlag(Position position, Expression<?> flag) {
+		return queryMixin.addFlag(new QueryFlag(position, flag));
+	}
 
-    @Override
-    public BooleanExpression exists() {
-        return unique(NumberTemplate.ONE).exists();
-    }
+	/**
+	 * Add the given String literal as a join flag to the last added join with the position BEFORE_TARGET
+	 *
+	 * @param flag
+	 * @return
+	 */
+	@Override
+	public Q addJoinFlag(String flag) {
+		return addJoinFlag(flag, JoinFlag.Position.BEFORE_TARGET);
+	}
 
-    @Override
-    public BooleanExpression notExists() {
-        return exists().not();
-    }
+	/**
+	 * Add the given String literal as a join flag to the last added join
+	 *
+	 * @param flag
+	 * @param position
+	 * @return
+	 */
+	@Override
+	@SuppressWarnings("unchecked")
+	public Q addJoinFlag(String flag, JoinFlag.Position position) {
+		queryMixin.addJoinFlag(new JoinFlag(flag, position));
+		return (Q) this;
+	}
 
-    public Q from(Expression<?> arg) {
-        return queryMixin.from(arg);
-    }
+	@Override
+	public BooleanExpression exists() {
+		return unique(NumberTemplate.ONE).exists();
+	}
 
-    @Override
-    public Q from(Expression<?>... args) {
-        return queryMixin.from(args);
-    }
+	@Override
+	public BooleanExpression notExists() {
+		return exists().not();
+	}
 
-    @Override
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public Q from(SubQueryExpression<?> subQuery, Path<?> alias) {
-        return queryMixin.from(ExpressionUtils.as((Expression)subQuery, alias));
-    }
+	public Q from(Expression<?> arg) {
+		return queryMixin.from(arg);
+	}
 
-    @Override
-    public Q fullJoin(EntityPath<?> target) {
-        return queryMixin.fullJoin(target);
-    }
+	@Override
+	public Q from(Expression<?>... args) {
+		return queryMixin.from(args);
+	}
 
-    @Override
-    public Q fullJoin(SubQueryExpression<?> target, Path<?> alias) {
-        return queryMixin.fullJoin(target, alias);
-    }
+	@Override
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public Q from(SubQueryExpression<?> subQuery, Path<?> alias) {
+		return queryMixin.from(ExpressionUtils.as((Expression) subQuery, alias));
+	}
 
-    @Override
-    public Q innerJoin(EntityPath<?> target) {
-        return queryMixin.innerJoin(target);
-    }
+	@Override
+	public Q fullJoin(EntityPath<?> target) {
+		return queryMixin.fullJoin(target);
+	}
 
-    @Override
-    public Q innerJoin(SubQueryExpression<?> target, Path<?> alias) {
-        return queryMixin.innerJoin(target, alias);
-    }
+	@Override
+	public Q fullJoin(SubQueryExpression<?> target, Path<?> alias) {
+		return queryMixin.fullJoin(target, alias);
+	}
 
-    @Override
-    public Q join(EntityPath<?> target) {
-        return queryMixin.join(target);
-    }
+	@Override
+	public Q innerJoin(EntityPath<?> target) {
+		return queryMixin.innerJoin(target);
+	}
 
-    @Override
-    public Q join(SubQueryExpression<?> target, Path<?> alias) {
-        return queryMixin.join(target, alias);
-    }
+	@Override
+	public Q innerJoin(SubQueryExpression<?> target, Path<?> alias) {
+		return queryMixin.innerJoin(target, alias);
+	}
 
-    @Override
-    public Q leftJoin(EntityPath<?> target) {
-        return queryMixin.leftJoin(target);
-    }
+	@Override
+	public Q join(EntityPath<?> target) {
+		return queryMixin.join(target);
+	}
 
-    @Override
-    public Q leftJoin(SubQueryExpression<?> target, Path<?> alias) {
-        return queryMixin.leftJoin(target, alias);
-    }
+	@Override
+	public Q join(SubQueryExpression<?> target, Path<?> alias) {
+		return queryMixin.join(target, alias);
+	}
 
-    public Q on(Predicate condition) {
-        return queryMixin.on(condition);
-    }
+	@Override
+	public Q leftJoin(EntityPath<?> target) {
+		return queryMixin.leftJoin(target);
+	}
 
-    @Override
-    public Q on(Predicate... conditions) {
-        return queryMixin.on(conditions);
-    }
+	@Override
+	public Q leftJoin(SubQueryExpression<?> target, Path<?> alias) {
+		return queryMixin.leftJoin(target, alias);
+	}
 
-    @Override
-    public Q rightJoin(EntityPath<?> target) {
-        return queryMixin.rightJoin(target);
-    }
+	public Q on(Predicate condition) {
+		return queryMixin.on(condition);
+	}
 
-    @Override
-    public Q rightJoin(SubQueryExpression<?> target, Path<?> alias) {
-        return queryMixin.rightJoin(target, alias);
-    }
+	@Override
+	public Q on(Predicate... conditions) {
+		return queryMixin.on(conditions);
+	}
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private <T> CollectionExpressionBase<?,T> union(Operator<Object> op, List<? extends SubQueryExpression<?>> sq) {
-        Expression<?> rv = sq.get(0);
-        if (sq.size() == 1 && !CollectionExpression.class.isInstance(rv)) {
-            return new ListSubQuery(rv.getType(), sq.get(0).getMetadata());
-        } else {
-            Class<?> elementType = sq.get(0).getType();
-            if (rv instanceof CollectionExpression) {
-                elementType = ((CollectionExpression)rv).getParameter(0);
-            }
-            for (int i = 1; i < sq.size(); i++) {
-                rv = CollectionOperation.create(op, (Class)elementType, rv, sq.get(i));
-            }
-            return (CollectionExpressionBase<?,T>)rv;
-        }
-    }
+	@Override
+	public Q rightJoin(EntityPath<?> target) {
+		return queryMixin.rightJoin(target);
+	}
 
-    public <T> CollectionExpressionBase<?,T> union(List<? extends SubQueryExpression<T>> sq) {
-        return union(SQLOps.UNION, sq);
-    }
+	@Override
+	public Q rightJoin(SubQueryExpression<?> target, Path<?> alias) {
+		return queryMixin.rightJoin(target, alias);
+	}
 
-    public <T> CollectionExpressionBase<?,T> union(ListSubQuery<T>... sq) {
-        return union(SQLOps.UNION, Arrays.asList(sq));
-    }
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private <T> CollectionExpressionBase<?, T> union(Operator<Object> op, List<? extends SubQueryExpression<?>> sq) {
+		Expression<?> rv = sq.get(0);
+		if (sq.size() == 1 && !CollectionExpression.class.isInstance(rv)) {
+			return new ListSubQuery(rv.getType(), sq.get(0).getMetadata());
+		} else {
+			Class<?> elementType = sq.get(0).getType();
+			if (rv instanceof CollectionExpression) {
+				elementType = ((CollectionExpression) rv).getParameter(0);
+			}
+			for (int i = 1; i < sq.size(); i++) {
+				rv = CollectionOperation.create(op, (Class) elementType, rv, sq.get(i));
+			}
+			return (CollectionExpressionBase<?, T>) rv;
+		}
+	}
 
-    public <T> CollectionExpressionBase<?,T> union(SubQueryExpression<T>... sq) {
-        return union(SQLOps.UNION, Arrays.asList(sq));
-    }
+	public <T> CollectionExpressionBase<?, T> union(List<? extends SubQueryExpression<T>> sq) {
+		return union(SQLOps.UNION, sq);
+	}
 
-    public <T> CollectionExpressionBase<?,T> unionAll(List<? extends SubQueryExpression<T>> sq) {
-        return union(SQLOps.UNION_ALL, sq);
-    }
+	public <T> CollectionExpressionBase<?, T> union(ListSubQuery<T>... sq) {
+		return union(SQLOps.UNION, Arrays.asList(sq));
+	}
 
-    public <T> CollectionExpressionBase<?,T> unionAll(ListSubQuery<T>... sq) {
-        return union(SQLOps.UNION_ALL, Arrays.asList(sq));
-    }
+	public <T> CollectionExpressionBase<?, T> union(SubQueryExpression<T>... sq) {
+		return union(SQLOps.UNION, Arrays.asList(sq));
+	}
 
-    public <T> CollectionExpressionBase<?,T> unionAll(SubQueryExpression<T>... sq) {
-        return union(SQLOps.UNION_ALL, Arrays.asList(sq));
-    }
+	public <T> CollectionExpressionBase<?, T> unionAll(List<? extends SubQueryExpression<T>> sq) {
+		return union(SQLOps.UNION_ALL, sq);
+	}
 
-    @Override
-    public Q withRecursive(Path<?> alias, SubQueryExpression<?> query) {
-        queryMixin.addFlag(new QueryFlag(QueryFlag.Position.WITH, SQLTemplates.RECURSIVE));
-        return with(alias, query);
-    }
+	public <T> CollectionExpressionBase<?, T> unionAll(ListSubQuery<T>... sq) {
+		return union(SQLOps.UNION_ALL, Arrays.asList(sq));
+	}
 
-    @Override
-    public Q withRecursive(Path<?> alias, Expression<?> query) {
-        queryMixin.addFlag(new QueryFlag(QueryFlag.Position.WITH, SQLTemplates.RECURSIVE));
-        return with(alias, query);
-    }
+	public <T> CollectionExpressionBase<?, T> unionAll(SubQueryExpression<T>... sq) {
+		return union(SQLOps.UNION_ALL, Arrays.asList(sq));
+	}
 
-    @Override
-    public WithBuilder<Q> withRecursive(Path<?> alias, Path<?>... columns) {
-        queryMixin.addFlag(new QueryFlag(QueryFlag.Position.WITH, SQLTemplates.RECURSIVE));
-        return with(alias, columns);
-    }
+	@Override
+	public Q withRecursive(Path<?> alias, SubQueryExpression<?> query) {
+		queryMixin.addFlag(new QueryFlag(QueryFlag.Position.WITH, SQLTemplates.RECURSIVE));
+		return with(alias, query);
+	}
 
-    @Override
-    public Q with(Path<?> alias, SubQueryExpression<?> target) {
-        Expression<?> expr = OperationImpl.create(alias.getType(), SQLOps.WITH_ALIAS, alias, target);
-        return queryMixin.addFlag(new QueryFlag(QueryFlag.Position.WITH, expr));
-    }
+	@Override
+	public Q withRecursive(Path<?> alias, Expression<?> query) {
+		queryMixin.addFlag(new QueryFlag(QueryFlag.Position.WITH, SQLTemplates.RECURSIVE));
+		return with(alias, query);
+	}
 
-    @Override
-    public Q with(Path<?> alias, Expression<?> query) {
-        Expression<?> expr = OperationImpl.create(alias.getType(), SQLOps.WITH_ALIAS, alias, query);
-        return queryMixin.addFlag(new QueryFlag(QueryFlag.Position.WITH, expr));
-    }
+	@Override
+	public WithBuilder<Q> withRecursive(Path<?> alias, Path<?>... columns) {
+		queryMixin.addFlag(new QueryFlag(QueryFlag.Position.WITH, SQLTemplates.RECURSIVE));
+		return with(alias, columns);
+	}
 
-    @Override
-    public WithBuilder<Q> with(Path<?> alias, Path<?>... columns) {
-        Expression<?> columnsCombined = ExpressionUtils.list(Object.class, columns);
-        Expression<?> aliasCombined = Expressions.operation(alias.getType(), SQLOps.WITH_COLUMNS, alias, columnsCombined);
-        return new WithBuilder<Q>(queryMixin, aliasCombined);
-    }
+	@Override
+	public Q with(Path<?> alias, SubQueryExpression<?> target) {
+		Expression<?> expr = OperationImpl.create(alias.getType(), SQLOps.WITH_ALIAS, alias, target);
+		return queryMixin.addFlag(new QueryFlag(QueryFlag.Position.WITH, expr));
+	}
 
-    public QueryMetadata getMetadata() {
-        return queryMixin.getMetadata();
-    }
-    
+	@Override
+	public Q with(Path<?> alias, Expression<?> query) {
+		Expression<?> expr = OperationImpl.create(alias.getType(), SQLOps.WITH_ALIAS, alias, query);
+		return queryMixin.addFlag(new QueryFlag(QueryFlag.Position.WITH, expr));
+	}
 
-    @Override
-    public abstract Q clone();
-    
-    protected abstract SQLSerializer createSerializer();
-    
-    protected SQLSerializer serialize(boolean forCountRow) {
-        SQLSerializer serializer = createSerializer();
-        serializer.setStrict(false);
-        serializer.serialize(queryMixin.getMetadata(), forCountRow);
-        return serializer;
-    }
-    
-    /**
-     * Get the query as an SQL query string and bindings
-     *
-     * @param exprs
-     * @return
-     */
-    public SQLBindings getSQL(Expression<?>... exprs) {
-        queryMixin.addProjection(exprs);
-        SQLSerializer serializer = serialize(false);
-        ImmutableList.Builder<Object> args = ImmutableList.builder();
-        Map<ParamExpression<?>, Object> params = getMetadata().getParams();
-        for (Object o : serializer.getConstants()) {
-            if (o instanceof ParamExpression) {
-                if (!params.containsKey(o)) {
-                    throw new ParamNotSetException((ParamExpression<?>) o);
-                }
-                o = queryMixin.getMetadata().getParams().get(o);
-            }
-            args.add(o);
-        }
-        return new SQLBindings(serializer.toString(), args.build());
-    }
+	@Override
+	public WithBuilder<Q> with(Path<?> alias, Path<?>... columns) {
+		Expression<?> columnsCombined = ExpressionUtils.list(Object.class, columns);
+		Expression<?> aliasCombined = Expressions.operation(alias.getType(), SQLOps.WITH_COLUMNS, alias, columnsCombined);
+		return new WithBuilder<Q>(queryMixin, aliasCombined);
+	}
 
-    @Override
-    public String toString() {
-        if (!getMetadata().getJoins().isEmpty()) {
-            SQLSerializer serializer = serialize(false);
-            return serializer.toString().trim();
-        } else {
-            return super.toString();
-        }
-    }
+	public QueryMetadata getMetadata() {
+		return queryMixin.getMetadata();
+	}
+
+	@Override
+	public abstract Q clone();
+
+	protected abstract SQLSerializer createSerializer();
+
+	protected SQLSerializer serialize(boolean forCountRow) {
+		SQLSerializer serializer = createSerializer();
+		serializer.setStrict(false);
+		serializer.serialize(queryMixin.getMetadata(), forCountRow);
+		return serializer;
+	}
+
+	/**
+	 * Get the query as an SQL query string and bindings
+	 *
+	 * @param exprs
+	 * @return
+	 */
+	public SQLBindings getSQL(Expression<?>... exprs) {
+		queryMixin.addProjection(exprs);
+		SQLSerializer serializer = serialize(false);
+		ImmutableList.Builder<Object> args = ImmutableList.builder();
+		Map<ParamExpression<?>, Object> params = getMetadata().getParams();
+		for (Object o : serializer.getConstants()) {
+			if (o instanceof ParamExpression) {
+				if (!params.containsKey(o)) {
+					throw new ParamNotSetException((ParamExpression<?>) o);
+				}
+				o = queryMixin.getMetadata().getParams().get(o);
+			}
+			args.add(o);
+		}
+		return new SQLBindings(serializer.toString(), args.build());
+	}
+
+	@Override
+	public String toString() {
+		if (!getMetadata().getJoins().isEmpty()) {
+			SQLSerializer serializer = serialize(false);
+			return serializer.toString().trim();
+		} else {
+			return super.toString();
+		}
+	}
 
 }

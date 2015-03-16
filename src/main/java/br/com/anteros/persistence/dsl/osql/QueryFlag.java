@@ -102,7 +102,7 @@ public class QueryFlag implements Serializable{
 
     private final Position position;
 
-    private final Expression<?> flag;
+    private Expression<?> flag;
 
     public QueryFlag(Position position, String flag) {
         this(position, TemplateExpressionImpl.create(Object.class, flag));
@@ -141,5 +141,9 @@ public class QueryFlag implements Serializable{
     @Override
     public String toString() {
         return position + " : " + flag;
+    }
+    
+    public void setFlag(String flag){
+    	this.flag = TemplateExpressionImpl.create(Object.class, flag);
     }
 }

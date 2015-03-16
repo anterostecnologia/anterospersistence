@@ -42,10 +42,7 @@ import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
 import br.com.anteros.persistence.dsl.osql.types.TemplateFactory;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorColumnPath;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorValuePath;
-import br.com.anteros.persistence.dsl.osql.util.LiteralUtils;
 import br.com.anteros.persistence.metadata.EntityCache;
-import br.com.anteros.persistence.metadata.EntityCacheManager;
-import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -73,8 +70,6 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	private boolean skipParent;
 
-	private final SQLTemplates templates;
-
 	private boolean inUnion = false;
 
 	private boolean inJoin = false;
@@ -85,25 +80,14 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	private boolean useLiterals = false;
 
-	private EntityCacheManager entityCacheManager;
+	private final SQLAnalyser analyser;
 
-	private SQLAnalyser analyser;
+	private final Configuration configuration;
 
-	private DatabaseDialect dialect;
-
-	public SQLSerializer(DatabaseDialect dialect, EntityCacheManager entityCacheManager, SQLTemplates templates) {
-		super(templates);
-		this.templates = templates;
-		this.entityCacheManager = entityCacheManager;
-		this.dialect = dialect;
-	}
-
-	public SQLSerializer(DatabaseDialect dialect, EntityCacheManager entityCacheManager, SQLTemplates templates, SQLAnalyser analyser) {
-		super(templates);
-		this.templates = templates;
-		this.entityCacheManager = entityCacheManager;
+	public SQLSerializer(Configuration configuration, SQLAnalyser analyser) {
+		super(configuration.getTemplates());
+		this.configuration = configuration;
 		this.analyser = analyser;
-		this.dialect = dialect;
 	}
 
 	public List<Object> getConstants() {
@@ -114,24 +98,20 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		return constantPaths;
 	}
 
-	protected SQLTemplates getTemplates() {
-		return templates;
-	}
-
 	public void handle(String template, Object... args) {
 		handleTemplate(TemplateFactory.DEFAULT.create(template), Arrays.asList(args));
 	}
 
 	private void handleJoinTarget(JoinExpression je) {
-		if ((je.getTarget() instanceof EntityPath) && (templates.isSupportsAlias())) {
+		if ((je.getTarget() instanceof EntityPath) && (configuration.getTemplates().isSupportsAlias())) {
 			if (((EntityPath<?>) je.getTarget()).getMetadata().getParent() == null) {
-				if (templates.isPrintSchema()) {
+				if (configuration.getTemplates().isPrintSchema()) {
 					append(".");
 				}
 
-				EntityCache entityCache = entityCacheManager.getEntityCache(((EntityPath<?>) je.getTarget()).getType());
+				EntityCache entityCache = configuration.getEntityCacheManager().getEntityCache(((EntityPath<?>) je.getTarget()).getType());
 				append(entityCache.getTableName());
-				append(templates.getTableAlias());
+				append(configuration.getTemplates().getTableAlias());
 			}
 		}
 		inJoin = true;
@@ -140,7 +120,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 	}
 
 	public void serialize(QueryMetadata metadata, boolean forCountRow) {
-		templates.serialize(metadata, forCountRow, this);
+		configuration.getTemplates().serialize(metadata, forCountRow, this);
 	}
 
 	public void serializeForQuery(QueryMetadata metadata, boolean forCountRow) {
@@ -155,7 +135,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		final boolean hasFlags = !flags.isEmpty();
 		String suffix = null;
 
-		List<Expression<?>> sqlSelect = analyser.getIndividualExpressions();
+		List<Expression<?>> sqlSelect = SQLAnalyser.extractIndividualColumnsExpression(metadata);
 
 		// with
 		if (hasFlags) {
@@ -176,9 +156,9 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			}
 			if (handled) {
 				if (recursive) {
-					prepend(templates.getWithRecursive());
+					prepend(configuration.getTemplates().getWithRecursive());
 				} else {
-					prepend(templates.getWith());
+					prepend(configuration.getTemplates().getWith());
 				}
 				append("\n");
 			}
@@ -193,13 +173,13 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		Stage oldStage = stage;
 		stage = Stage.SELECT;
 		if (forCountRow) {
-			append(templates.getSelect());
+			append(configuration.getTemplates().getSelect());
 			if (hasFlags) {
 				serialize(Position.AFTER_SELECT, flags);
 			}
 
 			if (!metadata.isDistinct()) {
-				append(templates.getCountStar());
+				append(configuration.getTemplates().getCountStar());
 			} else {
 				List<? extends Expression<?>> columns;
 				if (sqlSelect.isEmpty()) {
@@ -208,19 +188,19 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 					columns = sqlSelect;
 				}
 				if (columns.size() == 1) {
-					append(templates.getDistinctCountStart());
+					append(configuration.getTemplates().getDistinctCountStart());
 					handle(columns.get(0));
-					append(templates.getDistinctCountEnd());
-				} else if (templates.isCountDistinctMultipleColumns()) {
-					append(templates.getDistinctCountStart());
+					append(configuration.getTemplates().getDistinctCountEnd());
+				} else if (configuration.getTemplates().isCountDistinctMultipleColumns()) {
+					append(configuration.getTemplates().getDistinctCountStart());
 					append("(").handle(COMMA, columns).append(")");
-					append(templates.getDistinctCountEnd());
+					append(configuration.getTemplates().getDistinctCountEnd());
 				} else {
 					// select count(*) from (select distinct ...)
-					append(templates.getCountStar());
-					append(templates.getFrom());
+					append(configuration.getTemplates().getCountStar());
+					append(configuration.getTemplates().getFrom());
 					append("(");
-					append(templates.getSelectDistinct());
+					append(configuration.getTemplates().getSelectDistinct());
 					handle(COMMA, columns);
 					suffix = ") internal";
 				}
@@ -228,9 +208,9 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 		} else if (!sqlSelect.isEmpty()) {
 			if (!metadata.isDistinct()) {
-				append(templates.getSelect());
+				append(configuration.getTemplates().getSelect());
 			} else {
-				append(templates.getSelectDistinct());
+				append(configuration.getTemplates().getSelectDistinct());
 			}
 			if (hasFlags) {
 				serialize(Position.AFTER_SELECT, flags);
@@ -251,7 +231,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			if (hasFlags) {
 				serialize(Position.BEFORE_FILTERS, flags);
 			}
-			append(templates.getWhere()).handle(where);
+			append(configuration.getTemplates().getWhere()).handle(where);
 			if (hasFlags) {
 				serialize(Position.AFTER_FILTERS, flags);
 			}
@@ -263,7 +243,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			if (hasFlags) {
 				serialize(Position.BEFORE_GROUP_BY, flags);
 			}
-			append(templates.getGroupBy()).handle(COMMA, groupBy);
+			append(configuration.getTemplates().getGroupBy()).handle(COMMA, groupBy);
 			if (hasFlags) {
 				serialize(Position.AFTER_GROUP_BY, flags);
 			}
@@ -275,7 +255,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			if (hasFlags) {
 				serialize(Position.BEFORE_HAVING, flags);
 			}
-			append(templates.getHaving()).handle(having);
+			append(configuration.getTemplates().getHaving()).handle(having);
 			if (hasFlags) {
 				serialize(Position.AFTER_HAVING, flags);
 			}
@@ -287,7 +267,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		}
 		if (!orderBy.isEmpty() && !forCountRow) {
 			stage = Stage.ORDER_BY;
-			append(templates.getOrderBy());
+			append(configuration.getTemplates().getOrderBy());
 			handleOrderBy(orderBy);
 			if (hasFlags) {
 				serialize(Position.AFTER_ORDER, flags);
@@ -297,7 +277,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		// modifiers
 		if (!forCountRow && metadata.getModifiers().isRestricting() && !joins.isEmpty()) {
 			stage = Stage.MODIFIERS;
-			templates.serializeModifiers(metadata, this);
+			configuration.getTemplates().serializeModifiers(metadata, this);
 		}
 
 		if (suffix != null) {
@@ -314,12 +294,12 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			if (!first) {
 				append(COMMA);
 			}
-			String order = os.getOrder() == Order.ASC ? templates.getAsc() : templates.getDesc();
+			String order = os.getOrder() == Order.ASC ? configuration.getTemplates().getAsc() : configuration.getTemplates().getDesc();
 			if (os.getNullHandling() == OrderSpecifier.NullHandling.NullsFirst) {
-				if (templates.getNullsFirst() != null) {
+				if (configuration.getTemplates().getNullsFirst() != null) {
 					handle(os.getTarget());
 					append(order);
-					append(templates.getNullsFirst());
+					append(configuration.getTemplates().getNullsFirst());
 				} else {
 					append("(case when ");
 					handle(os.getTarget());
@@ -328,10 +308,10 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 					append(order);
 				}
 			} else if (os.getNullHandling() == OrderSpecifier.NullHandling.NullsLast) {
-				if (templates.getNullsLast() != null) {
+				if (configuration.getTemplates().getNullsLast() != null) {
 					handle(os.getTarget());
 					append(order);
-					append(templates.getNullsLast());
+					append(configuration.getTemplates().getNullsLast());
 				} else {
 					append("(case when ");
 					handle(os.getTarget());
@@ -350,33 +330,33 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	private void serializeSources(List<JoinExpression> joins) {
 		if (joins.isEmpty()) {
-			String dummyTable = templates.getDummyTable();
+			String dummyTable = configuration.getTemplates().getDummyTable();
 			if (!Strings.isNullOrEmpty(dummyTable)) {
-				append(templates.getFrom());
+				append(configuration.getTemplates().getFrom());
 				append(dummyTable);
 			}
 		} else {
-			append(templates.getFrom());
+			append(configuration.getTemplates().getFrom());
 			for (int i = 0; i < joins.size(); i++) {
 				final JoinExpression je = joins.get(i);
 				if (je.getFlags().isEmpty()) {
 					if (i > 0) {
-						append(templates.getJoinSymbol(je.getType()));
+						append(configuration.getTemplates().getJoinSymbol(je.getType()));
 					}
 					handleJoinTarget(je);
 					if (je.getCondition() != null) {
-						append(templates.getOn()).handle(je.getCondition());
+						append(configuration.getTemplates().getOn()).handle(je.getCondition());
 					}
 				} else {
 					serialize(JoinFlag.Position.START, je.getFlags());
 					if (!serialize(JoinFlag.Position.OVERRIDE, je.getFlags()) && i > 0) {
-						append(templates.getJoinSymbol(je.getType()));
+						append(configuration.getTemplates().getJoinSymbol(je.getType()));
 					}
 					serialize(JoinFlag.Position.BEFORE_TARGET, je.getFlags());
 					handleJoinTarget(je);
 					serialize(JoinFlag.Position.BEFORE_CONDITION, je.getFlags());
 					if (je.getCondition() != null) {
-						append(templates.getOn()).handle(je.getCondition());
+						append(configuration.getTemplates().getOn()).handle(je.getCondition());
 					}
 					serialize(JoinFlag.Position.END, je.getFlags());
 				}
@@ -410,9 +390,9 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			}
 			if (handled) {
 				if (recursive) {
-					prepend(templates.getWithRecursive());
+					prepend(configuration.getTemplates().getWithRecursive());
 				} else {
-					prepend(templates.getWith());
+					prepend(configuration.getTemplates().getWith());
 				}
 				append("\n");
 			}
@@ -428,7 +408,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			if (hasFlags) {
 				serialize(Position.BEFORE_GROUP_BY, flags);
 			}
-			append(templates.getGroupBy()).handle(COMMA, groupBy);
+			append(configuration.getTemplates().getGroupBy()).handle(COMMA, groupBy);
 			if (hasFlags) {
 				serialize(Position.AFTER_GROUP_BY, flags);
 			}
@@ -440,7 +420,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			if (hasFlags) {
 				serialize(Position.BEFORE_HAVING, flags);
 			}
-			append(templates.getHaving()).handle(having);
+			append(configuration.getTemplates().getHaving()).handle(having);
 			if (hasFlags) {
 				serialize(Position.AFTER_HAVING, flags);
 			}
@@ -452,14 +432,14 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		}
 		if (!orderBy.isEmpty()) {
 			stage = Stage.ORDER_BY;
-			append(templates.getOrderBy());
+			append(configuration.getTemplates().getOrderBy());
 			boolean first = true;
 			for (OrderSpecifier<?> os : orderBy) {
 				if (!first) {
 					append(COMMA);
 				}
 				handle(os.getTarget());
-				append(os.getOrder() == Order.ASC ? templates.getAsc() : templates.getDesc());
+				append(os.getOrder() == Order.ASC ? configuration.getTemplates().getAsc() : configuration.getTemplates().getDesc());
 				first = false;
 			}
 			if (hasFlags) {
@@ -480,7 +460,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 	public void visitConstant(Object constant) {
 		Object newConstant = constant;
 		if (newConstant instanceof Enum<?>) {
-			newConstant = entityCacheManager.convertEnumToValue((Enum<?>) newConstant);
+			newConstant = configuration.convertEnumToValue((Enum<?>) newConstant);
 		}
 
 		if (useLiterals) {
@@ -491,12 +471,12 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 					if (!first) {
 						append(COMMA);
 					}
-					append(LiteralUtils.asLiteral(o));
+					append(configuration.asLiteral(o));
 					first = false;
 				}
 				append(")");
 			} else {
-				append(LiteralUtils.asLiteral(newConstant));
+				append(configuration.asLiteral(newConstant));
 			}
 		} else if (newConstant instanceof Collection) {
 			append("(");
@@ -520,8 +500,8 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 				constantPaths.add(lastPath);
 			}
 		} else {
-			if (stage == Stage.SELECT && !Null.class.isInstance(newConstant) && getTemplates().isWrapSelectParameters()) {
-				String typeName = templates.getTypeForCast(newConstant.getClass());
+			if (stage == Stage.SELECT && !Null.class.isInstance(newConstant) && configuration.getTemplates().isWrapSelectParameters()) {
+				String typeName = configuration.getTemplates().getTypeForCast(newConstant.getClass());
 				Expression type = Expressions.constant(typeName);
 				super.visitOperation(newConstant.getClass(), SQLOps.CAST, ImmutableList.<Expression<?>> of(Q, type));
 			} else {
@@ -554,7 +534,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		 * Se for um caminho para um discriminator colum gera o nome da coluna.
 		 */
 		if (path instanceof DiscriminatorColumnPath) {
-			EntityCache sourceEntityCache = entityCacheManager.getEntityCache(((DiscriminatorColumnPath) path).getDiscriminatorClass());
+			EntityCache sourceEntityCache = configuration.getEntityCacheManager().getEntityCache(((DiscriminatorColumnPath) path).getDiscriminatorClass());
 			if (sourceEntityCache == null)
 				throw new SQLSerializerException("A classe " + ((DiscriminatorColumnPath) path).getDiscriminatorClass()
 						+ " não foi encontrada na lista de entidades gerenciadas.");
@@ -567,7 +547,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			/*
 			 * Se for um caminho para o valor do discriminator gera o valor
 			 */
-			EntityCache sourceEntityCache = entityCacheManager.getEntityCache(((DiscriminatorValuePath) path).getDiscriminatorClass());
+			EntityCache sourceEntityCache = configuration.getEntityCacheManager().getEntityCache(((DiscriminatorValuePath) path).getDiscriminatorClass());
 			if (sourceEntityCache == null)
 				throw new SQLSerializerException("A classe " + ((DiscriminatorValuePath) path).getDiscriminatorClass()
 						+ " não foi encontrada na lista de entidades gerenciadas.");
@@ -578,14 +558,14 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		} else if (((path.getMetadata().getPathType() == PathType.VARIABLE) && ((path instanceof EntityPath<?>) || (path.getMetadata().isRoot())))
 				|| (path.getMetadata().getPathType() == PathType.PROPERTY)) {
 			if ((inOperation && (lastOperation.getOperator() == Ops.INSTANCE_OF))) {
-				append(templates.quoteIdentifier(path.getMetadata().getName()));
+				append(configuration.getTemplates().quoteIdentifier(path.getMetadata().getName()));
 			} else if (inOperation) {
 				Set<SQLAnalyserColumn> columns = analyser.getParsedPathsOnOperations().get(path);
 				if ((columns == null) || (columns.size() == 0)) {
 					append(path.getMetadata().getName());
 				} else {
 					if (columns.size() > 1) {
-						throw new SQLSerializerException("Não é permitido o uso de chave composta em algumas operações.");
+						throw new SQLSerializerException("Não é permitido o uso de chave composta em algumas operações. Caminho " + path);
 					}
 					SQLAnalyserColumn column = columns.iterator().next();
 					append(column.getAliasTableName()).append(".").append(column.getColumnName());
@@ -601,7 +581,8 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 							if (appendSep)
 								append(COMMA);
 
-							append(templates.quoteIdentifier(column.getAliasTableName())).append(".").append(templates.quoteIdentifier(column.getColumnName()));
+							append(configuration.getTemplates().quoteIdentifier(column.getAliasTableName())).append(".").append(
+									configuration.getTemplates().quoteIdentifier(column.getColumnName()));
 							if ((stage == Stage.SELECT) && (!StringUtils.isEmpty(column.getAliasColumnName()) && !column.equals(column.getAliasColumnName()))
 									&& (!column.isUserAliasDefined()))
 								append(" AS ").append(column.getAliasColumnName());
@@ -609,30 +590,36 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 						}
 					}
 				} else
-					append(templates.quoteIdentifier(path.getMetadata().getName()));
+					append(configuration.getTemplates().quoteIdentifier(path.getMetadata().getName()));
 			}
 
 		} else if (path.getMetadata().getPathType() == PathType.VARIABLE) {
 		} else
-			append(templates.quoteIdentifier(path.getMetadata().getName()));
+			append(configuration.getTemplates().quoteIdentifier(path.getMetadata().getName()));
 		return null;
 	}
 
 	@Override
 	public Void visit(SubQueryExpression<?> query, Void context) {
-		if (inUnion && !templates.isUnionsWrapped()) {
-			serialize(query.getMetadata(), false);
-		} else {
-			append("(");
-			serialize(query.getMetadata(), false);
-			append(")");
+		boolean oldInOperation = inOperation;
+		this.inOperation = false;
+		try {
+			if (inUnion && !configuration.getTemplates().isUnionsWrapped()) {
+				serialize(query.getMetadata(), false);
+			} else {
+				append("(");
+				serialize(query.getMetadata(), false);
+				append(")");
+			}
+		} finally {
+			this.inOperation = oldInOperation;
 		}
 		return null;
 	}
 
 	@Override
 	public Void visit(TemplateExpression<?> expr, Void context) {
-		if (inJoin && templates.isFunctionJoinsWrapped()) {
+		if (inJoin && configuration.getTemplates().isFunctionJoinsWrapped()) {
 			append("table(");
 			super.visit(expr, context);
 			append(")");
@@ -659,7 +646,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 		try {
 			inOperation = true;
 			if (args.size() == 2 && !useLiterals && args.get(0) instanceof Path<?> && args.get(1) instanceof Constant<?> && operator != Ops.NUMCAST) {
-				for (Element element : templates.getTemplate(operator).getElements()) {
+				for (Element element : configuration.getTemplates().getTemplate(operator).getElements()) {
 					if (element instanceof Template.ByIndex && ((Template.ByIndex) element).getIndex() == 1) {
 						constantPaths.add((Path<?>) args.get(0));
 						break;
@@ -674,17 +661,17 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 				inUnion = oldUnion;
 
 			} else if (operator == Ops.LIKE && args.get(1) instanceof Constant) {
-				final String escape = String.valueOf(templates.getEscapeChar());
+				final String escape = String.valueOf(configuration.getTemplates().getEscapeChar());
 				final String escaped = args.get(1).toString().replace(escape, escape + escape);
 				super.visitOperation(String.class, Ops.LIKE, ImmutableList.of(args.get(0), ConstantImpl.create(escaped)));
 
 			} else if (operator == Ops.STRING_CAST) {
-				final String typeName = dialect.convertJavaToDatabaseType(String.class).getName();
+				final String typeName = configuration.convertJavaToDatabaseType(String.class);
 				super.visitOperation(String.class, SQLOps.CAST, ImmutableList.of(args.get(0), ConstantImpl.create(typeName)));
 
 			} else if (operator == Ops.NUMCAST) {
 				final Class<?> targetType = (Class<?>) ((Constant<?>) args.get(1)).getConstant();
-				final String typeName = dialect.convertJavaToDatabaseType(targetType).getName();
+				final String typeName = configuration.convertJavaToDatabaseType(targetType);
 				super.visitOperation(targetType, SQLOps.CAST, ImmutableList.of(args.get(0), ConstantImpl.create(typeName)));
 
 			} else if (operator == Ops.ALIAS) {
@@ -716,6 +703,10 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	protected void setSkipParent(boolean b) {
 		skipParent = b;
+	}
+
+	public Configuration getConfiguration() {
+		return configuration;
 	}
 
 }

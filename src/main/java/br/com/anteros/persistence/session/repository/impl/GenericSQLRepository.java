@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.session.repository.impl;
 
@@ -23,6 +20,7 @@ import java.util.List;
 
 import br.com.anteros.core.utils.Assert;
 import br.com.anteros.core.utils.TypeResolver;
+import br.com.anteros.persistence.dsl.osql.Configuration;
 import br.com.anteros.persistence.dsl.osql.EntityPathResolver;
 import br.com.anteros.persistence.dsl.osql.OSQLQuery;
 import br.com.anteros.persistence.dsl.osql.SimpleEntityPathResolver;
@@ -295,7 +293,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 		DescriptionNamedQuery namedQuery = cache.getDescriptionNamedQuery(queryName);
 		if (namedQuery == null)
 			throw new SQLQueryException("Query nomeada " + queryName + " não encontrada.");
-		return find(namedQuery.getQuery(),  namedQuery.getLockOptions(), readOnly);
+		return find(namedQuery.getQuery(), namedQuery.getLockOptions(), readOnly);
 	}
 
 	@Override
@@ -314,7 +312,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 	}
 
 	@Override
-	public List<T> findByNamedQuery(String queryName, Object parameters,  boolean readOnly) {
+	public List<T> findByNamedQuery(String queryName, Object parameters, boolean readOnly) {
 		Assert.notNull(queryName, "O nome da query não pode ser nulo.");
 		Assert.notNull(
 				persistentClass,
@@ -517,7 +515,6 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 	}
 
 	protected OSQLQuery createQuery(Predicate... predicate) {
-
 		OSQLQuery query = new OSQLQuery(session).from(getEntityPath()).where(predicate);
 		return query;
 	}
@@ -584,7 +581,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 
 	@Override
 	public T findOne(ID id, LockOptions lockOptions) {
-		return findOne(id, lockOptions,false);
+		return findOne(id, lockOptions, false);
 	}
 
 	@Override

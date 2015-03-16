@@ -29,6 +29,7 @@ import br.com.anteros.persistence.dsl.osql.types.Constant;
 import br.com.anteros.persistence.dsl.osql.types.EntityPath;
 import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpression;
+import br.com.anteros.persistence.dsl.osql.types.IndexHint;
 import br.com.anteros.persistence.dsl.osql.types.Operation;
 import br.com.anteros.persistence.dsl.osql.types.Ops;
 import br.com.anteros.persistence.dsl.osql.types.OrderSpecifier;
@@ -40,7 +41,6 @@ import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
 import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
 import br.com.anteros.persistence.dsl.osql.types.Visitor;
 import br.com.anteros.persistence.dsl.osql.types.expr.BooleanExpression;
-import br.com.anteros.persistence.dsl.osql.types.expr.BooleanOperation;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorColumnPath;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorValuePath;
 import br.com.anteros.persistence.handler.ResultClassDefinition;
@@ -49,9 +49,8 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 
 /**
- * Visitor que analisa as expressões da consulta processando os nomes path's
- * criando junções e colunas que serão usadas na serialização para SQL pela
- * classe {@link SQLSerializer}.
+ * Visitor que analisa as expressões da consulta processando os nomes path's criando junções e colunas que serão usadas
+ * na serialização para SQL pela classe {@link SQLSerializer}.
  * 
  * @author edson
  *
@@ -61,16 +60,15 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	private static int MAKE_ALIASES = 1;
 	private static int MAKE_COLUMNS = 2;
 	private static final String COMMA = ", ";
-	private AbstractOSQLQuery<?> query;
-	private Map<Path<?>, EntityPath<?>> aliases = new HashMap<Path<?>, EntityPath<?>>();
+	private QueryMetadata mainMetadata;
+	private Map<Path<?>, EntityPath<?>> createdAliasesForDynamicJoins = new HashMap<Path<?>, EntityPath<?>>();
 	private Map<Expression<?>, Set<SQLAnalyserColumn>> parsedPathsOnProjections = new LinkedHashMap<Expression<?>, Set<SQLAnalyserColumn>>();
 	private Map<Expression<?>, Set<SQLAnalyserColumn>> parsedPathsOnOperations = new LinkedHashMap<Expression<?>, Set<SQLAnalyserColumn>>();
 	private Map<Expression<?>, Set<SQLAnalyserColumn>> resultColumnsFromProjections = new LinkedHashMap<Expression<?>, Set<SQLAnalyserColumn>>();
-	private int nextAliasTableName = 0;
-	private int nextAliasColumnName = 0;
 	private int level = MAKE_ALIASES;
 	private List<Expression<?>> individualExpressions = new ArrayList<Expression<?>>();
 	private SQLAnalyserColumn lastColumnAdded = null;
+	private Set<QueryMetadata> allMetadatas = new LinkedHashSet<QueryMetadata>();
 
 	protected enum Stage {
 		SELECT, FROM, WHERE, GROUP_BY, HAVING, ORDER_BY
@@ -84,9 +82,11 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 	private Map<Operation<?>, String> booleanDefinitions = new HashMap<Operation<?>, String>();
 	private Expression<?> currentExpressionOnMakeColumns;
+	private Configuration configuration;
 
-	public SQLAnalyser(AbstractOSQLQuery<?> query) {
-		this.query = query;
+	public SQLAnalyser(QueryMetadata metadata, Configuration configuration) {
+		this.mainMetadata = metadata;
+		this.configuration = configuration;
 	}
 
 	@Override
@@ -121,8 +121,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 			if (level == MAKE_COLUMNS) {
 				if (expr.getType() == Boolean.class) {
-					if ((expr.getOperator() == Ops.EQ) || (expr.getOperator() == Ops.NE)
-							|| (expr.getOperator() == Ops.GT) || (expr.getOperator() == Ops.GOE)
+					if ((expr.getOperator() == Ops.EQ) || (expr.getOperator() == Ops.NE) || (expr.getOperator() == Ops.GT) || (expr.getOperator() == Ops.GOE)
 							|| (expr.getOperator() == Ops.LT) || (expr.getOperator() == Ops.LOE)) {
 						analyzeEqualsOperation(expr);
 					} else if ((expr.getOperator() == Ops.IS_NOT_NULL) || (expr.getOperator() == Ops.IS_NULL)) {
@@ -147,8 +146,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 				for (SQLAnalyserColumn leftColumn : leftColumns) {
 					if (appendAnd)
 						booleanAsString.append(" AND ");
-					booleanAsString.append(leftColumn.getAliasTableName()).append(".")
-							.append(leftColumn.getColumnName()).append(" ");
+					booleanAsString.append(leftColumn.getAliasTableName()).append(".").append(leftColumn.getColumnName()).append(" ");
 					if (expr.getOperator() == Ops.IS_NOT_NULL) {
 						booleanAsString.append(" is not null ");
 					} else if (expr.getOperator() == Ops.IS_NULL) {
@@ -168,6 +166,9 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			Expression<?> leftExpression = expr.getArg(0);
 			Expression<?> rigthExpression = expr.getArg(1);
 
+			/*
+			 * Igualdade de 2 entidades
+			 */
 			if (isEntity(leftExpression) && (isEntity(rigthExpression))) {
 
 				Set<SQLAnalyserColumn> leftColumns = parsedPathsOnOperations.get(leftExpression);
@@ -180,8 +181,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 					SQLAnalyserColumn rightColumn = itRightColumns.next();
 					if (appendAnd)
 						booleanAsString.append(" AND ");
-					booleanAsString.append(leftColumn.getAliasTableName()).append(".")
-							.append(leftColumn.getColumnName()).append(" ");
+					booleanAsString.append(leftColumn.getAliasTableName()).append(".").append(leftColumn.getColumnName()).append(" ");
 
 					if (expr.getOperator() == Ops.EQ) {
 						booleanAsString.append("=");
@@ -197,11 +197,38 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 						booleanAsString.append("<=");
 					}
 
-					booleanAsString.append(" ").append(rightColumn.getAliasTableName()).append(".")
-							.append(rightColumn.getColumnName());
+					booleanAsString.append(" ").append(rightColumn.getAliasTableName()).append(".").append(rightColumn.getColumnName());
 					appendAnd = true;
 				}
 
+				booleanDefinitions.put(expr, booleanAsString.toString());
+			} else if ((leftExpression instanceof Path<?>) && (rigthExpression instanceof Constant<?>)
+					&& (((Constant<?>) rigthExpression).getConstant() instanceof Boolean)) {
+				analyzeIsTrueOperation(expr, leftExpression, rigthExpression);
+			}
+		}
+	}
+
+	protected void analyzeIsTrueOperation(Operation<?> expr, Expression<?> leftExpression, Expression<?> rigthExpression) {
+		/*
+		 * Igualdade com verdadeiro/falso = isTrue
+		 */
+		Set<SQLAnalyserColumn> leftColumns = parsedPathsOnOperations.get(leftExpression);
+		if (leftColumns.size() > 1)
+			throw new SQLAnalyserException(
+					"Não é possível fazer comparações verdadeiras ou falsas em chaves compostas. Informe o campos individualmente. Expressão " + leftExpression);
+
+		Path<?> entityPath = this.getAppropriateAliasByEntityPath((Path<?>) leftExpression);
+		if (entityPath != null) {
+			EntityCache entityCache = getEntityCacheByPath(entityPath.getType());
+			DescriptionField descriptionField = entityCache.getDescriptionField(((Path<?>) leftExpression).getMetadata().getElement() + "");
+			if (descriptionField != null) {
+
+				Boolean value = (Boolean) ((Constant<?>) rigthExpression).getConstant();
+				Object booleanValue = descriptionField.getBooleanValue(value);
+				StringBuilder booleanAsString = new StringBuilder();
+				booleanAsString.append(leftColumns.iterator().next().getAliasTableName()).append(".").append(leftColumns.iterator().next().getColumnName())
+						.append(" = ").append(configuration.asLiteral(booleanValue));
 				booleanDefinitions.put(expr, booleanAsString.toString());
 			}
 		}
@@ -215,7 +242,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		else
 			sourceClass = expression.getType();
 
-		leftEntityCache = query.getSession().getEntityCacheManager().getEntityCache(sourceClass);
+		leftEntityCache = configuration.getEntityCacheManager().getEntityCache(sourceClass);
 		return leftEntityCache != null;
 	}
 
@@ -223,8 +250,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	public Void visit(ParamExpression<?> expr, Void context) {
 		if (namedParameter != null) {
 			if (namedParameter != (!expr.isAnon())) {
-				throw new SQLAnalyserException(
-						"Foram encontrados parâmetros nomeados e não nomeados. Use apenas um formato de parâmetros na consulta.");
+				throw new SQLAnalyserException("Foram encontrados parâmetros nomeados e não nomeados. Use apenas um formato de parâmetros na consulta.");
 			}
 		}
 		this.namedParameter = !expr.isAnon();
@@ -248,8 +274,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	}
 
 	/**
-	 * Processa o caminho e monta os nomes das colunas que serão usadas na
-	 * serialização do SQL.
+	 * Processa o caminho e monta os nomes das colunas que serão usadas na serialização do SQL.
 	 * 
 	 * @param path
 	 *            Caminho
@@ -269,64 +294,45 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			return;
 		}
 
-		if ((path.getMetadata().getPathType() == PathType.VARIABLE)
-				&& (this.query.getSession().getEntityCacheManager().isEntity(path.getType()))) {
+		if ((path.getMetadata().getPathType() == PathType.VARIABLE) && (this.configuration.getEntityCacheManager().isEntity(path.getType()))) {
 			/*
-			 * Ser for uma variável e for uma entidade Ex: tOrder = new
-			 * TOrder("ORD")
+			 * Ser for uma variável e for uma entidade Ex: tOrder = new TOrder("ORD")
 			 */
 			EntityCache sourceEntityCache = getEntityCacheByPath(path.getType());
 			String aliasTableName = path.getMetadata().getName();
 			/*
-			 * Somente processa projeções customizadas se não estiver dentro de
-			 * uma operação
+			 * Somente processa projeções customizadas se não estiver dentro de uma operação
 			 */
 			if ((!inOperation) && (((EntityPath<?>) path).getCustomProjection().size() > 0)) {
 				for (Path<?> customPath : ((EntityPath<?>) path).getCustomProjection()) {
 					if (customPath.equals(path))
-						processAllFields((keyPath == null ? path : keyPath),
-								((EntityPath<?>) path).getExcludeProjection(), aliasTableName, sourceEntityCache,
+						processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) path).getExcludeProjection(), aliasTableName, sourceEntityCache,
 								inOperation);
 					else
 						processColumns(customPath, path);
 				}
 			} else {
-				processAllFields((keyPath == null ? path : keyPath), null, aliasTableName, sourceEntityCache,
-						inOperation);
+				processAllFields((keyPath == null ? path : keyPath), null, aliasTableName, sourceEntityCache, inOperation);
 			}
 
-		} else if (path.getMetadata().getPathType() == PathType.PROPERTY) { // Ser
-																			// for
-																			// uma
-																			// propriedade
-																			// de
-																			// uma
-																			// Entidade.
-																			// Ex.
-																			// tOrder.dtInvoice
-																			// ou
-																			// tOrder.person
-																			// ou
-																			// tOrder.person.id
+		} else if (path.getMetadata().getPathType() == PathType.PROPERTY) {
 			/*
-			 * Se for uma propriedade da entidade, pega o pai adequado
+			 * Ser for uma propriedade de uma Entidade. Ex. tOrder.dtInvoice ou tOrder.person ou tOrder.person.id. Se
+			 * for uma propriedade da entidade, pega o pai mais adequado.
 			 */
 			Path<?> entityPath = this.getAppropriateAliasByEntityPath(path);
 			String aliasTableName = entityPath.getMetadata().getName();
 			Path<?> targetPath = path;
 			/*
-			 * Verifica se a propriedade é um ID então pega como caminho do pai
-			 * dela
+			 * Verifica se a propriedade é um ID então pega como caminho o pai dela
 			 */
 			EntityCache sourceEntityCache = getEntityCacheByPath(entityPath.getType());
 			/*
-			 * Se estiver numa operação e o caminho for chave primária troca o
-			 * path para a entidade da chave
+			 * Se estiver numa operação e o caminho for chave primária troca o path para a entidade da chave
 			 */
 			if (inOperation && !path.getMetadata().getParent().getMetadata().isRoot()) {
 				EntityCache targetEntityCache = getEntityCacheByPath(path.getMetadata().getParent().getType());
-				DescriptionField descriptionFieldPath = getDescriptionFieldByPath(targetEntityCache, path.getMetadata()
-						.getName() + "");
+				DescriptionField descriptionFieldPath = getDescriptionFieldByPath(targetEntityCache, path.getMetadata().getName() + "");
 				if (descriptionFieldPath.isPrimaryKey() && !descriptionFieldPath.isCompositeId()) {
 					targetPath = path.getMetadata().getParent();
 				}
@@ -334,37 +340,28 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 			if ((targetPath instanceof EntityPath<?>) && (!inOperation)) {
 				/*
-				 * Somente processa projeções customizadas se não estiver dentro
-				 * de uma operação
+				 * Somente processa projeções customizadas se não estiver dentro de uma operação
 				 */
 				if ((!inOperation) && (((EntityPath<?>) targetPath).getCustomProjection().size() > 0)) {
 					for (Path<?> customPath : ((EntityPath<?>) targetPath).getCustomProjection()) {
 						if (customPath.equals(targetPath))
-							processAllFields((keyPath == null ? path : keyPath),
-									((EntityPath<?>) targetPath).getExcludeProjection(), aliasTableName,
+							processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) targetPath).getExcludeProjection(), aliasTableName,
 									sourceEntityCache, inOperation);
 						else
 							processColumns(customPath, path);
 					}
 				} else
-					processAllFields((keyPath == null ? path : keyPath), null, aliasTableName, sourceEntityCache,
-							inOperation);
+					processAllFields((keyPath == null ? path : keyPath), null, aliasTableName, sourceEntityCache, inOperation);
 			} else {
-				DescriptionField descriptionField = getDescriptionFieldByPath(sourceEntityCache, targetPath
-						.getMetadata().getName());
+				DescriptionField descriptionField = getDescriptionFieldByPath(sourceEntityCache, targetPath.getMetadata().getName());
 				processSingleField((keyPath == null ? path : keyPath), aliasTableName, descriptionField, true);
 			}
 
-		} else if (path.getMetadata().getPathType() == PathType.VARIABLE) { // Demais
-																			// caso
-																			// incluindo
-																			// aliases
-																			// de
-																			// colunas.
+		} else if (path.getMetadata().getPathType() == PathType.VARIABLE) {
 			/*
-			 * Se o estágio da análise for MAKE_COLUMNS e havia sido adicionado
-			 * uma coluna associa o alias atribuido pelo usuário sobrepondo o
-			 * gerado e marca que o usuário atribui um alias.
+			 * Demais casos incluindo aliases de colunas. Se o estágio da análise for MAKE_COLUMNS e havia sido
+			 * adicionado uma coluna associa o alias atribuido pelo usuário sobrepondo o gerado e marca que o usuário
+			 * atribui um alias.
 			 */
 			if (level == MAKE_COLUMNS) {
 				if (lastColumnAdded != null) {
@@ -378,22 +375,19 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	protected DescriptionField getDescriptionFieldByPath(EntityCache entityCache, String fieldName) {
 		DescriptionField result = entityCache.getDescriptionField(fieldName);
 		if (result == null)
-			throw new SQLSerializerException("O campo " + fieldName + " não foi encontrado na classe "
-					+ entityCache.getEntityClass() + ". ");
+			throw new SQLSerializerException("O campo " + fieldName + " não foi encontrado na classe " + entityCache.getEntityClass() + ". ");
 		return result;
 	}
 
 	protected EntityCache getEntityCacheByPath(Class<?> sourceClass) {
-		EntityCache result = this.query.getSession().getEntityCacheManager().getEntityCache(sourceClass);
+		EntityCache result = this.configuration.getEntityCacheManager().getEntityCache(sourceClass);
 		if (result == null)
-			throw new SQLSerializerException("A classe " + sourceClass
-					+ " não foi encontrada na lista de entidades gerenciadas.");
+			throw new SQLSerializerException("A classe " + sourceClass + " não foi encontrada na lista de entidades gerenciadas.");
 		return result;
 	}
 
 	/**
-	 * Processa o campo da entidade e gera um coluna para o mesmo. Processa
-	 * apenas campos simples e relacionamentos.
+	 * Processa o campo da entidade e gera um coluna para o mesmo. Processa apenas campos simples e relacionamentos.
 	 * 
 	 * @param index
 	 *            Indice dentro da lista de expressões.
@@ -405,15 +399,13 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 *            criar um alias?
 	 * @return verdadeiro se conseguiu criar a coluna
 	 */
-	protected boolean processSingleField(Path<?> keyPath, String alias, DescriptionField descriptionField,
-			boolean makeAlias) {
+	protected boolean processSingleField(Path<?> keyPath, String alias, DescriptionField descriptionField, boolean makeAlias) {
 
 		if (descriptionField.isSimple()) {
 			String aliasColumnName = "";
 			if (makeAlias)
-				aliasColumnName = makeNextAliasName(alias);
-			lastColumnAdded = new SQLAnalyserColumn(alias, descriptionField.getSimpleColumn().getColumnName(),
-					aliasColumnName, descriptionField, 0);
+				aliasColumnName = configuration.makeNextAliasName(alias);
+			lastColumnAdded = new SQLAnalyserColumn(alias, descriptionField.getSimpleColumn().getColumnName(), aliasColumnName, descriptionField, 0);
 			if (inOperation)
 				getColumnListOperation(keyPath).add(lastColumnAdded);
 			else
@@ -429,9 +421,8 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			for (DescriptionColumn column : descriptionField.getDescriptionColumns()) {
 				String aliasColumnName = "";
 				if (makeAlias)
-					aliasColumnName = makeNextAliasName(alias);
-				lastColumnAdded = new SQLAnalyserColumn(alias, column.getColumnName(), aliasColumnName,
-						descriptionField, 0);
+					aliasColumnName = configuration.makeNextAliasName(alias);
+				lastColumnAdded = new SQLAnalyserColumn(alias, column.getColumnName(), aliasColumnName, descriptionField, 0);
 
 				if (inOperation)
 					getColumnListOperation(keyPath).add(lastColumnAdded);
@@ -495,25 +486,21 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 * @param sourceEntityCache
 	 *            Representação da entidade no dicionário
 	 */
-	protected void processAllFields(Path<?> keyPath, Set<Path<?>> excludeProjection, String alias,
-			EntityCache sourceEntityCache, boolean onlyPrimaryKey) {
+	protected void processAllFields(Path<?> keyPath, Set<Path<?>> excludeProjection, String alias, EntityCache sourceEntityCache, boolean onlyPrimaryKey) {
 
 		for (DescriptionField descriptionField : sourceEntityCache.getDescriptionFields()) {
 			/*
-			 * Se for para gerar somente campos da chave primária da entidade ou
-			 * se o campo faz parte da lista de exclusão
+			 * Se for para gerar somente campos da chave primária da entidade ou se o campo faz parte da lista de
+			 * exclusão
 			 */
 			if (onlyPrimaryKey) {
-				if (!descriptionField.isPrimaryKey()
-						|| hasPathForDescriptionFieldToExclude(excludeProjection, descriptionField))
+				if (!descriptionField.isPrimaryKey() || hasPathForDescriptionFieldToExclude(excludeProjection, descriptionField))
 					continue;
 			} else {
 				/*
-				 * Não processa nenhum tipo de coleção e caminhos excluídos da
-				 * projeção
+				 * Não processa nenhum tipo de coleção e caminhos excluídos da projeção
 				 */
-				if (descriptionField.isAnyCollection()
-						|| hasPathForDescriptionFieldToExclude(excludeProjection, descriptionField))
+				if (descriptionField.isAnyCollection() || hasPathForDescriptionFieldToExclude(excludeProjection, descriptionField))
 					continue;
 			}
 
@@ -522,15 +509,14 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	}
 
 	/**
-	 * Retorna se um caminho for excluído da projeção de uma entidade através do
-	 * método {@link EntityPath#excludeProjection(Path...)}
+	 * Retorna se um caminho for excluído da projeção de uma entidade através do método
+	 * {@link EntityPath#excludeProjection(Path...)}
 	 * 
 	 * @param excludeProjection
 	 * @param descriptionField
 	 * @return Verdadeiro se o campo faz parte da lista de exclusão.
 	 */
-	private boolean hasPathForDescriptionFieldToExclude(Set<Path<?>> excludeProjection,
-			DescriptionField descriptionField) {
+	private boolean hasPathForDescriptionFieldToExclude(Set<Path<?>> excludeProjection, DescriptionField descriptionField) {
 		if (excludeProjection == null)
 			return false;
 		for (Path<?> path : excludeProjection) {
@@ -543,6 +529,30 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 	@Override
 	public Void visit(SubQueryExpression<?> expr, Void context) {
+		boolean oldInOperation = inOperation;
+		Stage oldStage = stage;
+		this.inOperation = false;
+		this.allMetadatas.add(expr.getMetadata());
+		try {
+			if (level == MAKE_ALIASES) {
+				try {
+					processExpressions(expr.getMetadata(), MAKE_ALIASES);
+				} catch (Exception e) {
+					throw new SQLAnalyserException(e);
+				}
+
+			} else if (level == MAKE_COLUMNS) {
+				try {
+					processExpressions(expr.getMetadata(), MAKE_COLUMNS);
+					makeIndexHints(expr.getMetadata());
+				} catch (Exception e) {
+					throw new SQLAnalyserException(e);
+				}
+			}
+		} finally {
+			this.inOperation = oldInOperation;
+			this.stage = oldStage;
+		}
 		return null;
 	}
 
@@ -568,36 +578,17 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 * @throws Exception
 	 */
 	public void process() throws Exception {
-		QueryMetadata metadata = query.getMetadata();
-		this.individualExpressions = extractIndividualColumnsExpression(metadata);
-		processExpressions(metadata, MAKE_ALIASES);
-		processExpressions(metadata, MAKE_COLUMNS);
-
-		System.out.println("PROJEÇÃO");
-		System.out.println("-------------------------------------------");
-		for (Expression<?> p : parsedPathsOnProjections.keySet()) {
-			for (SQLAnalyserColumn s : parsedPathsOnProjections.get(p)) {
-				System.out.println(p + " -> " + s);
-			}
-		}
-
-		System.out.println();
-		System.out.println("OPERACAO");
-		System.out.println("-------------------------------------------");
-		for (Expression<?> p : parsedPathsOnOperations.keySet()) {
-			for (SQLAnalyserColumn s : parsedPathsOnOperations.get(p)) {
-				System.out.println(p + " -> " + s);
-			}
-		}
-
-		System.out.println("-------------------------------------------");
-
+		this.individualExpressions = SQLAnalyser.extractIndividualColumnsExpression(mainMetadata);
+		this.allMetadatas.clear();
+		this.allMetadatas.add(mainMetadata);
+		processExpressions(mainMetadata, MAKE_ALIASES);
+		processExpressions(mainMetadata, MAKE_COLUMNS);
+		makeIndexHints(mainMetadata);
 	}
 
 	/**
-	 * Extrai a lista de expressões de forma individualizada para serem
-	 * processadas. Expressões contidas em fábricas de expressões serão
-	 * retornadas de forma individual.
+	 * Extrai a lista de expressões de forma individualizada para serem processadas. Expressões contidas em fábricas de
+	 * expressões serão retornadas de forma individual.
 	 * 
 	 * @param metadata
 	 *            Metadata contendo as expressões
@@ -628,8 +619,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	}
 
 	/**
-	 * Processa lista de expressões individuais de acordo como nível(estágio) da
-	 * análise.
+	 * Processa lista de expressões individuais de acordo como nível(estágio) da análise.
 	 * 
 	 * @param metadata
 	 *            Metadata contendo expressões.
@@ -640,7 +630,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 */
 	protected void processExpressions(QueryMetadata metadata, int level) throws Exception {
 		this.level = level;
-		final List<Expression<?>> select = this.individualExpressions;
+		final List<Expression<?>> select = SQLAnalyser.extractIndividualColumnsExpression(metadata);
 		final Predicate where = metadata.getWhere();
 		final Predicate having = metadata.getHaving();
 		final List<OrderSpecifier<?>> orderBy = metadata.getOrderBy();
@@ -695,11 +685,31 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 				ord.getTarget().accept(this, null);
 			}
 		}
+
+		if (level == MAKE_COLUMNS) {
+			System.out.println("PROJEÇÃO");
+			System.out.println("-------------------------------------------");
+			for (Expression<?> p : parsedPathsOnProjections.keySet()) {
+				for (SQLAnalyserColumn s : parsedPathsOnProjections.get(p)) {
+					System.out.println(p + " -> " + s);
+				}
+			}
+
+			System.out.println();
+			System.out.println("OPERACAO");
+			System.out.println("-------------------------------------------");
+			for (Expression<?> p : parsedPathsOnOperations.keySet()) {
+				for (SQLAnalyserColumn s : parsedPathsOnOperations.get(p)) {
+					System.out.println(p + " -> " + s);
+				}
+			}
+
+			System.out.println("-------------------------------------------");
+		}
 	}
 
 	/**
-	 * Verifica se é possível criar uma junção para um caminho utilizado nas
-	 * expressões.
+	 * Verifica se é possível criar uma junção para um caminho utilizado nas expressões.
 	 * 
 	 * @param expr
 	 *            Expressão.
@@ -707,12 +717,11 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 *             Exceção ocorrida durante criação da junção.
 	 */
 	protected void makePossibleJoins(Path<?> expr, Path<?> owner) throws Exception {
-		if ((expr instanceof DiscriminatorValuePath) || (expr instanceof DiscriminatorColumnPath)
-				|| (expr.getMetadata().isRoot()))
+		if ((expr instanceof DiscriminatorValuePath) || (expr instanceof DiscriminatorColumnPath) || (expr.getMetadata().isRoot()))
 			return;
 		makePossibleJoins(expr.getMetadata().getParent(), (owner == null ? expr : owner));
 
-		EntityCache entityCache = this.query.getSession().getEntityCacheManager().getEntityCache(expr.getType());
+		EntityCache entityCache = this.configuration.getEntityCacheManager().getEntityCache(expr.getType());
 
 		boolean isEntity = (entityCache != null);
 		boolean isExpressionMain = (owner == null);
@@ -722,40 +731,57 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		if (isOwnerOfExpressionMain) {
 			Object element = owner.getMetadata().getElement();
 			DescriptionField descriptionField = entityCache.getDescriptionField(element + "");
-			isPrimaryKey = (descriptionField != null)
-					&& (descriptionField.isPrimaryKey() && !descriptionField.isCompositeId());
+			isPrimaryKey = (descriptionField != null) && (descriptionField.isPrimaryKey() && !descriptionField.isCompositeId());
 		}
 
 		/*
-		 * Se for uma entidade e não for pai ou a expressão principal
-		 * (expression main = onde inicia o processamento recursivo)
+		 * Se for uma entidade e não for pai ou a expressão principal (expression main = onde inicia o processamento
+		 * recursivo)
 		 */
 		boolean firstCondition = (isEntity && !isExpressionMain && !isOwnerOfExpressionMain);
 		/*
-		 * Se for uma entidade e for a expressão principal e o estágio for
-		 * diferente do FROM e WHERE.
+		 * Se for uma entidade e for a expressão principal e o estágio for diferente do FROM e WHERE.
 		 */
 		boolean secondCondition = (isEntity && isExpressionMain && (stage != Stage.FROM) && (stage != Stage.WHERE));
 		/*
-		 * Se for uma entidade e não for a expressão principal e for o pai da
-		 * expressão principal e a mesma não for chave primária.
+		 * Se for uma entidade e não for a expressão principal e for o pai da expressão principal e a mesma não for
+		 * chave primária.
 		 */
 		boolean thirdCondition = (isEntity && !isExpressionMain && isOwnerOfExpressionMain && !isPrimaryKey);
 		/*
-		 * Se for uma entidade e não for a expressão principal e for o pai da
-		 * expressão e o estágio for diferente de FROM e where.
+		 * Se for uma entidade e não for a expressão principal e for o pai da expressão e o estágio for diferente de
+		 * FROM e where.
 		 */
 		boolean fourthCondition = (isEntity && !isExpressionMain && isOwnerOfExpressionMain && (stage != Stage.FROM) && (stage != Stage.WHERE));
 
 		if ((firstCondition) || (secondCondition) || (thirdCondition) || (fourthCondition)) {
-			if (!aliases.containsKey(expr)) {
-				String alias = makeNextAliasTableName();
+			if (!createdAliasesForDynamicJoins.containsKey(expr)) {
+				String alias = configuration.makeNextAliasTableName();
 				EntityPath<?> newPath = (EntityPath<?>) ReflectionUtils.invokeConstructor(expr.getClass(), alias);
 				BooleanExpression boExpression = (BooleanExpression) ReflectionUtils.invokeMethod(expr, "eq", newPath);
-				query.leftJoin(newPath).on(boExpression);
-				aliases.put(expr, newPath);
+
+				QueryMetadata metadata = getMetadataFromPath(expr);
+				if (metadata == null)
+					throw new SQLAnalyserException("Não foi possível criar a junção dinâmica " + expr);
+
+				metadata.addJoin(JoinType.LEFTJOIN, newPath);
+				metadata.addJoinCondition(boExpression);
+				createdAliasesForDynamicJoins.put(expr, newPath);
 			}
 		}
+	}
+
+	private QueryMetadata getMetadataFromPath(Path<?> expr) {
+		Path<?> root = expr.getRoot();
+		for (QueryMetadata metadata : allMetadatas) {
+			for (JoinExpression joinExpression : metadata.getJoins()) {
+				if (joinExpression.getTarget() instanceof EntityPath<?>) {
+					if (((EntityPath<?>) joinExpression.getTarget()).getMetadata().getName().equals(root.getMetadata().getName()))
+						return metadata;
+				}
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -763,8 +789,8 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 * 
 	 * @return
 	 */
-	public Map<Path<?>, EntityPath<?>> getAliases() {
-		return aliases;
+	public Map<Path<?>, EntityPath<?>> getAliasesForJoins() {
+		return createdAliasesForDynamicJoins;
 	}
 
 	/**
@@ -779,42 +805,40 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		if (path.getMetadata().isRoot())
 			return path;
 
-		EntityCache entityCache = this.query.getSession().getEntityCacheManager().getEntityCache(path.getType());
+		EntityCache entityCache = this.configuration.getEntityCacheManager().getEntityCache(path.getType());
 		boolean isEntity = (entityCache != null);
 
 		EntityPath<?> result = null;
 		if (isEntity) { // PAP.pessoa
 			if (inOperation) {
-				result = aliases.get(path.getMetadata().getParent());
+				result = createdAliasesForDynamicJoins.get(path.getMetadata().getParent());
 				if (result == null)
 					result = (EntityPath<?>) path.getMetadata().getParent(); // PAP
 			} else {
-				result = aliases.get(path);
+				result = createdAliasesForDynamicJoins.get(path);
 			}
 		} else { // PAP.usuarioSistema.id
 			if (path.getMetadata().getParent().getMetadata().isRoot())
 				result = (EntityPath<?>) path.getMetadata().getParent();
 			else {
 
-				EntityCache entityCacheOwner = this.query.getSession().getEntityCacheManager()
-						.getEntityCache(path.getMetadata().getParent().getType());
+				EntityCache entityCacheOwner = this.configuration.getEntityCacheManager().getEntityCache(path.getMetadata().getParent().getType());
 				if (entityCacheOwner == null)
 					throw new SQLSerializerException("A classe " + path.getMetadata().getParent().getType()
 							+ " não foi encontrada na lista de entidades gerenciadas.");
 
-				DescriptionField descriptionField = entityCacheOwner.getDescriptionField(path.getMetadata().getName()
-						+ "");
+				DescriptionField descriptionField = entityCacheOwner.getDescriptionField(path.getMetadata().getName() + "");
 				if (descriptionField == null)
-					throw new SQLSerializerException("O campo " + path.getMetadata().getName()
-							+ " não foi encontrado na classe " + entityCacheOwner.getEntityClass() + ". ");
+					throw new SQLSerializerException("O campo " + path.getMetadata().getName() + " não foi encontrado na classe "
+							+ entityCacheOwner.getEntityClass() + ". ");
 
 				if ((inOperation) && (descriptionField.isPrimaryKey() && !descriptionField.isCompositeId())) {
-					result = aliases.get(path.getMetadata().getParent().getMetadata().getParent());
+					result = createdAliasesForDynamicJoins.get(path.getMetadata().getParent().getMetadata().getParent());
 					if (result == null) {
 						result = (EntityPath<?>) path.getMetadata().getParent().getMetadata().getParent(); // PAP
 					}
 				} else {
-					result = aliases.get((EntityPath<?>) path.getMetadata().getParent());
+					result = createdAliasesForDynamicJoins.get((EntityPath<?>) path.getMetadata().getParent());
 					if (result == null)
 						result = (EntityPath<?>) path.getMetadata().getParent();
 				}
@@ -838,82 +862,6 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	}
 
 	/**
-	 * Gera um alias aleatório para uso nas tabelas do SQL.
-	 * 
-	 * @return
-	 */
-	private String makeNextAliasTableName() {
-		nextAliasTableName++;
-		String result = "TB_" + String.valueOf(nextAliasTableName);
-		return result;
-	}
-
-	/**
-	 * Gera um alias aleatório para um alias de uma tabela para uso em uma
-	 * coluna.
-	 * 
-	 * @param alias
-	 *            Alias da tabela
-	 * @return Alias para coluna gerado.
-	 */
-	public String makeNextAliasName(String alias) {
-		nextAliasColumnName++;
-		return adpatAliasColumnName(alias) + "_COL_" + String.valueOf(nextAliasColumnName);
-	}
-
-	/**
-	 * Ajusta o nome do alias gerado para a coluna para não ultrapassar o máximo
-	 * de caracteres permitido pelo dialeto do banco de dados.
-	 * 
-	 * @param aliasColumnNamePrefix
-	 *            Prefixo do nome da coluna
-	 * @return Alias ajustado
-	 */
-	private String adpatAliasColumnName(String aliasColumnNamePrefix) {
-		int maximumNameLength = query.getSession().getDialect().getMaxColumnNameSize() - 8;
-		String result = adjustName(aliasColumnNamePrefix);
-
-		if (result.length() > maximumNameLength) {
-			result = StringUtils.removeAllButAlphaNumericToFit(aliasColumnNamePrefix, maximumNameLength);
-			if (result.length() > maximumNameLength) {
-				String onlyAlphaNumeric = StringUtils.removeAllButAlphaNumericToFit(aliasColumnNamePrefix, 0);
-				result = StringUtils.shortenStringsByRemovingVowelsToFit(onlyAlphaNumeric, "", maximumNameLength);
-				if (result.length() > maximumNameLength) {
-					String shortenedName = StringUtils.removeVowels(onlyAlphaNumeric);
-					if (shortenedName.length() >= maximumNameLength) {
-						result = StringUtils.truncate(shortenedName, maximumNameLength);
-					} else {
-						result = StringUtils.truncate(shortenedName, maximumNameLength - shortenedName.length());
-					}
-				}
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * Ajusta o nome fazendo algumas correções.
-	 * 
-	 * @param name
-	 *            Nome
-	 * @return Nome ajustado
-	 */
-	private String adjustName(String name) {
-		String adjustedName = name;
-		if (adjustedName.indexOf(' ') != -1 || adjustedName.indexOf('\"') != -1 || adjustedName.indexOf('`') != -1) {
-			StringBuilder buff = new StringBuilder();
-			for (int i = 0; i < name.length(); i++) {
-				char c = name.charAt(i);
-				if (c != ' ' && c != '\"' && c != '`') {
-					buff.append(c);
-				}
-			}
-			adjustedName = buff.toString();
-		}
-		return adjustedName;
-	}
-
-	/**
 	 * Retorna a lista de expressões individuais usadas na análise.
 	 * 
 	 * @return Lista de expressões.
@@ -923,8 +871,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	}
 
 	/**
-	 * Retorna uma lista de definições das classes de resultado que será usado
-	 * na montagem dos objetos.
+	 * Retorna uma lista de definições das classes de resultado que será usado na montagem dos objetos.
 	 * 
 	 * @return Lista de definições das classes
 	 */
@@ -963,22 +910,12 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	}
 
 	/**
-	 * Retorna se a análise concluíu que os usuário utilizou parâmetros
-	 * nomeados.
+	 * Retorna se a análise concluíu que os usuário utilizou parâmetros nomeados.
 	 * 
 	 * @return
 	 */
 	public boolean isNamedParameter() {
 		return (namedParameter == null ? false : namedParameter);
-	}
-
-	/**
-	 * Retorna número do próximo alias de coluna.
-	 * 
-	 * @return Próximo número
-	 */
-	public int getNextAliasColumnName() {
-		return nextAliasColumnName;
 	}
 
 	public Boolean hasParameters() {
@@ -1001,4 +938,23 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		return resultColumnsFromProjections;
 	}
 
+	protected void makeIndexHints(QueryMetadata metadata) {
+		if ((metadata.getIndexHints() != null) && (metadata.getIndexHints().size() > 0)) {
+			List<IndexHint> _indexes = new ArrayList<IndexHint>();
+			for (IndexHint index : metadata.getIndexHints()) {
+				if (index.hasAliasPath() && !index.getAliasPath().getMetadata().isRoot()) {
+					if (createdAliasesForDynamicJoins.containsKey(index.getAliasPath())) {
+						_indexes.add(new IndexHint(createdAliasesForDynamicJoins.get(index.getAliasPath()).getMetadata().getName(), index.getIndexName()));
+					}
+				} else
+					_indexes.add(new IndexHint(index.getAlias(), index.getIndexName()));
+			}
+			if (_indexes.size() > 0) {
+				String indexHint = configuration.getIndexHint(_indexes.toArray(new IndexHint[] {}));
+				if (!StringUtils.isEmpty(indexHint)) {
+					metadata.addFlag(new QueryFlag(configuration.getIndexHintPosition(), indexHint));
+				}
+			}
+		}
+	}
 }

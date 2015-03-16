@@ -75,18 +75,28 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	protected boolean lastJoinConditionAdded = false;
 
-	protected SQLAnalyser analyser = new SQLAnalyser(this);
+	protected SQLAnalyser analyser;
 
-	private LockOptions lockOptions = LockOptions.NONE;
+	protected LockOptions lockOptions = LockOptions.NONE;
 
-	public AbstractOSQLQuery(SQLSession session, SQLTemplates templates) {
-		this(session, templates, new DefaultQueryMetadata().noValidate());
+	protected final Configuration configuration;
+
+	protected List<IndexHint> indexHints = new ArrayList<IndexHint>();
+
+	public AbstractOSQLQuery(Configuration configuration) {
+		this(null, configuration, new DefaultQueryMetadata().noValidate());
 	}
 
-	public AbstractOSQLQuery(SQLSession session, SQLTemplates templates, QueryMetadata metadata) {
-		super(new QueryMixin<Q>(metadata, false), templates);
+	public AbstractOSQLQuery(SQLSession session, Configuration configuration) {
+		this(session, configuration, new DefaultQueryMetadata().noValidate());
+	}
+
+	public AbstractOSQLQuery(SQLSession session, Configuration configuration, QueryMetadata metadata) {
+		super(new QueryMixin<Q>(metadata, false), configuration.getTemplates());
 		this.session = session;
 		this.useLiterals = true;
+		this.analyser = new SQLAnalyser(this.getMetadata(), configuration);
+		this.configuration = configuration;
 	}
 
 	/**
@@ -103,7 +113,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	protected SQLSerializer createSerializer() {
 		try {
-			SQLSerializer serializer = new SQLSerializer(session.getDialect(), session.getEntityCacheManager(), templates, getAnalyser());
+			SQLSerializer serializer = new SQLSerializer(configuration, getAnalyser());
 
 			serializer.setUseLiterals(useLiterals);
 			return serializer;
@@ -135,6 +145,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	@Override
 	public long count() {
+		validateSession();
 		SQLQuery query = createQuery(null, true);
 		reset();
 		try {
@@ -148,8 +159,14 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		}
 	}
 
+	protected void validateSession() {
+		if (session == null)
+			throw new OSQLQueryException("Sessão não configurada para execução da consulta.");
+	}
+
 	@Override
 	public boolean exists() {
+		validateSession();
 		EntityPath<?> entityPath = (EntityPath<?>) queryMixin.getMetadata().getJoins().get(0).getTarget();
 		return !limit(1).list(entityPath).isEmpty();
 	}
@@ -157,6 +174,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@Override
 	@SuppressWarnings("unchecked")
 	public <RT> List<RT> list(Expression<RT> expr) {
+		validateSession();
 		try {
 			validateExpressions(expr);
 			SQLQuery query = createQuery(expr);
@@ -201,6 +219,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	@SuppressWarnings("unchecked")
 	@Override
 	public <RT> RT uniqueResult(Expression<RT> expr) {
+		validateSession();
 		try {
 			SQLQuery query = createQuery(expr);
 			return (RT) getSingleResult(query);
@@ -211,6 +230,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	@Override
 	public Tuple uniqueResult(Expression<?>... args) {
+		validateSession();
 		try {
 			validateExpressions(args);
 			return uniqueResult(queryMixin.createProjection(args));
@@ -221,6 +241,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	private Object getSingleResult(SQLQuery query) throws Exception {
+		validateSession();
 		if (projection != null) {
 			Object result = query.getSingleResult();
 			if (result != null) {
@@ -238,6 +259,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	@Override
 	public List<Tuple> list(Expression<?>... args) {
+		validateSession();
 		try {
 			validateExpressions(args);
 			return list(queryMixin.createProjection(args));
@@ -304,15 +326,15 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 					SQLAnalyserColumn simpleColumn = definitions.get(0).getSimpleColumn();
 					String aliasColumnName = (StringUtils.isEmpty(simpleColumn.getAliasColumnName()) ? simpleColumn.getColumnName() : simpleColumn
 							.getAliasColumnName());
-					query.resultSetHandler(new SingleValueHandler(definitions.get(0).getResultClass(), simpleColumn.getDescriptionField(),
-							aliasColumnName, simpleColumn.getColumnIndex()));
+					query.resultSetHandler(new SingleValueHandler(definitions.get(0).getResultClass(), simpleColumn.getDescriptionField(), aliasColumnName,
+							simpleColumn.getColumnIndex()));
 				}
 			} else {
 				/*
 				 * Se o resultado for múltiplos valores
 				 */
 				query = session.createQuery(sql);
-				query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions(), analyser.getNextAliasColumnName()));
+				query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions(), configuration.getNextAliasColumnName()));
 			}
 			query.setLockOptions(lockOptions);
 			/*
@@ -563,17 +585,18 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	public AbstractOSQLQuery<Q> indexHint(IndexHint... indexes) {
 		for (IndexHint index : indexes) {
-			addIndexHint(index.getAlias(), index.getIndexName());
+			indexHints.add(index);
 		}
+		this.getMetadata().setIndexHints(indexHints);
 		return this;
 	}
 
 	public AbstractOSQLQuery<Q> addIndexHint(String alias, String indexName) {
-		String indexHint = session.getDialect().getIndexHint(indexName, alias);
-		if (!StringUtils.isEmpty(indexHint)) {
-			addFlag(QueryFlag.Position.AFTER_SELECT, indexHint);
-		}
-		return this;
+		return indexHint(new IndexHint(alias, indexName));
+	}
+
+	public Configuration getConfiguration() {
+		return configuration;
 	}
 
 }

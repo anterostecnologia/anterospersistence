@@ -1,6 +1,6 @@
 /*******************************************************************************
  * Copyright 2011, Mysema Ltd
- *  
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by
  * applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,6 +22,7 @@ import java.util.Set;
 
 import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.ExpressionUtils;
+import br.com.anteros.persistence.dsl.osql.types.IndexHint;
 import br.com.anteros.persistence.dsl.osql.types.OrderSpecifier;
 import br.com.anteros.persistence.dsl.osql.types.ParamExpression;
 import br.com.anteros.persistence.dsl.osql.types.ParamsVisitor;
@@ -82,6 +83,8 @@ public class DefaultQueryMetadata implements QueryMetadata, Cloneable {
 
 	private ValidatingVisitor validatingVisitor = ValidatingVisitor.DEFAULT;
 
+	private List<IndexHint> indexHints;
+
 	private static Predicate and(Predicate lhs, Predicate rhs) {
 		if (lhs == null) {
 			return rhs;
@@ -94,6 +97,10 @@ public class DefaultQueryMetadata implements QueryMetadata, Cloneable {
 	 * Create an empty DefaultQueryMetadata instance
 	 */
 	public DefaultQueryMetadata() {
+	}
+
+	public void setIndexHints(List<IndexHint> indexes) {
+		this.indexHints = ImmutableList.copyOf(indexes);
 	}
 
 	/**
@@ -367,9 +374,8 @@ public class DefaultQueryMetadata implements QueryMetadata, Cloneable {
 		if (o instanceof QueryMetadata) {
 			QueryMetadata q = (QueryMetadata) o;
 			return q.getFlags().equals(flags) && q.getGroupBy().equals(groupBy) && Objects.equal(q.getHaving(), having) && q.isDistinct() == distinct
-					&& q.isUnique() == unique && q.getJoins().equals(joins) && Objects.equal(q.getModifiers(), modifiers)
-					&& q.getOrderBy().equals(orderBy) && q.getParams().equals(params) && q.getProjection().equals(projection)
-					&& Objects.equal(q.getWhere(), where);
+					&& q.isUnique() == unique && q.getJoins().equals(joins) && Objects.equal(q.getModifiers(), modifiers) && q.getOrderBy().equals(orderBy)
+					&& q.getParams().equals(params) && q.getProjection().equals(projection) && Objects.equal(q.getWhere(), where);
 
 		} else {
 			return false;
@@ -379,6 +385,11 @@ public class DefaultQueryMetadata implements QueryMetadata, Cloneable {
 	@Override
 	public int hashCode() {
 		return Objects.hashCode(flags, groupBy, having, joins, modifiers, orderBy, params, projection, unique, where);
+	}
+
+	@Override
+	public List<IndexHint> getIndexHints() {
+		return indexHints;
 	}
 
 }

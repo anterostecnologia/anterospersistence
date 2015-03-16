@@ -20,6 +20,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 
 import br.com.anteros.persistence.dsl.osql.QueryFlag.Position;
 import br.com.anteros.persistence.dsl.osql.SQLTemplates;
@@ -336,5 +337,10 @@ public class FirebirdDialect extends DatabaseDialect {
 	@Override
 	public Position getIndexHintPosition() {
 		return Position.AFTER_SELECT;
+	}
+
+	@Override
+	public String getIndexHint(Map<String, String> indexes) {
+		return "";
 	}
 }

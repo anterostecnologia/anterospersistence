@@ -346,8 +346,7 @@ public class OracleDialect extends DatabaseDialect {
 	@Override
 	public boolean checkIndexExistsByName(Connection conn, String tableName, String indexName) throws Exception {
 		Statement statement = conn.createStatement();
-		ResultSet resultSet = statement.executeQuery("SELECT I.INDEX_NAME FROM USER_INDEXES I  WHERE I.INDEX_NAME = '" + indexName.toUpperCase()
-				+ "' ");
+		ResultSet resultSet = statement.executeQuery("SELECT I.INDEX_NAME FROM USER_INDEXES I  WHERE I.INDEX_NAME = '" + indexName.toUpperCase() + "' ");
 		try {
 			if (resultSet.next()) {
 				return true;
@@ -363,8 +362,8 @@ public class OracleDialect extends DatabaseDialect {
 	@Override
 	public boolean checkForeignKeyExistsByName(Connection conn, String tableName, String foreignKeyName) throws Exception {
 		Statement statement = conn.createStatement();
-		ResultSet resultSet = statement.executeQuery("SELECT UC.CONSTRAINT_NAME  FROM USER_CONSTRAINTS UC WHERE UC.TABLE_NAME = '"
-				+ tableName.toUpperCase() + "' AND   UC.CONSTRAINT_NAME = '" + foreignKeyName.toUpperCase() + "' AND  UC.CONSTRAINT_TYPE = 'R'");
+		ResultSet resultSet = statement.executeQuery("SELECT UC.CONSTRAINT_NAME  FROM USER_CONSTRAINTS UC WHERE UC.TABLE_NAME = '" + tableName.toUpperCase()
+				+ "' AND   UC.CONSTRAINT_NAME = '" + foreignKeyName.toUpperCase() + "' AND  UC.CONSTRAINT_TYPE = 'R'");
 		try {
 			if (resultSet.next()) {
 				return true;
@@ -546,15 +545,13 @@ public class OracleDialect extends DatabaseDialect {
 			return sql
 					+ " FOR UPDATE "
 					+ aliases
-					+ (lockOptions.getTimeOut() >= LockOptions.NO_WAIT ? (lockOptions.getTimeOut() > 0 ? " WAIT " + lockOptions.getTimeOut()
-							: " NOWAIT ") : "");
+					+ (lockOptions.getTimeOut() >= LockOptions.NO_WAIT ? (lockOptions.getTimeOut() > 0 ? " WAIT " + lockOptions.getTimeOut() : " NOWAIT ") : "");
 		case PESSIMISTIC_WRITE:
 		case PESSIMISTIC_FORCE_INCREMENT:
 			return sql
 					+ " FOR UPDATE "
 					+ aliases
-					+ (lockOptions.getTimeOut() >= LockOptions.NO_WAIT ? (lockOptions.getTimeOut() > 0 ? " WAIT " + lockOptions.getTimeOut()
-							: " NOWAIT ") : "");
+					+ (lockOptions.getTimeOut() >= LockOptions.NO_WAIT ? (lockOptions.getTimeOut() > 0 ? " WAIT " + lockOptions.getTimeOut() : " NOWAIT ") : "");
 		default:
 			return sql;
 		}
@@ -619,6 +616,21 @@ public class OracleDialect extends DatabaseDialect {
 	@Override
 	public Position getIndexHintPosition() {
 		return Position.AFTER_SELECT;
+	}
+
+	@Override
+	public String getIndexHint(Map<String, String> indexes) {
+		if (indexes != null) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("\n/*+");
+			for (String index : indexes.keySet()) {
+				sb.append("index(").append(indexes.get(index)).append(" ").append(index).append(")\n ");
+			}
+			sb.append("*/\n");
+			return sb.toString();
+		}
+
+		return null;
 	}
 
 }

@@ -1278,8 +1278,8 @@ public abstract class DatabaseDialect {
 		return false;
 	}
 
-	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name, NamedParameter[] parameters,
-			int queryTimeOut, boolean showSql, String clientId) throws Exception {
+	public CallableStatement prepareCallableStatement(Connection connection, CallableType type, String name, NamedParameter[] parameters, int queryTimeOut,
+			boolean showSql, String clientId) throws Exception {
 		StringBuilder sql = null;
 		int index = 0;
 		if (type == CallableType.PROCEDURE) {
@@ -1678,7 +1678,9 @@ public abstract class DatabaseDialect {
 	public abstract LimitClauseResult getLimitClause(String sql, int offset, int limit, boolean namedParameter);
 
 	public abstract String getIndexHint(String indexName, String alias);
-	
+
+	public abstract String getIndexHint(Map<String, String> indexes);
+
 	public abstract QueryFlag.Position getIndexHintPosition();
 
 	public boolean bindLimitParametersFirst() {

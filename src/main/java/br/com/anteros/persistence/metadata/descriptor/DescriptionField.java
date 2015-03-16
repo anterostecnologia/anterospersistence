@@ -306,8 +306,7 @@ public class DescriptionField {
 	public void setStringValueToDateSQL(Object targetObject, String value) throws Exception {
 		TemporalType temporalType = this.getSimpleColumn().getTemporalType();
 		if (temporalType == TemporalType.DATE) {
-			String datePattern = this.getSimpleColumn().getDatePattern() != "" ? this.getSimpleColumn().getDatePattern()
-					: DatabaseDialect.DATE_PATTERN;
+			String datePattern = this.getSimpleColumn().getDatePattern() != "" ? this.getSimpleColumn().getDatePattern() : DatabaseDialect.DATE_PATTERN;
 			Date date = new SimpleDateFormat(datePattern).parse(value);
 			if (date != null)
 				setValue(targetObject, new java.sql.Date(date.getTime()));
@@ -489,9 +488,9 @@ public class DescriptionField {
 
 	@Override
 	public String toString() {
-		return "fieldName " + field.getName() + ", fieldType=" + fieldType + ", statement=" + statement + ", fechType=" + fetchType + ", mode="
-				+ modeType + ", orderBy=" + orderByClause + ", targetEntity=" + (targetEntity == null ? "" : targetEntity.getEntityClass().getName())
-				+ " mappedBy=" + (mappedBy == null ? null : mappedBy.toString());
+		return "fieldName " + field.getName() + ", fieldType=" + fieldType + ", statement=" + statement + ", fechType=" + fetchType + ", mode=" + modeType
+				+ ", orderBy=" + orderByClause + ", targetEntity=" + (targetEntity == null ? "" : targetEntity.getEntityClass().getName()) + " mappedBy="
+				+ (mappedBy == null ? null : mappedBy.toString());
 	}
 
 	public void setTableName(String tableName) {
@@ -613,8 +612,8 @@ public class DescriptionField {
 			if (fieldValue instanceof Collection) {
 				if ((fieldValue != null) && this.isInitialized(session, fieldValue)) {
 					for (Object entity : ((Collection) fieldValue))
-						listTemporary.add(new FieldEntityValue(session.getIdentifier(entity).getDatabaseUniqueId(), session.getIdentifier(entity)
-								.getColumns(), entity));
+						listTemporary.add(new FieldEntityValue(session.getIdentifier(entity).getDatabaseUniqueId(), session.getIdentifier(entity).getColumns(),
+								entity));
 				}
 				return new FieldEntityValue(this.getField().getName(), listTemporary.toArray(new FieldEntityValue[] {}), ((Collection) fieldValue));
 			}
@@ -734,8 +733,7 @@ public class DescriptionField {
 	public Object getColumnValue(String columnName, Object object) throws Exception {
 		DescriptionColumn column = getDescriptionColumnByName(columnName);
 		if (column == null)
-			throw new EntityCacheException("Coluna " + columnName + " não encontrada no campo " + getName() + " "
-					+ getEntityCache().getEntityClass().getName());
+			throw new EntityCacheException("Coluna " + columnName + " não encontrada no campo " + getName() + " " + getEntityCache().getEntityClass().getName());
 		return column.getColumnValue(object);
 	}
 
@@ -1022,8 +1020,7 @@ public class DescriptionField {
 		return result;
 	}
 
-	public NamedParameter getNamedParameterFromDatabaseObjectValue(SQLSession session, Object sourceObject, DescriptionColumn sourceColumn)
-			throws Exception {
+	public NamedParameter getNamedParameterFromDatabaseObjectValue(SQLSession session, Object sourceObject, DescriptionColumn sourceColumn) throws Exception {
 		Map<String, Object> primaryKeyOwner = null;
 		Object columnValue = sourceColumn.convertToDatabaseColumn(this.getObjectValue(sourceObject));
 		if (this.isRelationShip()) {
@@ -1088,6 +1085,14 @@ public class DescriptionField {
 
 	public void setPropertyAccessor(PropertyAccessor propertyAccessor) {
 		this.propertyAccessor = propertyAccessor;
+	}
+
+	public boolean hasReferencedDescriptionColumn(String columnName) {
+		for (DescriptionColumn descriptionColumn : getDescriptionColumns()) {
+			if (descriptionColumn.getReferencedColumnName().equals(columnName))
+				return true;
+		}
+		return false;
 	}
 
 }
