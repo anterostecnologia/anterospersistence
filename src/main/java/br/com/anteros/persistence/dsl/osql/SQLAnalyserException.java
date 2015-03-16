@@ -29,8 +29,5 @@ public class SQLAnalyserException extends RuntimeException {
 		super(message, cause);
 	}
 
-	public SQLAnalyserException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
-	}
 
 }
