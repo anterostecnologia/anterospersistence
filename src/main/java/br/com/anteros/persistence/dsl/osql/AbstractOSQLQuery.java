@@ -95,7 +95,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		super(new QueryMixin<Q>(metadata, false), configuration.getTemplates());
 		this.session = session;
 		this.useLiterals = true;
-		this.analyser = new SQLAnalyser(this.getMetadata(), configuration);
+		this.analyser = new SQLAnalyser(this.getMetadata(), configuration, null);
 		this.configuration = configuration;
 	}
 
@@ -297,6 +297,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			/*
 			 * Analisa as expressões
 			 */
+			analyser.setUnion(union);
 			analyser.process();
 			/*
 			 * Serializa o SQL.

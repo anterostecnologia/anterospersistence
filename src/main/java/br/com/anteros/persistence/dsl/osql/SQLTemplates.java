@@ -171,7 +171,7 @@ public class SQLTemplates extends Templates {
 
     private boolean batchCountViaGetUpdateCount = false;
 
-    private boolean unionsWrapped = true;
+    private boolean unionsWrapped = false;
 
     private boolean functionJoinsWrapped = false;
 

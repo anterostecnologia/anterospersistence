@@ -77,16 +77,19 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	protected Stage stage = Stage.SELECT;
 
 	private boolean inOperation = false;
+	private boolean inSubQuery = false;
 	private Boolean namedParameter = null;
 	private Boolean hasParameters = false;
 
 	private Map<Operation<?>, String> booleanDefinitions = new HashMap<Operation<?>, String>();
 	private Expression<?> currentExpressionOnMakeColumns;
 	private Configuration configuration;
+	private Expression<?> union;
 
-	public SQLAnalyser(QueryMetadata metadata, Configuration configuration) {
+	public SQLAnalyser(QueryMetadata metadata, Configuration configuration, Expression<?> union) {
 		this.mainMetadata = metadata;
 		this.configuration = configuration;
+		this.union = union;
 	}
 
 	@Override
@@ -312,7 +315,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 						processColumns(customPath, path);
 				}
 			} else {
-				processAllFields((keyPath == null ? path : keyPath), null, aliasTableName, sourceEntityCache, inOperation);
+				processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) path).getExcludeProjection(), aliasTableName, sourceEntityCache, inOperation);
 			}
 
 		} else if (path.getMetadata().getPathType() == PathType.PROPERTY) {
@@ -351,7 +354,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 							processColumns(customPath, path);
 					}
 				} else
-					processAllFields((keyPath == null ? path : keyPath), null, aliasTableName, sourceEntityCache, inOperation);
+					processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) targetPath).getExcludeProjection(), aliasTableName, sourceEntityCache, inOperation);
 			} else {
 				DescriptionField descriptionField = getDescriptionFieldByPath(sourceEntityCache, targetPath.getMetadata().getName());
 				processSingleField((keyPath == null ? path : keyPath), aliasTableName, descriptionField, true);
@@ -530,6 +533,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	@Override
 	public Void visit(SubQueryExpression<?> expr, Void context) {
 		boolean oldInOperation = inOperation;
+		this.inSubQuery = true;
 		Stage oldStage = stage;
 		this.inOperation = false;
 		this.allMetadatas.add(expr.getMetadata());
@@ -552,6 +556,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		} finally {
 			this.inOperation = oldInOperation;
 			this.stage = oldStage;
+			this.inSubQuery = false;
 		}
 		return null;
 	}
@@ -660,8 +665,11 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		if (joins != null) {
 			List<Expression<?>> expressionsJoins = new ArrayList<Expression<?>>();
 			for (JoinExpression expr : joins) {
-				if (expr.getCondition() != null)
+				if (expr.getCondition() != null) {
 					expressionsJoins.add(expr.getCondition());
+				} else if ((expr.getTarget() != null) && (expr.getTarget() instanceof Operation<?>)) {
+					expressionsJoins.add(expr.getTarget());
+				}
 			}
 			for (Expression<?> exprJoin : expressionsJoins) {
 				exprJoin.accept(this, null);
@@ -683,6 +691,12 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		if (orderBy != null) {
 			for (OrderSpecifier<?> ord : orderBy) {
 				ord.getTarget().accept(this, null);
+			}
+		}
+
+		if (metadata == mainMetadata) {
+			if (union != null) {
+				union.accept(this, null);
 			}
 		}
 
@@ -956,5 +970,13 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 				}
 			}
 		}
+	}
+
+	public Expression<?> getUnion() {
+		return union;
+	}
+
+	public void setUnion(Expression<?> union) {
+		this.union = union;
 	}
 }

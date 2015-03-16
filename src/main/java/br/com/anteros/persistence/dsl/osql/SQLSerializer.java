@@ -76,6 +76,8 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	private boolean inOperation = false;
 
+	private boolean inSubQuery = false;
+
 	private Operation<?> lastOperation = null;
 
 	private boolean useLiterals = false;
@@ -557,7 +559,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			append("'").append(sourceEntityCache.getDiscriminatorValue()).append("'");
 		} else if (((path.getMetadata().getPathType() == PathType.VARIABLE) && ((path instanceof EntityPath<?>) || (path.getMetadata().isRoot())))
 				|| (path.getMetadata().getPathType() == PathType.PROPERTY)) {
-			if ((inOperation && (lastOperation.getOperator() == Ops.INSTANCE_OF))) {
+			if (inOperation && (lastOperation!=null) && ((lastOperation.getOperator() == Ops.INSTANCE_OF) || ((stage == Stage.FROM) && (lastOperation.getOperator() == Ops.ALIAS)))) {
 				append(configuration.getTemplates().quoteIdentifier(path.getMetadata().getName()));
 			} else if (inOperation) {
 				Set<SQLAnalyserColumn> columns = analyser.getParsedPathsOnOperations().get(path);
@@ -584,7 +586,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 							append(configuration.getTemplates().quoteIdentifier(column.getAliasTableName())).append(".").append(
 									configuration.getTemplates().quoteIdentifier(column.getColumnName()));
 							if ((stage == Stage.SELECT) && (!StringUtils.isEmpty(column.getAliasColumnName()) && !column.equals(column.getAliasColumnName()))
-									&& (!column.isUserAliasDefined()))
+									&& (!column.isUserAliasDefined()) && (!inSubQuery))
 								append(" AS ").append(column.getAliasColumnName());
 							appendSep = true;
 						}
@@ -602,6 +604,8 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 	@Override
 	public Void visit(SubQueryExpression<?> query, Void context) {
 		boolean oldInOperation = inOperation;
+		Operation<?> oldLastOperation = lastOperation;
+		this.inSubQuery = true;
 		this.inOperation = false;
 		try {
 			if (inUnion && !configuration.getTemplates().isUnionsWrapped()) {
@@ -613,6 +617,8 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			}
 		} finally {
 			this.inOperation = oldInOperation;
+			this.inSubQuery = false;
+			this.lastOperation = oldLastOperation;
 		}
 		return null;
 	}

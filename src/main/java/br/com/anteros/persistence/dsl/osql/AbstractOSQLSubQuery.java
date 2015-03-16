@@ -44,7 +44,7 @@ public abstract class AbstractOSQLSubQuery<Q extends AbstractOSQLSubQuery<Q>> ex
 	}
 
 	protected SQLSerializer createSerializer() {
-		return new SQLSerializer(configuration, new SQLAnalyser(getMetadata(), configuration));
+		return new SQLSerializer(configuration, new SQLAnalyser(getMetadata(), configuration,null));
 	}
 	
 	public AbstractOSQLSubQuery<Q> indexHint(IndexHint... indexes) {
