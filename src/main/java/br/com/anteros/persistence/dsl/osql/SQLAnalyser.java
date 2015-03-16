@@ -315,7 +315,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 						processColumns(customPath, path);
 				}
 			} else {
-				processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) path).getExcludeProjection(), aliasTableName, sourceEntityCache,
+				processAllFields((keyPath == null ? path : keyPath), null, aliasTableName, sourceEntityCache,
 						inOperation);
 			}
 
