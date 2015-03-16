@@ -315,7 +315,8 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 						processColumns(customPath, path);
 				}
 			} else {
-				processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) path).getExcludeProjection(), aliasTableName, sourceEntityCache, inOperation);
+				processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) path).getExcludeProjection(), aliasTableName, sourceEntityCache,
+						inOperation);
 			}
 
 		} else if (path.getMetadata().getPathType() == PathType.PROPERTY) {
@@ -354,7 +355,8 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 							processColumns(customPath, path);
 					}
 				} else
-					processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) targetPath).getExcludeProjection(), aliasTableName, sourceEntityCache, inOperation);
+					processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) targetPath).getExcludeProjection(), aliasTableName,
+							sourceEntityCache, inOperation);
 			} else {
 				DescriptionField descriptionField = getDescriptionFieldByPath(sourceEntityCache, targetPath.getMetadata().getName());
 				processSingleField((keyPath == null ? path : keyPath), aliasTableName, descriptionField, true);
@@ -376,10 +378,19 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	}
 
 	protected DescriptionField getDescriptionFieldByPath(EntityCache entityCache, String fieldName) {
-		DescriptionField result = entityCache.getDescriptionField(fieldName);
-		if (result == null)
-			throw new SQLSerializerException("O campo " + fieldName + " não foi encontrado na classe " + entityCache.getEntityClass() + ". ");
-		return result;
+		EntityCache caches[] = { entityCache };
+		/*
+		 * Se for uma classe abstrata pega as classes concretas
+		 */
+		if (entityCache.isAbstractClass())
+			caches = configuration.getEntityCacheManager().getEntitiesBySuperClass(entityCache);
+		for (EntityCache cache : caches) {
+			DescriptionField result = cache.getDescriptionField(fieldName);
+			if (result != null) {
+				return result;
+			}
+		}
+		throw new SQLSerializerException("O campo " + fieldName + " não foi encontrado na classe " + entityCache.getEntityClass() + ". ");
 	}
 
 	protected EntityCache getEntityCacheByPath(Class<?> sourceClass) {
