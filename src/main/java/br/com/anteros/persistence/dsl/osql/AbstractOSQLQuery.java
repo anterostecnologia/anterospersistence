@@ -29,6 +29,7 @@ import br.com.anteros.persistence.dsl.osql.types.Expression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpression;
 import br.com.anteros.persistence.dsl.osql.types.FactoryExpressionUtils;
 import br.com.anteros.persistence.dsl.osql.types.IndexHint;
+import br.com.anteros.persistence.dsl.osql.types.Operation;
 import br.com.anteros.persistence.dsl.osql.types.ParamExpression;
 import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
@@ -186,6 +187,14 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	protected void validateExpressions(Expression<?>... args) {
 		for (Expression<?> arg : args) {
+			if (arg instanceof EntityPath<?>) {
+				List<JoinExpression> joins = getMetadata().getJoins();
+				for (JoinExpression expr : joins) {
+					if ((expr.getTarget() != null) && (expr.getTarget() instanceof Operation<?>)) {
+						throw new OSQLQueryException("Não é possível projetar entidades apartir de SQL's onde foram usadas SubQueries na cláusula From.");
+					}
+				}
+			}
 			if (ReflectionUtils.isCollection(arg.getType())) {
 				throw new OSQLQueryException(
 						"A expressão "
