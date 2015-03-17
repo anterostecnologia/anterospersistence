@@ -223,7 +223,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 		Path<?> entityPath = this.getAppropriateAliasByEntityPath((Path<?>) leftExpression);
 		if (entityPath != null) {
-			EntityCache entityCache = getEntityCacheByPath(entityPath.getType());
+			EntityCache entityCache = getEntityCacheByClass(entityPath.getType());
 			DescriptionField descriptionField = entityCache.getDescriptionField(((Path<?>) leftExpression).getMetadata().getElement() + "");
 			if (descriptionField != null) {
 
@@ -301,7 +301,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			/*
 			 * Ser for uma variável e for uma entidade Ex: tOrder = new TOrder("ORD")
 			 */
-			EntityCache sourceEntityCache = getEntityCacheByPath(path.getType());
+			EntityCache sourceEntityCache = getEntityCacheByClass(path.getType());
 			String aliasTableName = path.getMetadata().getName();
 			/*
 			 * Somente processa projeções customizadas se não estiver dentro de uma operação
@@ -330,12 +330,12 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			/*
 			 * Verifica se a propriedade é um ID então pega como caminho o pai dela
 			 */
-			EntityCache sourceEntityCache = getEntityCacheByPath(entityPath.getType());
+			EntityCache sourceEntityCache = getEntityCacheByClass(entityPath.getType());
 			/*
 			 * Se estiver numa operação e o caminho for chave primária troca o path para a entidade da chave
 			 */
 			if (inOperation && !path.getMetadata().getParent().getMetadata().isRoot()) {
-				EntityCache targetEntityCache = getEntityCacheByPath(path.getMetadata().getParent().getType());
+				EntityCache targetEntityCache = getEntityCacheByClass(path.getMetadata().getParent().getType());
 				DescriptionField descriptionFieldPath = getDescriptionFieldByPath(targetEntityCache, path.getMetadata().getName() + "");
 				if (descriptionFieldPath.isPrimaryKey() && !descriptionFieldPath.isCompositeId()) {
 					targetPath = path.getMetadata().getParent();
@@ -377,6 +377,14 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		}
 	}
 
+	/**
+	 * Retorna o DescriptionField da entidade baseado no seu nome. Se a entidade for abstrata procura
+	 * em todas as classes concretas.
+	 * 
+	 * @param entityCache Entidade
+	 * @param fieldName Nome do campo
+	 * @return DescriptionField encontrado ou null se não existe 
+	 */
 	protected DescriptionField getDescriptionFieldByPath(EntityCache entityCache, String fieldName) {
 		EntityCache caches[] = { entityCache };
 		/*
@@ -393,7 +401,12 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		throw new SQLSerializerException("O campo " + fieldName + " não foi encontrado na classe " + entityCache.getEntityClass() + ". ");
 	}
 
-	protected EntityCache getEntityCacheByPath(Class<?> sourceClass) {
+	/**
+	 * Retorna a entidade do cache baseado na classe.
+	 * @param sourceClass Classe
+	 * @return Entidade
+	 */
+	protected EntityCache getEntityCacheByClass(Class<?> sourceClass) {
 		EntityCache result = this.configuration.getEntityCacheManager().getEntityCache(sourceClass);
 		if (result == null)
 			throw new SQLSerializerException("A classe " + sourceClass + " não foi encontrada na lista de entidades gerenciadas.");

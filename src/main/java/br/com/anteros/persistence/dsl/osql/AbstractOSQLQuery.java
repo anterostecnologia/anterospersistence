@@ -49,12 +49,12 @@ import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.query.SQLQuery;
 
 /**
- * AbstractSQLQuery is the base type for SQL query implementations
+ * AbstractOSQLQuery é a classe base para implementações de consultas SQL.
  *
  * @author tiwe modified by: Edson Martins
  *
  * @param <Q>
- *            concrete subtype
+ *            subtipo concreto
  */
 public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends ProjectableSQLQuery<Q> {
 
@@ -83,6 +83,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	protected final Configuration configuration;
 
 	protected List<IndexHint> indexHints = new ArrayList<IndexHint>();
+	
+	protected boolean readOnly = false;
 
 	public AbstractOSQLQuery(Configuration configuration) {
 		this(null, configuration, new DefaultQueryMetadata().noValidate());
@@ -191,7 +193,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 				List<JoinExpression> joins = getMetadata().getJoins();
 				for (JoinExpression expr : joins) {
 					if ((expr.getTarget() != null) && (expr.getTarget() instanceof Operation<?>)) {
-						throw new OSQLQueryException("Não é possível projetar entidades apartir de SQL's onde foram usadas SubQueries na cláusula From.");
+						throw new OSQLQueryException("Não é possível projetar entidades a partir de SQL's onde foram usadas SubQueries na cláusula From.");
 					}
 				}
 			}
@@ -333,6 +335,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 					 * Se forem valores simples
 					 */
 					query = session.createQuery(sql);
+					query.setReadOnly(isReadOnly());
 					SQLAnalyserColumn simpleColumn = definitions.get(0).getSimpleColumn();
 					String aliasColumnName = (StringUtils.isEmpty(simpleColumn.getAliasColumnName()) ? simpleColumn.getColumnName() : simpleColumn
 							.getAliasColumnName());
@@ -607,6 +610,15 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	public Configuration getConfiguration() {
 		return configuration;
+	}
+
+	public boolean isReadOnly() {
+		return readOnly;
+	}
+
+	public AbstractOSQLQuery<Q> readOnly(boolean readOnly) {
+		this.readOnly = readOnly;
+		return this;
 	}
 
 }
