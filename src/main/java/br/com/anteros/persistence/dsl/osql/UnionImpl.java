@@ -38,11 +38,11 @@ public class UnionImpl<Q extends Query & Projectable, RT>  implements Union<RT> 
     @SuppressWarnings("unchecked")
     @Override
     public List<RT> list() {
-        if (projection.length == 1) {
-            return (List<RT>) query.list(projection[0]);
-        } else {
+//        if (projection.length == 1) {
+//            return (List<RT>) query.list(projection[0]);
+//        } else {
             return (List<RT>) query.list(projection);
-        }
+        //}
     }
 
     @SuppressWarnings("unchecked")

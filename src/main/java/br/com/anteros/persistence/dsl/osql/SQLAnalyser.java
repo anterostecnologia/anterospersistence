@@ -519,24 +519,32 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 *            Representação da entidade no dicionário
 	 */
 	protected void processAllFields(Path<?> keyPath, Set<Path<?>> excludeProjection, String alias, EntityCache sourceEntityCache, boolean onlyPrimaryKey) {
+		EntityCache caches[] = { sourceEntityCache };
+		/*
+		 * Se for uma classe abstrata pega as classes concretas
+		 */
+		if (sourceEntityCache.isAbstractClass())
+			caches = configuration.getEntityCacheManager().getEntitiesBySuperClass(sourceEntityCache);
+		for (EntityCache entityCache : caches) {
 
-		for (DescriptionField descriptionField : sourceEntityCache.getDescriptionFields()) {
-			/*
-			 * Se for para gerar somente campos da chave primária da entidade ou se o campo faz parte da lista de
-			 * exclusão
-			 */
-			if (onlyPrimaryKey) {
-				if (!descriptionField.isPrimaryKey() || hasPathForDescriptionFieldToExclude(excludeProjection, descriptionField))
-					continue;
-			} else {
+			for (DescriptionField descriptionField : entityCache.getDescriptionFields()) {
 				/*
-				 * Não processa nenhum tipo de coleção e caminhos excluídos da projeção
+				 * Se for para gerar somente campos da chave primária da entidade ou se o campo faz parte da lista de
+				 * exclusão
 				 */
-				if (descriptionField.isAnyCollection() || hasPathForDescriptionFieldToExclude(excludeProjection, descriptionField))
-					continue;
-			}
+				if (onlyPrimaryKey) {
+					if (!descriptionField.isPrimaryKey() || hasPathForDescriptionFieldToExclude(excludeProjection, descriptionField))
+						continue;
+				} else {
+					/*
+					 * Não processa nenhum tipo de coleção e caminhos excluídos da projeção
+					 */
+					if (descriptionField.isAnyCollection() || hasPathForDescriptionFieldToExclude(excludeProjection, descriptionField))
+						continue;
+				}
 
-			processSingleField(keyPath, alias, descriptionField, true);
+				processSingleField(keyPath, alias, descriptionField, true);
+			}
 		}
 	}
 
@@ -712,16 +720,19 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		stage = Stage.HAVING;
 		if (having != null)
 			having.accept(this, null);
-		stage = Stage.GROUP_BY;
-		if (groupBy != null) {
-			for (Expression<?> expr : groupBy) {
-				expr.accept(this, null);
+
+		if (!hasUnion() || inSubQuery) {
+			stage = Stage.GROUP_BY;
+			if (groupBy != null) {
+				for (Expression<?> expr : groupBy) {
+					expr.accept(this, null);
+				}
 			}
-		}
-		stage = Stage.ORDER_BY;
-		if (orderBy != null) {
-			for (OrderSpecifier<?> ord : orderBy) {
-				ord.getTarget().accept(this, null);
+			stage = Stage.ORDER_BY;
+			if (orderBy != null) {
+				for (OrderSpecifier<?> ord : orderBy) {
+					ord.getTarget().accept(this, null);
+				}
 			}
 		}
 
