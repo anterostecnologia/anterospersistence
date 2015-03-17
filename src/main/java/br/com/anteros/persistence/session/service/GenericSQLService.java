@@ -20,6 +20,7 @@ import java.util.List;
 
 import br.com.anteros.core.utils.Assert;
 import br.com.anteros.core.utils.TypeResolver;
+import br.com.anteros.persistence.dsl.osql.OSQLQuery;
 import br.com.anteros.persistence.dsl.osql.types.OrderSpecifier;
 import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
@@ -477,5 +478,10 @@ public class GenericSQLService<T, ID extends Serializable> implements SQLService
 	public Transaction getTransaction() throws Exception {
 		checkRepository();
 		return repository.getTransaction();
+	}
+
+	@Override
+	public OSQLQuery createObjectQuery() throws Exception {
+		return new OSQLQuery(repository.getSession());
 	}
 }

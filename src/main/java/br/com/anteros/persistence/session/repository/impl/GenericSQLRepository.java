@@ -20,7 +20,6 @@ import java.util.List;
 
 import br.com.anteros.core.utils.Assert;
 import br.com.anteros.core.utils.TypeResolver;
-import br.com.anteros.persistence.dsl.osql.Configuration;
 import br.com.anteros.persistence.dsl.osql.EntityPathResolver;
 import br.com.anteros.persistence.dsl.osql.OSQLQuery;
 import br.com.anteros.persistence.dsl.osql.SimpleEntityPathResolver;
@@ -717,6 +716,11 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 	@Override
 	public Page<T> findByNamedQuery(String queryName, Object parameters, Pageable pageable) {
 		return findByNamedQuery(queryName, parameters, pageable);
+	}
+
+	@Override
+	public OSQLQuery createObjectQuery() throws Exception {
+		return new OSQLQuery(session);
 	}
 
 }
