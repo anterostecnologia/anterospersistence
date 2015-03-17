@@ -15,6 +15,8 @@ package br.com.anteros.persistence.dsl.osql;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -315,8 +317,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 						processColumns(customPath, path);
 				}
 			} else {
-				processAllFields((keyPath == null ? path : keyPath), null, aliasTableName, sourceEntityCache,
-						inOperation);
+				processAllFields((keyPath == null ? path : keyPath), null, aliasTableName, sourceEntityCache, inOperation);
 			}
 
 		} else if (path.getMetadata().getPathType() == PathType.PROPERTY) {
@@ -378,12 +379,14 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	}
 
 	/**
-	 * Retorna o DescriptionField da entidade baseado no seu nome. Se a entidade for abstrata procura
-	 * em todas as classes concretas.
+	 * Retorna o DescriptionField da entidade baseado no seu nome. Se a entidade for abstrata procura em todas as
+	 * classes concretas.
 	 * 
-	 * @param entityCache Entidade
-	 * @param fieldName Nome do campo
-	 * @return DescriptionField encontrado ou null se não existe 
+	 * @param entityCache
+	 *            Entidade
+	 * @param fieldName
+	 *            Nome do campo
+	 * @return DescriptionField encontrado ou null se não existe
 	 */
 	protected DescriptionField getDescriptionFieldByPath(EntityCache entityCache, String fieldName) {
 		EntityCache caches[] = { entityCache };
@@ -403,7 +406,9 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 	/**
 	 * Retorna a entidade do cache baseado na classe.
-	 * @param sourceClass Classe
+	 * 
+	 * @param sourceClass
+	 *            Classe
 	 * @return Entidade
 	 */
 	protected EntityCache getEntityCacheByClass(Class<?> sourceClass) {
@@ -670,14 +675,16 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		 * Processa apenas o Select criando aliases colunas e junções
 		 */
 		stage = Stage.SELECT;
-		for (Expression<?> expr : select) {
-			currentExpressionOnMakeColumns = expr;
-			expr.accept(this, null);
-			if (expr instanceof EntityPath<?>) {
-				Set<Path<?>> customProjection = ((EntityPath<?>) expr).getCustomProjection();
-				for (Path<?> path : customProjection) {
-					if (!(path.equals(expr)))
-						makePossibleJoins(path, null);
+		if (!hasUnion() || inSubQuery) {
+			for (Expression<?> expr : select) {
+				currentExpressionOnMakeColumns = expr;
+				expr.accept(this, null);
+				if (expr instanceof EntityPath<?>) {
+					Set<Path<?>> customProjection = ((EntityPath<?>) expr).getCustomProjection();
+					for (Path<?> path : customProjection) {
+						if (!(path.equals(expr)))
+							makePossibleJoins(path, null);
+					}
 				}
 			}
 		}
@@ -707,7 +714,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			having.accept(this, null);
 		stage = Stage.GROUP_BY;
 		if (groupBy != null) {
-			for (Expression<?> expr : select) {
+			for (Expression<?> expr : groupBy) {
 				expr.accept(this, null);
 			}
 		}
@@ -1002,5 +1009,13 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 
 	public void setUnion(Expression<?> union) {
 		this.union = union;
+	}
+
+	public boolean hasUnion() {
+		return union != null;
+	}
+
+	public Set<QueryMetadata> getAllMetadatas() {
+		return Collections.unmodifiableSet(allMetadatas);
 	}
 }

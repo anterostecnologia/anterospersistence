@@ -15,8 +15,10 @@ package br.com.anteros.persistence.dsl.osql;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
@@ -83,7 +85,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	protected final Configuration configuration;
 
 	protected List<IndexHint> indexHints = new ArrayList<IndexHint>();
-	
+
 	protected boolean readOnly = false;
 
 	public AbstractOSQLQuery(Configuration configuration) {
@@ -382,25 +384,27 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	 * @return Lista de parâmetros convertidos.
 	 */
 	private Object getParameters() {
-		List<Object> result = new ArrayList<Object>();
-		Map<ParamExpression<?>, Object> params = getMetadata().getParams();
-		if (analyser.isNamedParameter()) {
-			for (ParamExpression<?> param : params.keySet()) {
-				if (param instanceof DateParam)
-					result.add(new NamedParameter(param.getName(), params.get(param), TemporalType.DATE));
-				else if ((param instanceof DateTimeParam) || (param.getType() == Date.class))
-					result.add(new NamedParameter(param.getName(), params.get(param), TemporalType.DATE_TIME));
-				else if (param.getType() == Enum.class)
-					if (param instanceof EnumParam)
-						result.add(new EnumeratedParameter(param.getName(), ((EnumParam) param).getFormat(), (Enum) params.get(param)));
+		Set<Object> result = new LinkedHashSet<Object>();
+		for (QueryMetadata metadata : analyser.getAllMetadatas()) {
+			Map<ParamExpression<?>, Object> params = metadata.getParams();
+			if (analyser.isNamedParameter()) {
+				for (ParamExpression<?> param : params.keySet()) {
+					if (param instanceof DateParam)
+						result.add(new NamedParameter(param.getName(), params.get(param), TemporalType.DATE));
+					else if ((param instanceof DateTimeParam) || (param.getType() == Date.class))
+						result.add(new NamedParameter(param.getName(), params.get(param), TemporalType.DATE_TIME));
+					else if (param.getType() == Enum.class)
+						if (param instanceof EnumParam)
+							result.add(new EnumeratedParameter(param.getName(), ((EnumParam) param).getFormat(), (Enum) params.get(param)));
+						else
+							result.add(new EnumeratedParameter(param.getName(), EnumeratedFormatSQL.STRING, (Enum) params.get(param)));
 					else
-						result.add(new EnumeratedParameter(param.getName(), EnumeratedFormatSQL.STRING, (Enum) params.get(param)));
-				else
-					result.add(new NamedParameter(param.getName(), params.get(param)));
-			}
-		} else {
-			for (ParamExpression<?> param : params.keySet()) {
-				result.add(params.get(param));
+						result.add(new NamedParameter(param.getName(), params.get(param)));
+				}
+			} else {
+				for (ParamExpression<?> param : params.keySet()) {
+					result.add(params.get(param));
+				}
 			}
 		}
 		return (result.size() == 0 ? null : result);

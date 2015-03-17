@@ -605,10 +605,13 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 	public Void visit(SubQueryExpression<?> query, Void context) {
 		boolean oldInOperation = inOperation;
 		Operation<?> oldLastOperation = lastOperation;
+		boolean oldInUnion = inUnion;
 		this.inSubQuery = true;
 		this.inOperation = false;
+		
 		try {
 			if (inUnion && !configuration.getTemplates().isUnionsWrapped()) {
+				this.inUnion = false;
 				serialize(query.getMetadata(), false);
 			} else {
 				append("(");
@@ -619,6 +622,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			this.inOperation = oldInOperation;
 			this.inSubQuery = false;
 			this.lastOperation = oldLastOperation;
+			this.inUnion = oldInUnion;
 		}
 		return null;
 	}
