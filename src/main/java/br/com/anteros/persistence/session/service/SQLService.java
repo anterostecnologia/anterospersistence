@@ -166,5 +166,5 @@ public interface SQLService<T, ID extends Serializable> {
 
 	Identifier<T> getIdentifier(T owner) throws Exception;
 
-	OSQLQuery createObjectQuery() throws Exception;
+	OSQLQuery createObjectQuery();
 }

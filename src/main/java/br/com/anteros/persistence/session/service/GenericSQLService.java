@@ -481,7 +481,7 @@ public class GenericSQLService<T, ID extends Serializable> implements SQLService
 	}
 
 	@Override
-	public OSQLQuery createObjectQuery() throws Exception {
+	public OSQLQuery createObjectQuery() {
 		return new OSQLQuery(repository.getSession());
 	}
 }

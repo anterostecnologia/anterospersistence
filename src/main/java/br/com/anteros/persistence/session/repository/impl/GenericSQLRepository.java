@@ -719,7 +719,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 	}
 
 	@Override
-	public OSQLQuery createObjectQuery() throws Exception {
+	public OSQLQuery createObjectQuery() {
 		return new OSQLQuery(session);
 	}
 
