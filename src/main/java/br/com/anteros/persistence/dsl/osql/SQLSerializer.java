@@ -42,6 +42,7 @@ import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
 import br.com.anteros.persistence.dsl.osql.types.TemplateFactory;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorColumnPath;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorValuePath;
+import br.com.anteros.persistence.dsl.osql.types.path.PathBuilder;
 import br.com.anteros.persistence.metadata.EntityCache;
 
 import com.google.common.base.Strings;

@@ -1,5 +1,6 @@
 package br.com.anteros.persistence.dsl.osql;
 
+import java.io.InputStream;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
@@ -12,7 +13,6 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 import br.com.anteros.core.utils.StringUtils;
-import br.com.anteros.core.utils.Base64.InputStream;
 import br.com.anteros.persistence.dsl.osql.types.IndexHint;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.session.SQLSession;

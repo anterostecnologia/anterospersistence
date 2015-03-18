@@ -15,7 +15,6 @@ package br.com.anteros.persistence.dsl.osql;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -45,6 +44,7 @@ import br.com.anteros.persistence.dsl.osql.types.Visitor;
 import br.com.anteros.persistence.dsl.osql.types.expr.BooleanExpression;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorColumnPath;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorValuePath;
+import br.com.anteros.persistence.dsl.osql.types.path.PathBuilder;
 import br.com.anteros.persistence.handler.ResultClassDefinition;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
@@ -285,6 +285,15 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 *            Caminho
 	 */
 	private void processColumns(Path<?> path, Path<?> keyPath) {
+
+//		if (path.getMetadata().getParent() instanceof PathBuilder<?>) {
+//			Path<?> sourceOfTargetPath = ((PathBuilder<?>) path.getMetadata().getParent()).getSourceOfTargetPath(path);
+//			if (sourceOfTargetPath != null) {
+//				processColumns(sourceOfTargetPath, path);
+//			}
+//			return;
+//		}
+
 		if (keyPath == null) {
 			if (inOperation) {
 				if (parsedPathsOnOperations.containsKey(path))
