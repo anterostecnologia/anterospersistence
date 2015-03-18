@@ -524,19 +524,22 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 						if (np.getName().equals(copyParameter.getName())) {
 							np.setValue(copyParameter.getValue());
 						}
-						if (!StringUtils.isEmpty(limitResult.getParameterOffSet())) {
-							if (np.getName().equals(limitResult.getParameterOffSet())) {
-								np.setValue(limitResult.getOffset());
-							}
+					}
+				}
+				for (Integer index : namedParameters.keySet()) {
+					NamedParameter np = namedParameters.get(index);
+					if (!StringUtils.isEmpty(limitResult.getParameterOffSet())) {
+						if (np.getName().equals(limitResult.getParameterOffSet())) {
+							np.setValue(limitResult.getOffset());
 						}
-
-						if (!StringUtils.isEmpty(limitResult.getParameterLimit())) {
-							if (np.getName().equals(limitResult.getParameterLimit())) {
-								np.setValue(limitResult.getLimit());
-							}
+					}
+					if (!StringUtils.isEmpty(limitResult.getParameterLimit())) {
+						if (np.getName().equals(limitResult.getParameterLimit())) {
+							np.setValue(limitResult.getLimit());
 						}
 					}
 				}
+				
 			} else {
 				if (limitResult.getLimitParameterIndex() == LimitClauseResult.FIRST_PARAMETER) {
 					int countParams = 1;
@@ -658,17 +661,22 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		String parsedSql = sql;
 		if (handler instanceof MultiSelectHandler)
 			parsedSql = ((MultiSelectHandler) handler).getParsedSql();
+		
+		Map<Integer, NamedParameter> tempNamedParameters = new TreeMap<Integer, NamedParameter>(this.namedParameters);
+		Map<Integer, Object> tempParameters = new TreeMap<Integer, Object>(this.parameters);
+
+		parsedSql = appendLimit(parsedSql, tempParameters, tempNamedParameters);
 
 		parsedSql = (session.getDialect().supportsLock() ? session.applyLock(parsedSql, resultClass, lockOptions)
 				: parsedSql);
 
-		if (this.parameters.size() > 0)
+		if (tempParameters.size() > 0)
 			result = session.getRunner().query(session.getConnection(), parsedSql, handler,
-					parameters.values().toArray(), showSql, formatSql, timeOut, session.getListeners(),
+					tempParameters.values().toArray(), showSql, formatSql, timeOut, session.getListeners(),
 					session.clientId());
-		else if (this.namedParameters.size() > 0)
+		else if (tempNamedParameters.size() > 0)
 			result = session.getRunner().query(session.getConnection(), parsedSql, handler,
-					namedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql, timeOut,
+					tempNamedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql, timeOut,
 					session.getListeners(), session.clientId());
 		else
 			result = session.getRunner().query(session.getConnection(), parsedSql, handler, showSql, formatSql,

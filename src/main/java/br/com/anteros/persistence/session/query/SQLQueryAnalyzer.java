@@ -124,7 +124,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		INode node = new Node("root");
 		parser.parse(node);
 
-		// System.out.println(parser.dump(node));
+		//System.out.println(parser.dump(node));
 
 		allowApplyLockStrategy = false;
 		INode[] children = ParserUtil.findChildren(getFirstSelectStatement(node), ColumnNode.class.getSimpleName());
@@ -990,7 +990,8 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		/*
 		 * Busca todos os nós do tipo ColumnNode
 		 */
-		INode[] columns = ParserUtil.findChildren(selectStatement, ColumnNode.class.getSimpleName());
+		SelectNode select = (SelectNode) ParserUtil.findFirstChild(selectStatement, "SelectNode");
+		INode[] columns = ParserUtil.findChildren(select, ColumnNode.class.getSimpleName());
 		/*
 		 * Cria lista temporária de expressões no formato String para facilitar a criação das expressões no formato
 		 * ExpressionFieldMapper

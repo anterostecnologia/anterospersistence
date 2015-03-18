@@ -88,6 +88,10 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	protected boolean readOnly = false;
 
+	private long limit;
+
+	private long offset;
+
 	public AbstractOSQLQuery(Configuration configuration) {
 		this(null, configuration, new DefaultQueryMetadata().noValidate());
 	}
@@ -191,14 +195,15 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	protected void validateExpressions(Expression<?>... args) {
 		for (Expression<?> arg : args) {
-//			if (arg instanceof EntityPath<?>) {
-//				List<JoinExpression> joins = getMetadata().getJoins();
-//				for (JoinExpression expr : joins) {
-//					if ((expr.getTarget() != null) && (expr.getTarget() instanceof Operation<?>)) {
-//						throw new OSQLQueryException("Não é possível projetar entidades a partir de SQL's onde foram usadas SubQueries na cláusula From.");
-//					}
-//				}
-//			}
+			// if (arg instanceof EntityPath<?>) {
+			// List<JoinExpression> joins = getMetadata().getJoins();
+			// for (JoinExpression expr : joins) {
+			// if ((expr.getTarget() != null) && (expr.getTarget() instanceof Operation<?>)) {
+			// throw new
+			// OSQLQueryException("Não é possível projetar entidades a partir de SQL's onde foram usadas SubQueries na cláusula From.");
+			// }
+			// }
+			// }
 			if (ReflectionUtils.isCollection(arg.getType())) {
 				throw new OSQLQueryException(
 						"A expressão "
@@ -351,6 +356,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 				query = session.createQuery(sql);
 				query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions(), configuration.getNextAliasColumnName()));
 			}
+			query.setMaxResults((int) limit);
+			query.setFirstResult((int) offset);
 			query.setLockOptions(lockOptions);
 			/*
 			 * Converte os parâmetros no formato de expressão para o formato da query.
@@ -623,6 +630,18 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	public AbstractOSQLQuery<Q> readOnly(boolean readOnly) {
 		this.readOnly = readOnly;
 		return this;
+	}
+
+	@Override
+	public Q limit(long limit) {
+		this.limit = limit;
+		return (Q) this;
+	}
+
+	@Override
+	public Q offset(long offset) {
+		this.offset = offset;
+		return (Q) this;
 	}
 
 }

@@ -273,7 +273,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 				throw new SQLAnalyserException(e.getMessage(), e);
 			}
 		} else if (level == MAKE_COLUMNS) {
-			processColumns(expr, null);
+			processColumns(expr, null, null);
 		}
 		return null;
 	}
@@ -284,15 +284,15 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	 * @param path
 	 *            Caminho
 	 */
-	private void processColumns(Path<?> path, Path<?> keyPath) {
+	private void processColumns(Path<?> path, Path<?> keyPath, String aliasTableName) {
 
-//		if (path.getMetadata().getParent() instanceof PathBuilder<?>) {
-//			Path<?> sourceOfTargetPath = ((PathBuilder<?>) path.getMetadata().getParent()).getSourceOfTargetPath(path);
-//			if (sourceOfTargetPath != null) {
-//				processColumns(sourceOfTargetPath, path);
-//			}
-//			return;
-//		}
+		if (path.getMetadata().getParent() instanceof PathBuilder<?>) {
+			Path<?> sourceOfTargetPath = ((PathBuilder<?>) path.getMetadata().getParent()).getSourceOfTargetPath(path);
+			if (sourceOfTargetPath != null) {
+				processColumns(sourceOfTargetPath, path, path.getMetadata().getParent().getMetadata().getName());
+			}
+			return;
+		}
 
 		if (keyPath == null) {
 			if (inOperation) {
@@ -313,7 +313,8 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			 * Ser for uma variável e for uma entidade Ex: tOrder = new TOrder("ORD")
 			 */
 			EntityCache sourceEntityCache = getEntityCacheByClass(path.getType());
-			String aliasTableName = path.getMetadata().getName();
+			if (aliasTableName == null)
+				aliasTableName = path.getMetadata().getName();
 			/*
 			 * Somente processa projeções customizadas se não estiver dentro de uma operação
 			 */
@@ -323,7 +324,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 						processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) path).getExcludeProjection(), aliasTableName, sourceEntityCache,
 								inOperation);
 					else
-						processColumns(customPath, path);
+						processColumns(customPath, path, aliasTableName);
 				}
 			} else {
 				processAllFields((keyPath == null ? path : keyPath), null, aliasTableName, sourceEntityCache, inOperation);
@@ -335,7 +336,8 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			 * for uma propriedade da entidade, pega o pai mais adequado.
 			 */
 			Path<?> entityPath = this.getAppropriateAliasByEntityPath(path);
-			String aliasTableName = entityPath.getMetadata().getName();
+			if (aliasTableName == null)
+				aliasTableName = entityPath.getMetadata().getName();
 			Path<?> targetPath = path;
 			/*
 			 * Verifica se a propriedade é um ID então pega como caminho o pai dela
@@ -362,7 +364,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 							processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) targetPath).getExcludeProjection(), aliasTableName,
 									sourceEntityCache, inOperation);
 						else
-							processColumns(customPath, path);
+							processColumns(customPath, path, aliasTableName);
 					}
 				} else
 					processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) targetPath).getExcludeProjection(), aliasTableName,

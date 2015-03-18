@@ -642,7 +642,6 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	@Override
 	public Void visit(Operation<?> expr, Void context) {
-
 		lastOperation = expr;
 		String booleanAsString = analyser.getBooleanDefinitions().get(expr);
 		if (booleanAsString != null) {
