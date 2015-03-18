@@ -125,18 +125,18 @@ public class OracleTemplates extends SQLTemplates {
         add(Ops.DateTimeOps.TRUNC_SECOND, "{0}"); // not truncated
     }
 
-    @Override
-    public String serialize(String literal, int jdbcType) {
-        if (jdbcType == Types.DATE) {
-            return "date '" + literal + "'";
-        } else if (jdbcType == Types.TIMESTAMP) {
-            return "timestamp '" + literal + "'";
-        } else if (jdbcType == Types.TIME) {
-            return "timestamp '1970-01-01 " + literal + "'";
-        } else {
-            return super.serialize(literal, jdbcType);
-        }
-    }
+//    @Override
+//    public String serialize(String literal, int jdbcType) {
+//        if (jdbcType == Types.DATE) {
+//            return "date '" + literal + "'";
+//        } else if (jdbcType == Types.TIMESTAMP) {
+//            return "timestamp '" + literal + "'";
+//        } else if (jdbcType == Types.TIME) {
+//            return "timestamp '1970-01-01 " + literal + "'";
+//        } else {
+//            return super.serialize(literal, jdbcType);
+//        }
+//    }
 
     @Override
     public void serialize(QueryMetadata metadata, boolean forCountRow, SQLSerializer context) {
