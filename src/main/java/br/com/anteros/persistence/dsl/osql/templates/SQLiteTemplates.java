@@ -99,18 +99,18 @@ public class SQLiteTemplates extends SQLTemplates {
         add(Ops.MathOps.LOG, "(log({0}) / log({1}))");
     }
 
-//    @Override
-//    public String serialize(String literal, int jdbcType) {
-//        // XXX doesn't work with LocalDate, LocalDateTime and LocalTime
-//        if (jdbcType == Types.TIMESTAMP) {
-//            return String.valueOf(dateTimeFormatter.parseDateTime(literal).getMillis());
-//        } else if (jdbcType == Types.DATE) {
-//            return String.valueOf(dateFormatter.parseDateTime(literal).getMillis());
-//        } else if (jdbcType == Types.TIME) {
-//            return String.valueOf(timeFormatter.parseDateTime(literal).getMillis());
-//        } else {
-//            return super.serialize(literal, jdbcType);
-//        }
-//    }
+    @Override
+    public String serialize(String literal, int jdbcType) {
+        // XXX doesn't work with LocalDate, LocalDateTime and LocalTime
+        if (jdbcType == Types.TIMESTAMP) {
+            return String.valueOf(dateTimeFormatter.parseDateTime(literal).getMillis());
+        } else if (jdbcType == Types.DATE) {
+            return String.valueOf(dateFormatter.parseDateTime(literal).getMillis());
+        } else if (jdbcType == Types.TIME) {
+            return String.valueOf(timeFormatter.parseDateTime(literal).getMillis());
+        } else {
+            return super.serialize(literal, jdbcType);
+        }
+    }
 
 }

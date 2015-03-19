@@ -15,6 +15,7 @@ import org.joda.time.format.DateTimeFormatter;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.types.IndexHint;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
+import br.com.anteros.persistence.schema.definition.type.ColumnDatabaseType;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 
@@ -168,6 +169,17 @@ public final class Configuration {
 	}
 
 	public String asLiteral(Object value) {
+		if (value == null)
+			return "";
+		ColumnDatabaseType columnDatabaseType = dialect.convertJavaToDatabaseType(value.getClass());
+		if (columnDatabaseType != null) {
+			return templates.serialize(convertObjectToLiteral(value), columnDatabaseType.getSqlType());
+		} else {
+			throw new IllegalArgumentException("Unsupported literal type " + value.getClass().getName());
+		}
+	}
+
+	protected String convertObjectToLiteral(Object value) {
 		if (value instanceof Calendar) {
 			return "'" + dateTimeFormatter.print(((Calendar) value).getTimeInMillis()) + "'";
 		} else if (value instanceof DateTime) {

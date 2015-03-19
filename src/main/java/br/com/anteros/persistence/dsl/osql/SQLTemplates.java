@@ -335,44 +335,45 @@ public class SQLTemplates extends Templates {
 
 	}
 
-//	public String asLiteral(Object value) {
-//		if (value instanceof Calendar) {
-//			return "'" + dateTimeFormatter.print(((Calendar) value).getTimeInMillis()) + "'";
-//		} else if (value instanceof DateTime) {
-//			return "'" + dateTimeFormatter.print((DateTime) value) + "'";
-//		} else if (value instanceof Date) {
-//			return "'" + dateFormatter.print(((Date) value).getTime()) + "'";
-//		} else if (value instanceof java.sql.Date) {
-//			return "'" + dateFormatter.print(((java.sql.Date) value).getTime()) + "'";
-//		} else if (value instanceof InputStream) {
-//			return value.toString();
-//		} else if (value instanceof Timestamp) {
-//			return "(timestamp '" + dateTimeFormatter.print(((Timestamp) value).getTime()) + "')";
-//		} else if (value instanceof Time) {
-//			return "(time '" + timeFormatter.print(((Time) value).getTime()) + "')";
-//		} else if (value instanceof String) {
-//			return "'" + escapeLiteral(value.toString()) + "'";
-//		}
-//		return value.toString();
-//	}
+	public String serialize(String literal, int jdbcType) {
+        switch (jdbcType) {
+            case Types.TIMESTAMP:
+                return "(timestamp '" + literal + "')";
+            case Types.DATE:
+                return "(date '" + literal + "')";
+            case Types.TIME:
+                return "(time '" + literal + "')";
+            case Types.CHAR:
+            case Types.CLOB:
+            case Types.LONGNVARCHAR:
+            case Types.LONGVARCHAR:
+            case Types.NCHAR:
+            case Types.NCLOB:
+            case Types.NVARCHAR:
+            case Types.VARCHAR:
+                return "'" + escapeLiteral(literal) + "'";
+            default:
+                return literal;
+        }
+    }
 
-	public String escapeLiteral(String str) {
-		StringBuilder builder = new StringBuilder();
-		for (char ch : str.toCharArray()) {
-			if (ch == '\n') {
-				builder.append("\\n");
-				continue;
-			} else if (ch == '\r') {
-				builder.append("\\r");
-				continue;
-			} else if (ch == '\'') {
-				builder.append("''");
-				continue;
-			}
-			builder.append(ch);
-		}
-		return builder.toString();
-	}
+    public String escapeLiteral(String str) {
+        StringBuilder builder = new StringBuilder();
+        for (char ch : str.toCharArray()) {
+            if (ch == '\n') {
+                builder.append("\\n");
+                continue;
+            } else if (ch == '\r') {
+                builder.append("\\r");
+                continue;
+            } else if (ch == '\'') {
+                builder.append("''");
+                continue;
+            }
+            builder.append(ch);
+        }
+        return builder.toString();
+    }
 
 	protected void add(Map<Operator<?>, String> ops) {
 		for (Map.Entry<Operator<?>, String> entry : ops.entrySet()) {

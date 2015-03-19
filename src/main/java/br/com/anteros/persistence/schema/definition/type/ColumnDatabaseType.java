@@ -27,6 +27,7 @@ public class ColumnDatabaseType {
 	protected int maxScale;
 	protected int minScale;
 	protected boolean allowsNull;
+	protected int sqlType;
 
 	public ColumnDatabaseType() {
 		defaultSize = 10;
@@ -36,37 +37,42 @@ public class ColumnDatabaseType {
 		allowsNull = true;
 	}
 
-	public ColumnDatabaseType(String databaseTypeName) {
+	public ColumnDatabaseType(String databaseTypeName, int sqlType) {
 		this();
 		name = databaseTypeName;
+		this.sqlType = sqlType;
 	}
 
-	public ColumnDatabaseType(String databaseTypeName, int defaultSize) {
+	public ColumnDatabaseType(String databaseTypeName, int defaultSize, int sqlType) {
 		this();
 		this.name = databaseTypeName;
 		this.defaultSize = defaultSize;
 		this.isSizeRequired = true;
 		this.maxLength = defaultSize;
+		this.sqlType = sqlType;
 	}
 
-	public ColumnDatabaseType(String databaseTypeName, int defaultSize, int defaultSubSize) {
+	public ColumnDatabaseType(String databaseTypeName, int defaultSize, int defaultSubSize, int sqlType) {
 		this();
 		this.name = databaseTypeName;
 		this.defaultSize = defaultSize;
 		this.defaultSubSize = defaultSubSize;
 		this.isSizeRequired = true;
 		this.maxLength = defaultSize;
+		this.sqlType = sqlType;
 	}
 
-	public ColumnDatabaseType(String databaseTypeName, boolean allowsSize) {
+	public ColumnDatabaseType(String databaseTypeName, boolean allowsSize, int sqlType) {
 		this();
 		this.name = databaseTypeName;
 		this.isSizeAllowed = allowsSize;
+		this.sqlType = sqlType;
 	}
 
-	public ColumnDatabaseType(String databaseTypeName, boolean allowsSize, boolean allowsNull) {
-		this(databaseTypeName, allowsSize);
+	public ColumnDatabaseType(String databaseTypeName, boolean allowsSize, boolean allowsNull, int sqlType) {
+		this(databaseTypeName, allowsSize, sqlType);
 		this.allowsNull = allowsNull;
+		this.sqlType = sqlType;
 	}
 
 	public ColumnDatabaseType setLimits(int maxLength, int minScale, int maxScale) {
@@ -160,5 +166,13 @@ public class ColumnDatabaseType {
 
 	public void setAllowsNull(boolean allowsNull) {
 		this.allowsNull = allowsNull;
+	}
+
+	public int getSqlType() {
+		return sqlType;
+	}
+
+	public void setSqlType(int sqlType) {
+		this.sqlType = sqlType;
 	}
 }

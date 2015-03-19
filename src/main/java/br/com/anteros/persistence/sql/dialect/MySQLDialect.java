@@ -17,6 +17,7 @@ import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Map;
 
 import br.com.anteros.core.log.Logger;
@@ -51,28 +52,28 @@ public class MySQLDialect extends DatabaseDialect {
 	protected void initializeTypes() {
 		super.initializeTypes();
 
-		registerJavaColumnType(Boolean.class, new ColumnDatabaseType("TINYINT(1) DEFAULT 0", false));
-		registerJavaColumnType(Integer.class, new ColumnDatabaseType("INTEGER", false));
-		registerJavaColumnType(Long.class, new ColumnDatabaseType("BIGINT", false));
-		registerJavaColumnType(Float.class, new ColumnDatabaseType("FLOAT", false));
-		registerJavaColumnType(Double.class, new ColumnDatabaseType("DOUBLE", false));
-		registerJavaColumnType(Short.class, new ColumnDatabaseType("SMALLINT", false));
-		registerJavaColumnType(Byte.class, new ColumnDatabaseType("TINYINT", false));
-		registerJavaColumnType(java.math.BigInteger.class, new ColumnDatabaseType("BIGINT", false));
-		registerJavaColumnType(java.math.BigDecimal.class, new ColumnDatabaseType("DECIMAL", 38));
-		registerJavaColumnType(Number.class, new ColumnDatabaseType("DECIMAL", 38));
-		registerJavaColumnType(String.class, new ColumnDatabaseType("VARCHAR", DEFAULT_VARCHAR_SIZE));
-		registerJavaColumnType(Character.class, new ColumnDatabaseType("CHAR", 1));
-		registerJavaColumnType(Byte[].class, new ColumnDatabaseType("LONGBLOB", false));
-		registerJavaColumnType(Character[].class, new ColumnDatabaseType("LONGTEXT", false));
-		registerJavaColumnType(byte[].class, new ColumnDatabaseType("LONGBLOB", false));
-		registerJavaColumnType(char[].class, new ColumnDatabaseType("LONGTEXT", false));
-		registerJavaColumnType(java.sql.Blob.class, new ColumnDatabaseType("LONGBLOB", false));
-		registerJavaColumnType(java.sql.Clob.class, new ColumnDatabaseType("LONGTEXT", false));
-		registerJavaColumnType(java.sql.Date.class, new ColumnDatabaseType("DATE", false));
-		registerJavaColumnType(java.util.Date.class, new ColumnDatabaseType("DATETIME", false));
-		registerJavaColumnType(java.sql.Time.class, new ColumnDatabaseType("TIME", false));
-		registerJavaColumnType(java.sql.Timestamp.class, new ColumnDatabaseType("DATETIME", false));
+		registerJavaColumnType(Boolean.class, new ColumnDatabaseType("TINYINT(1) DEFAULT 0", false, Types.TINYINT));
+		registerJavaColumnType(Integer.class, new ColumnDatabaseType("INTEGER", false, Types.INTEGER));
+		registerJavaColumnType(Long.class, new ColumnDatabaseType("BIGINT", false, Types.BIGINT));
+		registerJavaColumnType(Float.class, new ColumnDatabaseType("FLOAT", false, Types.FLOAT));
+		registerJavaColumnType(Double.class, new ColumnDatabaseType("DOUBLE", false, Types.DOUBLE));
+		registerJavaColumnType(Short.class, new ColumnDatabaseType("SMALLINT", false, Types.SMALLINT));
+		registerJavaColumnType(Byte.class, new ColumnDatabaseType("TINYINT", false, Types.TINYINT));
+		registerJavaColumnType(java.math.BigInteger.class, new ColumnDatabaseType("BIGINT", false, Types.BIGINT));
+		registerJavaColumnType(java.math.BigDecimal.class, new ColumnDatabaseType("DECIMAL", 38, Types.DECIMAL));
+		registerJavaColumnType(Number.class, new ColumnDatabaseType("DECIMAL", 38, Types.DECIMAL));
+		registerJavaColumnType(String.class, new ColumnDatabaseType("VARCHAR", DEFAULT_VARCHAR_SIZE, Types.VARCHAR));
+		registerJavaColumnType(Character.class, new ColumnDatabaseType("CHAR", 1, Types.CHAR));
+		registerJavaColumnType(Byte[].class, new ColumnDatabaseType("LONGBLOB", false, Types.VARBINARY));
+		registerJavaColumnType(Character[].class, new ColumnDatabaseType("LONGTEXT", false, Types.LONGVARCHAR));
+		registerJavaColumnType(byte[].class, new ColumnDatabaseType("LONGBLOB", false, Types.VARBINARY));
+		registerJavaColumnType(char[].class, new ColumnDatabaseType("LONGTEXT", false, Types.LONGVARCHAR));
+		registerJavaColumnType(java.sql.Blob.class, new ColumnDatabaseType("LONGBLOB", false, Types.VARBINARY));
+		registerJavaColumnType(java.sql.Clob.class, new ColumnDatabaseType("LONGTEXT", false, Types.LONGVARCHAR));
+		registerJavaColumnType(java.sql.Date.class, new ColumnDatabaseType("DATE", false, Types.DATE));
+		registerJavaColumnType(java.util.Date.class, new ColumnDatabaseType("DATETIME", false, Types.TIMESTAMP));
+		registerJavaColumnType(java.sql.Time.class, new ColumnDatabaseType("TIME", false, Types.TIME));
+		registerJavaColumnType(java.sql.Timestamp.class, new ColumnDatabaseType("DATETIME", false, Types.TIMESTAMP));
 	}
 
 	@Override
