@@ -554,16 +554,20 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 					}
 
 				} else {
+					for (Integer oldIndex : copyOfParameters.keySet()) {
+						parameters.put(oldIndex, copyOfParameters.get(oldIndex));
+					}
+					
 					if (limitResult.getLimitParameterIndex() == LimitClauseResult.PREVIOUS_PARAMETER) {
-						parameters.put(parameters.size() - 2, limitResult.getLimit());
-					} else if (limitResult.getLimitParameterIndex() == LimitClauseResult.LAST_PARAMETER) {
 						parameters.put(parameters.size() - 1, limitResult.getLimit());
+					} else if (limitResult.getLimitParameterIndex() == LimitClauseResult.LAST_PARAMETER) {
+						parameters.put(parameters.size(), limitResult.getLimit());
 					}
 
 					if (limitResult.getOffSetParameterIndex() == limitResult.PREVIOUS_PARAMETER) {
-						parameters.put(parameters.size() - 2, limitResult.getOffset());
-					} else if (limitResult.getLimitParameterIndex() == LimitClauseResult.LAST_PARAMETER) {
 						parameters.put(parameters.size() - 1, limitResult.getOffset());
+					} else if (limitResult.getOffSetParameterIndex() == LimitClauseResult.LAST_PARAMETER) {
+						parameters.put(parameters.size(), limitResult.getOffset());
 					}
 				}
 			}
@@ -1622,6 +1626,9 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 					i++;
 				}
 				setParameters(params);
+				return this;
+			} else {
+				setParameters(((Collection)parameters).toArray());
 				return this;
 			}
 		} else if (parameters instanceof Map) {
