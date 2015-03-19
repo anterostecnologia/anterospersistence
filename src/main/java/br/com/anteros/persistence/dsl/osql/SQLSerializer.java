@@ -42,7 +42,6 @@ import br.com.anteros.persistence.dsl.osql.types.TemplateExpression;
 import br.com.anteros.persistence.dsl.osql.types.TemplateFactory;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorColumnPath;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorValuePath;
-import br.com.anteros.persistence.dsl.osql.types.path.PathBuilder;
 import br.com.anteros.persistence.metadata.EntityCache;
 
 import com.google.common.base.Strings;
@@ -86,6 +85,8 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 	private final SQLAnalyser analyser;
 
 	private final Configuration configuration;
+
+	private boolean inSerializeUnion;
 
 	public SQLSerializer(Configuration configuration, SQLAnalyser analyser) {
 		super(configuration.getTemplates());
@@ -368,95 +369,100 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 	}
 
 	public void serializeUnion(Expression<?> union, QueryMetadata metadata, boolean unionAll) {
-		final List<? extends Expression<?>> groupBy = metadata.getGroupBy();
-		final Predicate having = metadata.getHaving();
-		final List<OrderSpecifier<?>> orderBy = metadata.getOrderBy();
-		final Set<QueryFlag> flags = metadata.getFlags();
-		final boolean hasFlags = !flags.isEmpty();
+		inSerializeUnion = true;
+		try {
+			final List<? extends Expression<?>> groupBy = metadata.getGroupBy();
+			final Predicate having = metadata.getHaving();
+			final List<OrderSpecifier<?>> orderBy = metadata.getOrderBy();
+			final Set<QueryFlag> flags = metadata.getFlags();
+			final boolean hasFlags = !flags.isEmpty();
 
-		// with
-		if (hasFlags) {
-			boolean handled = false;
-			boolean recursive = false;
-			for (QueryFlag flag : flags) {
-				if (flag.getPosition() == Position.WITH) {
-					if (flag.getFlag() == SQLTemplates.RECURSIVE) {
-						recursive = true;
-						continue;
+			// with
+			if (hasFlags) {
+				boolean handled = false;
+				boolean recursive = false;
+				for (QueryFlag flag : flags) {
+					if (flag.getPosition() == Position.WITH) {
+						if (flag.getFlag() == SQLTemplates.RECURSIVE) {
+							recursive = true;
+							continue;
+						}
+						if (handled) {
+							append(", ");
+						}
+						handle(flag.getFlag());
+						handled = true;
 					}
-					if (handled) {
-						append(", ");
+				}
+				if (handled) {
+					if (recursive) {
+						prepend(configuration.getTemplates().getWithRecursive());
+					} else {
+						prepend(configuration.getTemplates().getWith());
 					}
-					handle(flag.getFlag());
-					handled = true;
+					append("\n");
 				}
 			}
-			if (handled) {
-				if (recursive) {
-					prepend(configuration.getTemplates().getWithRecursive());
-				} else {
-					prepend(configuration.getTemplates().getWith());
+
+			// union
+			Stage oldStage = stage;
+			handle(union);
+
+			// group by
+			if (!groupBy.isEmpty()) {
+				stage = Stage.GROUP_BY;
+				if (hasFlags) {
+					serialize(Position.BEFORE_GROUP_BY, flags);
 				}
-				append("\n");
-			}
-		}
-
-		// union
-		Stage oldStage = stage;
-		handle(union);
-
-		// group by
-		if (!groupBy.isEmpty()) {
-			stage = Stage.GROUP_BY;
-			if (hasFlags) {
-				serialize(Position.BEFORE_GROUP_BY, flags);
-			}
-			append(configuration.getTemplates().getGroupBy()).handle(COMMA, groupBy);
-			if (hasFlags) {
-				serialize(Position.AFTER_GROUP_BY, flags);
-			}
-		}
-
-		// having
-		if (having != null) {
-			stage = Stage.HAVING;
-			if (hasFlags) {
-				serialize(Position.BEFORE_HAVING, flags);
-			}
-			append(configuration.getTemplates().getHaving()).handle(having);
-			if (hasFlags) {
-				serialize(Position.AFTER_HAVING, flags);
-			}
-		}
-
-		// order by
-		if (hasFlags) {
-			serialize(Position.BEFORE_ORDER, flags);
-		}
-		if (!orderBy.isEmpty()) {
-			stage = Stage.ORDER_BY;
-			append(configuration.getTemplates().getOrderBy());
-			boolean first = true;
-			for (OrderSpecifier<?> os : orderBy) {
-				if (!first) {
-					append(COMMA);
+				append(configuration.getTemplates().getGroupBy()).handle(COMMA, groupBy);
+				if (hasFlags) {
+					serialize(Position.AFTER_GROUP_BY, flags);
 				}
-				handle(os.getTarget());
-				append(os.getOrder() == Order.ASC ? configuration.getTemplates().getAsc() : configuration.getTemplates().getDesc());
-				first = false;
 			}
+
+			// having
+			if (having != null) {
+				stage = Stage.HAVING;
+				if (hasFlags) {
+					serialize(Position.BEFORE_HAVING, flags);
+				}
+				append(configuration.getTemplates().getHaving()).handle(having);
+				if (hasFlags) {
+					serialize(Position.AFTER_HAVING, flags);
+				}
+			}
+
+			// order by
 			if (hasFlags) {
-				serialize(Position.AFTER_ORDER, flags);
+				serialize(Position.BEFORE_ORDER, flags);
 			}
-		}
+			if (!orderBy.isEmpty()) {
+				stage = Stage.ORDER_BY;
+				append(configuration.getTemplates().getOrderBy());
+				boolean first = true;
+				for (OrderSpecifier<?> os : orderBy) {
+					if (!first) {
+						append(COMMA);
+					}
+					handle(os.getTarget());
+					append(os.getOrder() == Order.ASC ? configuration.getTemplates().getAsc() : configuration.getTemplates().getDesc());
+					first = false;
+				}
+				if (hasFlags) {
+					serialize(Position.AFTER_ORDER, flags);
+				}
+			}
 
-		// end
-		if (hasFlags) {
-			serialize(Position.END, flags);
-		}
+			// end
+			if (hasFlags) {
+				serialize(Position.END, flags);
+			}
 
-		// reset stage
-		stage = oldStage;
+			// reset stage
+			stage = oldStage;
+		} finally {
+			inSerializeUnion = false;
+		}
 	}
 
 	@Override
@@ -560,7 +566,8 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			append("'").append(sourceEntityCache.getDiscriminatorValue()).append("'");
 		} else if (((path.getMetadata().getPathType() == PathType.VARIABLE) && ((path instanceof EntityPath<?>) || (path.getMetadata().isRoot())))
 				|| (path.getMetadata().getPathType() == PathType.PROPERTY)) {
-			if (inOperation && (lastOperation!=null) && ((lastOperation.getOperator() == Ops.INSTANCE_OF) || ((stage == Stage.FROM) && (lastOperation.getOperator() == Ops.ALIAS)))) {
+			if (inOperation && (lastOperation != null)
+					&& ((lastOperation.getOperator() == Ops.INSTANCE_OF) || ((stage == Stage.FROM) && (lastOperation.getOperator() == Ops.ALIAS)))) {
 				append(configuration.getTemplates().quoteIdentifier(path.getMetadata().getName()));
 			} else if (inOperation) {
 				Set<SQLAnalyserColumn> columns = analyser.getParsedPathsOnOperations().get(path);
@@ -571,7 +578,11 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 						throw new SQLSerializerException("Não é permitido o uso de chave composta em algumas operações. Caminho " + path);
 					}
 					SQLAnalyserColumn column = columns.iterator().next();
-					append(column.getAliasTableName()).append(".").append(column.getColumnName());
+					if ((inSerializeUnion) && (stage == Stage.ORDER_BY))
+						append(configuration.getTemplates().quoteIdentifier(
+								(column.isUserAliasDefined() ? column.getAliasColumnName() : column.getColumnName())));
+					else
+						append(column.getAliasTableName()).append(".").append(column.getColumnName());
 				}
 			} else {
 				if ((stage == Stage.SELECT) || (stage == Stage.GROUP_BY) || (stage == Stage.HAVING) || (stage == Stage.ORDER_BY)) {
@@ -583,12 +594,17 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 						for (SQLAnalyserColumn column : columns) {
 							if (appendSep)
 								append(COMMA);
-
-							append(configuration.getTemplates().quoteIdentifier(column.getAliasTableName())).append(".").append(
-									configuration.getTemplates().quoteIdentifier(column.getColumnName()));
-							if ((stage == Stage.SELECT) && (!StringUtils.isEmpty(column.getAliasColumnName()) && !column.equals(column.getAliasColumnName()))
-									&& (!column.isUserAliasDefined()) && (!inSubQuery))
-								append(" AS ").append(column.getAliasColumnName());
+							if (inSerializeUnion) {
+								append(configuration.getTemplates().quoteIdentifier(
+										(column.isUserAliasDefined() ? column.getAliasColumnName() : column.getColumnName())));
+							} else {
+								append(configuration.getTemplates().quoteIdentifier(column.getAliasTableName())).append(".").append(
+										configuration.getTemplates().quoteIdentifier(column.getColumnName()));
+								if ((stage == Stage.SELECT)
+										&& (!StringUtils.isEmpty(column.getAliasColumnName()) && !column.equals(column.getAliasColumnName()))
+										&& (!column.isUserAliasDefined()) && (!inSubQuery))
+									append(" AS ").append(column.getAliasColumnName());
+							}
 							appendSep = true;
 						}
 					}
@@ -605,11 +621,13 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 	@Override
 	public Void visit(SubQueryExpression<?> query, Void context) {
 		boolean oldInOperation = inOperation;
+		boolean oldInSerializeUnion = inSerializeUnion;
 		Operation<?> oldLastOperation = lastOperation;
 		boolean oldInUnion = inUnion;
 		this.inSubQuery = true;
 		this.inOperation = false;
-		
+		this.inSerializeUnion = false;
+
 		try {
 			if (inUnion && !configuration.getTemplates().isUnionsWrapped()) {
 				this.inUnion = false;
@@ -624,6 +642,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 			this.inSubQuery = false;
 			this.lastOperation = oldLastOperation;
 			this.inUnion = oldInUnion;
+			this.inSerializeUnion = oldInSerializeUnion;
 		}
 		return null;
 	}

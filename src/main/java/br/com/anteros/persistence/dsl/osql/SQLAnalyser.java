@@ -17,6 +17,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -536,6 +537,8 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		 */
 		if (sourceEntityCache.isAbstractClass())
 			caches = configuration.getEntityCacheManager().getEntitiesBySuperClass(sourceEntityCache);
+
+		Set<String> distinctFields = new HashSet<String>();
 		for (EntityCache entityCache : caches) {
 
 			for (DescriptionField descriptionField : entityCache.getDescriptionFields()) {
@@ -554,7 +557,10 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 						continue;
 				}
 
-				processSingleField(keyPath, alias, descriptionField, true);
+				if (!distinctFields.contains(descriptionField.getField().getName())) {
+					processSingleField(keyPath, alias, descriptionField, true);
+					distinctFields.add(descriptionField.getField().getName());
+				}
 			}
 		}
 	}
