@@ -12,12 +12,12 @@ import br.com.anteros.persistence.metadata.exception.EntityCacheManagerException
 public class ConverterConfiguration {
 	private Class<?> converter;
 	private boolean autoApply = false;
-	private Class entityAttributeType;
-	private Class databaseColumnType;
+	private Class<?> entityAttributeType;
+	private Class<?> databaseColumnType;
 
-	public ConverterConfiguration(Class converterClass) throws InstantiationException, IllegalAccessException {
+	public ConverterConfiguration(Class<?> converterClass) throws InstantiationException, IllegalAccessException {
 		if (!ReflectionUtils.isImplementsInterface(converterClass, AttributeConverter.class))
-			throw new EntityCacheManagerException("A classe " + converter.getName() + " não implementa a interface AttributeConverter.");
+			throw new EntityCacheManagerException("A classe " + converterClass.getName() + " não implementa a interface AttributeConverter.");
 		this.converter = converterClass;
 
 		final ParameterizedType attributeConverterSignature = extractAttributeConverterParameterizedType(converter);
@@ -33,9 +33,9 @@ public class ConverterConfiguration {
 
 		Type type = attributeConverterSignature.getActualTypeArguments()[0];
 		if (type instanceof Class) {
-			this.entityAttributeType = (Class) type;
+			this.entityAttributeType = (Class<?>) type;
 		} else if (type instanceof ParameterizedType) {
-			this.entityAttributeType = (Class) ((ParameterizedType) type).getRawType();
+			this.entityAttributeType = (Class<?>) ((ParameterizedType) type).getRawType();
 		}
 
 		if (entityAttributeType == null) {
@@ -43,7 +43,7 @@ public class ConverterConfiguration {
 					+ converter.getName() + "]");
 		}
 
-		databaseColumnType = (Class) attributeConverterSignature.getActualTypeArguments()[1];
+		databaseColumnType = (Class<?>) attributeConverterSignature.getActualTypeArguments()[1];
 		if (databaseColumnType == null) {
 			throw new EntityCacheManagerException(
 					"Não foi possível determinar o tipo de atributo para a coluna do banco de dados na classe AttributeConverter ["
@@ -51,7 +51,7 @@ public class ConverterConfiguration {
 		}
 	}
 
-	public static ParameterizedType extractAttributeConverterParameterizedType(Class converter) {
+	public static ParameterizedType extractAttributeConverterParameterizedType(Class<?> converter) {
 		for (Type type : converter.getGenericInterfaces()) {
 			if (ParameterizedType.class.isInstance(type)) {
 				final ParameterizedType parameterizedType = (ParameterizedType) type;
@@ -79,11 +79,11 @@ public class ConverterConfiguration {
 		}
 	}
 
-	public Class getEntityAttributeType() {
+	public Class<?> getEntityAttributeType() {
 		return entityAttributeType;
 	}
 
-	public Class getDatabaseColumnType() {
+	public Class<?> getDatabaseColumnType() {
 		return databaseColumnType;
 	}
 

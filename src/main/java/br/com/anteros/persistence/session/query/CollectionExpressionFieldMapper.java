@@ -241,7 +241,7 @@ public class CollectionExpressionFieldMapper extends ExpressionFieldMapper {
 	public String toString(int level) {
 		StringBuilder sb = new StringBuilder(StringUtils.repeat(" ", level * 4) + descriptionField.getField().getName() + " -> "
 				+ targetEntityCache.getEntityClass().getSimpleName() + " : " + aliasColumnName
-				+ (aliasDiscriminatorColumnName == "" ? "" : " discriminator column " + aliasDiscriminatorColumnName));
+				+ ("".equals(aliasDiscriminatorColumnName) ? "" : " discriminator column " + aliasDiscriminatorColumnName));
 		level = level + 1;
 		for (ExpressionFieldMapper expressionFieldMapper : children) {
 			sb.append("\n").append(expressionFieldMapper.toString(level));

@@ -18,7 +18,7 @@ import br.com.anteros.persistence.dsl.osql.types.Predicate;
 import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
 
 /**
- * SQLCommonQuery is a common interface for SQLQuery and SQLSubQuery
+ * SQLCommonQuery is a common interface for OSQLQuery and OSQLSubQuery
  *
  * @author tiwe
  *

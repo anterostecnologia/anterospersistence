@@ -41,6 +41,7 @@ import br.com.anteros.persistence.session.repository.SQLRepository;
 import br.com.anteros.persistence.session.repository.SQLRepositoryException;
 import br.com.anteros.persistence.transaction.Transaction;
 
+@SuppressWarnings("unchecked")
 public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepository<T, ID> {
 
 	private static final EntityPathResolver DEFAULT_ENTITY_PATH_RESOLVER = SimpleEntityPathResolver.INSTANCE;
@@ -268,7 +269,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 		try {
 			query = getSession().createQuery(sql, persistentClass);
 			query.setFirstResult(pageable.getOffset());
-			query.setMaxResults(pageable.getPageSize());
+			query.setMaxResults(pageable.getPageSize()); 
 			query.setParameters(parameters);
 			query.setReadOnly(readOnly);
 			query.setLockOptions(lockOptions);
@@ -535,7 +536,6 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 		return getSession().getTransaction();
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Identifier<T> createIdentifier() throws Exception {
 		return (Identifier<T>) getSession().createIdentifier(getPersistentClass());
@@ -715,7 +715,7 @@ public class GenericSQLRepository<T, ID extends Serializable> implements SQLRepo
 
 	@Override
 	public Page<T> findByNamedQuery(String queryName, Object parameters, Pageable pageable) {
-		return findByNamedQuery(queryName, parameters, pageable);
+		return findByNamedQuery(queryName, parameters, pageable, false);
 	}
 
 	@Override

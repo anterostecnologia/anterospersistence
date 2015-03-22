@@ -1,8 +1,4 @@
-OK - Testar OSql e usar
-
 - Forma de fazer paginação de objetos usando ScrollableResult,
-
-OK - Forma de fazer paginação de objetos setFirst, setMaxResults
 
 - Implementar comandos sql para sugestão de indices
 
@@ -14,35 +10,9 @@ OK - Forma de fazer paginação de objetos setFirst, setMaxResults
            http://www.java2s.com/Tutorial/Java/0355__JPA/AttributeOverridesForEmbeddableID.htm
            http://www.programmingforfuture.com/2013/02/attributeoverrides-annotation-in.html
 
-OK - Possibilidade de trabalhar as classes do Joda Time e novos tipos de data Java 8
-
-OK - Terminar implementação de Convert
-
-OK - Qdo usar anotação @ForeignKey e não usar @Column ou @Columns usar as colunas da Classe estrangeira. Pra isso será necessário garantir
-  que esta classe já tenha sido lida.
-  
-OK - Colunas usadas em fields com anotação @ForeignKey devem ser obrigatoriamente ID's na outra classe
-   Para não permitir que ocorra este tipo de erro, onde foi usado um atributo que não era ID:
-   @ForeignKey
-	@Column(name = "ID_FORNECEDOR", inversedColumn = "ID_PESSOA")
-	private Fornecedor fornecedor;
-   Deveria ser ID_PESSOA_PAPEL mas como havia a coluna na outra classe não deu erro e só foi gerar o erro na hora
-   da geração do script.
-   
-OK - Corrigir problema no relacionamento ONY_TO_MANY com EAGER, o framework tenta buscar a lista antes de adicionar o objeto pai ao cache. 
-    Obs: O problema era o tamanho do cache de objetos, muito pequeno.
-  
-
-
-OK - Implementar estratégias de Lock
-
 - Implementar FlushMode o que irá permitir definir se é necessário usar save ou as entidades serão salvas automaticamentes no flush ou commit da session.
 
 - Join Table anotação bidirecional. Utilizar mappedBy, para não ser necessario anotação de ambos lados;
-
-OK - Integração com API de Validação do JAVA
-
-OK - Fazer LOB carregar com lazy
 
 - Implementar nas anotações para verificar quando salvar
    boolean insertable() default true;
@@ -63,6 +33,35 @@ OK - Fazer LOB carregar com lazy
 - Implementar Projetos de Exemplo usando HTML5/JavaScript, Angular, Vaadin, SpringMVC, VRaptor, Android, Delphi.
 
 - Implementar Ações que possam ser disparados via REST.
+
+
+OK - Testar OSql e usar
+
+OK - Forma de fazer paginação de objetos setFirst, setMaxResults
+
+OK - Possibilidade de trabalhar as classes do Joda Time e novos tipos de data Java 8
+
+OK - Terminar implementação de Convert
+
+OK - Qdo usar anotação @ForeignKey e não usar @Column ou @Columns usar as colunas da Classe estrangeira. Pra isso será necessário garantir
+  que esta classe já tenha sido lida.
+  
+OK - Colunas usadas em fields com anotação @ForeignKey devem ser obrigatoriamente ID's na outra classe
+   Para não permitir que ocorra este tipo de erro, onde foi usado um atributo que não era ID:
+   @ForeignKey
+	@Column(name = "ID_FORNECEDOR", inversedColumn = "ID_PESSOA")
+	private Fornecedor fornecedor;
+   Deveria ser ID_PESSOA_PAPEL mas como havia a coluna na outra classe não deu erro e só foi gerar o erro na hora
+   da geração do script.
+   
+OK - Corrigir problema no relacionamento ONY_TO_MANY com EAGER, o framework tenta buscar a lista antes de adicionar o objeto pai ao cache. 
+    Obs: O problema era o tamanho do cache de objetos, muito pequeno.
+  
+OK - Implementar estratégias de Lock
+
+OK - Integração com API de Validação do JAVA
+
+OK - Fazer LOB carregar com lazy
 
 OK - Implementar limit para trazer registros
    Obs: Implementado junto com DSL.

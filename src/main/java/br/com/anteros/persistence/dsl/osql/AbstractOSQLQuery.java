@@ -131,10 +131,20 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		}
 	}
 
+	/**
+	 * Retorna a instância do analisador das expressões Sql.
+	 * @return
+	 * @throws Exception
+	 */
 	protected SQLAnalyser getAnalyser() throws Exception {
 		return analyser;
 	}
 
+	/**
+	 * Configura se o sql deve ser gerado usando literais para conversão de tipos em string.
+	 * 
+	 * @param useLiterals
+	 */
 	public void setUseLiterals(boolean useLiterals) {
 		this.useLiterals = useLiterals;
 	}
@@ -168,6 +178,10 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		}
 	}
 
+	/**
+	 * Valida se a sessão sql foi configurado corretamente. É possível criar uma consulta sem atribuir a sessão e 
+	 * atribuí-la posteriormente no momento de usá-la criando um clone usando o método {@link #clone(SQLSession)}.
+	 */
 	protected void validateSession() {
 		if (session == null)
 			throw new OSQLQueryException("Sessão não configurada para execução da consulta.");
@@ -193,6 +207,11 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		}
 	}
 
+	/**
+	 * Valida as expressões passadas como argumento para projeção.
+	 * 
+	 * @param args Expressões
+	 */
 	protected void validateExpressions(Expression<?>... args) {
 		for (Expression<?> arg : args) {
 			if (arg instanceof EntityPath<?>) {
@@ -401,9 +420,9 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 						result.add(new NamedParameter(param.getName(), params.get(param), TemporalType.DATE_TIME));
 					else if (param.getType() == Enum.class)
 						if (param instanceof EnumParam)
-							result.add(new EnumeratedParameter(param.getName(), ((EnumParam) param).getFormat(), (Enum) params.get(param)));
+							result.add(new EnumeratedParameter(param.getName(), ((EnumParam) param).getFormat(), (Enum<?>) params.get(param)));
 						else
-							result.add(new EnumeratedParameter(param.getName(), EnumeratedFormatSQL.STRING, (Enum) params.get(param)));
+							result.add(new EnumeratedParameter(param.getName(), EnumeratedFormatSQL.STRING, (Enum<?>) params.get(param)));
 					else
 						result.add(new NamedParameter(param.getName(), params.get(param)));
 				}

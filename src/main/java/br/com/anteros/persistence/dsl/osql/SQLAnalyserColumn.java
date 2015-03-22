@@ -15,7 +15,6 @@
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
-import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 
 public class SQLAnalyserColumn {

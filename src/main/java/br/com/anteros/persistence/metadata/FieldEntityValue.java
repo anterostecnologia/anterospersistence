@@ -24,6 +24,7 @@ import java.util.Map;
 
 import br.com.anteros.core.utils.ReflectionUtils;
 
+@SuppressWarnings("unchecked")
 public class FieldEntityValue implements Comparable<FieldEntityValue> {
 
 	private String name;
@@ -78,6 +79,8 @@ public class FieldEntityValue implements Comparable<FieldEntityValue> {
 		return 0;
 	}
 
+	
+	@SuppressWarnings("rawtypes")
 	private int compareObject(Object source, Object target) {
 		if ((source == null) && (target == null))
 			return 0;
@@ -117,22 +120,25 @@ public class FieldEntityValue implements Comparable<FieldEntityValue> {
 		} else if (source instanceof byte[]) {
 			return (Arrays.equals((byte[]) source, (byte[]) target) == true ? 0 : -1);
 		} else {
-			if (source.getClass() != target.getClass())
-				return -1;
-			Field[] allDeclaredFields = ReflectionUtils.getAllDeclaredFields(source.getClass());
-			for (Field field : allDeclaredFields) {
-				try {
-					Object sourceValue = field.get(source);
-					Object targetValue = field.get(target);
-					int result = compareObject(sourceValue, targetValue);
-					if (result != 0)
-						return result;
-				} catch (Exception e) {
+			if ((source != null) && (target != null)) {
+				if ((source.getClass() != target.getClass()))
 					return -1;
+				Field[] allDeclaredFields = ReflectionUtils.getAllDeclaredFields(source.getClass());
+				for (Field field : allDeclaredFields) {
+					try {
+						Object sourceValue = field.get(source);
+						Object targetValue = field.get(target);
+						int result = compareObject(sourceValue, targetValue);
+						if (result != 0)
+							return result;
+					} catch (Exception e) {
+						return -1;
+					}
 				}
+				return 0;
 			}
-			return 0;
 		}
+		return 0;
 	}
 
 	public String getName() {

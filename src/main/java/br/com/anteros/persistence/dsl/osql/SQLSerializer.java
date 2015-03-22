@@ -50,7 +50,7 @@ import com.google.common.collect.ImmutableList;
 /**
  * SqlSerializer serializes Querydsl queries into SQL
  *
- * @author tiwe
+ * @author tiwe modified by : Edson Martins
  */
 public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
@@ -600,7 +600,7 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 								append(configuration.getTemplates().quoteIdentifier(column.getAliasTableName())).append(".").append(
 										configuration.getTemplates().quoteIdentifier(column.getColumnName()));
 								if ((stage == Stage.SELECT)
-										&& (!StringUtils.isEmpty(column.getAliasColumnName()) && !column.equals(column.getAliasColumnName()))
+										&& (!StringUtils.isEmpty(column.getAliasColumnName()) && !column.getColumnName().equals(column.getAliasColumnName()))
 										&& (!column.isUserAliasDefined()) && (!inSubQuery))
 									append(" AS ").append(column.getAliasColumnName());
 							}

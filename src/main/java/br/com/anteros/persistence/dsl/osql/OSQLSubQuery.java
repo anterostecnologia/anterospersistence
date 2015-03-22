@@ -14,7 +14,7 @@ package br.com.anteros.persistence.dsl.osql;
 
 
 /**
- * SQLSubQuery is a subquery implementation for SQL queries
+ * OSQLSubQuery is a subquery implementation for Anteros SQL queries
  *
  * @author tiwe modified by: Edson Martins
  *

@@ -15,7 +15,7 @@ package br.com.anteros.persistence.dsl.osql;
 import br.com.anteros.persistence.session.SQLSession;
 
 /**
- * SQLQuery is a JDBC based implementation of the {@link SQLCommonQuery} interface
+ * OSQLQuery is a Anteros based implementation of the {@link SQLCommonQuery} interface
  *
  * @author tiwe modified by: Edson Martins
  */

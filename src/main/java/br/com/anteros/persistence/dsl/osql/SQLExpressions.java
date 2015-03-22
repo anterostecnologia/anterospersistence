@@ -33,7 +33,7 @@ import br.com.anteros.persistence.dsl.osql.types.expr.Wildcard;
 /**
  * Common SQL expressions
  *
- * @author tiwe
+ * @author tiwe Modified by: Edson Martins
  *
  */
 @SuppressWarnings("rawtypes")

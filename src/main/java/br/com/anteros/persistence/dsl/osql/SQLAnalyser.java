@@ -976,7 +976,10 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 						index++;
 					}
 				}
-				result.add(new ResultClassDefinition(expr.getType(), columns));
+				if (columns != null) {
+					ResultClassDefinition classDefinition = new ResultClassDefinition(expr.getType(), columns);
+					result.add(classDefinition);
+				}
 			}
 		}
 		return result;
