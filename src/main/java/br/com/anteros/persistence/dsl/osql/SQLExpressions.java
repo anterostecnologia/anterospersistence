@@ -161,6 +161,27 @@ public final class SQLExpressions {
 	public static <D extends Comparable> DateExpression<D> date(Class<D> type, DateTimeExpression<?> dateTime) {
 		return DateOperation.create(type, Ops.DateTimeOps.DATE, dateTime);
 	}
+	
+	/**
+	 * Truncate the given date expression
+	 *
+	 * @param date
+	 * @return
+	 */
+	public static <D extends Comparable> DateExpression<D> dateTrunc(DateExpression<D> date) {
+		return DateOperation.create((Class) date.getType(), Ops.DateTimeOps.DATE, date);
+	}
+
+	/**
+	 * Truncate the given date expression
+	 *
+	 * @param type
+	 * @param date
+	 * @return
+	 */
+	public static <D extends Comparable> DateExpression<D> dateTrunc(Class<D> type, DateExpression<?> date) {
+		return DateOperation.create(type, Ops.DateTimeOps.DATE, date);
+	}
 
 	/**
 	 * Get a dateadd(unit, date, amount) expression

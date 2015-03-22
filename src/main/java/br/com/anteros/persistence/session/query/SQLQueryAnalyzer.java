@@ -47,6 +47,8 @@ import br.com.anteros.persistence.sql.parser.node.FromNode;
 import br.com.anteros.persistence.sql.parser.node.GroupbyNode;
 import br.com.anteros.persistence.sql.parser.node.KeywordNode;
 import br.com.anteros.persistence.sql.parser.node.OperatorNode;
+import br.com.anteros.persistence.sql.parser.node.ParenthesesNode;
+import br.com.anteros.persistence.sql.parser.node.RootNode;
 import br.com.anteros.persistence.sql.parser.node.SelectNode;
 import br.com.anteros.persistence.sql.parser.node.SelectStatementNode;
 import br.com.anteros.persistence.sql.parser.node.TableNode;
@@ -121,10 +123,10 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		 * Faz o parse do SQL para transformar em uma estrutura de objetos o que torna possível a análise do mapeamento.
 		 */
 		SqlParser parser = new SqlParser(sql, new SqlFormatRule());
-		INode node = new Node("root");
+		INode node = new RootNode();
 		parser.parse(node);
 
-		//System.out.println(parser.dump(node));
+		System.out.println(parser.dump(node));
 
 		allowApplyLockStrategy = false;
 		INode[] children = ParserUtil.findChildren(getFirstSelectStatement(node), ColumnNode.class.getSimpleName());
@@ -330,11 +332,14 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		 * Busca todos os nós do tipo Select
 		 */
 		SelectStatementNode[] selectStatements = getAllSelectStatement(mainNode);
+		
+		
+		
 		/*
 		 * Analisa os Select's encontrados pelo parser.
 		 */
 		int size = selectStatements.length;
-		
+
 		for (int i = 0; i < size; i++) {
 			SelectStatementNode selectStatement = selectStatements[i];
 			/*
@@ -370,8 +375,9 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 				 * Recarrega a árvore do Sql realizando um novo parser.
 				 */
 				parser = new SqlParser(sql, new SqlFormatRule());
-				mainNode = new Node("root");
+				mainNode = new RootNode();
 				parser.parse(mainNode);
+				System.out.println(parser.dump(mainNode));
 				selectStatements = getAllSelectStatement(mainNode);
 			}
 		}
@@ -431,7 +437,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		 * Adiciona as colunas da chave primária do alias(tabela) e discriminator column caso não existam no
 		 * Select/GroupBy.
 		 */
-		addPkAndDiscriminatorColumnsIfNotExists(aliases, mainNode, newColumns, processNode, generateAliasToColum);
+		addPkAndDiscriminatorColumnsIfNotExists(aliasesTemporary, mainNode, newColumns, processNode, generateAliasToColum);
 
 		/*
 		 * Remove as colunas atuais do Select/GroupBy
@@ -783,11 +789,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 	 * @return Nó que representa o SelectStatement
 	 */
 	private SelectStatementNode getFirstSelectStatement(INode node) {
-		for (Object child : node.getChildren()) {
-			if (child instanceof SelectStatementNode)
-				return ((SelectStatementNode) child);
-		}
-		return null;
+		return (SelectStatementNode) ParserUtil.findFirstChild(node, "SelectStatementNode");
 	}
 
 	/**
@@ -800,7 +802,13 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 	private SelectStatementNode[] getAllSelectStatement(INode node) {
 		List<SelectStatementNode> result = new ArrayList<SelectStatementNode>();
 		for (Object child : node.getChildren()) {
-			if (child instanceof SelectStatementNode)
+			if (child instanceof ParenthesesNode) {
+				if (((ParenthesesNode) child).getChildrenSize() > 0) {
+					if (((ParenthesesNode) child).getChildren().get(0) instanceof SelectStatementNode) {
+						result.add((SelectStatementNode) ((ParenthesesNode) child).getChildren().get(0));
+					}
+				}
+			} else if (child instanceof SelectStatementNode)
 				result.add((SelectStatementNode) child);
 		}
 		return result.toArray(new SelectStatementNode[] {});
@@ -848,17 +856,13 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 	 */
 	private Set<SQLQueryAnalyserAlias> getTableAliasesFromFirstSelectNode(INode node) throws SQLQueryAnalyzerException {
 		Set<SQLQueryAnalyserAlias> result = new LinkedHashSet<SQLQueryAnalyserAlias>();
-		for (Object child : node.getChildren()) {
+
+		SelectStatementNode selectStatement = getFirstSelectStatement(node);
+		if (selectStatement != null) {
 			/*
-			 * Se o nó for do tipo Select
+			 * Retorna os aliases do Select
 			 */
-			if (child instanceof SelectStatementNode) {
-				SelectStatementNode selectStatement = ((SelectStatementNode) child);
-				/*
-				 * Retorna os aliases do Select
-				 */
-				return getTableAliasesFromSelectNode(selectStatement);
-			}
+			return getTableAliasesFromSelectNode(selectStatement);
 		}
 		return result;
 	}

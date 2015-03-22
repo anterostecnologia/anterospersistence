@@ -129,7 +129,6 @@ public class SQLSerializer extends SerializerBase<SQLSerializer> {
 
 	public void serializeForQuery(QueryMetadata metadata, boolean forCountRow) {
 		skipParent = true;
-		final List<? extends Expression<?>> select = metadata.getProjection();
 		final List<JoinExpression> joins = metadata.getJoins();
 		final Predicate where = metadata.getWhere();
 		final List<? extends Expression<?>> groupBy = metadata.getGroupBy();
