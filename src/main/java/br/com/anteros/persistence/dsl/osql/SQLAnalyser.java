@@ -325,7 +325,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 						processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) path).getExcludeProjection(), aliasTableName, sourceEntityCache,
 								inOperation);
 					else
-						processColumns(customPath, path, aliasTableName);
+						processColumns(customPath, (keyPath == null ? path : keyPath), null);
 				}
 			} else {
 				processAllFields((keyPath == null ? path : keyPath), null, aliasTableName, sourceEntityCache, inOperation);
@@ -365,7 +365,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 							processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) targetPath).getExcludeProjection(), aliasTableName,
 									sourceEntityCache, inOperation);
 						else
-							processColumns(customPath, path, aliasTableName);
+							processColumns(customPath, (keyPath == null ? path : keyPath), null);
 					}
 				} else
 					processAllFields((keyPath == null ? path : keyPath), ((EntityPath<?>) targetPath).getExcludeProjection(), aliasTableName,
