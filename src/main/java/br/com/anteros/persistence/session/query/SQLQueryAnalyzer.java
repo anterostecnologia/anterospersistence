@@ -331,8 +331,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		/*
 		 * Busca todos os nós do tipo Select
 		 */
-		SelectStatementNode[] selectStatements = getAllSelectStatement(mainNode);
-		
+		SelectStatementNode[] selectStatements = getAllSelectStatement(mainNode);	
 		
 		
 		/*
@@ -352,10 +351,16 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			 */
 			validateColumnsAndWhereCondition(selectStatement);
 
+			
+			SelectNode select = (SelectNode) ParserUtil.findFirstChild(selectStatement, "SelectNode");
+			/*
+			 * Obtém as posições do Select/Group by dentro do SQL.
+			 */
+			int offsetProcessNode = select.getOffset();
+			int offSetProcessNodeFinal = select.getMaxOffset();
 			/*
 			 * Processa Select
 			 */
-			SelectNode select = (SelectNode) ParserUtil.findFirstChild(selectStatement, "SelectNode");
 			processSelectOrGroupByColumns(mainNode, replaceStrings, selectStatement, select, GENERATE_ALIAS_TO_COLUM);
 
 			/*
@@ -370,7 +375,10 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 			 */
 
 			for (String r : replaceStrings.keySet()) {
-				sql = StringUtils.replaceOnce(sql, r, replaceStrings.get(r));
+				StringBuilder sb = new StringBuilder(sql);
+				
+				sql = sb.replace(offsetProcessNode, offSetProcessNodeFinal, replaceStrings.get(r)).toString();
+				
 				/*
 				 * Recarrega a árvore do Sql realizando um novo parser.
 				 */
@@ -1494,3 +1502,5 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		return (Arrays.toString(o1).compareTo(Arrays.toString(o2)));
 	}
 }
+
+
