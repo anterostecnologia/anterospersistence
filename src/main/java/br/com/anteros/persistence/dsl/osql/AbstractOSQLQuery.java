@@ -12,9 +12,11 @@
  *******************************************************************************/
 package br.com.anteros.persistence.dsl.osql;
 
+import java.io.Closeable;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -108,18 +110,6 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		this.configuration = configuration;
 	}
 
-	/**
-	 * If you use forUpdate() with a backend that uses page or row locks, rows examined by the query are write-locked
-	 * until the end of the current transaction.
-	 *
-	 * Not supported for SQLite and CUBRID
-	 *
-	 * @return
-	 */
-	public Q forUpdate() {
-		return addFlag(SQLOps.FOR_UPDATE_FLAG);
-	}
-
 	protected SQLSerializer createSerializer() {
 		try {
 			SQLSerializer serializer = new SQLSerializer(configuration, getAnalyser());
@@ -133,6 +123,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	/**
 	 * Retorna a instância do analisador das expressões Sql.
+	 * 
 	 * @return
 	 * @throws Exception
 	 */
@@ -179,7 +170,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	}
 
 	/**
-	 * Valida se a sessão sql foi configurado corretamente. É possível criar uma consulta sem atribuir a sessão e 
+	 * Valida se a sessão sql foi configurado corretamente. É possível criar uma consulta sem atribuir a sessão e
 	 * atribuí-la posteriormente no momento de usá-la criando um clone usando o método {@link #clone(SQLSession)}.
 	 */
 	protected void validateSession() {
@@ -210,7 +201,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	/**
 	 * Valida as expressões passadas como argumento para projeção.
 	 * 
-	 * @param args Expressões
+	 * @param args
+	 *            Expressões
 	 */
 	protected void validateExpressions(Expression<?>... args) {
 		for (Expression<?> arg : args) {
@@ -599,17 +591,54 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	@Override
 	public CloseableIterator<Tuple> iterate(Expression<?>... args) {
-		throw new UnsupportedOperationException();
+		return iterate(queryMixin.createProjection(args));
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <RT> CloseableIterator<RT> iterate(Expression<RT> expr) {
-		throw new UnsupportedOperationException();
+		validateSession();
+		try {
+			validateExpressions(expr);
+			SQLQuery query = createQuery(expr);
+			Closeable closeable = null;
+			Iterator<RT> iterator = ((List<RT>) getResultList(query)).iterator();
+			if (projection != null) {
+				return new TransformingIterator<RT>(iterator, closeable, projection);
+			} else {
+				return new IteratorAdapter<RT>(iterator, closeable);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
 	}
 
 	@Override
+	public SearchResults<Tuple> listResults(Expression<?>... args) {
+		return listResults(queryMixin.createProjection(args));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
 	public <RT> SearchResults<RT> listResults(Expression<RT> projection) {
-		throw new UnsupportedOperationException();
+		validateSession();
+		try {
+			validateExpressions(projection);
+			queryMixin.addProjection(projection);
+			SQLQuery query = createQuery(projection);
+			List<RT> list = (List<RT>) getResultList(query);
+			if (list != null && list.size() > 0) {
+				QueryModifiers modifiers = new QueryModifiers(limit, offset);
+				return new SearchResults<RT>(list, modifiers, list.size());
+			} else {
+				return SearchResults.emptyResults();
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		} finally {
+			reset();
+		}
 	}
 
 	public SQLSession getSession() {

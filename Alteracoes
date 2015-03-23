@@ -1,7 +1,5 @@
 - Forma de fazer paginação de objetos usando ScrollableResult,
 
-- Implementar comandos sql para sugestão de indices
-
 - Concluir implementação MappedSuperClass     
   ver link http://www.concretepage.com/hibernate/example-mappedsuperclass-hibernate 
 
@@ -42,6 +40,8 @@ OK - Forma de fazer paginação de objetos setFirst, setMaxResults
 OK - Possibilidade de trabalhar as classes do Joda Time e novos tipos de data Java 8
 
 OK - Terminar implementação de Convert
+
+OK - Implementar comandos sql para sugestão de indices
 
 OK - Qdo usar anotação @ForeignKey e não usar @Column ou @Columns usar as colunas da Classe estrangeira. Pra isso será necessário garantir
   que esta classe já tenha sido lida.
