@@ -653,6 +653,11 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 	public Void visit(TemplateExpression<?> expr, Void context) {
 		if (this.level == MAKE_COLUMNS) {
 
+			for (Object arg : expr.getArgs()) {
+				if (arg instanceof Expression<?>)
+					((Expression<?>) arg).accept(this, null);
+			}
+
 			Set<SQLAnalyserColumn> columns = null;
 			if (inOperation) {
 				columns = getColumnListOperation(expr);
