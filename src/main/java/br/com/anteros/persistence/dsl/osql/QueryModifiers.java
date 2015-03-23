@@ -43,7 +43,7 @@ public final class QueryModifiers implements Serializable{
 
     private final Long limit, offset;
 
-    private QueryModifiers() {
+    public QueryModifiers() {
         limit = null;
         offset = null;
     }

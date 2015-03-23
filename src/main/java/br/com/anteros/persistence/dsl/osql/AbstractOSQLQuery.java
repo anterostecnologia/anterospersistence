@@ -255,9 +255,9 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			SQLQuery query = createQuery(expr);
 			return (RT) getSingleResult(query);
 		} catch (SQLQueryNoResultException se) {
-		    return null;
+			return null;
 		} catch (OSQLQueryException oe) {
-		   throw oe;
+			throw oe;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -270,7 +270,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			validateExpressions(args);
 			return uniqueResult(queryMixin.createProjection(args));
 		} catch (SQLQueryNoResultException se) {
-		    return null;
+			return null;
 		} catch (Exception e) {
 			throw new OSQLQueryException(e);
 		}
@@ -307,14 +307,14 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	public SQLQuery createQuery(Expression<?> expr) throws Exception {
 		queryMixin.addProjection(expr);
-		return createQuery(getMetadata().getModifiers(), false);
+		return createQuery(getModifiers(), false);
 	}
 
 	public SQLQuery createQuery(Expression<?> expr1, Expression<?> expr2, Expression<?>... rest) throws Exception {
 		queryMixin.addProjection(expr1);
 		queryMixin.addProjection(expr2);
 		queryMixin.addProjection(rest);
-		return createQuery(getMetadata().getModifiers(), false);
+		return createQuery(getModifiers(), false);
 	}
 
 	/**
@@ -325,7 +325,7 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	 */
 	public SQLQuery createQuery(Expression<?>[] args) {
 		queryMixin.addProjection(args);
-		return createQuery(getMetadata().getModifiers(), false);
+		return createQuery(getModifiers(), false);
 	}
 
 	private SQLQuery createQuery(QueryModifiers modifiers, boolean forCount) {
@@ -712,6 +712,13 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	public void setAllowDuplicateObjects(boolean allowDuplicateObjects) {
 		this.allowDuplicateObjects = allowDuplicateObjects;
+	}
+
+	protected QueryModifiers getModifiers() {
+		if (limit == 0)
+			return new QueryModifiers();
+
+		return new QueryModifiers(limit, (offset == 0 ? 1 : offset));
 	}
 
 }
