@@ -51,6 +51,7 @@ import br.com.anteros.persistence.parameter.type.EnumeratedFormatSQL;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.query.SQLQuery;
+import br.com.anteros.persistence.session.query.SQLQueryNoResultException;
 
 /**
  * AbstractOSQLQuery é a classe base para implementações de consultas SQL.
@@ -253,6 +254,10 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		try {
 			SQLQuery query = createQuery(expr);
 			return (RT) getSingleResult(query);
+		} catch (SQLQueryNoResultException se) {
+		    return null;
+		} catch (OSQLQueryException oe) {
+		   throw oe;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -264,6 +269,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 		try {
 			validateExpressions(args);
 			return uniqueResult(queryMixin.createProjection(args));
+		} catch (SQLQueryNoResultException se) {
+		    return null;
 		} catch (Exception e) {
 			throw new OSQLQueryException(e);
 		}
