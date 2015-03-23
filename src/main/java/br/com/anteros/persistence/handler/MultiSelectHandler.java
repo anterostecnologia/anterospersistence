@@ -20,20 +20,21 @@ import br.com.anteros.persistence.session.query.SQLQueryAnalyzerResult;
 public class MultiSelectHandler implements ResultSetHandler {
 
 	private static final boolean LOAD_ALL_FIELDS = false;
-	private static final boolean ALLOW_DUPLICATE_OBJECTS = true;
 	private List<ResultClassDefinition> definitions;
 	private Map<ResultClassDefinition, EntityHandler> cacheHandler = new HashMap<ResultClassDefinition, EntityHandler>();
 	private SQLSession session;
 	private String sql;
 	private String parsedSql;
 	private int numberOfColumnAlias;
+	private boolean allowDuplicateObjects;
 
-	public MultiSelectHandler(SQLSession session, String sql, List<ResultClassDefinition> definitions, int numberOfColumnAlias) throws SQLQueryAnalyzerException {
+	public MultiSelectHandler(SQLSession session, String sql, List<ResultClassDefinition> definitions, int numberOfColumnAlias, boolean allowDuplicateObjects) throws SQLQueryAnalyzerException {
 		this.definitions = definitions;
 		this.session = session;
 		this.sql = sql;
 		this.numberOfColumnAlias = numberOfColumnAlias;
 		this.parsedSql = parseSqlForResultClass();
+		this.allowDuplicateObjects = allowDuplicateObjects;
 	}
 
 	@Override
@@ -156,7 +157,7 @@ public class MultiSelectHandler implements ResultSetHandler {
 		EntityHandler result = cacheHandler.get(rcd);
 		if (result == null) {
 			result = session.createNewEntityHandler(rcd.getResultClass(), analyzerResult.getExpressionsFieldMapper(),
-					analyzerResult.getColumnAliases(), transactionCache, ALLOW_DUPLICATE_OBJECTS, null, 0, 0, false, LockOptions.NONE);
+					analyzerResult.getColumnAliases(), transactionCache, allowDuplicateObjects, null, 0, 0, false, LockOptions.NONE);
 			cacheHandler.put(rcd, result);
 		}
 		return result;

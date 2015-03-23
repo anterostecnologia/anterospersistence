@@ -405,7 +405,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		 * Se o usuário setou um Handler específico. Processa o resultSet com o handler e devolve o objeto em forma de
 		 * lista caso o resultado já não seja uma lista
 		 */
-		
+
 		if (getResultClass() != null) {
 			/*
 			 * Processa o resultSet usando o EntityHandler para criar os objetos
@@ -614,7 +614,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		/*
 		 * Se o usuário setou um Handler específico. Processa o resultSet com o handler e devolve o objeto.
 		 */
-		Object result = ((getResultClass() != null?getResultList():getResultObjectByCustomHandler((handler != null ? handler : new ArrayListHandler()))));
+		Object result = ((getResultClass() != null ? getResultList() : getResultObjectByCustomHandler((handler != null ? handler : new ArrayListHandler()))));
 
 		if (result instanceof Collection) {
 			Collection resultCollection = (Collection) result;
@@ -1608,6 +1608,35 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	@Override
 	public SQLQuery setLockMode(String alias, LockMode lockMode) {
 		return null;
+	}
+
+	@Override
+	public long count() throws Exception {
+		if ((this.parameters.size() > 0) && (this.namedParameters.size() > 0))
+			throw new SQLQueryException("Use apenas um formato de parâmetros. Parâmetros nomeados ou lista de parâmetros.");
+
+		ResultSet rs = null;
+
+		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
+		String sqlForCount = "SELECT COUNT(*) FROM (" + sql + ")";
+
+		if (this.parameters.size() > 0)
+			rs = session.getRunner().executeQuery(session.getConnection(), sqlForCount, parameters.values().toArray(), showSql, formatSql, timeOut,
+					session.getListeners(), session.clientId());
+		else if (this.namedParameters.size() > 0)
+			rs = session.getRunner().executeQuery(session.getConnection(), sqlForCount, namedParameters.values().toArray(new NamedParameter[] {}), showSql,
+					formatSql, timeOut, session.getListeners(), session.clientId());
+		else
+			rs = session.getRunner()
+					.executeQuery(session.getConnection(), sqlForCount, showSql, formatSql, timeOut, session.getListeners(), session.clientId());
+		long value = 0;
+		try {
+			rs.next();
+			value = rs.getLong(1);
+		} finally {
+			rs.close();
+		}
+		return value;
 	}
 
 }

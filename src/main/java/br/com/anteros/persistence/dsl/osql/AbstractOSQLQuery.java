@@ -94,6 +94,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 
 	private long offset;
 
+	private boolean allowDuplicateObjects = false;
+
 	public AbstractOSQLQuery(Configuration configuration) {
 		this(null, configuration, new DefaultQueryMetadata().noValidate());
 	}
@@ -364,10 +366,10 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 				 * Se o resultado for múltiplos valores
 				 */
 				query = session.createQuery(sql);
-				query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions(), configuration.getNextAliasColumnName()));
+				query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions(), configuration.getNextAliasColumnName(), allowDuplicateObjects));
 			}
-			query.setMaxResults((int) limit);
-			query.setFirstResult((int) offset);
+			query.setMaxResults(modifiers.getLimitAsInteger());
+			query.setFirstResult(modifiers.getOffsetAsInteger());
 			query.setLockOptions(lockOptions);
 			/*
 			 * Converte os parâmetros no formato de expressão para o formato da query.
@@ -628,9 +630,10 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			queryMixin.addProjection(projection);
 			SQLQuery query = createQuery(projection);
 			List<RT> list = (List<RT>) getResultList(query);
-			if (list != null && list.size() > 0) {
+			long total = query.count();
+			if (total > 0) {
 				QueryModifiers modifiers = new QueryModifiers(limit, offset);
-				return new SearchResults<RT>(list, modifiers, list.size());
+				return new SearchResults<RT>(list, modifiers, total);
 			} else {
 				return SearchResults.emptyResults();
 			}
@@ -689,6 +692,14 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 	public Q offset(long offset) {
 		this.offset = offset;
 		return (Q) this;
+	}
+
+	public boolean isAllowDuplicateObjects() {
+		return allowDuplicateObjects;
+	}
+
+	public void setAllowDuplicateObjects(boolean allowDuplicateObjects) {
+		this.allowDuplicateObjects = allowDuplicateObjects;
 	}
 
 }

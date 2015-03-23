@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.session.query;
 
@@ -43,13 +40,13 @@ import br.com.anteros.persistence.session.lock.LockOptions;
 public interface SQLQuery {
 
 	public static boolean READ_ONLY = true;
-	
+
 	public SQLQuery identifier(Identifier<?> identifier);
 
 	public SQLSession getSession();
 
 	public SQLQuery sql(String sql);
-	
+
 	public String getSql();
 
 	public SQLQuery showSql(boolean showSql);
@@ -65,6 +62,8 @@ public interface SQLQuery {
 	public SQLQuery setReadOnly(boolean readOnlyObjects);
 
 	public SQLQuery clear();
+
+	public long count() throws Exception;
 
 	public SQLQuery setParameters(Object parameters) throws Exception;
 
@@ -144,13 +143,13 @@ public interface SQLQuery {
 
 	public ResultSet executeQuery() throws Exception;
 
-	public Object loadData(EntityCache entityCacheTarget, Object owner, final DescriptionField descriptionFieldOwner,
-			Map<String, Object> columnKeyTarget, Cache transactionCache) throws Exception;
+	public Object loadData(EntityCache entityCacheTarget, Object owner, final DescriptionField descriptionFieldOwner, Map<String, Object> columnKeyTarget,
+			Cache transactionCache) throws Exception;
 
 	public SQLQuery setLockOptions(LockOptions lockOptions);
 
 	public LockOptions getLockOptions();
-	
+
 	public SQLQuery setLockMode(String alias, LockMode lockMode);
 
 	public SQLQuery allowDuplicateObjects(boolean allowDuplicateObjects);
@@ -168,5 +167,5 @@ public interface SQLQuery {
 	public ProcedureResult execute() throws Exception;
 
 	public SQLQuery namedStoredProcedureQuery(String name);
-	
+
 }
