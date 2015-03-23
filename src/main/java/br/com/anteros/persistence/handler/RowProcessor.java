@@ -23,7 +23,7 @@ import java.util.Map;
 public interface RowProcessor {
 
 	public Object[] toArray(ResultSet rs) throws SQLException;
-
+	
 	public <T> T toBean(ResultSet rs, Class<T> type) throws SQLException;
 
 	public <T> List<T> toBeanList(ResultSet rs, Class<T> type) throws SQLException;

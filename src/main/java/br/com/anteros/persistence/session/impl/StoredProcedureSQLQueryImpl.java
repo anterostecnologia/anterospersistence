@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.session.impl;
 
@@ -22,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 
 import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.handler.ArrayListHandler;
+import br.com.anteros.persistence.handler.ResultSetHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionNamedQuery;
@@ -52,32 +51,28 @@ public class StoredProcedureSQLQueryImpl<T> extends SQLQueryImpl<T> {
 	@Override
 	public Object getOutputParameterValue(int position) {
 		if (lastResult == null)
-			throw new SQLQueryException(
-					"É necessário executar o procedimento/função antes de obter o valor do parâmetro de saída. Procedimento/função "
-							+ procedureName + " tipo: " + callableType);
+			throw new SQLQueryException("É necessário executar o procedimento/função antes de obter o valor do parâmetro de saída. Procedimento/função "
+					+ procedureName + " tipo: " + callableType);
 		int i = 0;
 		for (Object value : lastResult.getOutputParameters().values()) {
 			if (i == position)
 				return value;
 			i++;
 		}
-		throw new SQLQueryException("Não encontrado parâmetro para a posição " + position + ". Procedimento/função "
-				+ procedureName + " tipo: " + callableType);
+		throw new SQLQueryException("Não encontrado parâmetro para a posição " + position + ". Procedimento/função " + procedureName + " tipo: " + callableType);
 	}
 
 	@Override
 	public Object getOutputParameterValue(String parameterName) {
 		if (lastResult == null)
-			throw new SQLQueryException(
-					"É necessário executar o procedimento/função antes de obter o valor do parâmetro de saída. Procedimento/função "
-							+ procedureName + " tipo: " + callableType);
+			throw new SQLQueryException("É necessário executar o procedimento/função antes de obter o valor do parâmetro de saída. Procedimento/função "
+					+ procedureName + " tipo: " + callableType);
 		return lastResult.getOutPutParameter(parameterName);
 	}
 
 	@Override
 	public ProcedureResult execute() throws Exception {
-		if (((this.parameters.size() > 0) && (this.namedParameters.size() > 0))
-				|| (((this.parameters.size() > 0) && (this.namedParameters.size() == 0))))
+		if (((this.parameters.size() > 0) && (this.namedParameters.size() > 0)) || (((this.parameters.size() > 0) && (this.namedParameters.size() == 0))))
 			throw new SQLQueryException("Use apenas parâmetros nomeados para execução de procedimento ou função.");
 
 		if (StringUtils.isEmpty(procedureName))
@@ -90,11 +85,11 @@ public class StoredProcedureSQLQueryImpl<T> extends SQLQueryImpl<T> {
 
 		if (this.namedParameters.size() > 0) {
 			Collection<NamedParameter> values = namedParameters.values();
-			lastResult = session.getRunner().executeProcedure(session, session.getDialect(), callableType,
-					procedureName, values.toArray(new NamedParameter[] {}), showSql, timeOut, session.clientId());
+			lastResult = session.getRunner().executeProcedure(session, session.getDialect(), callableType, procedureName,
+					values.toArray(new NamedParameter[] {}), showSql, timeOut, session.clientId());
 		} else
-			lastResult = session.getRunner().executeProcedure(session, session.getDialect(), callableType,
-					procedureName, new NamedParameter[] {}, showSql, timeOut, session.clientId());
+			lastResult = session.getRunner().executeProcedure(session, session.getDialect(), callableType, procedureName, new NamedParameter[] {}, showSql,
+					timeOut, session.clientId());
 		return lastResult;
 	}
 
@@ -133,8 +128,7 @@ public class StoredProcedureSQLQueryImpl<T> extends SQLQueryImpl<T> {
 			throw new UnsupportedOperationException("Procedimento nomeado ainda não implementado.");
 		}
 
-		if (((this.parameters.size() > 0) && (this.namedParameters.size() > 0))
-				|| (((this.parameters.size() > 0) && (this.namedParameters.size() == 0))))
+		if (((this.parameters.size() > 0) && (this.namedParameters.size() > 0)) || (((this.parameters.size() > 0) && (this.namedParameters.size() == 0))))
 			throw new SQLQueryException("Use apenas parâmetros nomeados para execução de procedimento ou função.");
 		/*
 		 * Se for uma stored procedure nomeada
@@ -148,7 +142,7 @@ public class StoredProcedureSQLQueryImpl<T> extends SQLQueryImpl<T> {
 		}
 
 		List<T> result = Collections.emptyList();
-		T resultObject = getResultObjectByCustomHandler();
+		T resultObject = getResultObjectByCustomHandler((handler != null ? handler : new ArrayListHandler()));
 		if (resultObject != null) {
 			if (resultObject instanceof Collection)
 				result = new ArrayList<T>((Collection<T>) resultObject);
@@ -162,7 +156,7 @@ public class StoredProcedureSQLQueryImpl<T> extends SQLQueryImpl<T> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected T getResultObjectByCustomHandler() throws Exception {
+	protected T getResultObjectByCustomHandler(ResultSetHandler customHandler) throws Exception {
 		if (getNamedQuery() != null) {
 			throw new UnsupportedOperationException("Procedimento/função nomeado ainda não implementado.");
 		}
@@ -170,7 +164,7 @@ public class StoredProcedureSQLQueryImpl<T> extends SQLQueryImpl<T> {
 		if ((this.parameters.size() > 0) && (this.namedParameters.size() > 0))
 			throw new SQLQueryException("Use apenas parâmetros nomeados para execução de procedimento ou função.");
 
-		if (handler == null)
+		if (customHandler == null)
 			throw new SQLQueryException("Informe o ResultSetHandler para executar a consulta.");
 
 		if (StringUtils.isEmpty(procedureName))
@@ -185,11 +179,11 @@ public class StoredProcedureSQLQueryImpl<T> extends SQLQueryImpl<T> {
 
 		if (this.namedParameters.size() > 0) {
 			Collection<NamedParameter> values = namedParameters.values();
-			result = (T) session.getRunner().queryProcedure(session, session.getDialect(), callableType, procedureName,
-					handler, values.toArray(new NamedParameter[] {}), showSql, timeOut, session.clientId());
+			result = (T) session.getRunner().queryProcedure(session, session.getDialect(), callableType, procedureName, customHandler,
+					values.toArray(new NamedParameter[] {}), showSql, timeOut, session.clientId());
 		} else
-			result = (T) session.getRunner().queryProcedure(session, session.getDialect(), callableType, procedureName,
-					handler, new NamedParameter[] {}, showSql, timeOut, session.clientId());
+			result = (T) session.getRunner().queryProcedure(session, session.getDialect(), callableType, procedureName, customHandler, new NamedParameter[] {},
+					showSql, timeOut, session.clientId());
 		return result;
 	}
 
@@ -215,8 +209,7 @@ public class StoredProcedureSQLQueryImpl<T> extends SQLQueryImpl<T> {
 				return this;
 			}
 		}
-		throw new SQLQueryException(
-				"Formato para setParameters inválido. Use NamedParameter[] ou Map para execução de Procedimento/função ");
+		throw new SQLQueryException("Formato para setParameters inválido. Use NamedParameter[] ou Map para execução de Procedimento/função ");
 	}
 
 	@Override
