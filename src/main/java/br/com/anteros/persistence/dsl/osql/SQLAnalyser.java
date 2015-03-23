@@ -52,8 +52,8 @@ import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 
 /**
- * Visitor que analisa as expressões da consulta processando os nomes path's criando junções e colunas que serão usadas
- * na serialização para SQL pela classe {@link SQLSerializer}.
+ * Visitor que analisa as expressões da consulta processando os nomes path's
+ * criando junções e colunas que serão usadas na serialização para SQL pela
  * 
  * @author edson
  *
