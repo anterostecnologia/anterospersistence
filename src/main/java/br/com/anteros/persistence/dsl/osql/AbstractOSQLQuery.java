@@ -366,7 +366,8 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 				 * Se o resultado for múltiplos valores
 				 */
 				query = session.createQuery(sql);
-				query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions(), configuration.getNextAliasColumnName(), allowDuplicateObjects));
+				query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions(), configuration.getNextAliasColumnName(),
+						allowDuplicateObjects));
 			}
 			query.setMaxResults(modifiers.getLimitAsInteger());
 			query.setFirstResult(modifiers.getOffsetAsInteger());
@@ -629,8 +630,12 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			validateExpressions(projection);
 			queryMixin.addProjection(projection);
 			SQLQuery query = createQuery(projection);
-			List<RT> list = (List<RT>) getResultList(query);
+			query.setMaxResults(0);
+			query.setFirstResult(0);
 			long total = query.count();
+			query.setMaxResults((int) limit);
+			query.setFirstResult((int) offset);
+			List<RT> list = (List<RT>) getResultList(query);
 			if (total > 0) {
 				QueryModifiers modifiers = new QueryModifiers(limit, offset);
 				return new SearchResults<RT>(list, modifiers, total);
