@@ -71,7 +71,7 @@ public final class QueryModifiers implements Serializable{
 
     
     public Integer getLimitAsInteger() {
-        return limit != null ? toInt(limit) : null;
+        return limit != null ? toInt(limit) : 0;
     }
 
     
@@ -81,7 +81,7 @@ public final class QueryModifiers implements Serializable{
 
     
     public Integer getOffsetAsInteger() {
-        return offset != null ? toInt(offset) : null;
+        return offset != null ? toInt(offset) : 0;
     }
 
     /**
