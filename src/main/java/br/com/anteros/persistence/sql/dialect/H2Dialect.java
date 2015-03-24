@@ -226,7 +226,7 @@ public class H2Dialect extends DatabaseDialect {
 	}
 
 	@Override
-	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception {
+	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws SQLSessionException {
 		int errorCode = extractErrorCode(ex);
 
 		if (40001 == errorCode) { // DEADLOCK DETECTED

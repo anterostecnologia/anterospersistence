@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SQLCache implements Cache {
-	private Map<Object, Object> cache;
+	protected Map<Object, Object> cache;
 
 	public SQLCache() {
 		cache = new ConcurrentHashMap<Object, Object>();

@@ -57,6 +57,7 @@ import br.com.anteros.persistence.session.SQLSessionResult;
 import br.com.anteros.persistence.session.cache.Cache;
 import br.com.anteros.persistence.session.cache.PersistenceMetadataCache;
 import br.com.anteros.persistence.session.cache.SQLCache;
+import br.com.anteros.persistence.session.cache.WeakReferenceSQLCache;
 import br.com.anteros.persistence.session.lock.LockMode;
 import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.query.SQLQuery;
@@ -443,7 +444,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			PersistenceMetadataCache.getInstance().put(getResultClass().getName() + ":" + sql, analyzerResult);
 		}
 
-		SQLCache transactionCache = new SQLCache();
+		SQLCache transactionCache = new WeakReferenceSQLCache();
 
 		String parsedSql = analyzerResult.getParsedSql();
 
@@ -1446,7 +1447,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 		String parsedSql = analyzerResult.getParsedSql();
 
-		SQLCache transactionCache = new SQLCache();
+		SQLCache transactionCache = new WeakReferenceSQLCache();
 		try {
 			if (entityCache == null)
 				handler = new BeanHandler(getResultClass());

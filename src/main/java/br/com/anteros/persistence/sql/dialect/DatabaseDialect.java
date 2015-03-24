@@ -1636,7 +1636,7 @@ public abstract class DatabaseDialect {
 
 	public abstract SQLTemplates getTemplateSQL();
 
-	public abstract SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception;
+	public abstract SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws SQLSessionException;
 
 	protected int extractErrorCode(SQLException sqlException) {
 		int errorCode = sqlException.getErrorCode();

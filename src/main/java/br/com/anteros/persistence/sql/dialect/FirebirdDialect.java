@@ -286,7 +286,7 @@ public class FirebirdDialect extends DatabaseDialect {
 	}
 
 	@Override
-	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception {
+	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws SQLSessionException {
 		return new SQLSessionException(msg, ex, sql);
 	}
 

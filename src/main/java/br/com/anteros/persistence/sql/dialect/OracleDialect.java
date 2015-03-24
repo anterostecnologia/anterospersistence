@@ -486,7 +486,7 @@ public class OracleDialect extends DatabaseDialect {
 	}
 
 	@Override
-	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception {
+	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws SQLSessionException {
 		final int errorCode = extractErrorCode(ex);
 
 		if (errorCode == 30006) { // ORA-30006: resource busy; acquire with WAIT timeout expired

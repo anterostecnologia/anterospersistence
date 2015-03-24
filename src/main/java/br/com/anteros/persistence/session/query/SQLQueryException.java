@@ -15,9 +15,26 @@
  *******************************************************************************/
 package br.com.anteros.persistence.session.query;
 
+import br.com.anteros.persistence.session.exception.SQLSessionException;
+
 @SuppressWarnings("serial")
-public class SQLQueryException extends RuntimeException {
+public class SQLQueryException extends SQLSessionException {
+	private String sql;
+	
 	public SQLQueryException(String message) {
 		super(message);
+	}
+	
+	public SQLQueryException(String message, Throwable t, String sql) {
+		super(message,t);
+		this.sql = sql;
+	}
+
+	public SQLQueryException(String message, Throwable t) {
+		super(message,t);
+	}
+
+	public String getSql() {
+		return sql;
 	}
 }

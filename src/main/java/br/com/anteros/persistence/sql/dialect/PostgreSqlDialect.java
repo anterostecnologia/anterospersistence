@@ -237,7 +237,7 @@ public class PostgreSqlDialect extends DatabaseDialect {
 	}
 
 	@Override
-	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws Exception {
+	public SQLSessionException convertSQLException(SQLException ex, String msg, String sql) throws SQLSessionException {
 		final String sqlState = extractSqlState(ex);
 
 		if ("40P01".equals(sqlState)) { // DEADLOCK DETECTED

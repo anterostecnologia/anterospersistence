@@ -50,7 +50,7 @@ import br.com.anteros.persistence.util.AnterosPersistenceHelper;
  * Handler para criação de Objeto baseado em SELECT com Expressões.
  * 
  */
-public class EntityHandler implements ResultSetHandler {
+public class EntityHandler implements ScrollableResultSetHandler {
 	public static final boolean LOAD_ALL_FIELDS = true;
 	protected Class<?> resultClass;
 	protected transient EntityCacheManager entityCacheManager;
@@ -109,16 +109,7 @@ public class EntityHandler implements ResultSetHandler {
 				 * Faz o loop para processar os registros do ResultSet
 				 */
 				do {
-					/*
-					 * Se a classe passada para o handler for uma entidade abstrata localiza no entityCache a classe
-					 * correspondente ao discriminator colum
-					 */
-					EntityCache entityCache = getEntityCacheByResultSetRow(resultClass, resultSet);
-					/*
-					 * Processa a linha do resultSet montando o objeto da classe de resultado
-					 */
-					if (entityCache != null)
-						handleRow(resultSet, result, entityCache, LOAD_ALL_FIELDS);
+					readRow(resultSet, result);
 				} while (resultSet.next());
 			}
 		} catch (SQLException ex) {
@@ -126,6 +117,19 @@ public class EntityHandler implements ResultSetHandler {
 		}
 
 		return result;
+	}
+
+	protected void readRow(ResultSet resultSet, List<Object> result) throws EntityHandlerException, SQLException, Exception {
+		/*
+		 * Se a classe passada para o handler for uma entidade abstrata localiza no entityCache a classe
+		 * correspondente ao discriminator colum
+		 */
+		EntityCache entityCache = getEntityCacheByResultSetRow(resultClass, resultSet);
+		/*
+		 * Processa a linha do resultSet montando o objeto da classe de resultado
+		 */
+		if (entityCache != null)
+			handleRow(resultSet, result, entityCache, LOAD_ALL_FIELDS);
 	}
 
 	static void validateDuplicateColumns(ResultSet resultSet, Class<?> resultClass) throws SQLException, EntityHandlerException {
@@ -146,6 +150,16 @@ public class EntityHandler implements ResultSetHandler {
 			columns.add(resultSet.getMetaData().getColumnLabel(i).toUpperCase());
 		}
 	}
+	
+
+	@Override
+	public Object[] readCurrentRow(ResultSet resultSet) throws Exception {
+		List<Object> result = new ArrayList<Object>();
+		readRow(resultSet, result);
+		return result.toArray();
+	}
+	
+	
 
 	Object handleRow(ResultSet resultSet, List<Object> result, EntityCache entityCache, boolean loadAllFields) throws EntityHandlerException,
 			SQLException, Exception {
@@ -813,4 +827,5 @@ public class EntityHandler implements ResultSetHandler {
 		}
 		this.objectToRefresh = objectToRefresh;
 	}
+
 }
