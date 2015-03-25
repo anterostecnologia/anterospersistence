@@ -363,7 +363,8 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			/*
 			 * Se estiver numa operação e o caminho for chave primária troca o path para a entidade da chave
 			 */
-			if (inOperation && !path.getMetadata().getParent().getMetadata().isRoot()) {
+			if (inOperation && !path.getMetadata().getParent().getMetadata().isRoot()
+					&& !(path.getMetadata().getParent().getMetadata().getPathType() == PathType.COLLECTION_ANY)) {
 				EntityCache targetEntityCache = getEntityCacheByClass(path.getMetadata().getParent().getType());
 				DescriptionField descriptionFieldPath = getDescriptionFieldByPath(targetEntityCache, path.getMetadata().getName() + "");
 				if (descriptionFieldPath.isPrimaryKey() && !descriptionFieldPath.isCompositeId()) {
@@ -404,7 +405,7 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 					processAllFields((keyPath == null ? path : keyPath), targetEntityPath.getExcludeProjection(), aliasTableName, sourceEntityCache,
 							inOperation);
 			} else {
-				DescriptionField descriptionField = getDescriptionFieldByPath(sourceEntityCache, targetPath.getMetadata().getName());
+				DescriptionField descriptionField = getDescriptionFieldByPath(sourceEntityCache, targetPath.getMetadata().getElement() + "");
 				processSingleField((keyPath == null ? path : keyPath), aliasTableName, descriptionField, true);
 			}
 
@@ -893,7 +894,8 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 		 * Se for uma entidade e não for a expressão principal e for o pai da expressão e o estágio for diferente de
 		 * FROM e where.
 		 */
-		boolean fourthCondition = (isEntity && !isExpressionMain && isOwnerOfExpressionMain && (stage != Stage.FROM) && (stage != Stage.WHERE));
+		boolean fourthCondition = (isEntity && !isExpressionMain && isOwnerOfExpressionMain && (((stage != Stage.FROM) && (stage != Stage.WHERE)) || (expr
+				.getMetadata().getPathType() == PathType.COLLECTION_ANY)));
 
 		if ((firstCondition) || (secondCondition) || (thirdCondition) || (fourthCondition)) {
 
