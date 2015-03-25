@@ -20,7 +20,11 @@ public class IndexHint {
 
 	public IndexHint(EntityPath<?> alias, String indexName) {
 		this.aliasPath = alias;
+<<<<<<< .merge_file_Pn7xW0
 		this.alias = alias.getMetadata().getElement()+"";
+=======
+		this.alias = alias.getMetadata().getElement() + "";
+>>>>>>> .merge_file_vKivoq
 		this.indexName = indexName;
 	}
 
