@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 import br.com.anteros.persistence.dsl.osql.ColumnMetadata;
+import br.com.anteros.persistence.dsl.osql.OSQLQueryException;
 import br.com.anteros.persistence.dsl.osql.types.EntityPath;
 import br.com.anteros.persistence.dsl.osql.types.Path;
 import br.com.anteros.persistence.dsl.osql.types.PathMetadata;
@@ -28,7 +29,7 @@ import com.google.common.collect.Maps;
 /**
  * EntityPathBase provides a base class for EntityPath implementations
  *
- * @author tiwe  modified by: Edson Martins
+ * @author tiwe modified by: Edson Martins
  *
  * @param <T>
  *            entity type
@@ -77,7 +78,7 @@ public class EntityPathBase<T> extends BeanPath<T> implements EntityPath<T> {
 	public Set<Path<?>> getCustomProjection() {
 		return customProjection;
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
@@ -92,11 +93,13 @@ public class EntityPathBase<T> extends BeanPath<T> implements EntityPath<T> {
 	@Override
 	public EntityPath<T> customProjection(Path<?>... args) {
 		for (Path<?> arg : args) {
+			if (arg instanceof SetPath<?, ?>)
+				throw new OSQLQueryException("Não possível fazer join de coleções diretamente. Use o método "+arg+".any() da coleção para projetá-la ou realizar operações. ");
 			customProjection.add(arg);
 		}
 		return this;
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */

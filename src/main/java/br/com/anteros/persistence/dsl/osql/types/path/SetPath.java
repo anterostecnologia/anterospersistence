@@ -101,4 +101,12 @@ public class SetPath<E, Q extends SimpleExpression<? super E>> extends Collectio
         }
     }
 
+	public Class<Q> getQueryType() {
+		return queryType;
+	}
+
+	public Q getAny() {
+		return any;
+	}
+
 }
