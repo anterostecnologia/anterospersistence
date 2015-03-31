@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.session.impl;
 
@@ -22,6 +19,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -53,6 +53,7 @@ import br.com.anteros.persistence.sql.statement.NamedParameterStatement;
  * @author Edson Martins - Anteros
  * 
  */
+@SuppressWarnings({"rawtypes","unchecked"})
 public class SQLQueryRunner extends AbstractSQLRunner {
 
 	public int[] batch(Connection connection, String sql, Object[][] parameters) throws Exception {
@@ -84,9 +85,8 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		}
 	}
 
-	public Object query(Connection connection, String sql, ResultSetHandler resultSetHandler, Object[] parameters,
-			boolean showSql, boolean formatSql, int timeOut, List<SQLSessionListener> listeners, String clientId)
-			throws Exception {
+	public Object query(Connection connection, String sql, ResultSetHandler resultSetHandler, Object[] parameters, boolean showSql, boolean formatSql,
+			int timeOut, List<SQLSessionListener> listeners, String clientId) throws Exception {
 		PreparedStatement statement = null;
 		ResultSet resultSet = null;
 		Object result = null;
@@ -116,9 +116,8 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		return result;
 	}
 
-	public Object query(Connection connection, String sql, ResultSetHandler resultSetHandler,
-			NamedParameter[] parameters, boolean showSql, boolean formatSql, int timeOut,
-			List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public Object query(Connection connection, String sql, ResultSetHandler resultSetHandler, NamedParameter[] parameters, boolean showSql, boolean formatSql,
+			int timeOut, List<SQLSessionListener> listeners, String clientId) throws Exception {
 
 		ResultSet resultSet = null;
 		Object result = null;
@@ -139,7 +138,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			resultSet = this.wrap(statement.executeQuery());
 			result = resultSetHandler.handle(resultSet);
 		} catch (SQLException e) {
-			statement=null;
+			statement = null;
 			this.rethrow(e, sql, parameters, clientId);
 
 		} finally {
@@ -147,15 +146,15 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 				close(resultSet);
 			} finally {
 				close(statement);
-				statement=null;
+				statement = null;
 			}
 		}
 		return result;
 	}
 
-	public SQLSessionResult queryWithResultSet(Connection connection, String sql, ResultSetHandler resultSetHandler,
-			NamedParameter[] parameters, boolean showSql, boolean formatSql, int timeOut,
-			List<SQLSessionListener> listeners, String clientId) throws Exception {
+	
+	public SQLSessionResult queryWithResultSet(Connection connection, String sql, ResultSetHandler resultSetHandler, NamedParameter[] parameters,
+			boolean showSql, boolean formatSql, int timeOut, List<SQLSessionListener> listeners, String clientId) throws Exception {
 		SQLSessionResult result = new SQLSessionResult();
 		ResultSet resultSet = null;
 		NamedParameterStatement statement = null;
@@ -177,16 +176,16 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			result.setResultSet(resultSet);
 			result.setResultList(((List) resultHandler));
 		} catch (SQLException e) {
-			statement=null;
+			statement = null;
 			this.rethrow(e, sql, parameters, clientId);
 		}
 
 		return result;
 	}
 
-	public SQLSessionResult queryWithResultSet(Connection connection, String sql, ResultSetHandler resultSetHandler,
-			Object[] parameters, boolean showSql, boolean formatSql, int timeOut, List<SQLSessionListener> listeners,
-			String clientId) throws Exception {
+	
+	public SQLSessionResult queryWithResultSet(Connection connection, String sql, ResultSetHandler resultSetHandler, Object[] parameters, boolean showSql,
+			boolean formatSql, int timeOut, List<SQLSessionListener> listeners, String clientId) throws Exception {
 		SQLSessionResult result = new SQLSessionResult();
 		ResultSet resultSet = null;
 		PreparedStatement statement = null;
@@ -201,9 +200,22 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			}
 
 			resultSet = this.wrap(statement.executeQuery());
-			Object resultHandler = resultSetHandler.handle(resultSet);
+			Object resultHandler = null;
+			if (resultSetHandler != null)
+				resultHandler = resultSetHandler.handle(resultSet);
+
+			if (resultHandler == null)
+				resultHandler = Collections.EMPTY_LIST;
+
+			if (!(resultHandler instanceof List)) {
+				if (resultHandler instanceof Collection)
+					resultHandler = new ArrayList<Object>((Collection<?>) resultHandler);
+				else {
+					resultHandler = Arrays.asList(resultHandler);
+				}
+			}
 			result.setResultSet(resultSet);
-			result.setResultList((List) resultHandler);
+			result.setResultList((List<?>) resultHandler);
 		} catch (SQLException e) {
 			close(statement);
 			this.rethrow(e, sql, parameters, clientId);
@@ -212,9 +224,8 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		return result;
 	}
 
-	public Object query(Connection connection, String sql, ResultSetHandler resultSetHandler,
-			Map<String, Object> parameters, boolean showSql, boolean formatSql, int timeOut,
-			List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public Object query(Connection connection, String sql, ResultSetHandler resultSetHandler, Map<String, Object> parameters, boolean showSql,
+			boolean formatSql, int timeOut, List<SQLSessionListener> listeners, String clientId) throws Exception {
 		ResultSet resultSet = null;
 		Object result = null;
 		NamedParameterStatement statement = null;
@@ -237,7 +248,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			result = resultSetHandler.handle(resultSet);
 		} catch (SQLException e) {
 			close(statement);
-			statement=null;
+			statement = null;
 			this.rethrow(e, sql, parameters, clientId);
 
 		} finally {
@@ -250,18 +261,16 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		return result;
 	}
 
-	public Object queryProcedure(SQLSession session, DatabaseDialect dialect, CallableType type, String name,
-			ResultSetHandler resultSetHandler, NamedParameter[] parameters, boolean showSql, int timeOut,
-			String clientId) throws Exception {
+	public Object queryProcedure(SQLSession session, DatabaseDialect dialect, CallableType type, String name, ResultSetHandler resultSetHandler,
+			NamedParameter[] parameters, boolean showSql, int timeOut, String clientId) throws Exception {
 		CallableStatement statement = null;
 		ResultSet resultSet = null;
 		Object result = null;
 		try {
 			String[] split = name.split("\\(");
-			List<NamedParameter> newParameters = adjustNamedParametersStoredProcedure(session, split[0], parameters,
-					type);
-			statement = dialect.prepareCallableStatement(session.getConnection(), type, split[0],
-					newParameters.toArray(new NamedParameter[] {}), timeOut, showSql, clientId);
+			List<NamedParameter> newParameters = adjustNamedParametersStoredProcedure(session, split[0], parameters, type);
+			statement = dialect.prepareCallableStatement(session.getConnection(), type, split[0], newParameters.toArray(new NamedParameter[] {}), timeOut,
+					showSql, clientId);
 
 			if (type == CallableType.FUNCTION) {
 				if (statement.execute()) {
@@ -290,12 +299,11 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		return result;
 	}
 
-	protected List<NamedParameter> adjustNamedParametersStoredProcedure(SQLSession session, String spName,
-			NamedParameter[] parameters, CallableType type) throws Exception {
+	protected List<NamedParameter> adjustNamedParametersStoredProcedure(SQLSession session, String spName, NamedParameter[] parameters, CallableType type)
+			throws Exception {
 		Set<StoredProcedureSchema> storedProcedures = null;
 		if (type == CallableType.FUNCTION) {
-			storedProcedures = new LinkedHashSet<StoredProcedureSchema>(session.getDialect().getStoredFunctions(
-					session.getConnection(), spName, true));
+			storedProcedures = new LinkedHashSet<StoredProcedureSchema>(session.getDialect().getStoredFunctions(session.getConnection(), spName, true));
 		} else {
 			storedProcedures = session.getDialect().getStoredProcedures(session.getConnection(), spName, true);
 		}
@@ -306,34 +314,27 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		StoredProcedureSchema storedProcedure = storedProcedures.iterator().next();
 		List<NamedParameter> newParameters = new ArrayList<NamedParameter>();
 
-		int size = (parameters ==null?0:parameters.length);
-		if (type==CallableType.FUNCTION)
+		int size = (parameters == null ? 0 : parameters.length);
+		if (type == CallableType.FUNCTION)
 			size++;
-		
-		if (((parameters == null) && (storedProcedure.getParameters().size() > 1))
-				|| ((storedProcedure.getParameters().size() != size))) {
-			throw new SQLQueryException("Número de parâmetros informados para execução do procedimento/função "
-					+ spName + " incorretos.");
+
+		if (((parameters == null) && (storedProcedure.getParameters().size() > 1)) || ((storedProcedure.getParameters().size() != size))) {
+			throw new SQLQueryException("Número de parâmetros informados para execução do procedimento/função " + spName + " incorretos.");
 		}
 
 		for (StoredParameterSchema p : storedProcedure.getParameters()) {
-			if ((p.getParameterType() == StoredParameterType.RETURN_VALUE)
-					|| (p.getParameterType() == StoredParameterType.RETURN_RESULTSET)) {
+			if ((p.getParameterType() == StoredParameterType.RETURN_VALUE) || (p.getParameterType() == StoredParameterType.RETURN_RESULTSET)) {
 				newParameters.add(new OutputNamedParameter("RESULT", p.getParameterType(), p.getDataTypeSql()));
 			} else {
 				NamedParameter namedParameter = NamedParameter.getNamedParameterByName(parameters, p.getName());
 				if (namedParameter == null) {
 					throw new SQLQueryException("Parâmetro " + p.getName()
-							+ " não encontrado na lista de parâmetros informados para execução do procedimento/função "
-							+ spName);
+							+ " não encontrado na lista de parâmetros informados para execução do procedimento/função " + spName);
 				}
 				if (((p.getParameterType() == StoredParameterType.OUT) || (p.getParameterType() == StoredParameterType.IN_OUT))
 						&& !(namedParameter instanceof OutputNamedParameter)) {
-					throw new SQLQueryException(
-							"Parâmetro "
-									+ p.getName()
-									+ " é um parâmetro de saída. Use OuputNamedParameter para parâmetros deste tipo. Procedimento/função "
-									+ spName);
+					throw new SQLQueryException("Parâmetro " + p.getName()
+							+ " é um parâmetro de saída. Use OuputNamedParameter para parâmetros deste tipo. Procedimento/função " + spName);
 				}
 
 				if (namedParameter instanceof OutputNamedParameter) {
@@ -346,18 +347,17 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		return newParameters;
 	}
 
-	public ProcedureResult executeProcedure(SQLSession session, DatabaseDialect dialect, CallableType type,
-			String name, NamedParameter[] parameters, boolean showSql, int timeOut, String clientId) throws Exception {
+	public ProcedureResult executeProcedure(SQLSession session, DatabaseDialect dialect, CallableType type, String name, NamedParameter[] parameters,
+			boolean showSql, int timeOut, String clientId) throws Exception {
 		CallableStatement statement = null;
 		ProcedureResult result = new ProcedureResult();
 		try {
 			String[] split = name.split("\\(");
 			log.debug("Preparando CallableStatement " + split[0] + " ##" + clientId);
-			List<NamedParameter> newParameters = adjustNamedParametersStoredProcedure(session, split[0], parameters,
-					type);
+			List<NamedParameter> newParameters = adjustNamedParametersStoredProcedure(session, split[0], parameters, type);
 
-			statement = dialect.prepareCallableStatement(session.getConnection(), type, split[0],
-					newParameters.toArray(new NamedParameter[] {}), timeOut, showSql, clientId);
+			statement = dialect.prepareCallableStatement(session.getConnection(), type, split[0], newParameters.toArray(new NamedParameter[] {}), timeOut,
+					showSql, clientId);
 
 			if (type == CallableType.FUNCTION) {
 				if (statement.execute()) {
@@ -391,19 +391,18 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 
 	}
 
-	public Object query(Connection conn, String sql, ResultSetHandler resultSetHandler, boolean showSql,
-			boolean formatSql, List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public Object query(Connection conn, String sql, ResultSetHandler resultSetHandler, boolean showSql, boolean formatSql, List<SQLSessionListener> listeners,
+			String clientId) throws Exception {
 		return this.query(conn, sql, resultSetHandler, (Object[]) null, showSql, formatSql, 0, listeners, clientId);
 	}
 
-	public Object query(Connection conn, String sql, ResultSetHandler resultSetHandler, boolean showSql,
-			boolean formatSql, int timeOut, List<SQLSessionListener> listeners, String clientId) throws Exception {
-		return this.query(conn, sql, resultSetHandler, (Object[]) null, showSql, formatSql, timeOut, listeners,
-				clientId);
+	public Object query(Connection conn, String sql, ResultSetHandler resultSetHandler, boolean showSql, boolean formatSql, int timeOut,
+			List<SQLSessionListener> listeners, String clientId) throws Exception {
+		return this.query(conn, sql, resultSetHandler, (Object[]) null, showSql, formatSql, timeOut, listeners, clientId);
 	}
 
-	public Object query(String sql, ResultSetHandler rsh, Object[] parameters, boolean showSql, boolean formatSql,
-			List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public Object query(String sql, ResultSetHandler rsh, Object[] parameters, boolean showSql, boolean formatSql, List<SQLSessionListener> listeners,
+			String clientId) throws Exception {
 		Connection connection = this.prepareConnection();
 		try {
 			return this.query(connection, sql, rsh, parameters, showSql, formatSql, 0, listeners, clientId);
@@ -412,39 +411,38 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		}
 	}
 
-	public Object query(String sql, ResultSetHandler resultSetHandler, Object[] parameters, boolean showSql,
-			boolean formatSql, int timeOut, List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public Object query(String sql, ResultSetHandler resultSetHandler, Object[] parameters, boolean showSql, boolean formatSql, int timeOut,
+			List<SQLSessionListener> listeners, String clientId) throws Exception {
 		Connection conn = this.prepareConnection();
 		try {
-			return this
-					.query(conn, sql, resultSetHandler, parameters, showSql, formatSql, timeOut, listeners, clientId);
+			return this.query(conn, sql, resultSetHandler, parameters, showSql, formatSql, timeOut, listeners, clientId);
 		} finally {
 			close(conn);
 		}
 	}
 
-	public Object query(String sql, ResultSetHandler resultSetHandler, boolean showSql, boolean formatSql,
-			List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public Object query(String sql, ResultSetHandler resultSetHandler, boolean showSql, boolean formatSql, List<SQLSessionListener> listeners, String clientId)
+			throws Exception {
 		return this.query(sql, resultSetHandler, (Object[]) null, showSql, formatSql, listeners, clientId);
 	}
 
-	public Object query(String sql, ResultSetHandler resultSetHandler, boolean showSql, boolean formatSql, int timeOut,
-			List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public Object query(String sql, ResultSetHandler resultSetHandler, boolean showSql, boolean formatSql, int timeOut, List<SQLSessionListener> listeners,
+			String clientId) throws Exception {
 		return this.query(sql, resultSetHandler, (Object[]) null, showSql, formatSql, timeOut, listeners, clientId);
 	}
 
-	public ResultSet executeQuery(Connection connection, String sql, NamedParameter[] parameters, boolean showSql,
-			boolean formatSql, List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public ResultSet executeQuery(Connection connection, String sql, NamedParameter[] parameters, boolean showSql, boolean formatSql,
+			List<SQLSessionListener> listeners, String clientId) throws Exception {
 		return executeQuery(connection, sql, parameters, showSql, formatSql, 0, listeners, clientId);
 	}
 
-	public ResultSet executeQuery(Connection connection, String sql, boolean showSql, boolean formatSql, int timeOut,
-			List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public ResultSet executeQuery(Connection connection, String sql, boolean showSql, boolean formatSql, int timeOut, List<SQLSessionListener> listeners,
+			String clientId) throws Exception {
 		return executeQuery(connection, sql, (Object[]) null, showSql, formatSql, timeOut, listeners, clientId);
 	}
 
-	public ResultSet executeQuery(Connection connection, String sql, NamedParameter[] parameters, boolean showSql,
-			boolean formatSql, int timeOut, List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public ResultSet executeQuery(Connection connection, String sql, NamedParameter[] parameters, boolean showSql, boolean formatSql, int timeOut,
+			List<SQLSessionListener> listeners, String clientId) throws Exception {
 		ResultSet result = null;
 		NamedParameterStatement statement = null;
 		try {
@@ -464,8 +462,8 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		return result;
 	}
 
-	public ResultSet executeQuery(Connection connection, String sql, Object[] parameters, boolean showSql,
-			boolean formatSql, int timeOut, List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public ResultSet executeQuery(Connection connection, String sql, Object[] parameters, boolean showSql, boolean formatSql, int timeOut,
+			List<SQLSessionListener> listeners, String clientId) throws Exception {
 		PreparedStatement statement = null;
 		ResultSet result = null;
 		try {
@@ -483,8 +481,8 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		return result;
 	}
 
-	public ResultSet executeQuery(Connection connection, String sql, Map<String, Object> parameters, boolean showSql,
-			boolean formatSql, int timeOut, List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public ResultSet executeQuery(Connection connection, String sql, Map<String, Object> parameters, boolean showSql, boolean formatSql, int timeOut,
+			List<SQLSessionListener> listeners, String clientId) throws Exception {
 		ResultSet resultSet = null;
 		NamedParameterStatement statement = null;
 		try {
@@ -509,7 +507,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 
 		} finally {
 			close(statement);
-			statement=null;
+			statement = null;
 		}
 
 		return resultSet;
@@ -519,20 +517,18 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		return this.update(connection, sql, (Object[]) null, listeners);
 	}
 
-	public int update(Connection connection, String sql, Object[] parameters, List<SQLSessionListener> listeners)
-			throws Exception {
+	public int update(Connection connection, String sql, Object[] parameters, List<SQLSessionListener> listeners) throws Exception {
 
 		return this.update(connection, sql, parameters, false, listeners, "");
 	}
 
-	public int update(Connection connection, String sql, NamedParameter[] parameters, List<SQLSessionListener> listeners)
-			throws Exception {
+	public int update(Connection connection, String sql, NamedParameter[] parameters, List<SQLSessionListener> listeners) throws Exception {
 
 		return this.update(connection, sql, parameters, false, listeners, "");
 	}
 
-	public int update(Connection connection, String sql, Object[] parameters, boolean showSql,
-			List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public int update(Connection connection, String sql, Object[] parameters, boolean showSql, List<SQLSessionListener> listeners, String clientId)
+			throws Exception {
 
 		PreparedStatement statement = null;
 		int rows = 0;
@@ -557,9 +553,8 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		return rows;
 	}
 
-	public int update(Connection connection, String sql, Object[] parameters,
-			IdentifierPostInsert identifierPostInsert, String identitySelectString, boolean showSql,
-			List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public int update(Connection connection, String sql, Object[] parameters, IdentifierPostInsert identifierPostInsert, String identitySelectString,
+			boolean showSql, List<SQLSessionListener> listeners, String clientId) throws Exception {
 		PreparedStatement statement = null;
 		PreparedStatement statementGeneratedKeys = null;
 		ResultSet rsGeneratedKeys;
@@ -599,8 +594,8 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		return rows;
 	}
 
-	public int update(Connection connection, String sql, NamedParameter[] parameters, boolean showSql,
-			List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public int update(Connection connection, String sql, NamedParameter[] parameters, boolean showSql, List<SQLSessionListener> listeners, String clientId)
+			throws Exception {
 		NamedParameterStatement statement = null;
 		int rows = 0;
 		try {
@@ -618,15 +613,14 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 
 		} finally {
 			close(statement);
-			statement=null;
+			statement = null;
 		}
 
 		return rows;
 	}
 
-	public int update(Connection connection, String sql, NamedParameter[] parameters,
-			IdentifierPostInsert identifierPostInsert, String identitySelectString, boolean showSql,
-			List<SQLSessionListener> listeners, String clientId) throws Exception {
+	public int update(Connection connection, String sql, NamedParameter[] parameters, IdentifierPostInsert identifierPostInsert, String identitySelectString,
+			boolean showSql, List<SQLSessionListener> listeners, String clientId) throws Exception {
 		NamedParameterStatement statement = null;
 		PreparedStatement stmtGeneratedKeys = null;
 		ResultSet rsGeneratedKeys;
@@ -665,36 +659,32 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 			if (statement != null)
 				close(statement.getStatement());
 			close(stmtGeneratedKeys);
-			statement=null;
-			stmtGeneratedKeys=null;
+			statement = null;
+			stmtGeneratedKeys = null;
 		}
 
 		return rows;
 	}
 
-	public ResultSet executeQuery(Connection connection, String sql, boolean showSql, boolean formatSql, String clientId)
-			throws Exception {
+	public ResultSet executeQuery(Connection connection, String sql, boolean showSql, boolean formatSql, String clientId) throws Exception {
 		if (showSql)
 			log.debug("Sql-> " + (formatSql == true ? SQLFormatter.format(sql) : sql) + " ##" + clientId);
 		return connection.prepareStatement(sql).executeQuery();
 	}
 
 	@Override
-	public int update(Connection connection, String sql, Object parameter, List<SQLSessionListener> listeners)
-			throws Exception {
+	public int update(Connection connection, String sql, Object parameter, List<SQLSessionListener> listeners) throws Exception {
 		return update(connection, sql, new Object[] { parameter }, false, listeners, "");
 	}
 
 	@Override
-	public void executeDDL(Connection connection, String ddl, boolean showSql, boolean formatSql, String clientId)
-			throws Exception {
+	public void executeDDL(Connection connection, String ddl, boolean showSql, boolean formatSql, String clientId) throws Exception {
 		if (showSql)
 			log.debug("DDL-> " + (formatSql == true ? SQLFormatter.format(ddl) : ddl) + " ##" + clientId);
 		connection.prepareStatement(ddl).executeUpdate();
 	}
 
-	protected void showSQLAndParameters(String sql, Object[] parameters, boolean formatSql,
-			List<SQLSessionListener> listeners, String clientId) {
+	protected void showSQLAndParameters(String sql, Object[] parameters, boolean formatSql, List<SQLSessionListener> listeners, String clientId) {
 		String sqlFormatted = (formatSql == true ? SQLFormatter.format(sql) : sql);
 		System.out.println("Sql-> " + sqlFormatted + " ##" + clientId);
 
@@ -715,8 +705,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 				listener.onExecuteSQL(sqlFormatted, parameters);
 	}
 
-	protected void showSQLAndParameters(String sql, NamedParameter[] parameters, boolean formatSql,
-			List<SQLSessionListener> listeners, String clientId) {
+	protected void showSQLAndParameters(String sql, NamedParameter[] parameters, boolean formatSql, List<SQLSessionListener> listeners, String clientId) {
 		String sqlFormatted = (formatSql == true ? SQLFormatter.format(sql) : sql);
 		System.out.println("Sql-> " + sqlFormatted + " ##" + clientId);
 		if ((parameters != null) && (parameters.length > 0)) {
@@ -737,8 +726,7 @@ public class SQLQueryRunner extends AbstractSQLRunner {
 		}
 	}
 
-	protected void showSQLAndParameters(String sql, Map<String, Object> parameters, boolean formatSql,
-			List<SQLSessionListener> listeners, String clientId) {
+	protected void showSQLAndParameters(String sql, Map<String, Object> parameters, boolean formatSql, List<SQLSessionListener> listeners, String clientId) {
 		String sqlFormatted = (formatSql == true ? SQLFormatter.format(sql) : sql);
 		System.out.println("Sql-> " + sqlFormatted + " ##" + clientId);
 		if ((parameters != null) && (parameters.size() > 0)) {

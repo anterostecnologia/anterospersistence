@@ -19,10 +19,12 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,12 +33,17 @@ import java.util.TreeMap;
 import br.com.anteros.core.utils.ObjectUtils;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
+import br.com.anteros.persistence.dsl.osql.SQLAnalyserColumn;
 import br.com.anteros.persistence.handler.ArrayListHandler;
 import br.com.anteros.persistence.handler.BeanHandler;
 import br.com.anteros.persistence.handler.ElementCollectionHandler;
 import br.com.anteros.persistence.handler.ElementMapHandler;
 import br.com.anteros.persistence.handler.MultiSelectHandler;
+import br.com.anteros.persistence.handler.ResultClassColumnInfo;
+import br.com.anteros.persistence.handler.ResultClassDefinition;
 import br.com.anteros.persistence.handler.ResultSetHandler;
+import br.com.anteros.persistence.handler.ScrollableResultSetHandler;
+import br.com.anteros.persistence.handler.SingleValueHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityManaged;
 import br.com.anteros.persistence.metadata.annotation.type.FetchMode;
@@ -60,6 +67,7 @@ import br.com.anteros.persistence.session.cache.SQLCache;
 import br.com.anteros.persistence.session.cache.WeakReferenceSQLCache;
 import br.com.anteros.persistence.session.lock.LockMode;
 import br.com.anteros.persistence.session.lock.LockOptions;
+import br.com.anteros.persistence.session.query.ResultSetTransformer;
 import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyzer;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyzerException;
@@ -67,26 +75,42 @@ import br.com.anteros.persistence.session.query.SQLQueryAnalyzerResult;
 import br.com.anteros.persistence.session.query.SQLQueryException;
 import br.com.anteros.persistence.session.query.SQLQueryNoResultException;
 import br.com.anteros.persistence.session.query.SQLQueryNonUniqueResultException;
+import br.com.anteros.persistence.session.query.ScrollableResultSet;
+import br.com.anteros.persistence.session.query.ScrollableResultSetImpl;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
 import br.com.anteros.persistence.sql.command.Select;
 import br.com.anteros.persistence.sql.dialect.type.LimitClauseResult;
+import br.com.anteros.persistence.sql.format.SqlFormatRule;
 import br.com.anteros.persistence.sql.lob.AnterosBlob;
 import br.com.anteros.persistence.sql.lob.AnterosClob;
+import br.com.anteros.persistence.sql.parser.INode;
+import br.com.anteros.persistence.sql.parser.Node;
+import br.com.anteros.persistence.sql.parser.ParserUtil;
+import br.com.anteros.persistence.sql.parser.SqlParser;
+import br.com.anteros.persistence.sql.parser.node.ColumnNode;
+import br.com.anteros.persistence.sql.parser.node.RootNode;
+import br.com.anteros.persistence.sql.parser.node.SelectStatementNode;
 import br.com.anteros.persistence.sql.statement.NamedParameterStatement;
 import br.com.anteros.persistence.util.SQLParserUtil;
 
 @SuppressWarnings("all")
 public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	protected SQLSession session;
-	private Class<?> resultClass;
+	private List<ResultClassDefinition> resultClassDefinitionsList = new ArrayList<ResultClassDefinition>();
 	protected Identifier identifier;
 	protected boolean showSql;
 	protected boolean formatSql;
-	protected ResultSetHandler handler;
+	protected ResultSetHandler customHandler;
+	protected ResultSetTransformer<T> resultTransformer;
+	private String sql;
 	protected Map<Integer, NamedParameter> namedParameters = new TreeMap<Integer, NamedParameter>();
 	protected Map<Integer, Object> parameters = new TreeMap<Integer, Object>();
+	protected Map<Integer, NamedParameter> parsedNamedParameters;
+	protected Map<Integer, Object> parsedParameters;
+	private String parsedSql;
+
 	public final int DEFAULT_CACHE_SIZE = 100000;
-	private String sql;
+
 	public static int FIRST_RECORD = 0;
 	protected int timeOut = 0;
 	private String namedQuery;
@@ -95,6 +119,8 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	private int firstResult;
 	private int maxResults;
 	private boolean readOnly = false;
+	private SelectStatementNode firstStatement;
+	private int nextAliasColumnName;
 
 	public SQLQueryImpl(SQLSession session) {
 		this.session = session;
@@ -102,12 +128,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	public SQLQueryImpl(SQLSession session, Class<?> resultClass) {
 		this.session = session;
-		this.resultClass = resultClass;
-	}
-
-	public TypedSQLQuery<T> resultClass(Class<?> resultClass) {
-		this.setResultClass(resultClass);
-		return this;
+		this.addEntityResult(resultClass);
 	}
 
 	public TypedSQLQuery<T> identifier(Identifier<?> identifier) {
@@ -121,6 +142,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	public TypedSQLQuery<T> sql(String sql) {
 		this.sql = parseSql(sql, parameters, namedParameters);
+		firstStatement = null;
 		return this;
 	}
 
@@ -163,7 +185,12 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 	}
 
 	public TypedSQLQuery<T> resultSetHandler(ResultSetHandler handler) {
-		this.handler = handler;
+		this.customHandler = handler;
+		return this;
+	}
+
+	public TypedSQLQuery<T> resultSetTransformer(ResultSetTransformer resultTransformer) {
+		this.resultTransformer = resultTransformer;
 		return this;
 	}
 
@@ -394,54 +421,157 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		 * Se for uma query nomeada
 		 */
 		if (this.getNamedQuery() != null) {
-			EntityCache cache = session.getEntityCacheManager().getEntityCache(getResultClass());
-			DescriptionNamedQuery namedQuery = cache.getDescriptionNamedQuery(this.getNamedQuery());
+			DescriptionNamedQuery namedQuery = findNamedQuery();
 			if (namedQuery == null)
 				throw new SQLQueryException("Query nomeada " + this.getNamedQuery() + " não encontrada.");
 			this.sql = namedQuery.getQuery();
 			this.lockOptions = namedQuery.getLockOptions();
 		}
-		List result = null;
-		/*
-		 * Se o usuário setou um Handler específico. Processa o resultSet com o handler e devolve o objeto em forma de
-		 * lista caso o resultado já não seja uma lista
-		 */
 
-		if (getResultClass() != null) {
-			/*
-			 * Processa o resultSet usando o EntityHandler para criar os objetos
-			 */
-			result = getResultListByEntityHandler(null);
-		} else {
-			Object resultObject = getResultObjectByCustomHandler((handler != null ? handler : new ArrayListHandler()));
-			if (resultObject instanceof Collection)
-				result = new ArrayList((Collection) resultObject);
-			else {
-				result = new ArrayList();
-				result.add(resultObject);
+		ResultSetHandler targetHandler = getAppropriateResultSetHandler();
+
+		try {
+
+			Object result = null;
+
+			if (parsedParameters.size() > 0)
+				result = session.getRunner().query(session.getConnection(), parsedSql, targetHandler, parsedParameters.values().toArray(), showSql, formatSql,
+						timeOut, session.getListeners(), session.clientId());
+			else if (parsedNamedParameters.size() > 0)
+				result = session.getRunner().query(session.getConnection(), parsedSql, targetHandler,
+						parsedNamedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql, timeOut, session.getListeners(),
+						session.clientId());
+			else
+				result = session.getRunner().query(session.getConnection(), parsedSql, targetHandler, showSql, formatSql, timeOut, session.getListeners(),
+						session.clientId());
+
+			if (result == null)
+				return Collections.EMPTY_LIST;
+
+			if (!(result instanceof List)) {
+				if (result instanceof Collection)
+					result = new ArrayList((Collection) result);
+				else {
+					result = Arrays.asList(result);
+				}
 			}
-		}
 
-		if (result == null)
-			return Collections.EMPTY_LIST;
-		return result;
+			if (resultTransformer != null) {
+				List<?> results = (List<?>) result;
+				List<Object> rv = new ArrayList<Object>(results.size());
+				for (Object o : results) {
+					if (o != null) {
+						if (!o.getClass().isArray()) {
+							o = new Object[] { o };
+						}
+						rv.add(resultTransformer.newInstance((Object[]) o));
+					} else {
+						rv.add(null);
+					}
+				}
+				return rv;
+			} else {
+				return (List) result;
+			}
+
+		} catch (SQLException ex) {
+			throw session.getDialect().convertSQLException(ex, "Não foi possível executar a consulta " + parsedSql, parsedSql);
+		} finally {
+			session.getPersistenceContext().clearCache();
+		}
 	}
 
-	protected List getResultListByEntityHandler(Object objectToRefresh) throws Exception, SQLQueryAnalyzerException, SQLException {
+	@Override
+	public ScrollableResultSet getScrollableResultSet() throws Exception {
+		if ((this.parameters.size() > 0) && (this.namedParameters.size() > 0))
+			throw new SQLQueryException("Use apenas um formato de parâmetros. Parâmetros nomeados ou lista de parâmetros.");
+		/*
+		 * Se for uma query nomeada
+		 */
+		if (this.getNamedQuery() != null) {
+			DescriptionNamedQuery namedQuery = findNamedQuery();
+			if (namedQuery == null)
+				throw new SQLQueryException("Query nomeada " + this.getNamedQuery() + " não encontrada.");
+			this.sql = namedQuery.getQuery();
+			this.lockOptions = namedQuery.getLockOptions();
+		}
+
+		ResultSetHandler resultSetHandler = getAppropriateResultSetHandler();
+		if (!(resultSetHandler instanceof ScrollableResultSetHandler)) {
+			throw new SQLQueryException("O resultSetHandler " + resultSetHandler.getClass().getName()
+					+ " sendo usado para processar o ResultSet não extends ScrollableResultSetHandler. Não será possível navegar o resultado.");
+		}
+
+		ScrollableResultSetHandler scrollableHandler = (ScrollableResultSetHandler) getAppropriateResultSetHandler();
+
+		try {
+			SQLSessionResult<?> result = null;
+
+			if (parsedParameters.size() > 0)
+				result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, null, parsedParameters.values().toArray(), showSql,
+						formatSql, timeOut, session.getListeners(), session.clientId());
+			else if (parsedNamedParameters.size() > 0)
+				result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, null,
+						parsedNamedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql, timeOut, session.getListeners(),
+						session.clientId());
+			else
+				result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, null, new NamedParameterParserResult[] {}, showSql,
+						formatSql, timeOut, session.getListeners(), session.clientId());
+
+			return new ScrollableResultSetImpl(session, result.getResultSet(), scrollableHandler);
+
+		} catch (SQLException ex) {
+			throw session.getDialect().convertSQLException(ex, "Não foi possível executar a consulta " + parsedSql, parsedSql);
+		} finally {
+			session.getPersistenceContext().clearCache();
+		}
+	}
+
+	protected DescriptionNamedQuery findNamedQuery() {
+		for (ResultClassDefinition resultClassDefinition : resultClassDefinitionsList) {
+			if (session.getEntityCacheManager().isEntity(resultClassDefinition.getResultClass())) {
+				EntityCache cache = session.getEntityCacheManager().getEntityCache(resultClassDefinition.getResultClass());
+				DescriptionNamedQuery namedQuery = cache.getDescriptionNamedQuery(this.getNamedQuery());
+				return namedQuery;
+			}
+		}
+		return null;
+	}
+
+	private boolean resultIsOneEntity() {
+		if ((resultClassDefinitionsList.size() == 1) || (this.identifier != null)) {
+			return session.getEntityCacheManager().isEntity(resultClassDefinitionsList.get(0).getResultClass());
+		}
+
+		return false;
+	}
+
+	private boolean resultIsMultiSelect() {
+		return (resultClassDefinitionsList.size() > 1);
+	}
+
+	private boolean resultIsSingleValue() {
+		if ((resultClassDefinitionsList.size() == 1) && (this.identifier == null)) {
+			return !session.getEntityCacheManager().isEntity(resultClassDefinitionsList.get(0).getResultClass());
+		}
+		return false;
+	}
+
+	protected List getResultListByEntityHandler(Class<?> resultClass, Object objectToRefresh) throws Exception, SQLQueryAnalyzerException, SQLException {
 		List result;
-		if (getResultClass() == null)
-			throw new SQLQueryException("Informe a Classe para executar a consulta.");
+		if (resultClassDefinitionsList.size() == 0)
+			throw new SQLQueryException("Defina uma entidade ou coluna de retorno para a consulta SQL.");
 
 		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
 
-		EntityCache entityCache = session.getEntityCacheManager().getEntityCache(getResultClass());
+		EntityCache entityCache = session.getEntityCacheManager().getEntityCache(resultClass);
 		ResultSetHandler handler = null;
 
-		SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(getResultClass().getName() + ":" + sql);
+		SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(resultClass.getName() + ":" + sql);
 		if (analyzerResult == null) {
 			analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect(), !SQLQueryAnalyzer.IGNORE_NOT_USED_ALIAS_TABLE)
-					.analyze(sql, getResultClass());
-			PersistenceMetadataCache.getInstance().put(getResultClass().getName() + ":" + sql, analyzerResult);
+					.analyze(sql, resultClass);
+			PersistenceMetadataCache.getInstance().put(resultClass.getName() + ":" + sql, analyzerResult);
 		}
 
 		SQLCache transactionCache = new WeakReferenceSQLCache();
@@ -458,10 +588,10 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 		try {
 			if (entityCache == null)
-				handler = new BeanHandler(getResultClass());
+				handler = new BeanHandler(resultClass);
 			else {
 				if (sql.toLowerCase().indexOf(entityCache.getTableName().toLowerCase()) < 0) {
-					throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + getResultClass().getName()
+					throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + resultClass.getName()
 							+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 				}
 				/*
@@ -473,7 +603,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 				lockOpts.setAliasesToLock(analyzerResult.getColumnNamesToLock(lockOptions.getAliasesToLock()));
 				parsedSql = (session.getDialect().supportsLock() ? session.applyLock(parsedSql, resultClass, lockOpts) : parsedSql);
 
-				handler = session.createNewEntityHandler(getResultClass(), analyzerResult.getExpressionsFieldMapper(), analyzerResult.getColumnAliases(),
+				handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressionsFieldMapper(), analyzerResult.getColumnAliases(),
 						transactionCache, allowDuplicateObjects, objectToRefresh, firstResult, maxResults, readOnly, lockOptions);
 			}
 
@@ -564,58 +694,19 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		return parsedSql;
 	}
 
-	protected T getSingleResultId() throws Exception {
-		if (identifier == null)
-			throw new SQLQueryException("Informe o Identicador para executar a consulta.");
-
-		Select select = new Select(session.getDialect());
-		select.addTableName(identifier.getEntityCache().getTableName());
-		Map<String, Object> columns = identifier.getDatabaseColumns();
-		List<NamedParameter> params = new ArrayList<NamedParameter>();
-		boolean appendOperator = false;
-		for (String column : columns.keySet()) {
-			if (appendOperator)
-				select.and();
-			select.addCondition(column, "=", ":P" + column);
-			params.add(new NamedParameter("P" + column, columns.get(column)));
-			appendOperator = true;
-		}
-		this.sql(select.toStatementString());
-		this.resultClass(identifier.getClazz());
-		this.setParameters(params.toArray(new NamedParameter[] {}));
-		Object objectToRefresh = null;
-		if (identifier.isOnlyRefreshOwner()) {
-			objectToRefresh = identifier.getOwner();
-		}
-		List<T> resultList = getResultListByEntityHandler(objectToRefresh);
-		if ((resultList != null) && (resultList.size() > 0))
-			return resultList.get(0);
-		else {
-			if (identifier.isOnlyRefreshOwner()) {
-				throw new SQLQueryException("Objeto não encontrado. Não foi possível realizar o refresh. ");
-			}
-		}
-		return null;
-	}
-
 	public T getSingleResult() throws Exception {
 		if ((this.parameters.size() > 0) && (this.namedParameters.size() > 0))
 			throw new SQLQueryException("Use apenas um formato de parâmetros. Parâmetros nomeados ou lista de parâmetros.");
 
-		if (identifier != null) {
-			return getSingleResultId();
-		} else if (this.getNamedQuery() != null) {
-			EntityCache entityCache = session.getEntityCacheManager().getEntityCache(getResultClass());
-			DescriptionNamedQuery namedQuery = entityCache.getDescriptionNamedQuery(this.getNamedQuery());
+		if (this.getNamedQuery() != null) {
+			DescriptionNamedQuery namedQuery = findNamedQuery();
 			if (namedQuery == null)
 				throw new SQLQueryException("Query nomeada " + this.getNamedQuery() + " não encontrada.");
 			this.sql = namedQuery.getQuery();
 			this.lockOptions = namedQuery.getLockOptions();
 		}
-		/*
-		 * Se o usuário setou um Handler específico. Processa o resultSet com o handler e devolve o objeto.
-		 */
-		Object result = ((getResultClass() != null ? getResultList() : getResultObjectByCustomHandler((handler != null ? handler : new ArrayListHandler()))));
+
+		Object result = getResultList();
 
 		if (result instanceof Collection) {
 			Collection resultCollection = (Collection) result;
@@ -630,45 +721,12 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		}
 
 		return (T) result;
-
-	}
-
-	protected Object getResultObjectByCustomHandler(ResultSetHandler customHandler) throws Exception {
-		if ((this.parameters.size() > 0) && (this.namedParameters.size() > 0))
-			throw new SQLQueryException("Use apenas um formato de parâmetros. Parâmetros nomeados ou lista de parâmetros.");
-		if (customHandler == null)
-			throw new SQLQueryException("Informe o ResultSetHandler para executar a consulta.");
-
-		Object result = null;
-		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
-		String parsedSql = sql;
-		if (customHandler instanceof MultiSelectHandler)
-			parsedSql = ((MultiSelectHandler) customHandler).getParsedSql();
-
-		Map<Integer, NamedParameter> tempNamedParameters = new TreeMap<Integer, NamedParameter>(this.namedParameters);
-		Map<Integer, Object> tempParameters = new TreeMap<Integer, Object>(this.parameters);
-
-		parsedSql = appendLimit(parsedSql, tempParameters, tempNamedParameters);
-
-		parsedSql = (session.getDialect().supportsLock() ? session.applyLock(parsedSql, resultClass, lockOptions) : parsedSql);
-
-		if (tempParameters.size() > 0)
-			result = session.getRunner().query(session.getConnection(), parsedSql, customHandler, tempParameters.values().toArray(), showSql, formatSql,
-					timeOut, session.getListeners(), session.clientId());
-		else if (tempNamedParameters.size() > 0)
-			result = session.getRunner().query(session.getConnection(), parsedSql, customHandler,
-					tempNamedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql, timeOut, session.getListeners(), session.clientId());
-		else
-			result = session.getRunner().query(session.getConnection(), parsedSql, customHandler, showSql, formatSql, timeOut, session.getListeners(),
-					session.clientId());
-
-		return result;
 	}
 
 	protected SQLSessionResult getResultObjectAndResultSetByCustomHandler() throws Exception {
 		if ((this.parameters.size() > 0) && (this.namedParameters.size() > 0))
 			throw new SQLQueryException("Use apenas um formato de parâmetros. Parâmetros nomeados ou lista de parâmetros.");
-		if (handler == null)
+		if (customHandler == null)
 			throw new SQLQueryException("Informe o ResultSetHandler para executar a consulta.");
 
 		SQLSessionResult result = null;
@@ -676,16 +734,16 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 		String parsedSql = sql;
 		if (session.getDialect().supportsLock())
-			parsedSql = session.applyLock(parsedSql, resultClass, lockOptions);
+			parsedSql = session.applyLock(parsedSql, null, lockOptions);
 
 		if (this.parameters.size() > 0)
-			result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, handler, parameters.values().toArray(), showSql, formatSql,
-					timeOut, session.getListeners(), session.clientId());
+			result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, customHandler, parameters.values().toArray(), showSql,
+					formatSql, timeOut, session.getListeners(), session.clientId());
 		else if (this.namedParameters.size() > 0)
-			result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, handler,
+			result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, customHandler,
 					namedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql, timeOut, session.getListeners(), session.clientId());
 		else
-			result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, handler, new NamedParameterParserResult[] {}, showSql,
+			result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, customHandler, new NamedParameterParserResult[] {}, showSql,
 					formatSql, timeOut, session.getListeners(), session.clientId());
 		return result;
 	}
@@ -1050,7 +1108,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		return sql;
 	}
 
-	private Object getResultFromSelect(Object owner, final DescriptionField descFieldOwner, Cache transactionCache, Object result)
+	protected Object getResultFromSelect(Object owner, final DescriptionField descFieldOwner, Cache transactionCache, Object result)
 			throws IllegalAccessException, InvocationTargetException, Exception {
 		/*
 		 * Pega o SQL
@@ -1087,7 +1145,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		return result;
 	}
 
-	private Object getResultFromForeignKey(EntityCache targetEntityCache, final DescriptionField descriptionFieldOwner, Map<String, Object> columnKeyTarget,
+	protected Object getResultFromForeignKey(EntityCache targetEntityCache, final DescriptionField descriptionFieldOwner, Map<String, Object> columnKeyTarget,
 			Cache transactionCache) throws Exception {
 		for (Object value : columnKeyTarget.values()) {
 			if (value == null)
@@ -1151,14 +1209,14 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		return result;
 	}
 
-	public Object getResultOneToLazyLoad(String sql, NamedParameter[] namedParameter, Class<?> resultClass, Cache transactionCache) throws Exception {
+	protected Object getResultOneToLazyLoad(String sql, NamedParameter[] namedParameter, Class<?> resultClass, Cache transactionCache) throws Exception {
 		List result = getResultListToLoadData(sql, namedParameter, resultClass, transactionCache);
 		if ((result != null) && (result.size() > 0))
 			return result.get(FIRST_RECORD);
 		return null;
 	}
 
-	public Object getResultOneToLazyLoad(String sql, Object[] parameter, Class<?> resultClass, Cache transactionCache) throws Exception {
+	protected Object getResultOneToLazyLoad(String sql, Object[] parameter, Class<?> resultClass, Cache transactionCache) throws Exception {
 		List result = getResultListToLazyLoad(sql, parameter, resultClass, transactionCache);
 		if (result != null)
 			return result.get(FIRST_RECORD);
@@ -1288,31 +1346,30 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		String parsedSql = sql;
 
 		if (entityCache == null)
-			handler = new BeanHandler(resultClass);
-		else {
-			if (sql.toLowerCase().indexOf(" " + entityCache.getTableName().toLowerCase()) < 0) {
-				throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + resultClass.getName()
-						+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
-			}
+			throw new SQLQueryException("A classe " + resultClass + " não foi encontrada na lista de entidades sendo gerenciadas.");
 
-			SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(resultClass.getName() + ":" + sql);
-			if (analyzerResult == null) {
-				analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect(), !SQLQueryAnalyzer.IGNORE_NOT_USED_ALIAS_TABLE)
-						.analyze(sql, resultClass);
-				PersistenceMetadataCache.getInstance().put(resultClass.getName() + ":" + sql, analyzerResult);
-			}
-
-			handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressionsFieldMapper(), analyzerResult.getColumnAliases(),
-					transactionCache, false, null, firstResult, maxResults, readOnly, lockOptions);
-			/*
-			 * Cria um cópia do LockOptions e adiciona as colunas dos aliases caso o usuário tenha informado pegando o
-			 * nome da colunas do resultado da análise do SQL.
-			 */
-			LockOptions lockOpts = lockOptions.copy(lockOptions, new LockOptions());
-			lockOpts.setAliasesToLock(analyzerResult.getColumnNamesToLock(lockOptions.getAliasesToLock()));
-			parsedSql = (session.getDialect().supportsLock() ? session.applyLock(analyzerResult.getParsedSql(), resultClass, lockOpts) : analyzerResult
-					.getParsedSql());
+		if (sql.toLowerCase().indexOf(" " + entityCache.getTableName().toLowerCase()) < 0) {
+			throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + resultClass.getName()
+					+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 		}
+
+		SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(resultClass.getName() + ":" + sql);
+		if (analyzerResult == null) {
+			analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect(), !SQLQueryAnalyzer.IGNORE_NOT_USED_ALIAS_TABLE)
+					.analyze(sql, resultClass);
+			PersistenceMetadataCache.getInstance().put(resultClass.getName() + ":" + sql, analyzerResult);
+		}
+
+		handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressionsFieldMapper(), analyzerResult.getColumnAliases(), transactionCache,
+				false, null, firstResult, maxResults, readOnly, lockOptions);
+		/*
+		 * Cria um cópia do LockOptions e adiciona as colunas dos aliases caso o usuário tenha informado pegando o nome
+		 * da colunas do resultado da análise do SQL.
+		 */
+		LockOptions lockOpts = lockOptions.copy(lockOptions, new LockOptions());
+		lockOpts.setAliasesToLock(analyzerResult.getColumnNamesToLock(lockOptions.getAliasesToLock()));
+		parsedSql = (session.getDialect().supportsLock() ? session.applyLock(analyzerResult.getParsedSql(), resultClass, lockOpts) : analyzerResult
+				.getParsedSql());
 
 		List result = (List) session.getRunner().query(session.getConnection(), parsedSql, handler, namedParameter, showSql, formatSql, 0,
 				session.getListeners(), session.clientId());
@@ -1323,48 +1380,42 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		return result;
 	}
 
-	public <T> List<T> getResultListToLazyLoad(String sql, Object[] parameter, Class<?> resultClass, Cache transactionCache) throws Exception {
+	protected <T> List<T> getResultListToLazyLoad(String sql, Object[] parameter, Class<?> resultClass, Cache transactionCache) throws Exception {
 		EntityCache entityCache = session.getEntityCacheManager().getEntityCache(resultClass);
 		ResultSetHandler handler;
 
 		List result = null;
 		if (readOnly)
 			lockOptions = LockOptions.NONE;
-		try {
-			if (entityCache == null)
-				handler = new BeanHandler(resultClass);
-			else {
-				if (sql.toLowerCase().indexOf(" " + entityCache.getTableName().toLowerCase()) < 0) {
-					throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + resultClass.getName()
-							+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
-				}
 
-				SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(
-						getResultClass().getName() + ":" + sql);
-				if (analyzerResult == null) {
-					analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect(), !SQLQueryAnalyzer.IGNORE_NOT_USED_ALIAS_TABLE)
-							.analyze(sql, resultClass);
-					PersistenceMetadataCache.getInstance().put(resultClass.getName() + ":" + sql, analyzerResult);
-				}
-				handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressionsFieldMapper(), analyzerResult.getColumnAliases(),
-						transactionCache, false, null, firstResult, maxResults, readOnly, lockOptions);
+		if (entityCache == null)
+			throw new SQLQueryException("A classe " + resultClass + " não foi encontrada na lista de entidades sendo gerenciadas.");
 
-				/*
-				 * Cria um cópia do LockOptions e adiciona as colunas dos aliases caso o usuário tenha informado pegando
-				 * o nome da colunas do resultado da análise do SQL.
-				 */
-				LockOptions lockOpts = lockOptions.copy(lockOptions, new LockOptions());
-				lockOpts.setAliasesToLock(analyzerResult.getColumnNamesToLock(lockOptions.getAliasesToLock()));
-
-				sql = (session.getDialect().supportsLock() ? session.applyLock(analyzerResult.getParsedSql(), resultClass, lockOpts) : analyzerResult
-						.getParsedSql());
-			}
-
-			result = (List) session.getRunner().query(session.getConnection(), sql, handler, parameter, showSql, formatSql, 0, session.getListeners(),
-					session.clientId());
-
-		} finally {
+		if (sql.toLowerCase().indexOf(" " + entityCache.getTableName().toLowerCase()) < 0) {
+			throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + resultClass.getName()
+					+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
 		}
+
+		SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(resultClass.getName() + ":" + sql);
+		if (analyzerResult == null) {
+			analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect(), !SQLQueryAnalyzer.IGNORE_NOT_USED_ALIAS_TABLE)
+					.analyze(sql, resultClass);
+			PersistenceMetadataCache.getInstance().put(resultClass.getName() + ":" + sql, analyzerResult);
+		}
+		handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressionsFieldMapper(), analyzerResult.getColumnAliases(), transactionCache,
+				false, null, firstResult, maxResults, readOnly, lockOptions);
+
+		/*
+		 * Cria um cópia do LockOptions e adiciona as colunas dos aliases caso o usuário tenha informado pegando o nome
+		 * da colunas do resultado da análise do SQL.
+		 */
+		LockOptions lockOpts = lockOptions.copy(lockOptions, new LockOptions());
+		lockOpts.setAliasesToLock(analyzerResult.getColumnNamesToLock(lockOptions.getAliasesToLock()));
+
+		sql = (session.getDialect().supportsLock() ? session.applyLock(analyzerResult.getParsedSql(), resultClass, lockOpts) : analyzerResult.getParsedSql());
+
+		result = (List) session.getRunner().query(session.getConnection(), sql, handler, parameter, showSql, formatSql, 0, session.getListeners(),
+				session.clientId());
 
 		if (result == null)
 			return Collections.EMPTY_LIST;
@@ -1413,16 +1464,12 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		if ((this.parameters.size() > 0) && (this.namedParameters.size() > 0))
 			throw new SQLQueryException("Use apenas um formato de parâmetros. Parâmetros nomeados ou lista de parâmetros.");
 
-		/*
-		 * Se o usuário setou um Handler específico. Processa o resultSet com o handler e devolve o objeto em forma de
-		 * lista caso o resultado já não seja uma lista
-		 */
 		SQLSessionResult result = null;
-		if (handler != null) {
+		if (customHandler != null) {
 			result = getResultObjectAndResultSetByCustomHandler();
 		} else {
 			/*
-			 * Processa o resultSet usando o EntityHandler para criar os objetos
+			 * Processa o resultSet usando o ResultSetHandler apropriado para criar os objetos
 			 */
 			result = getResultObjectAndResultSetByEntityHandler();
 		}
@@ -1431,57 +1478,51 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	protected SQLSessionResult getResultObjectAndResultSetByEntityHandler() throws Exception, SQLQueryAnalyzerException, SQLException {
 		SQLSessionResult result;
-		if (getResultClass() == null)
-			throw new SQLQueryException("Informe a classe para executar a consulta.");
 
-		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
-		EntityCache entityCache = session.getEntityCacheManager().getEntityCache(getResultClass());
-		ResultSetHandler handler;
-
-		SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(getResultClass().getName() + ":" + sql);
-		if (analyzerResult == null) {
-			analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect(), !SQLQueryAnalyzer.IGNORE_NOT_USED_ALIAS_TABLE)
-					.analyze(sql, getResultClass());
-			PersistenceMetadataCache.getInstance().put(getResultClass().getName() + ":" + sql, analyzerResult);
+		if ((this.parameters.size() > 0) && (this.namedParameters.size() > 0))
+			throw new SQLQueryException("Use apenas um formato de parâmetros. Parâmetros nomeados ou lista de parâmetros.");
+		/*
+		 * Se for uma query nomeada
+		 */
+		if (this.getNamedQuery() != null) {
+			DescriptionNamedQuery namedQuery = findNamedQuery();
+			if (namedQuery == null)
+				throw new SQLQueryException("Query nomeada " + this.getNamedQuery() + " não encontrada.");
+			this.sql = namedQuery.getQuery();
+			this.lockOptions = namedQuery.getLockOptions();
 		}
 
-		String parsedSql = analyzerResult.getParsedSql();
-
-		SQLCache transactionCache = new WeakReferenceSQLCache();
+		ResultSetHandler targetHandler = getAppropriateResultSetHandler();
 		try {
-			if (entityCache == null)
-				handler = new BeanHandler(getResultClass());
-			else {
-				if (sql.toLowerCase().indexOf(" " + entityCache.getTableName().toLowerCase()) < 0) {
-					throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + getResultClass().getName()
-							+ " não foi localizada no SQL informado. Não será possível executar a consulta. SQL-> " + sql);
+
+			if (this.parsedParameters.size() > 0)
+				result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, targetHandler, parsedParameters.values().toArray(),
+						showSql, formatSql, timeOut, session.getListeners(), session.clientId());
+			else if (this.parsedNamedParameters.size() > 0)
+				result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, targetHandler,
+						parsedNamedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql, timeOut, session.getListeners(),
+						session.clientId());
+			else
+				result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, targetHandler, new NamedParameterParserResult[] {},
+						showSql, formatSql, timeOut, session.getListeners(), session.clientId());
+
+			if (resultTransformer != null) {
+				List<?> results = result.getResultList();
+				List<Object> rv = new ArrayList<Object>(results.size());
+				for (Object o : results) {
+					if (o != null) {
+						if (!o.getClass().isArray()) {
+							o = new Object[] { o };
+						}
+						rv.add(resultTransformer.newInstance((Object[]) o));
+					} else {
+						rv.add(null);
+					}
 				}
-				/*
-				 * Cria um cópia do LockOptions e adiciona as colunas dos aliases caso o usuário tenha informado pegando
-				 * o nome da colunas do resultado da análise do SQL.
-				 */
-				LockOptions lockOpts = lockOptions.copy(lockOptions, new LockOptions());
-				lockOpts.setAliasesToLock(analyzerResult.getColumnNamesToLock(lockOptions.getAliasesToLock()));
-
-				parsedSql = (session.getDialect().supportsLock() ? session.applyLock(parsedSql, getResultClass(), lockOpts) : parsedSql);
-
-				handler = session.createNewEntityHandler(getResultClass(), analyzerResult.getExpressionsFieldMapper(), analyzerResult.getColumnAliases(),
-						transactionCache, allowDuplicateObjects, null, firstResult, maxResults, readOnly, lockOptions);
+				result.setResultList(rv);
 			}
 
-			if (this.parameters.size() > 0)
-				result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, handler, parameters.values().toArray(), showSql, formatSql,
-						timeOut, session.getListeners(), session.clientId());
-			else if (this.namedParameters.size() > 0)
-				result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, handler,
-						namedParameters.values().toArray(new NamedParameter[] {}), showSql, formatSql, timeOut, session.getListeners(), session.clientId());
-			else
-				result = session.getRunner().queryWithResultSet(session.getConnection(), parsedSql, handler, new NamedParameterParserResult[] {}, showSql,
-						formatSql, timeOut, session.getListeners(), session.clientId());
-
 		} finally {
-			transactionCache.clear();
-			transactionCache = null;
 			session.getPersistenceContext().clearCache();
 		}
 		return result;
@@ -1550,14 +1591,6 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 		return sql;
 	}
 
-	public Class<?> getResultClass() {
-		return resultClass;
-	}
-
-	public void setResultClass(Class<?> resultClass) {
-		this.resultClass = resultClass;
-	}
-
 	@Override
 	public void refresh(Object entity) throws Exception {
 		session.refresh(entity);
@@ -1608,7 +1641,7 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 
 	@Override
 	public SQLQuery setLockMode(String alias, LockMode lockMode) {
-		return null;
+		return this;
 	}
 
 	@Override
@@ -1638,6 +1671,182 @@ public class SQLQueryImpl<T> implements TypedSQLQuery<T>, SQLQuery {
 			rs.close();
 		}
 		return value;
+	}
+
+	@Override
+	public SQLQuery addEntityResult(Class<?> entity) {
+		if (!session.getEntityCacheManager().isEntity(entity)) {
+			throw new SQLQueryException("A classe " + entity.getName() + " não é uma entidade ou não foi encontrada na lista de entidades gerenciadas.");
+		}
+		ResultClassDefinition resultClassDefinition = new ResultClassDefinition(entity, new LinkedHashSet<ResultClassColumnInfo>());
+		resultClassDefinitionsList.add(resultClassDefinition);
+		return this;
+	}
+
+	@Override
+	public SQLQuery addColumnResult(String columnName, Class<?> type) {
+		if (StringUtils.isEmpty(sql))
+			throw new SQLQueryException("É necessário definir o SQL para a consulta antes da definição dos resultados a serem retornados.");
+
+		LinkedHashSet<ResultClassColumnInfo> columns = new LinkedHashSet<ResultClassColumnInfo>();
+		columns.add(new ResultClassColumnInfo("", columnName, "", null, -1));
+
+		ResultClassDefinition resultClassDefinition = new ResultClassDefinition(type, columns);
+		resultClassDefinitionsList.add(resultClassDefinition);
+		return this;
+	}
+
+	@Override
+	public SQLQuery addColumnResult(int columnIndex, Class<?> type) {
+		if (StringUtils.isEmpty(sql))
+			throw new SQLQueryException("É necessário definir o SQL para a consulta antes da definição dos resultados a serem retornados.");
+
+		LinkedHashSet<ResultClassColumnInfo> columns = new LinkedHashSet<ResultClassColumnInfo>();
+		columns.add(new ResultClassColumnInfo("", "", "", null, columnIndex));
+
+		ResultClassDefinition resultClassDefinition = new ResultClassDefinition(type, columns);
+		resultClassDefinitionsList.add(resultClassDefinition);
+		return this;
+	}
+
+	private SelectStatementNode getFirstSelectStatement(INode node) {
+		if (firstStatement == null)
+			firstStatement = (SelectStatementNode) ParserUtil.findFirstChild(node, "SelectStatementNode");
+		return firstStatement;
+	}
+
+	private ResultSetHandler getAppropriateResultSetHandler() throws Exception {
+		if ((this.parameters.size() > 0) && (this.namedParameters.size() > 0))
+			throw new SQLQueryException("Use apenas um formato de parâmetros. Parâmetros nomeados ou lista de parâmetros.");
+
+		if (customHandler != null)
+			return customHandler;
+
+		if (resultIsOneEntity()) {
+			if (this.identifier != null) {
+				Select select = new Select(session.getDialect());
+				select.addTableName(identifier.getEntityCache().getTableName());
+				Map<String, Object> columns = identifier.getDatabaseColumns();
+				List<NamedParameter> params = new ArrayList<NamedParameter>();
+				boolean appendOperator = false;
+				for (String column : columns.keySet()) {
+					if (appendOperator)
+						select.and();
+					select.addCondition(column, "=", ":P" + column);
+					params.add(new NamedParameter("P" + column, columns.get(column)));
+					appendOperator = true;
+				}
+				this.sql(select.toStatementString());
+				this.setParameters(params.toArray(new NamedParameter[] {}));
+				Object objectToRefresh = null;
+				if (identifier.isOnlyRefreshOwner()) {
+					objectToRefresh = identifier.getOwner();
+				}
+				return makeEntityHandler(identifier.getClazz(), objectToRefresh);
+			} else {
+				return makeEntityHandler(resultClassDefinitionsList.get(0).getResultClass(), null);
+			}
+		} else if (resultIsSingleValue()) {
+			return makeSingleValueHandler();
+		} else if (resultIsMultiSelect()) {
+			return makeMultiSelectHandler();
+		} else
+			return new ArrayListHandler();
+
+	}
+
+	private ResultSetHandler makeSingleValueHandler() throws Exception {
+		parsedNamedParameters = new TreeMap<Integer, NamedParameter>(this.namedParameters);
+		parsedParameters = new TreeMap<Integer, Object>(this.parameters);
+
+		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
+		ResultClassColumnInfo simpleColumn = resultClassDefinitionsList.get(0).getSimpleColumn();
+		String aliasColumnName = (StringUtils.isEmpty(simpleColumn.getAliasColumnName()) ? simpleColumn.getColumnName() : simpleColumn.getAliasColumnName());
+		return new SingleValueHandler(sql, resultClassDefinitionsList.get(0).getResultClass(), null, aliasColumnName, simpleColumn.getColumnIndex());
+	}
+
+	private ResultSetHandler makeMultiSelectHandler() throws Exception {
+		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
+		ResultSetHandler resultSetHandler = new MultiSelectHandler(session, sql, resultClassDefinitionsList, nextAliasColumnName, allowDuplicateObjects);
+		parsedSql = ((MultiSelectHandler) resultSetHandler).getParsedSql();
+
+		parsedNamedParameters = new TreeMap<Integer, NamedParameter>(this.namedParameters);
+		parsedParameters = new TreeMap<Integer, Object>(this.parameters);
+
+		parsedSql = appendLimit(parsedSql, parsedParameters, parsedNamedParameters);
+		parsedSql = (session.getDialect().supportsLock() ? session.applyLock(parsedSql, null, lockOptions) : parsedSql);
+
+		return resultSetHandler;
+	}
+
+	private ResultSetHandler makeEntityHandler(Class<?> resultClass, Object objectToRefresh) throws Exception {
+		if (resultClassDefinitionsList.size() == 0)
+			throw new SQLQueryException("Defina uma entidade ou coluna de retorno para a consulta SQL.");
+
+		session.forceFlush(SQLParserUtil.getTableNames(sql, session.getDialect()));
+
+		EntityCache entityCache = session.getEntityCacheManager().getEntityCache(resultClass);
+		ResultSetHandler handler = null;
+
+		SQLQueryAnalyzerResult analyzerResult = (SQLQueryAnalyzerResult) PersistenceMetadataCache.getInstance().get(resultClass.getName() + ":" + sql);
+		if (analyzerResult == null) {
+			analyzerResult = new SQLQueryAnalyzer(session.getEntityCacheManager(), session.getDialect(), !SQLQueryAnalyzer.IGNORE_NOT_USED_ALIAS_TABLE)
+					.analyze(sql, resultClass);
+			PersistenceMetadataCache.getInstance().put(resultClass.getName() + ":" + sql, analyzerResult);
+		}
+
+		SQLCache transactionCache = new WeakReferenceSQLCache();
+
+		parsedSql = analyzerResult.getParsedSql();
+
+		parsedNamedParameters = new TreeMap<Integer, NamedParameter>(this.namedParameters);
+		parsedParameters = new TreeMap<Integer, Object>(this.parameters);
+
+		parsedSql = appendLimit(parsedSql, parsedParameters, parsedNamedParameters);
+
+		if (readOnly || lockOptions == null)
+			lockOptions = LockOptions.NONE;
+
+		if (sql.toLowerCase().indexOf(entityCache.getTableName().toLowerCase()) < 0) {
+			throw new SQLException("A tabela " + entityCache.getTableName() + " da classe " + resultClass.getName()
+					+ " não foi localizada no SQL informado. Não será possível executar a consulta.");
+		}
+		/*
+		 * Cria um cópia do LockOptions e adiciona as colunas dos aliases caso o usuário tenha informado pegando o nome
+		 * das colunas do resultado da análise do SQL.
+		 */
+		LockOptions lockOpts = lockOptions.copy(lockOptions, new LockOptions());
+		lockOpts.setAliasesToLock(analyzerResult.getColumnNamesToLock(lockOptions.getAliasesToLock()));
+		parsedSql = (session.getDialect().supportsLock() ? session.applyLock(parsedSql, resultClass, lockOpts) : parsedSql);
+
+		handler = session.createNewEntityHandler(resultClass, analyzerResult.getExpressionsFieldMapper(), analyzerResult.getColumnAliases(), transactionCache,
+				allowDuplicateObjects, objectToRefresh, firstResult, maxResults, readOnly, lockOptions);
+
+		return handler;
+
+	}
+
+	@Override
+	public SQLQuery addResultClassDefinition(ResultClassDefinition... classes) {
+		for (ResultClassDefinition rd : classes)
+			resultClassDefinitionsList.add(rd);
+		return this;
+	}
+
+	@Override
+	public SQLQuery nextAliasColumnName(int nextAlias) {
+		this.nextAliasColumnName = nextAlias;
+		return this;
+	}
+
+	@Override
+	public String toString() {
+		return "SQLQueryImpl [session=" + session + ", resultClassDefinitionsList=" + resultClassDefinitionsList + ", identifier=" + identifier + ", showSql="
+				+ showSql + ", formatSql=" + formatSql + ", handler=" + customHandler + ", sql=" + sql + ", namedParameters=" + namedParameters
+				+ ", parameters=" + parameters + ", parsedNamedParameters=" + parsedNamedParameters + ", parsedParameters=" + parsedParameters + ", parsedSql="
+				+ parsedSql + ", DEFAULT_CACHE_SIZE=" + DEFAULT_CACHE_SIZE + ", timeOut=" + timeOut + ", namedQuery=" + namedQuery + ", lockOptions="
+				+ lockOptions + ", allowDuplicateObjects=" + allowDuplicateObjects + ", firstResult=" + firstResult + ", maxResults=" + maxResults
+				+ ", readOnly=" + readOnly + ", firstStatement=" + firstStatement + ", nextAliasColumnName=" + nextAliasColumnName + "]";
 	}
 
 }

@@ -1,17 +1,14 @@
 /*******************************************************************************
  * Copyright 2012 Anteros Tecnologia
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  *******************************************************************************/
 package br.com.anteros.persistence.session.query;
 
@@ -46,7 +43,7 @@ public interface TypedSQLQuery<X> extends SQLQuery {
 	public TypedSQLQuery<X> namedQuery(String name);
 
 	public TypedSQLQuery<X> clear();
-	
+
 	public TypedSQLQuery<X> setReadOnly(boolean readOnlyObjects);
 
 	public TypedSQLQuery<X> setParameters(Object parameters) throws Exception;
@@ -128,7 +125,7 @@ public interface TypedSQLQuery<X> extends SQLQuery {
 	public TypedSQLQuery<X> setLockOptions(LockOptions lockOptions);
 
 	public LockOptions getLockOptions();
-	
+
 	public SQLQuery setLockMode(String alias, LockMode lockMode);
 
 	public TypedSQLQuery<X> allowDuplicateObjects(boolean allowDuplicateObjects);
@@ -136,7 +133,7 @@ public interface TypedSQLQuery<X> extends SQLQuery {
 	public TypedSQLQuery<X> setMaxResults(int maxResults);
 
 	public TypedSQLQuery<X> setFirstResult(int firstResult);
-	
+
 	public TypedSQLQuery<X> procedureOrFunctionName(String procedureName);
 
 	public TypedSQLQuery<X> namedStoredProcedureQuery(String name);

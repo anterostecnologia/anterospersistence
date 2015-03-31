@@ -25,7 +25,6 @@ import java.util.Set;
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.ReflectionUtils;
-import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.dsl.osql.lang.CloseableIterator;
 import br.com.anteros.persistence.dsl.osql.support.QueryMixin;
 import br.com.anteros.persistence.dsl.osql.types.EntityPath;
@@ -41,9 +40,7 @@ import br.com.anteros.persistence.dsl.osql.types.SubQueryExpression;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.DateParam;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.DateTimeParam;
 import br.com.anteros.persistence.dsl.osql.types.expr.params.EnumParam;
-import br.com.anteros.persistence.handler.MultiSelectHandler;
 import br.com.anteros.persistence.handler.ResultClassDefinition;
-import br.com.anteros.persistence.handler.SingleValueHandler;
 import br.com.anteros.persistence.metadata.annotation.type.TemporalType;
 import br.com.anteros.persistence.parameter.EnumeratedParameter;
 import br.com.anteros.persistence.parameter.NamedParameter;
@@ -344,46 +341,16 @@ public abstract class AbstractOSQLQuery<Q extends AbstractOSQLQuery<Q>> extends 
 			System.out.println(sql);
 			System.out.println();
 			/*
-			 * Monta os objetos usando o handler adequado para o resultado esperado.
+			 * Cria a query para execução passando a lista de classes de resultados esperadas.
 			 */
-			List<ResultClassDefinition> definitions = analyser.getResultClassDefinitions();
-			/*
-			 * Se for apenas um resultado
-			 */
-			if (definitions.size() == 1) {
-				/*
-				 * Se o resultado esperado for uma entidade
-				 */
-				if (session.getEntityCacheManager().isEntity(definitions.get(0).getResultClass())) {
-					query = session.createQuery(sql, definitions.get(0).getResultClass());
-				} else {
-					/*
-					 * Se forem valores simples
-					 */
-					query = session.createQuery(sql);
-					query.setReadOnly(isReadOnly());
-					SQLAnalyserColumn simpleColumn = definitions.get(0).getSimpleColumn();
-					String aliasColumnName = (StringUtils.isEmpty(simpleColumn.getAliasColumnName()) ? simpleColumn.getColumnName() : simpleColumn
-							.getAliasColumnName());
-					query.resultSetHandler(new SingleValueHandler(definitions.get(0).getResultClass(), simpleColumn.getDescriptionField(), aliasColumnName,
-							simpleColumn.getColumnIndex()));
-				}
-			} else {
-				/*
-				 * Se o resultado for múltiplos valores
-				 */
-				query = session.createQuery(sql);
-				query.resultSetHandler(new MultiSelectHandler(session, sql, analyser.getResultClassDefinitions(), configuration.getNextAliasColumnName(),
-						allowDuplicateObjects));
-			}
+			query = session.createQuery(sql);
+			query.addResultClassDefinition(analyser.getResultClassDefinitions().toArray(new ResultClassDefinition[] {}));
 			query.setMaxResults(modifiers.getLimitAsInteger());
 			query.setFirstResult(modifiers.getOffsetAsInteger());
 			query.setLockOptions(lockOptions);
-			/*
-			 * Converte os parâmetros no formato de expressão para o formato da query.
-			 */
-			if (analyser.hasParameters())
-				query.setParameters(getParameters());
+			query.allowDuplicateObjects(allowDuplicateObjects);
+			query.nextAliasColumnName(configuration.getNextAliasColumnName());
+			
 
 		} catch (Exception e) {
 			throw new OSQLQueryException("Não foi possível criar a query. ", e);

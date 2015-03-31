@@ -17,6 +17,13 @@ import br.com.anteros.persistence.session.lock.LockOptions;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyzer;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyzerException;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyzerResult;
+import br.com.anteros.persistence.sql.format.SqlFormatRule;
+import br.com.anteros.persistence.sql.parser.INode;
+import br.com.anteros.persistence.sql.parser.ParserUtil;
+import br.com.anteros.persistence.sql.parser.SqlParser;
+import br.com.anteros.persistence.sql.parser.node.ColumnNode;
+import br.com.anteros.persistence.sql.parser.node.RootNode;
+import br.com.anteros.persistence.sql.parser.node.SelectStatementNode;
 
 public class MultiSelectHandler implements ScrollableResultSetHandler {
 
@@ -101,7 +108,13 @@ public class MultiSelectHandler implements ScrollableResultSetHandler {
 				else
 					record.add(null);
 			} else {
-				Object value = resultSet.getObject(rcd.getSimpleColumn().getColumnIndex());
+				Object value = null;
+				if (rcd.getSimpleColumn().getColumnIndex() > 0) {
+					value = resultSet.getObject(rcd.getSimpleColumn().getColumnIndex());
+				} else {
+					value = resultSet.getObject(getColumnIndex(rcd.getSimpleColumn().getColumnName()));
+				}
+
 				record.add(ObjectUtils.convert(value, rcd.getResultClass()));
 			}
 		}
@@ -183,6 +196,55 @@ public class MultiSelectHandler implements ScrollableResultSetHandler {
 
 	public String getParsedSql() {
 		return parsedSql;
+	}
+
+	protected int getColumnIndex(String columnName) {
+		SqlParser parser = new SqlParser(parsedSql, new SqlFormatRule());
+		INode node = new RootNode();
+		parser.parse(node);
+
+		INode[] children = (INode[]) ParserUtil.findChildren(getFirstSelectStatement(node), ColumnNode.class.getSimpleName());
+		int i = 1;
+		/*
+		 * Localiza primeiro pelo alias da coluna caso o usuário tenha informado. O alias definido pelo usuário não será alterado durante a análise do sql.
+		 */
+		for (INode nd : children) {
+			if (nd instanceof ColumnNode) {
+				ColumnNode columnNode = (ColumnNode) nd;
+				if (columnNode.hasAlias()) {
+					if (columnNode.getAliasName().equalsIgnoreCase(columnName)) {
+						return i;
+					}
+				}
+				i++;
+			}
+		}
+		
+		/*
+		 * Caso não encontre pelo alias da coluna procura pelo nome da coluna. 
+		 */
+		i = 1;
+		for (INode nd : children) {
+			if (nd instanceof ColumnNode) {
+				ColumnNode columnNode = (ColumnNode) nd;
+				if (columnNode.getColumnName().equalsIgnoreCase(columnName)) {
+					return i;
+				}
+				i++;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Retorna o primeiro nó do tipo SelectStatement da árvore do SQL
+	 * 
+	 * @param node
+	 *            Árvore do SQL
+	 * @return Nó que representa o SelectStatement
+	 */
+	private SelectStatementNode getFirstSelectStatement(INode node) {
+		return (SelectStatementNode) ParserUtil.findFirstChild(node, "SelectStatementNode");
 	}
 
 }

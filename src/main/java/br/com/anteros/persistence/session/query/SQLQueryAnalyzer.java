@@ -180,15 +180,14 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		// System.out.println("--------------------EXPRESSIONS-------------------------------");
 		// for (ExpressionFieldMapper expField : expressionsFieldMapper)
 		// System.out.println(expField);
-		// System.out.println("--------------------COLUMN ALIASES----------------------------");
-		// for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
-		// System.out.println("ALIAS-> " + a.getAlias() + " path " +
-		// a.getAliasPath());
-		// System.out.println("    ----------------------------------");
-		// for (String k : columnAliases.get(a).keySet()) {
-		// System.out.println("    " + k + " = " + columnAliases.get(a).get(k));
-		// }
-		// }
+		System.out.println("--------------------COLUMN ALIASES----------------------------");
+		for (SQLQueryAnalyserAlias a : columnAliases.keySet()) {
+			System.out.println("ALIAS-> " + a.getAlias() + " path " + a.getAliasPath());
+			System.out.println("    ----------------------------------");
+			for (String k : columnAliases.get(a).keySet()) {
+				System.out.println("    " + k + " = " + Arrays.toString(columnAliases.get(a).get(k)));
+			}
+		}
 
 	}
 
@@ -331,8 +330,7 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 		/*
 		 * Busca todos os nós do tipo Select
 		 */
-		SelectStatementNode[] selectStatements = getAllSelectStatement(mainNode);	
-		
+		SelectStatementNode[] selectStatements = getAllSelectStatement(mainNode);			
 		
 		/*
 		 * Analisa os Select's encontrados pelo parser.
@@ -1048,7 +1046,6 @@ public class SQLQueryAnalyzer implements Comparator<String[]> {
 							columnAliases.put(alias, new HashMap<String, String[]>());
 						}
 						columnAliases.get(alias).put(columnName, (alias.getAlias() + "." + aliasName).split("\\."));
-
 						/*
 						 * Se a coluna tem um descriptionField e o campo é uma coleção, função ou relacionamento não
 						 * gera uma expressão

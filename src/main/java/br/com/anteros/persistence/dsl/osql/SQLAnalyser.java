@@ -47,6 +47,7 @@ import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorColumnPath;
 import br.com.anteros.persistence.dsl.osql.types.path.DiscriminatorValuePath;
 import br.com.anteros.persistence.dsl.osql.types.path.PathBuilder;
 import br.com.anteros.persistence.dsl.osql.types.path.SetPath;
+import br.com.anteros.persistence.handler.ResultClassColumnInfo;
 import br.com.anteros.persistence.handler.ResultClassDefinition;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
@@ -1054,23 +1055,27 @@ public class SQLAnalyser implements Visitor<Void, Void> {
 			if (expr instanceof FactoryExpression) {
 				FactoryExpression<?> factory = ((FactoryExpression<?>) expr);
 				Class<?> resultClass = factory.getType();
-				Set<SQLAnalyserColumn> columns = new LinkedHashSet<SQLAnalyserColumn>();
+				Set<ResultClassColumnInfo> columns = new LinkedHashSet<ResultClassColumnInfo>();
 				for (Expression<?> exprFact : factory.getArgs()) {
 					Set<SQLAnalyserColumn> tempColumns = resultColumnsFromProjections.get(exprFact);
 					if (tempColumns != null) {
 						for (SQLAnalyserColumn column : tempColumns) {
-							column.setColumnIndex(index);
-							columns.add(column);
+							ResultClassColumnInfo newColumnInfo = new ResultClassColumnInfo(column.getAliasTableName(), column.getColumnName(),
+									column.getAliasColumnName(), column.getDescriptionField(), index);
+							columns.add(newColumnInfo);
 							index++;
 						}
 					}
 				}
 				result.add(new ResultClassDefinition(resultClass, columns));
 			} else {
-				Set<SQLAnalyserColumn> columns = resultColumnsFromProjections.get(expr);
+				Set<ResultClassColumnInfo> columns = new LinkedHashSet<ResultClassColumnInfo>();
+				Set<SQLAnalyserColumn> tempColumns = resultColumnsFromProjections.get(expr);
 				if (columns != null) {
-					for (SQLAnalyserColumn column : columns) {
-						column.setColumnIndex(index);
+					for (SQLAnalyserColumn column : tempColumns) {
+						ResultClassColumnInfo newColumnInfo = new ResultClassColumnInfo(column.getAliasTableName(), column.getColumnName(),
+								column.getAliasColumnName(), column.getDescriptionField(), index);
+						columns.add(newColumnInfo);
 						index++;
 					}
 				}

@@ -245,4 +245,9 @@ public class LockOptions {
 			aliasesToLock.clear();
 	}
 
+	@Override
+	public String toString() {
+		return "LockOptions [lockMode=" + lockMode + ", timeout=" + timeout + ", lockScope=" + lockScope + "]";
+	}	
+
 }

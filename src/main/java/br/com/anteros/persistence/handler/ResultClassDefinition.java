@@ -10,9 +10,9 @@ public class ResultClassDefinition {
 
 	private Class<?> resultClass;
 
-	private Set<SQLAnalyserColumn> columns;
+	private Set<ResultClassColumnInfo> columns;
 
-	public ResultClassDefinition(Class<?> resultClass, Set<SQLAnalyserColumn> columns) {
+	public ResultClassDefinition(Class<?> resultClass, Set<ResultClassColumnInfo> columns) {
 		super();
 		this.resultClass = resultClass;
 		this.columns = ImmutableSet.copyOf(columns);
@@ -26,14 +26,10 @@ public class ResultClassDefinition {
 		this.resultClass = resultClass;
 	}
 
-	public Set<SQLAnalyserColumn> getColumns() {
+	public Set<ResultClassColumnInfo> getColumns() {
 		return columns;
 	}
-	
-	@Override
-	public String toString() {
-		return resultClass.getName();
-	}
+
 
 	@Override
 	public int hashCode() {
@@ -60,10 +56,15 @@ public class ResultClassDefinition {
 		return true;
 	}
 	
-	public SQLAnalyserColumn getSimpleColumn(){
+	public ResultClassColumnInfo getSimpleColumn(){
 		if (columns.size()==0)
 			return null;
 		return columns.iterator().next();
+	}
+
+	@Override
+	public String toString() {
+		return "ResultClassDefinition [resultClass=" + resultClass + ", columns=" + columns + "]";
 	}
 
 }

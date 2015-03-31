@@ -43,8 +43,7 @@ public class StoredProcedureSQLQueryImpl<T> extends SQLQueryImpl<T> {
 
 	@SuppressWarnings("unchecked")
 	public StoredProcedureSQLQueryImpl(SQLSession session, Class<?> resultClass, CallableType callableType) {
-		super(session);
-		this.setResultClass(resultClass);
+		super(session, resultClass);
 		this.callableType = callableType;
 	}
 
@@ -101,7 +100,7 @@ public class StoredProcedureSQLQueryImpl<T> extends SQLQueryImpl<T> {
 
 	@Override
 	public T getSingleResult() throws Exception {
-		if (handler == null) {
+		if (customHandler == null) {
 			ProcedureResult procedureResult = execute();
 			if (callableType == CallableType.FUNCTION) {
 				procedureResult.close();
@@ -134,15 +133,14 @@ public class StoredProcedureSQLQueryImpl<T> extends SQLQueryImpl<T> {
 		 * Se for uma stored procedure nomeada
 		 */
 		if (this.getNamedQuery() != null) {
-			EntityCache cache = session.getEntityCacheManager().getEntityCache(getResultClass());
-			DescriptionNamedQuery namedQuery = cache.getDescriptionNamedQuery(this.getNamedQuery());
+			DescriptionNamedQuery namedQuery = findNamedQuery();
 			if (namedQuery == null)
 				throw new SQLQueryException("Procedimento nomeado " + this.getNamedQuery() + " não encontrado.");
 			this.sql(namedQuery.getQuery());
 		}
 
 		List<T> result = Collections.emptyList();
-		T resultObject = getResultObjectByCustomHandler((handler != null ? handler : new ArrayListHandler()));
+		T resultObject = getResultObjectByCustomHandler((customHandler != null ? customHandler : new ArrayListHandler()));
 		if (resultObject != null) {
 			if (resultObject instanceof Collection)
 				result = new ArrayList<T>((Collection<T>) resultObject);
@@ -155,7 +153,6 @@ public class StoredProcedureSQLQueryImpl<T> extends SQLQueryImpl<T> {
 	}
 
 	@SuppressWarnings("unchecked")
-	@Override
 	protected T getResultObjectByCustomHandler(ResultSetHandler customHandler) throws Exception {
 		if (getNamedQuery() != null) {
 			throw new UnsupportedOperationException("Procedimento/função nomeado ainda não implementado.");

@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import br.com.anteros.persistence.handler.ResultClassDefinition;
 import br.com.anteros.persistence.handler.ResultSetHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
@@ -56,6 +57,8 @@ public interface SQLQuery {
 	public SQLQuery timeOut(int seconds);
 
 	public SQLQuery resultSetHandler(ResultSetHandler handler);
+
+	public SQLQuery resultSetTransformer(ResultSetTransformer resultTransformer);
 
 	public SQLQuery namedQuery(String name);
 
@@ -139,6 +142,8 @@ public interface SQLQuery {
 
 	public Object getSingleResult() throws Exception;
 
+	public ScrollableResultSet getScrollableResultSet() throws Exception;
+
 	public void refresh(Object entity) throws Exception;
 
 	public ResultSet executeQuery() throws Exception;
@@ -154,6 +159,8 @@ public interface SQLQuery {
 
 	public SQLQuery allowDuplicateObjects(boolean allowDuplicateObjects);
 
+	public SQLQuery nextAliasColumnName(int nextAlias);
+
 	public SQLQuery setMaxResults(int max);
 
 	public SQLQuery setFirstResult(int first);
@@ -167,5 +174,13 @@ public interface SQLQuery {
 	public ProcedureResult execute() throws Exception;
 
 	public SQLQuery namedStoredProcedureQuery(String name);
+
+	public SQLQuery addEntityResult(Class<?> entity);
+
+	public SQLQuery addColumnResult(String columnName, Class<?> type);
+
+	public SQLQuery addColumnResult(int columnIndex, Class<?> type);
+
+	public SQLQuery addResultClassDefinition(ResultClassDefinition... resultClassDefinition);
 
 }

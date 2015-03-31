@@ -692,13 +692,13 @@ public class SQLSessionImpl implements SQLSession {
 	@Override
 	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass) throws Exception {
 		errorIfClosed();
-		return new SQLQueryImpl<T>(this).resultClass(resultClass).timeOut(queryTimeout).namedQuery(name).showSql(showSql).formatSql(formatSql);
+		return new SQLQueryImpl<T>(this,resultClass).timeOut(queryTimeout).namedQuery(name).showSql(showSql).formatSql(formatSql);
 	}
 
 	@Override
 	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters) throws Exception {
 		errorIfClosed();
-		return new SQLQueryImpl<T>(this).resultClass(resultClass).namedQuery(name).setParameters(parameters).showSql(showSql).formatSql(formatSql);
+		return new SQLQueryImpl<T>(this,resultClass).namedQuery(name).setParameters(parameters).showSql(showSql).formatSql(formatSql);
 	}
 
 	@Override

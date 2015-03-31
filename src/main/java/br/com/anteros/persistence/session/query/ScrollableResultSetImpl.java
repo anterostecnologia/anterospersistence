@@ -61,10 +61,12 @@ public class ScrollableResultSetImpl implements ScrollableResultSet {
 	}
 
 	private void readCurrentRow(boolean result) throws SQLQueryException {
-		try {
-			scrollableHandler.readCurrentRow(resultSet);
-		} catch (Exception e) {
-			throw new SQLQueryException("Não foi possível ler o registro corrente do ResultSet.", e);
+		if (result) {
+			try {
+				currentRow = scrollableHandler.readCurrentRow(resultSet);
+			} catch (Exception e) {
+				throw new SQLQueryException("Não foi possível ler o registro corrente do ResultSet.", e);
+			}
 		}
 	}
 
