@@ -14,6 +14,9 @@ OK - Forma de fazer paginação de objetos usando ScrollableResult,
 
 - Join Table anotação bidirecional. Utilizar mappedBy, para não ser necessario anotação de ambos lados;
 
+- Join table snotação bidirecional para o ManyToMany , ex:   @ManyToMany(mappedBy="notebooks")
+                                                             private List pessoas;
+
 - Implementar nas anotações para verificar quando salvar
    boolean insertable() default true;
    boolean updatable() default true;   
