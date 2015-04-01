@@ -1,6 +1,6 @@
 OK - Fazer MultiSelect na query
 
-OK - Forma de fazer paginação de objetos usando ScrollableResult,
+OK - Forma de fazer paginação de objetos usando ScrollableResultSet,
 
 - Concluir implementação MappedSuperClass     
   ver link http://www.concretepage.com/hibernate/example-mappedsuperclass-hibernate 
