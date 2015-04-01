@@ -15,25 +15,16 @@
  *******************************************************************************/
 package br.com.anteros.persistence.session.configuration;
 
-import java.io.InputStream;
-import java.net.URL;
-import java.util.List;
-
 import javax.sql.DataSource;
 
-import br.com.anteros.core.configuration.DataSourceConfiguration;
-import br.com.anteros.core.configuration.PropertyConfiguration;
 import br.com.anteros.core.configuration.exception.AnterosConfigurationException;
-import br.com.anteros.core.utils.ReflectionUtils;
-import br.com.anteros.core.utils.ResourceUtils;
-import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
 import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
-import br.com.anteros.persistence.sql.datasource.JDBCDataSource;
-import br.com.anteros.persistence.sql.datasource.JNDIDataSourceFactory;
+import br.com.anteros.persistence.session.SQLSessionFactory;
+import br.com.anteros.persistence.session.impl.SQLSessionFactoryImpl;
 import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
 
-public class AnterosPersistenceConfiguration extends AbstractPersistenceConfiguration {
+public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigurationBase {
 
 	public AnterosPersistenceConfiguration() {
 		super();
@@ -52,68 +43,23 @@ public class AnterosPersistenceConfiguration extends AbstractPersistenceConfigur
 	}
 
 	@Override
-	protected void buildDataSource() throws Exception {
-		if (dataSource == null) {
-			String dataSourceId = getProperty(AnterosPersistenceProperties.DATASOURCE);
-			if (dataSourceId != null) {
-				DataSourceConfiguration dataSourceConfiguration = getSessionFactoryConfiguration().getDataSourceById(
-						dataSourceId);
-				if (dataSourceConfiguration == null)
-					throw new AnterosConfigurationException("Não foi possível encontrar o DataSource " + dataSourceId
-							+ " configurado.");
-
-				Class<?> datasourceClass = Thread.currentThread().getContextClassLoader()
-						.loadClass(dataSourceConfiguration.getClazz());
-
-				if (datasourceClass == JNDIDataSourceFactory.class) {
-					String jndiName = getSessionFactoryConfiguration().ConvertPlaceHolder(
-							dataSourceConfiguration.getProperty(AnterosPersistenceProperties.JNDI_DATASOURCE));
-					if ((jndiName == null) || (jndiName.equals("")))
-						throw new AnterosConfigurationException("não foi possível criar o DataSource " + dataSourceId
-								+ ", não foi configurado o nome do JNDI.");
-					dataSource = JNDIDataSourceFactory.getDataSource(jndiName);
-				} else {
-					dataSource = (DataSource) datasourceClass.newInstance();
-					String value;
-					for (PropertyConfiguration prop : dataSourceConfiguration.getProperties()) {
-						value = getSessionFactoryConfiguration().ConvertPlaceHolder(prop.getValue());
-						if (value != null)
-							ReflectionUtils.invokeMethodWithParameterString(dataSource,
-									"set" + StringUtils.capitalize(prop.getName()), value);
-					}
-				}
-			} else {
-				String driverClassName = getSessionFactoryConfiguration().getProperty("driverClassName");
-				String url = getSessionFactoryConfiguration().getProperty("url");
-				String username = getSessionFactoryConfiguration().getProperty("username");
-				String password = getSessionFactoryConfiguration().getProperty("password");
-				if ((driverClassName != null) && (username != null)) {
-					dataSource = new JDBCDataSource(driverClassName, username, password, url);
-				} else
-					throw new AnterosConfigurationException("Nenhum DataSource foi configurado.");
-			}
-		}
-		if (dataSource == null)
-			throw new AnterosConfigurationException(AnterosPersistenceTranslate.getMessage(this.getClass(),
-					"datasourceNotConfigured"));
-	}
-
-	public static InputStream getDefaultXmlInputStream() throws Exception {
-		List<URL> resources = ResourceUtils.getResources("/anteros-config.xml", AnterosPersistenceConfiguration.class);
-		if ((resources == null) || (resources.isEmpty())) {
-			resources = ResourceUtils.getResources("/assets/anteros-config.xml", AnterosPersistenceConfiguration.class);
-			if ((resources != null) && (!resources.isEmpty())) {
-				final URL url = resources.get(0);
-				return url.openStream();
-			}
-		}
-		return null;
-	}
-
-	@Override
 	public PropertyAccessorFactory getPropertyAccessorFactory() {
 		//return new PropertyAcessorFactoryImpl();
 	return null;
+	}
+	
+	
+	public SQLSessionFactory buildSessionFactory() throws Exception {
+		prepareClassesToLoad();
+		buildDataSource();
+		if (dataSource == null)
+			throw new AnterosConfigurationException(AnterosPersistenceTranslate.getMessage(this.getClass(),
+					"datasourceNotConfigured"));
+		SQLSessionFactoryImpl sessionFactory = new SQLSessionFactoryImpl(entityCacheManager, dataSource,
+				this.getSessionFactoryConfiguration());
+		loadEntities(sessionFactory.getDialect());		
+		sessionFactory.generateDDL();
+		return sessionFactory;
 	}
 
 }

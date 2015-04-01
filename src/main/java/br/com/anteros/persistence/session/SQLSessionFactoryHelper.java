@@ -18,6 +18,7 @@ package br.com.anteros.persistence.session;
 import java.io.InputStream;
 
 import br.com.anteros.persistence.session.configuration.AnterosPersistenceConfiguration;
+import br.com.anteros.persistence.session.configuration.AnterosPersistenceConfigurationBase;
 
 
 
