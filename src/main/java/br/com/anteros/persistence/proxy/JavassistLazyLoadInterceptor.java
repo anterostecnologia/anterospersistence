@@ -127,11 +127,6 @@ public class JavassistLazyLoadInterceptor implements MethodHandler {
 				target = query.loadData(entityCache, owner, descriptionFieldOwner,
 						columnKeyValuesTarget, transactionCache);
 
-				if (ownerEntityCache != null) {
-					if ((ownerEntityCache.getCacheScope().equals(ScopeType.TRANSACTION)) && (transactionCache != null))
-						transactionCache.clear();
-				}
-
 				EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(owner);
 				/*
 				 * Caso o objeto possa ser gerenciado(objeto completo ou parcial
