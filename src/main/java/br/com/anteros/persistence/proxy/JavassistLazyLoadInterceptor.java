@@ -124,6 +124,7 @@ public class JavassistLazyLoadInterceptor implements MethodHandler {
 
 				SQLQuery query = session.createQuery("");
 				query.setLockOptions(lockOptions);
+				query.allowDuplicateObjects(true);
 				target = query.loadData(entityCache, owner, descriptionFieldOwner,
 						columnKeyValuesTarget, transactionCache);
 
