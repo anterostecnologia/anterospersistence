@@ -22,9 +22,11 @@ import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
 import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.impl.SQLSessionFactoryImpl;
-import br.com.anteros.persistence.util.AnterosPersistenceTranslate;
+import br.com.anteros.persistence.translation.AnterosPersistenceTranslate;
 
 public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigurationBase {
+	
+	private static AnterosPersistenceTranslate TRANSLATOR = AnterosPersistenceTranslate.getInstance();
 
 	public AnterosPersistenceConfiguration() {
 		super();
@@ -53,7 +55,7 @@ public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigura
 		prepareClassesToLoad();
 		buildDataSource();
 		if (dataSource == null)
-			throw new AnterosConfigurationException(AnterosPersistenceTranslate.getMessage(this.getClass(),
+			throw new AnterosConfigurationException(TRANSLATOR.getMessage(this.getClass(),
 					"datasourceNotConfigured"));
 		SQLSessionFactoryImpl sessionFactory = new SQLSessionFactoryImpl(entityCacheManager, dataSource,
 				this.getSessionFactoryConfiguration());
