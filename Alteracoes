@@ -1,3 +1,19 @@
+- Criar OneToOne bidirecional associado ao ForeignKey
+   public class User {
+       ...
+       @OneToOne (mappedBy="user")
+       private UserPicture userPicture;
+       ...
+   }
+
+   public class UserPicture {
+       ...
+       @OneToOne
+       @JoinColumn (name="user")
+       private User user;
+       ...
+   }
+
 - Concluir implementação MappedSuperClass     
   ver link http://www.concretepage.com/hibernate/example-mappedsuperclass-hibernate 
 
@@ -45,7 +61,7 @@
 [--detectOneToOne] - Detect one-to-one associations between tables.
 [--detectOptimisticLock] - Detect optimistic locking tables, i.e. if a table has a column named 'version' with a numeric type optimistic locking will be setup for that table.
 
-
+OK - Criar anotações para compatibilidade OneToOne, OneToMany e ManyToMany.
 
 OK - Fazer MultiSelect na query
 
