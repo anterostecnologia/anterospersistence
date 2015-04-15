@@ -28,6 +28,12 @@
 			<artifactId>Anteros-Persistence-Core</artifactId>
 			<version>LATEST</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>br.com.anteros</groupId>
+			<artifactId>Anteros-XML-Helper</artifactId>
+			<version>LATEST</version>
+		</dependency>
 
 		<dependency>
 			<groupId>c3p0</groupId>
