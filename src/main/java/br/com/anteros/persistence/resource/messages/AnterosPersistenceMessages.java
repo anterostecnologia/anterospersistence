@@ -1,15 +1,18 @@
-package br.com.anteros.persistence.translation;
+package br.com.anteros.persistence.resource.messages;
 
+import java.text.MessageFormat;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
 
-import br.com.anteros.core.translation.TranslateMessage;
+import br.com.anteros.core.resource.messages.AnterosBundle;
 
-public class AnterosPersistenceTranslateMessages_ptBR implements TranslateMessage {
+public class AnterosPersistenceMessages implements AnterosBundle {
 
 	private final Map<String, String> messages = new HashMap<String, String>();
 
-	public AnterosPersistenceTranslateMessages_ptBR() {
+	public AnterosPersistenceMessages() {
 		messages.put("ToStringVisitor.operation_unknown", "Opera\u00e7\u00e3o desconhecida com estes argumentos {0}");
 
 		messages.put("NamedParameterParserResult.toString", "SQL-> {0} Par\u00e2metros: {1}");
@@ -33,8 +36,18 @@ public class AnterosPersistenceTranslateMessages_ptBR implements TranslateMessag
 		messages.put("IndexedPropertyDescriptor.IntrospectionException", "M\u00e9todo {0} n\u00e3o encontrado");
 	}
 
+	@Override
 	public String getMessage(String key) {
 		return messages.get(key);
 	}
 
+	@Override
+	public String getMessage(String key, Object... parameters) {
+		return MessageFormat.format(getMessage(key), parameters);
+	}
+	
+	@Override
+	public Enumeration<String> getKeys() {
+		return new Vector<String>(messages.keySet()).elements();
+	}
 }

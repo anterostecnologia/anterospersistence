@@ -19,19 +19,21 @@ import javax.sql.DataSource;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import br.com.anteros.core.resource.messages.AnterosBundle;
+import br.com.anteros.core.resource.messages.AnterosResourceBundle;
 import br.com.anteros.core.utils.IOUtils;
 import br.com.anteros.core.utils.ObjectUtils;
 import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
 import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
+import br.com.anteros.persistence.resource.messages.AnterosPersistenceMessages;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.configuration.exception.AnterosConfigurationException;
 import br.com.anteros.persistence.session.impl.SQLSessionFactoryImpl;
-import br.com.anteros.persistence.translation.AnterosPersistenceTranslate;
 import br.com.anteros.xml.helper.XMLReader;
 
 public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigurationBase {
 
-	private static AnterosPersistenceTranslate TRANSLATOR = AnterosPersistenceTranslate.getInstance();
+	private static AnterosBundle MESSAGES = AnterosResourceBundle.getBundle(AnterosPersistenceProperties.ANTEROS_PERSISTENCE,AnterosPersistenceMessages.class);
 
 	public AnterosPersistenceConfiguration() {
 		super();
@@ -59,7 +61,7 @@ public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigura
 		prepareClassesToLoad();
 		buildDataSource();
 		if (dataSource == null)
-			throw new AnterosConfigurationException(TRANSLATOR.getMessage(this.getClass(), "datasourceNotConfigured"));
+			throw new AnterosConfigurationException(MESSAGES.getMessage(this.getClass().getSimpleName()+".datasourceNotConfigured"));
 		SQLSessionFactoryImpl sessionFactory = new SQLSessionFactoryImpl(entityCacheManager, dataSource, this.getSessionFactoryConfiguration());
 		loadEntities(sessionFactory.getDialect());
 		sessionFactory.generateDDL();
