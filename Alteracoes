@@ -1,3 +1,9 @@
+- Não encontrou @INDEX classe herdada 
+     @Index(name="PESSOA_CNPJ", columnNames={"CNPJ"})
+     public class PessoaJuridica extends AbstractPessoa {
+    
+ - Problema com classe herdada gerando errado RegraTributariaGeral
+ 
 - Criar OneToOne bidirecional associado ao ForeignKey
    public class User {
        ...
@@ -45,6 +51,8 @@
 - Implementar Ações que possam ser disparados via REST.
 
 - Plugin para executar SQL's, gerar schemas e engenharia reversa
+
+- Fazer Schema gerar alterações nos campos tipo not null alterado ou tamanho do campo maior.
 
 [generate-entities] - Generate entities from a database.
 
