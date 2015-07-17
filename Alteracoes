@@ -1,3 +1,7 @@
+- Tamanho do nome da PK criado junto com a tabela está ultrapassando tamanho máximo no oracle.
+
+- Tamanho do nome da tabela no oracle gerando mais que o máximo
+
 - Não encontrou @INDEX classe herdada 
      @Index(name="PESSOA_CNPJ", columnNames={"CNPJ"})
      public class PessoaJuridica extends AbstractPessoa {
