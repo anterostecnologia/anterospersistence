@@ -1,3 +1,7 @@
+- Criar anotação para validação de campo onde aceite apenas objetos de classes específicas  
+
+- Compactar nome da PK 
+
 - Tamanho do nome da PK criado junto com a tabela está ultrapassando tamanho máximo no oracle.
 
 - Tamanho do nome da tabela no oracle gerando mais que o máximo
