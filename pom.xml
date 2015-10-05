@@ -12,9 +12,9 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>javassist</groupId>
+			<groupId>org.javassist</groupId>
 			<artifactId>javassist</artifactId>
-			<version>3.12.1.GA</version>
+			<version>3.20.0-GA</version>
 		</dependency>
 
 		<dependency>
@@ -28,7 +28,7 @@
 			<artifactId>Anteros-Persistence-Core</artifactId>
 			<version>LATEST</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>br.com.anteros</groupId>
 			<artifactId>Anteros-XML-Helper</artifactId>
@@ -62,7 +62,7 @@
 			</plugin>
 		</plugins>
 	</build>
-	
+
 	<!-- DECLARAÇÃO DE REPOSITÓRIO PARA BAIXAR AS BIBLIOTECAS DO ANTEROS NO 
 		10.0.0.33 -->
 	<repositories>
