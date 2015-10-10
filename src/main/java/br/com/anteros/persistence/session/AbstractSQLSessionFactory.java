@@ -52,6 +52,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	private boolean formatSql = false;
 	private int queryTimeout = 0;
 	private int lockTimeout = 0;
+	private int batchSize = 0;
 
 	public AbstractSQLSessionFactory(EntityCacheManager entityCacheManager, DataSource dataSource, SessionFactoryConfiguration configuration) throws Exception {
 		this.entityCacheManager = entityCacheManager;
@@ -82,6 +83,8 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 			this.queryTimeout = new Integer(configuration.getProperty(AnterosPersistenceProperties.QUERY_TIMEOUT)).intValue();
 		if (configuration.getProperty(AnterosPersistenceProperties.LOCK_TIMEOUT) != null)
 			this.lockTimeout = new Integer(configuration.getProperty(AnterosPersistenceProperties.LOCK_TIMEOUT)).intValue();
+		if (configuration.getProperty(AnterosPersistenceProperties.BATCH_SIZE) != null)
+			this.batchSize = new Integer(configuration.getProperty(AnterosPersistenceProperties.BATCH_SIZE)).intValue();
 
 		this.currentSessionContext = buildCurrentSessionContext();
 	}
@@ -345,6 +348,10 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
 	public void setLockTimeout(int lockTimeout) {
 		this.lockTimeout = lockTimeout;
+	}
+
+	public int getBatchSize() {
+		return batchSize;
 	}
 
 }

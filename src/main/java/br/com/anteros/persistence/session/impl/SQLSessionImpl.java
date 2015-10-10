@@ -85,7 +85,7 @@ public class SQLSessionImpl implements SQLSession {
 	private String clientId;
 
 	public SQLSessionImpl(SQLSessionFactory sessionFactory, Connection connection, EntityCacheManager entityCacheManager, AbstractSQLRunner queryRunner,
-			DatabaseDialect dialect, boolean showSql, boolean formatSql, int queryTimeout, int lockTimeout, TransactionFactory transactionFactory)
+			DatabaseDialect dialect, boolean showSql, boolean formatSql, int queryTimeout, int lockTimeout, TransactionFactory transactionFactory, int batchSize)
 					throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.connection = connection;
@@ -101,6 +101,7 @@ public class SQLSessionImpl implements SQLSession {
 		this.queryTimeout = queryTimeout;
 		this.transactionFactory = transactionFactory;
 		this.lockManager = new LockManagerJDBC();
+		this.batchSize = batchSize;
 
 		String lockTimeoutSql = dialect.getSetLockTimeoutString(lockTimeout);
 		if (!StringUtils.isEmpty(lockTimeoutSql)) {
