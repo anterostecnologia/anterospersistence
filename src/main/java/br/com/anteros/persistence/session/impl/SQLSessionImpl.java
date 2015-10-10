@@ -79,7 +79,6 @@ public class SQLSessionImpl implements SQLSession {
 	private Transaction transaction;
 	private LockManager lockManager;
 	private int batchSize = 0;
-	private int totalcomandos = 0;
 	private int currentBatchSize = 0;
 
 	private String clientId;
@@ -219,8 +218,6 @@ public class SQLSessionImpl implements SQLSession {
 					}
 				}
 			}
-			totalcomandos += commandQueue.size();
-			System.out.println(totalcomandos);
 			commandQueue.clear();
 		}
 	}
