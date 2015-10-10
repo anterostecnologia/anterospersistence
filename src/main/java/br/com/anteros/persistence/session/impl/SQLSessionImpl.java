@@ -50,6 +50,7 @@ import br.com.anteros.persistence.session.query.ExpressionFieldMapper;
 import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
+import br.com.anteros.persistence.sql.command.BatchCommandSQL;
 import br.com.anteros.persistence.sql.command.CommandSQL;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.transaction.Transaction;
@@ -77,12 +78,15 @@ public class SQLSessionImpl implements SQLSession {
 	private TransactionFactory transactionFactory;
 	private Transaction transaction;
 	private LockManager lockManager;
+	private int batchSize = 0;
+	private int totalcomandos = 0;
+	private int currentBatchSize = 0;
 
 	private String clientId;
 
-	public SQLSessionImpl(SQLSessionFactory sessionFactory, Connection connection, EntityCacheManager entityCacheManager,
-			AbstractSQLRunner queryRunner, DatabaseDialect dialect, boolean showSql, boolean formatSql, int queryTimeout, int lockTimeout,
-			TransactionFactory transactionFactory) throws Exception {
+	public SQLSessionImpl(SQLSessionFactory sessionFactory, Connection connection, EntityCacheManager entityCacheManager, AbstractSQLRunner queryRunner,
+			DatabaseDialect dialect, boolean showSql, boolean formatSql, int queryTimeout, int lockTimeout, TransactionFactory transactionFactory)
+					throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.connection = connection;
 		if (connection != null)
@@ -124,9 +128,25 @@ public class SQLSessionImpl implements SQLSession {
 		return persister.save(this, object);
 	}
 
+	@Override
+	public void saveInBatchMode(Object object, int batchSize) throws Exception {
+		errorIfClosed();
+		this.currentBatchSize = batchSize;
+		persister.save(this, object, batchSize);
+	}
+
+	@Override
+	public void saveInBatchMode(Object[] object, int batchSize) throws Exception {
+		errorIfClosed();
+		this.currentBatchSize = batchSize;
+		for (Object obj : object)
+			persister.save(this, obj, batchSize);
+	}
+
 	public void save(Object[] object) throws Exception {
 		errorIfClosed();
-		persister.save(this, object);
+		for (Object obj : object)
+			persister.save(this, obj);
 	}
 
 	public void remove(Object object) throws Exception {
@@ -186,13 +206,20 @@ public class SQLSessionImpl implements SQLSession {
 	public void flush() throws Exception {
 		errorIfClosed();
 		synchronized (commandQueue) {
-			for (CommandSQL command : commandQueue) {
-				try {
-					command.execute();
-				} catch (SQLException ex) {
-					throw this.getDialect().convertSQLException(ex, "Erro enviando comando sql.", command.getSql());
+			if (getCurrentBatchSize() > 0) {
+				if (commandQueue.size() > 0)
+					new BatchCommandSQL(this, commandQueue.toArray(new CommandSQL[] {}), getCurrentBatchSize()).execute();
+			} else {
+				for (CommandSQL command : commandQueue) {
+					try {
+						command.execute();
+					} catch (SQLException ex) {
+						throw this.getDialect().convertSQLException(ex, "Erro enviando comando sql.", command.getSql());
+					}
 				}
 			}
+			totalcomandos += commandQueue.size();
+			System.out.println(totalcomandos);
 			commandQueue.clear();
 		}
 	}
@@ -220,6 +247,7 @@ public class SQLSessionImpl implements SQLSession {
 		synchronized (commandQueue) {
 			commandQueue.clear();
 		}
+		currentBatchSize = 0;
 		connection.close();
 		connection = null;
 		LOG.debug("Fechou session " + this);
@@ -238,11 +266,11 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void onAfterExecuteCommit(Connection connection) throws Exception {
-
+		currentBatchSize = 0;
 	}
 
 	public void onAfterExecuteRollback(Connection connection) throws Exception {
-
+		currentBatchSize = 0;
 	}
 
 	public AbstractSQLRunner getQueryRunner() {
@@ -326,8 +354,8 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public EntityHandler createNewEntityHandler(Class<?> resultClass, List<ExpressionFieldMapper> expressionsFieldMapper,
-			Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, Cache transactionCache, boolean allowDuplicateObjects,
-			Object objectToRefresh, int firstResult, int maxResults, boolean readOnly, LockOptions lockOptions) throws Exception {
+			Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, Cache transactionCache, boolean allowDuplicateObjects, Object objectToRefresh,
+			int firstResult, int maxResults, boolean readOnly, LockOptions lockOptions) throws Exception {
 		errorIfClosed();
 		EntityHandler handler = new EntityHandler(lazyLoadFactory, resultClass, getEntityCacheManager(), expressionsFieldMapper, columnAliases, this,
 				transactionCache, allowDuplicateObjects, firstResult, maxResults, readOnly, lockOptions);
@@ -692,13 +720,13 @@ public class SQLSessionImpl implements SQLSession {
 	@Override
 	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass) throws Exception {
 		errorIfClosed();
-		return new SQLQueryImpl<T>(this,resultClass).timeOut(queryTimeout).namedQuery(name).showSql(showSql).formatSql(formatSql);
+		return new SQLQueryImpl<T>(this, resultClass).timeOut(queryTimeout).namedQuery(name).showSql(showSql).formatSql(formatSql);
 	}
 
 	@Override
 	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters) throws Exception {
 		errorIfClosed();
-		return new SQLQueryImpl<T>(this,resultClass).namedQuery(name).setParameters(parameters).showSql(showSql).formatSql(formatSql);
+		return new SQLQueryImpl<T>(this, resultClass).namedQuery(name).setParameters(parameters).showSql(showSql).formatSql(formatSql);
 	}
 
 	@Override
@@ -811,6 +839,22 @@ public class SQLSessionImpl implements SQLSession {
 	@Override
 	public String applyLock(String sql, Class<?> resultClass, LockOptions lockOptions) throws Exception {
 		return lockManager.applyLock(this, sql, resultClass, lockOptions);
+	}
+
+	@Override
+	public int getBatchSize() {
+		return batchSize;
+	}
+
+	@Override
+	public void batchSize(int batchSize) {
+		this.batchSize = batchSize;
+	}
+
+	private int getCurrentBatchSize() {
+		if (batchSize > 0)
+			return batchSize;
+		return currentBatchSize;
 	}
 
 }
