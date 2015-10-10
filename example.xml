@@ -37,6 +37,7 @@
 			<property name="application-location" value="c://temp/" />
 			<property name="create-tables-file-name" value="ScriptCriacaoBanco.SQL" />
 			<property name="drop-tables-file-name" value="ScriptCriacaoBanco.SQL" />
+			<property name="batchSize" value="0" />
 		</properties>
 		<annotatedClasses>
 		    <className>br.com.anteros.pessoa.Telefone</className>
