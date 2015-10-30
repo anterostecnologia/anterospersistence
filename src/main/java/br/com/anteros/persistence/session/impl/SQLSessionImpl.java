@@ -16,6 +16,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,12 +81,15 @@ public class SQLSessionImpl implements SQLSession {
 	private LockManager lockManager;
 	private int batchSize = 0;
 	private int currentBatchSize = 0;
+	private Map<String, NextValControl> cacheSequenceNumbers = new HashMap<String, SQLSessionImpl.NextValControl>();
 
 	private String clientId;
 
+	private boolean validationActive;
+
 	public SQLSessionImpl(SQLSessionFactory sessionFactory, Connection connection, EntityCacheManager entityCacheManager, AbstractSQLRunner queryRunner,
-			DatabaseDialect dialect, boolean showSql, boolean formatSql, int queryTimeout, int lockTimeout, TransactionFactory transactionFactory, int batchSize)
-					throws Exception {
+			DatabaseDialect dialect, boolean showSql, boolean formatSql, int queryTimeout, int lockTimeout, TransactionFactory transactionFactory,
+			int batchSize) throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.connection = connection;
 		if (connection != null)
@@ -205,21 +209,21 @@ public class SQLSessionImpl implements SQLSession {
 
 	public void flush() throws Exception {
 		errorIfClosed();
-		synchronized (commandQueue) {
-			if (getCurrentBatchSize() > 0) {
-				if (commandQueue.size() > 0)
-					new BatchCommandSQL(this, commandQueue.toArray(new CommandSQL[] {}), getCurrentBatchSize()).execute();
-			} else {
-				for (CommandSQL command : commandQueue) {
-					try {
-						command.execute();
-					} catch (SQLException ex) {
-						throw this.getDialect().convertSQLException(ex, "Erro enviando comando sql.", command.getSql());
-					}
+		// synchronized (commandQueue) {
+		if (getCurrentBatchSize() > 0) {
+			if (commandQueue.size() > 0)
+				new BatchCommandSQL(this, commandQueue.toArray(new CommandSQL[] {}), getCurrentBatchSize()).execute();
+		} else {
+			for (CommandSQL command : commandQueue) {
+				try {
+					command.execute();
+				} catch (SQLException ex) {
+					throw this.getDialect().convertSQLException(ex, "Erro enviando comando sql.", command.getSql());
 				}
 			}
-			commandQueue.clear();
 		}
+		commandQueue.clear();
+		// }
 	}
 
 	public void forceFlush(Set<String> tableNames) throws Exception {
@@ -853,6 +857,61 @@ public class SQLSessionImpl implements SQLSession {
 		if (batchSize > 0)
 			return batchSize;
 		return currentBatchSize;
+	}
+
+	@Override
+	public boolean validationIsActive() {
+		return validationActive;
+	}
+
+	@Override
+	public void activateValidation() {
+		this.validationActive = true;
+	}
+
+	@Override
+	public void deactivateValidation() {
+		this.validationActive = false;
+	}
+
+	@Override
+	public boolean hasNextValFromCacheSequence(String sequenceName) {
+		if (!cacheSequenceNumbers.containsKey(sequenceName))
+			return false;
+		return (cacheSequenceNumbers.get(sequenceName).hasNextVal());
+	}
+
+	@Override
+	public void storeNextValToCacheSession(String sequenceName, Long firstValue, Long lastValue) {
+		cacheSequenceNumbers.put(sequenceName, new NextValControl(firstValue-1, lastValue));
+	}
+
+	@Override
+	public Long getNextValFromCacheSequence(String sequenceName) {
+		if (!cacheSequenceNumbers.containsKey(sequenceName))
+			return null;
+		return (cacheSequenceNumbers.get(sequenceName).getNextVal());
+	}
+
+	private class NextValControl {
+
+		private Long lastValue;
+		private Long value;
+
+		public NextValControl(Long firstValue, Long lastValue) {
+			this.lastValue = lastValue;
+			this.value = firstValue;
+		}
+
+		public boolean hasNextVal() {
+			return (value + 1 <= lastValue);
+		}
+
+		public Long getNextVal() {
+			value++;
+			return value;
+
+		}
 	}
 
 }
