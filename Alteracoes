@@ -1,14 +1,6 @@
 1 - Implementar tela de Manutenção dos Objetos de Segurança na WEB.
 2 - Implementar Ações que possam ser disparados via REST.
 3 - Plugin para executar SQL's, gerar schemas e engenharia reversa
-4 - Fazer Schema gerar alterações nos campos tipo not null alterado ou tamanho do campo maior.
-5 - Implementar Integração com JAX-RS, JAXB, JEE, JERSEY
-6 - Implementar Projetos de Exemplo usando HTML5/JavaScript, Angular, Vaadin, SpringMVC, VRaptor, Android, Delphi.
-
-
-
-
-
 [generate-entities] - Generate entities from a database.
 
 [OPTIONS]
@@ -23,6 +15,16 @@
 [--detectManyToMany] - Detect many to many associations between tables.
 [--detectOneToOne] - Detect one-to-one associations between tables.
 [--detectOptimisticLock] - Detect optimistic locking tables, i.e. if a table has a column named 'version' with a numeric type optimistic locking will be setup for that table.
+
+
+4 - Fazer Schema gerar alterações nos campos tipo not null alterado ou tamanho do campo maior.
+5 - Implementar Integração com JAX-RS, JAXB, JEE, JERSEY
+6 - Implementar Projetos de Exemplo usando HTML5/JavaScript, Angular, Vaadin, SpringMVC, VRaptor, Android, Delphi.
+
+
+
+
+
 
 
 - Criar anotação para validação de campo onde aceite apenas objetos de classes específicas  
