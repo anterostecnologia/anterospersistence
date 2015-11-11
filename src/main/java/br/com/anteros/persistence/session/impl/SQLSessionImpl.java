@@ -212,7 +212,7 @@ public class SQLSessionImpl implements SQLSession {
 		// synchronized (commandQueue) {
 		if (getCurrentBatchSize() > 0) {
 			if (commandQueue.size() > 0)
-				new BatchCommandSQL(this, commandQueue.toArray(new CommandSQL[] {}), getCurrentBatchSize()).execute();
+				new BatchCommandSQL(this, commandQueue.toArray(new CommandSQL[] {}), getCurrentBatchSize(), this.isShowSql()).execute();
 		} else {
 			for (CommandSQL command : commandQueue) {
 				try {
@@ -220,25 +220,26 @@ public class SQLSessionImpl implements SQLSession {
 				} catch (SQLException ex) {
 					throw this.getDialect().convertSQLException(ex, "Erro enviando comando sql.", command.getSql());
 				}
+
 			}
 		}
 		commandQueue.clear();
-		// }
 	}
 
 	public void forceFlush(Set<String> tableNames) throws Exception {
 		errorIfClosed();
 		if (tableNames != null) {
 			synchronized (commandQueue) {
-				List<CommandSQL> commandsToRemove = new ArrayList<CommandSQL>();
+				boolean foundCommand = false;
 				for (CommandSQL command : commandQueue) {
 					if (tableNames.contains(command.getTargetTableName().toUpperCase())) {
-						command.execute();
-						commandsToRemove.add(command);
+						foundCommand = true;
+						break;
 					}
 				}
-				for (CommandSQL command : commandsToRemove)
-					commandQueue.remove(command);
+				if (foundCommand) {
+					flush();
+				}
 			}
 		}
 	}
@@ -883,7 +884,7 @@ public class SQLSessionImpl implements SQLSession {
 
 	@Override
 	public void storeNextValToCacheSession(String sequenceName, Long firstValue, Long lastValue) {
-		cacheSequenceNumbers.put(sequenceName, new NextValControl(firstValue-1, lastValue));
+		cacheSequenceNumbers.put(sequenceName, new NextValControl(firstValue - 1, lastValue));
 	}
 
 	@Override
