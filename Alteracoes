@@ -2,6 +2,7 @@
 2 - Implementar Ações que possam ser disparados via REST.
 3 - Plugin para executar SQL's, gerar schemas e engenharia reversa
 [generate-entities] - Generate entities from a database.
+4 - Implementar remove lógico atribuindo o campo que irá ocultar o registro.
 
 [OPTIONS]
 [--table] - Table pattern to include. 'CUSTOMER' for specific table, 'CUST' for substring match and '' for all (the default)
