@@ -24,13 +24,17 @@ import java.util.Set;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
+import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.handler.EntityHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
+import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
 import br.com.anteros.persistence.metadata.identifier.Identifier;
+import br.com.anteros.persistence.metadata.identifier.IdentifierGenerator;
+import br.com.anteros.persistence.metadata.identifier.IdentifierGeneratorFactory;
 import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.proxy.JavassistLazyLoadFactory;
@@ -214,6 +218,14 @@ public class SQLSessionImpl implements SQLSession {
 			if (commandQueue.size() > 0)
 				new BatchCommandSQL(this, commandQueue.toArray(new CommandSQL[] {}), getCurrentBatchSize(), this.isShowSql()).execute();
 		} else {
+
+			// System.out.println("COMANDOS GERADOS->");
+			// System.out.println("----------------------------------------------");
+			// for (CommandSQL command : commandQueue) {
+			// System.out.println(" "+command.getSql()+" : "+command.getNamedParameters());
+			// }
+			// System.out.println("----------------------------------------------");
+
 			for (CommandSQL command : commandQueue) {
 				try {
 					command.execute();
@@ -915,4 +927,32 @@ public class SQLSessionImpl implements SQLSession {
 		}
 	}
 
+	@Override
+	public void forceGenerationIdentifier(Object entity) throws Exception {
+		if (entity == null)
+			return;
+		EntityCache entityCache = this.getEntityCacheManager().getEntityCache(entity.getClass());
+		if (entityCache == null) {
+			throw new SQLSessionException(
+					"Objeto não pode ser salvo pois a classe " + entity.getClass().getName() + " não foi localizada no cache de Entidades.");
+		}
+
+		if (!this.getIdentifier(entity).hasIdentifier()) {
+			for (DescriptionField descriptionField : entityCache.getDescriptionFields()) {
+				if (!descriptionField.isAnyCollectionOrMap() && !descriptionField.isVersioned() && !descriptionField.isJoinTable()) {
+					for (DescriptionColumn columnModified : descriptionField.getDescriptionColumns()) {
+						if (columnModified.isPrimaryKey() && columnModified.hasGenerator()) {
+							IdentifierGenerator identifierGenerator = IdentifierGeneratorFactory.createGenerator(this, columnModified);
+							if (!(identifierGenerator instanceof IdentifierPostInsert)) {
+								/*
+								 * Gera o próximo número da sequência e seta na entidade
+								 */
+								ReflectionUtils.setObjectValueByFieldName(entity, columnModified.getField().getName(), identifierGenerator.generate());
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }

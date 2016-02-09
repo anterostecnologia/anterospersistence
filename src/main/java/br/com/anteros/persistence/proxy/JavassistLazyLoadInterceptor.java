@@ -83,8 +83,9 @@ public class JavassistLazyLoadInterceptor implements MethodHandler {
 				 */
 				if (entityCache != null && ReflectionUtils.isPublic(entityCache.getEntityClass(), thisMethod)) {
 					Class<?> dc = thisMethod.getDeclaringClass();
-					if (!dc.isInstance(target))
+					if (!dc.isInstance(target)){
 						throw new ClassCastException(target.getClass().getName());
+					}
 					returnValue = thisMethod.invoke(target, args);
 				} else {
 					if (!thisMethod.isAccessible())
@@ -102,7 +103,6 @@ public class JavassistLazyLoadInterceptor implements MethodHandler {
 	private synchronized Object getTargetObject() throws Exception {
 		if (!initialized) {
 			try {
-				initialized = Boolean.TRUE;
 				processing = Boolean.TRUE;
 
 				/*
@@ -127,6 +127,7 @@ public class JavassistLazyLoadInterceptor implements MethodHandler {
 				query.allowDuplicateObjects(true);
 				target = query.loadData(entityCache, owner, descriptionFieldOwner,
 						columnKeyValuesTarget, transactionCache);
+				
 
 				EntityManaged entityManaged = session.getPersistenceContext().getEntityManaged(owner);
 				/*
@@ -150,7 +151,8 @@ public class JavassistLazyLoadInterceptor implements MethodHandler {
 						entityManaged.getFieldsForUpdate().add(descriptionFieldOwner.getField().getName());
 					}
 				}
-
+				initialized = Boolean.TRUE;
+				
 			} finally {
 				processing = Boolean.FALSE;
 			}
