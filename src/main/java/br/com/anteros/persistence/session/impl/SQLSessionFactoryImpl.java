@@ -128,7 +128,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	public SQLSession openSession(Connection connection) throws Exception {
 		setConfigurationClientInfo(connection);
 		return new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(),
-				this.getDialect(), this.isShowSql(), this.isFormatSql(), this.getQueryTimeout(), this.getLockTimeout(),
+				this.getDialect(), this.getShowSql(), this.isFormatSql(), this.getQueryTimeout(), this.getLockTimeout(),
 				this.getTransactionFactory(), this.getBatchSize());
 	}
 

@@ -54,6 +54,7 @@ import br.com.anteros.persistence.session.query.AbstractSQLRunner;
 import br.com.anteros.persistence.session.query.ExpressionFieldMapper;
 import br.com.anteros.persistence.session.query.SQLQuery;
 import br.com.anteros.persistence.session.query.SQLQueryAnalyserAlias;
+import br.com.anteros.persistence.session.query.ShowSQLType;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
 import br.com.anteros.persistence.sql.command.BatchCommandSQL;
 import br.com.anteros.persistence.sql.command.CommandSQL;
@@ -70,7 +71,7 @@ public class SQLSessionImpl implements SQLSession {
 	private Connection connection;
 	private DatabaseDialect dialect;
 	private AbstractSQLRunner queryRunner;
-	private boolean showSql;
+	private ShowSQLType[] showSql= {ShowSQLType.NONE};
 	private boolean formatSql;
 	private int queryTimeout = 0;
 	private SQLPersistenceContext persistenceContext;
@@ -92,7 +93,7 @@ public class SQLSessionImpl implements SQLSession {
 	private boolean validationActive;
 
 	public SQLSessionImpl(SQLSessionFactory sessionFactory, Connection connection, EntityCacheManager entityCacheManager, AbstractSQLRunner queryRunner,
-			DatabaseDialect dialect, boolean showSql, boolean formatSql, int queryTimeout, int lockTimeout, TransactionFactory transactionFactory,
+			DatabaseDialect dialect, ShowSQLType[] showSql, boolean formatSql, int queryTimeout, int lockTimeout, TransactionFactory transactionFactory,
 			int batchSize) throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.connection = connection;
@@ -192,10 +193,14 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public boolean isShowSql() {
+		return showSql!=null;
+	}
+	
+	public ShowSQLType[] getShowSql() {
 		return showSql;
 	}
 
-	public void setShowSql(boolean showSql) {
+	public void setShowSql(ShowSQLType... showSql) {
 		this.showSql = showSql;
 	}
 
@@ -216,15 +221,15 @@ public class SQLSessionImpl implements SQLSession {
 		// synchronized (commandQueue) {
 		if (getCurrentBatchSize() > 0) {
 			if (commandQueue.size() > 0)
-				new BatchCommandSQL(this, commandQueue.toArray(new CommandSQL[] {}), getCurrentBatchSize(), this.isShowSql()).execute();
+				new BatchCommandSQL(this, commandQueue.toArray(new CommandSQL[] {}), getCurrentBatchSize(), this.getShowSql()).execute();
 		} else {
 
-			// System.out.println("COMANDOS GERADOS->");
-			// System.out.println("----------------------------------------------");
-			// for (CommandSQL command : commandQueue) {
-			// System.out.println(" "+command.getSql()+" : "+command.getNamedParameters());
-			// }
-			// System.out.println("----------------------------------------------");
+//			 System.out.println("COMANDOS GERADOS->");
+//			 System.out.println("----------------------------------------------");
+//			 for (CommandSQL command : commandQueue) {
+//			 System.out.println(" "+command.getSql()+" : "+command.getNamedParameters());
+//			 }
+//			 System.out.println("----------------------------------------------");
 
 			for (CommandSQL command : commandQueue) {
 				try {
