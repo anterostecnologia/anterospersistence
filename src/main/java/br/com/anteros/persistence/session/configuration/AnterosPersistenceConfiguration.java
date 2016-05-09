@@ -127,4 +127,8 @@ public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigura
 		return this;
 	}
 
+	public AnterosPersistenceConfiguration setPackageToScanEntity(PackageScanEntity packageToScanEntity){
+		getSessionFactoryConfiguration().setPackageToScanEntity(packageToScanEntity);
+		return this;
+	}
 }
