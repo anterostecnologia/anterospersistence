@@ -62,6 +62,7 @@ import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.transaction.Transaction;
 import br.com.anteros.persistence.transaction.TransactionFactory;
 
+@SuppressWarnings("unchecked")
 public class SQLSessionImpl implements SQLSession {
 
 	private static Logger LOG = LoggerProvider.getInstance().getLogger(SQLSession.class);
@@ -71,7 +72,7 @@ public class SQLSessionImpl implements SQLSession {
 	private Connection connection;
 	private DatabaseDialect dialect;
 	private AbstractSQLRunner queryRunner;
-	private ShowSQLType[] showSql= {ShowSQLType.NONE};
+	private ShowSQLType[] showSql = { ShowSQLType.NONE };
 	private boolean formatSql;
 	private int queryTimeout = 0;
 	private SQLPersistenceContext persistenceContext;
@@ -92,9 +93,10 @@ public class SQLSessionImpl implements SQLSession {
 
 	private boolean validationActive;
 
-	public SQLSessionImpl(SQLSessionFactory sessionFactory, Connection connection, EntityCacheManager entityCacheManager, AbstractSQLRunner queryRunner,
-			DatabaseDialect dialect, ShowSQLType[] showSql, boolean formatSql, int queryTimeout, int lockTimeout, TransactionFactory transactionFactory,
-			int batchSize) throws Exception {
+	public SQLSessionImpl(SQLSessionFactory sessionFactory, Connection connection,
+			EntityCacheManager entityCacheManager, AbstractSQLRunner queryRunner, DatabaseDialect dialect,
+			ShowSQLType[] showSql, boolean formatSql, int queryTimeout, int lockTimeout,
+			TransactionFactory transactionFactory, int batchSize) throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.connection = connection;
 		if (connection != null)
@@ -193,9 +195,9 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public boolean isShowSql() {
-		return showSql!=null;
+		return showSql != null;
 	}
-	
+
 	public ShowSQLType[] getShowSql() {
 		return showSql;
 	}
@@ -221,16 +223,9 @@ public class SQLSessionImpl implements SQLSession {
 		// synchronized (commandQueue) {
 		if (getCurrentBatchSize() > 0) {
 			if (commandQueue.size() > 0)
-				new BatchCommandSQL(this, commandQueue.toArray(new CommandSQL[] {}), getCurrentBatchSize(), this.getShowSql()).execute();
+				new BatchCommandSQL(this, commandQueue.toArray(new CommandSQL[] {}), getCurrentBatchSize(),
+						this.getShowSql()).execute();
 		} else {
-
-//			 System.out.println("COMANDOS GERADOS->");
-//			 System.out.println("----------------------------------------------");
-//			 for (CommandSQL command : commandQueue) {
-//			 System.out.println(" "+command.getSql()+" : "+command.getNamedParameters());
-//			 }
-//			 System.out.println("----------------------------------------------");
-
 			for (CommandSQL command : commandQueue) {
 				try {
 					command.execute();
@@ -373,12 +368,15 @@ public class SQLSessionImpl implements SQLSession {
 		getRunner().executeDDL(getConnection(), ddl, showSql, formatSql, "");
 	}
 
-	public EntityHandler createNewEntityHandler(Class<?> resultClass, List<ExpressionFieldMapper> expressionsFieldMapper,
-			Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, Cache transactionCache, boolean allowDuplicateObjects, Object objectToRefresh,
-			int firstResult, int maxResults, boolean readOnly, LockOptions lockOptions) throws Exception {
+	public EntityHandler createNewEntityHandler(Class<?> resultClass,
+			List<ExpressionFieldMapper> expressionsFieldMapper,
+			Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, Cache transactionCache,
+			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly,
+			LockOptions lockOptions) throws Exception {
 		errorIfClosed();
-		EntityHandler handler = new EntityHandler(lazyLoadFactory, resultClass, getEntityCacheManager(), expressionsFieldMapper, columnAliases, this,
-				transactionCache, allowDuplicateObjects, firstResult, maxResults, readOnly, lockOptions);
+		EntityHandler handler = new EntityHandler(lazyLoadFactory, resultClass, getEntityCacheManager(),
+				expressionsFieldMapper, columnAliases, this, transactionCache, allowDuplicateObjects, firstResult,
+				maxResults, readOnly, lockOptions);
 		handler.setObjectToRefresh(objectToRefresh);
 		return handler;
 	}
@@ -485,11 +483,13 @@ public class SQLSessionImpl implements SQLSession {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache == null) {
-			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. " + entityClass.getName());
+			throw new SQLSessionException(
+					"Classe não foi encontrada na lista de entidades gerenciadas. " + entityClass.getName());
 		}
 		if (id instanceof Identifier) {
 			if (!((Identifier<?>) id).getClazz().equals(entityClass)) {
-				throw new SQLSessionException("Objeto ID é do tipo Identifier porém de uma classe diferente da classe " + entityClass.getName());
+				throw new SQLSessionException("Objeto ID é do tipo Identifier porém de uma classe diferente da classe "
+						+ entityClass.getName());
 			} else
 				return find((Identifier<T>) id, readOnly);
 		}
@@ -499,11 +499,13 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object id, Map<String, Object> properties, boolean readOnly) throws Exception {
+	public <T> T find(Class<T> entityClass, Object id, Map<String, Object> properties, boolean readOnly)
+			throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache == null) {
-			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. " + entityClass.getName());
+			throw new SQLSessionException(
+					"Classe não foi encontrada na lista de entidades gerenciadas. " + entityClass.getName());
 		}
 		T result = find(entityClass, id, readOnly);
 		entityCache.setObjectValues(result, properties);
@@ -515,11 +517,13 @@ public class SQLSessionImpl implements SQLSession {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache == null) {
-			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. " + entityClass.getName());
+			throw new SQLSessionException(
+					"Classe não foi encontrada na lista de entidades gerenciadas. " + entityClass.getName());
 		}
 		if (id instanceof Identifier) {
 			if (!((Identifier<?>) id).getClazz().equals(entityClass)) {
-				throw new SQLSessionException("Objeto ID é do tipo Identifier porém de uma classe diferente da classe " + entityClass.getName());
+				throw new SQLSessionException("Objeto ID é do tipo Identifier porém de uma classe diferente da classe "
+						+ entityClass.getName());
 			} else
 				return find((Identifier<T>) id, readOnly);
 		}
@@ -529,23 +533,30 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object id, LockOptions lockOptions, Map<String, Object> properties, boolean readOnly) throws Exception {
+	public <T> T find(Class<T> entityClass, Object id, LockOptions lockOptions, Map<String, Object> properties,
+			boolean readOnly) throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache == null) {
-			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. " + entityClass.getName());
+			throw new SQLSessionException(
+					"Classe não foi encontrada na lista de entidades gerenciadas. " + entityClass.getName());
 		}
 		T result = find(entityClass, id, lockOptions, readOnly);
 		entityCache.setObjectValues(result, properties);
 		return result;
 	}
 
+	
 	@Override
 	public <T> T find(Identifier<T> id, boolean readOnly) throws Exception {
 		errorIfClosed();
 		SQLQuery query = createQuery("");
 		query.setReadOnly(readOnly);
-		return (T) query.identifier(id).getSingleResult();
+		List<?> result = query.identifier(id).getResultList();
+		if ((result == null) || (result.size() == 0)) {
+			return null;
+		}
+		return (T) result.get(0);
 	}
 
 	@Override
@@ -554,7 +565,11 @@ public class SQLSessionImpl implements SQLSession {
 		SQLQuery query = createQuery("");
 		query.setReadOnly(readOnly);
 		query.setLockOptions(lockOptions);
-		return (T) query.identifier(id).getSingleResult();
+		List<?> result = query.identifier(id).getResultList();
+		if ((result == null) || (result.size() == 0)) {
+			return null;
+		}
+		return (T) result.get(0);
 	}
 
 	@Override
@@ -566,7 +581,8 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockOptions lockOptions, boolean readOnly) throws Exception {
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockOptions lockOptions, boolean readOnly)
+			throws Exception {
 		errorIfClosed();
 		T result = find(id, lockOptions, readOnly);
 		id.getEntityCache().setObjectValues(result, properties);
@@ -582,7 +598,8 @@ public class SQLSessionImpl implements SQLSession {
 		persistenceContext.detach(entity);
 		EntityCache entityCache = entityCacheManager.getEntityCache(entity.getClass());
 		if (entityCache == null) {
-			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
+			throw new SQLSessionException(
+					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
 		find(identifier);
@@ -597,7 +614,8 @@ public class SQLSessionImpl implements SQLSession {
 		persistenceContext.detach(entity);
 		EntityCache entityCache = entityCacheManager.getEntityCache(entity.getClass());
 		if (entityCache == null) {
-			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
+			throw new SQLSessionException(
+					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
 		find(identifier);
@@ -613,7 +631,8 @@ public class SQLSessionImpl implements SQLSession {
 		persistenceContext.detach(entity);
 		EntityCache entityCache = entityCacheManager.getEntityCache(entity.getClass());
 		if (entityCache == null) {
-			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
+			throw new SQLSessionException(
+					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
 		find(identifier, lockOptions);
@@ -628,7 +647,8 @@ public class SQLSessionImpl implements SQLSession {
 		persistenceContext.detach(entity);
 		EntityCache entityCache = entityCacheManager.getEntityCache(entity.getClass());
 		if (entityCache == null) {
-			throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
+			throw new SQLSessionException(
+					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
 		find(identifier, lockOptions);
@@ -690,7 +710,8 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, LockOptions lockOptions) throws Exception {
+	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, LockOptions lockOptions)
+			throws Exception {
 		errorIfClosed();
 		TypedSQLQuery<T> result = new SQLQueryImpl<T>(this, resultClass);
 		result.sql(sql);
@@ -702,7 +723,8 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, Object parameters, LockOptions lockOptions) throws Exception {
+	public <T> TypedSQLQuery<T> createQuery(String sql, Class<T> resultClass, Object parameters,
+			LockOptions lockOptions) throws Exception {
 		errorIfClosed();
 		TypedSQLQuery<T> result = new SQLQueryImpl<T>(this, resultClass);
 		result.timeOut(queryTimeout);
@@ -740,13 +762,16 @@ public class SQLSessionImpl implements SQLSession {
 	@Override
 	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass) throws Exception {
 		errorIfClosed();
-		return new SQLQueryImpl<T>(this, resultClass).timeOut(queryTimeout).namedQuery(name).showSql(showSql).formatSql(formatSql);
+		return new SQLQueryImpl<T>(this, resultClass).timeOut(queryTimeout).namedQuery(name).showSql(showSql)
+				.formatSql(formatSql);
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters) throws Exception {
+	public <T> TypedSQLQuery<T> createNamedQuery(String name, Class<T> resultClass, Object parameters)
+			throws Exception {
 		errorIfClosed();
-		return new SQLQueryImpl<T>(this, resultClass).namedQuery(name).setParameters(parameters).showSql(showSql).formatSql(formatSql);
+		return new SQLQueryImpl<T>(this, resultClass).namedQuery(name).setParameters(parameters).showSql(showSql)
+				.formatSql(formatSql);
 	}
 
 	@Override
@@ -761,7 +786,8 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public SQLQuery createStoredProcedureQuery(String procedureName, CallableType type, Object parameters) throws Exception {
+	public SQLQuery createStoredProcedureQuery(String procedureName, CallableType type, Object parameters)
+			throws Exception {
 		errorIfClosed();
 		SQLQuery result = new StoredProcedureSQLQueryImpl(this, type);
 		result.procedureOrFunctionName(procedureName);
@@ -773,7 +799,8 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type, Class<T> resultClass) throws Exception {
+	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type,
+			Class<T> resultClass) throws Exception {
 		errorIfClosed();
 		TypedSQLQuery<T> result = new StoredProcedureSQLQueryImpl(this, resultClass, type);
 		result.procedureOrFunctionName(procedureName);
@@ -784,8 +811,8 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type, Class<T> resultClass, Object[] parameters)
-			throws Exception {
+	public <T> TypedSQLQuery<T> createStoredProcedureQuery(String procedureName, CallableType type,
+			Class<T> resultClass, Object[] parameters) throws Exception {
 		errorIfClosed();
 		TypedSQLQuery<T> result = new StoredProcedureSQLQueryImpl(this, resultClass, type);
 		result.procedureOrFunctionName(procedureName);
@@ -812,7 +839,8 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass, Object[] parameters) throws Exception {
+	public <T> TypedSQLQuery<T> createStoredProcedureNamedQuery(String name, Class<T> resultClass, Object[] parameters)
+			throws Exception {
 		throw new UnsupportedOperationException();
 	}
 
@@ -832,7 +860,8 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object primaryKey, LockOptions lockOptions, Map<String, Object> properties) throws Exception {
+	public <T> T find(Class<T> entityClass, Object primaryKey, LockOptions lockOptions, Map<String, Object> properties)
+			throws Exception {
 		return find(entityClass, primaryKey, lockOptions, properties, false);
 	}
 
@@ -938,21 +967,25 @@ public class SQLSessionImpl implements SQLSession {
 			return;
 		EntityCache entityCache = this.getEntityCacheManager().getEntityCache(entity.getClass());
 		if (entityCache == null) {
-			throw new SQLSessionException(
-					"Objeto não pode ser salvo pois a classe " + entity.getClass().getName() + " não foi localizada no cache de Entidades.");
+			throw new SQLSessionException("Objeto não pode ser salvo pois a classe " + entity.getClass().getName()
+					+ " não foi localizada no cache de Entidades.");
 		}
 
 		if (!this.getIdentifier(entity).hasIdentifier()) {
 			for (DescriptionField descriptionField : entityCache.getDescriptionFields()) {
-				if (!descriptionField.isAnyCollectionOrMap() && !descriptionField.isVersioned() && !descriptionField.isJoinTable()) {
+				if (!descriptionField.isAnyCollectionOrMap() && !descriptionField.isVersioned()
+						&& !descriptionField.isJoinTable()) {
 					for (DescriptionColumn columnModified : descriptionField.getDescriptionColumns()) {
 						if (columnModified.isPrimaryKey() && columnModified.hasGenerator()) {
-							IdentifierGenerator identifierGenerator = IdentifierGeneratorFactory.createGenerator(this, columnModified);
+							IdentifierGenerator identifierGenerator = IdentifierGeneratorFactory.createGenerator(this,
+									columnModified);
 							if (!(identifierGenerator instanceof IdentifierPostInsert)) {
 								/*
-								 * Gera o próximo número da sequência e seta na entidade
+								 * Gera o próximo número da sequência e seta na
+								 * entidade
 								 */
-								ReflectionUtils.setObjectValueByFieldName(entity, columnModified.getField().getName(), identifierGenerator.generate());
+								ReflectionUtils.setObjectValueByFieldName(entity, columnModified.getField().getName(),
+										identifierGenerator.generate());
 							}
 						}
 					}
