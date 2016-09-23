@@ -15,6 +15,7 @@ package br.com.anteros.persistence.session;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 
 import javax.sql.DataSource;
 import javax.transaction.TransactionManager;
@@ -361,5 +362,17 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	public int getBatchSize() {
 		return batchSize;
 	}
+
+	@Override
+	public String toString() {
+		return "AbstractSQLSessionFactory [dialect=" + dialect + ", entityCacheManager=" + entityCacheManager
+				+ ", dataSource=" + dataSource + ", configuration=" + configuration + ", currentSessionContext="
+				+ currentSessionContext + ", transactionManager=" + transactionManager + ", showSql="
+				+ Arrays.toString(showSql) + ", formatSql=" + formatSql + ", queryTimeout=" + queryTimeout
+				+ ", lockTimeout=" + lockTimeout + ", batchSize=" + batchSize + "]";
+	}
+	
+	
+	
 
 }
