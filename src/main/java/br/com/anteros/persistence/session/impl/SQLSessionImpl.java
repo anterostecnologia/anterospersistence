@@ -159,6 +159,12 @@ public class SQLSessionImpl implements SQLSession {
 		for (Object obj : object)
 			persister.save(this, obj);
 	}
+	
+	public void save(Collection<?> object) throws Exception {
+		errorIfClosed();
+		for (Object obj : object)
+			persister.save(this, obj);
+	}
 
 	public void remove(Object object) throws Exception {
 		errorIfClosed();
