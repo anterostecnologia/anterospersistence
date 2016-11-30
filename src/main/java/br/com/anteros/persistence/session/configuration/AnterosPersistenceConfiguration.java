@@ -24,6 +24,7 @@ import br.com.anteros.core.resource.messages.AnterosResourceBundle;
 import br.com.anteros.core.utils.IOUtils;
 import br.com.anteros.core.utils.ObjectUtils;
 import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
+import br.com.anteros.persistence.metadata.accessor.impl.PropertyAcessorFactoryImpl;
 import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
 import br.com.anteros.persistence.resource.messages.AnterosPersistenceMessages;
 import br.com.anteros.persistence.session.SQLSessionFactory;
@@ -53,8 +54,8 @@ public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigura
 
 	@Override
 	public PropertyAccessorFactory getPropertyAccessorFactory() {
-		// return new PropertyAcessorFactoryImpl();
-		return null;
+		 return new PropertyAcessorFactoryImpl();
+		//return null;
 	}
 
 	public SQLSessionFactory buildSessionFactory() throws Exception {

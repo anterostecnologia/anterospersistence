@@ -24,8 +24,8 @@
 6 - Implementar Projetos de Exemplo usando HTML5/JavaScript, Angular, Vaadin, SpringMVC, VRaptor, Android, Delphi.
 
 
-
-
+Criar anotação:
+- @AttributeOverride(name="address.street", column=@Column(name="STREET", table="OTHER_PERSON"))
 
 
 
