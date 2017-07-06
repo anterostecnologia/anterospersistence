@@ -54,8 +54,8 @@ public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigura
 
 	@Override
 	public PropertyAccessorFactory getPropertyAccessorFactory() {
-		 return new PropertyAcessorFactoryImpl();
-		//return null;
+		// return new PropertyAcessorFactoryImpl();
+		return null;
 	}
 
 	public SQLSessionFactory buildSessionFactory() throws Exception {
