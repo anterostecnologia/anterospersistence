@@ -56,6 +56,8 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	private int lockTimeout = 0;
 	private int batchSize = 0;
 
+	private boolean useBeanValidation=true;
+
 	public AbstractSQLSessionFactory(EntityCacheManager entityCacheManager, DataSource dataSource, SessionFactoryConfiguration configuration) throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.dataSource = dataSource;
@@ -90,6 +92,8 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 			this.lockTimeout = new Integer(configuration.getProperty(AnterosPersistenceProperties.LOCK_TIMEOUT)).intValue();
 		if (configuration.getProperty(AnterosPersistenceProperties.BATCH_SIZE) != null)
 			this.batchSize = new Integer(configuration.getProperty(AnterosPersistenceProperties.BATCH_SIZE)).intValue();
+		if (configuration.getProperty(AnterosPersistenceProperties.USE_BEAN_VALIDATION) != null)
+			this.useBeanValidation = new Boolean(configuration.getProperty(AnterosPersistenceProperties.USE_BEAN_VALIDATION)).booleanValue();
 
 		this.currentSessionContext = buildCurrentSessionContext();
 	}
@@ -370,6 +374,14 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 				+ currentSessionContext + ", transactionManager=" + transactionManager + ", showSql="
 				+ Arrays.toString(showSql) + ", formatSql=" + formatSql + ", queryTimeout=" + queryTimeout
 				+ ", lockTimeout=" + lockTimeout + ", batchSize=" + batchSize + "]";
+	}
+
+	public boolean isUseBeanValidation() {
+		return useBeanValidation;
+	}
+
+	public void setUseBeanValidation(boolean useBeanValidation) {
+		this.useBeanValidation = useBeanValidation;
 	}
 	
 	

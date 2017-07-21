@@ -129,7 +129,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 		setConfigurationClientInfo(connection);
 		return new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(),
 				this.getDialect(), this.getShowSql(), this.isFormatSql(), this.getQueryTimeout(), this.getLockTimeout(),
-				this.getTransactionFactory(), this.getBatchSize());
+				this.getTransactionFactory(), this.getBatchSize(), this.isUseBeanValidation());
 	}
 
 }
