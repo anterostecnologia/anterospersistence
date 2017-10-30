@@ -160,7 +160,7 @@ public class SQLSessionImpl implements SQLSession {
 		for (Object obj : object)
 			persister.save(this, obj);
 	}
-	
+
 	public void save(Collection<?> object) throws Exception {
 		errorIfClosed();
 		for (Object obj : object)
@@ -270,7 +270,8 @@ public class SQLSessionImpl implements SQLSession {
 			commandQueue.clear();
 		}
 		currentBatchSize = 0;
-		connection.close();
+		if (connection != null && !connection.isClosed())
+			connection.close();
 		connection = null;
 		LOG.debug("Fechou session " + this);
 	}
@@ -553,7 +554,6 @@ public class SQLSessionImpl implements SQLSession {
 		return result;
 	}
 
-	
 	@Override
 	public <T> T find(Identifier<T> id, boolean readOnly) throws Exception {
 		errorIfClosed();
@@ -999,5 +999,12 @@ public class SQLSessionImpl implements SQLSession {
 				}
 			}
 		}
+	}
+
+	@Override
+	protected void finalize() throws Throwable {
+		if (!this.isClosed())
+			this.close();
+		super.finalize();
 	}
 }
