@@ -1007,4 +1007,9 @@ public class SQLSessionImpl implements SQLSession {
 			this.close();
 		super.finalize();
 	}
+
+	@Override
+	public int[] batch(String sql, Object[][] params) throws Exception {
+		return queryRunner.batch(getConnection(), sql, params, showSql, formatSql, listeners,"");
+	}
 }
