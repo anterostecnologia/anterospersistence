@@ -24,7 +24,6 @@ import br.com.anteros.core.resource.messages.AnterosResourceBundle;
 import br.com.anteros.core.utils.IOUtils;
 import br.com.anteros.core.utils.ObjectUtils;
 import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
-import br.com.anteros.persistence.metadata.accessor.impl.PropertyAcessorFactoryImpl;
 import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
 import br.com.anteros.persistence.resource.messages.AnterosPersistenceMessages;
 import br.com.anteros.persistence.session.SQLSessionFactory;
