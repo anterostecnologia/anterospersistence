@@ -377,7 +377,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public EntityHandler createNewEntityHandler(Class<?> resultClass,
-			List<ExpressionFieldMapper> expressionsFieldMapper,
+			Set<ExpressionFieldMapper> expressionsFieldMapper,
 			Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, Cache transactionCache,
 			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly,
 			LockOptions lockOptions) throws Exception {
