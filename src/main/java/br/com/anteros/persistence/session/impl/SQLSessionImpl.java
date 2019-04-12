@@ -1012,4 +1012,9 @@ public class SQLSessionImpl implements SQLSession {
 	public int[] batch(String sql, Object[][] params) throws Exception {
 		return queryRunner.batch(getConnection(), sql, params, showSql, formatSql, listeners,"");
 	}
+
+	@Override
+	public void validate(Object object) throws Exception {
+		persister.getValidator().validateBean(object);		
+	}
 }
