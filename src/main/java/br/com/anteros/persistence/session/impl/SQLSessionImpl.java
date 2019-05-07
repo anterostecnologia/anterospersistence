@@ -1017,4 +1017,10 @@ public class SQLSessionImpl implements SQLSession {
 	public void validate(Object object) throws Exception {
 		persister.getValidator().validateBean(object);		
 	}
+
+
+	@Override
+	public void validate(Object object, Class<?>... groups) throws Exception {
+		persister.getValidator().validateBean(object, groups);		
+	}
 }
