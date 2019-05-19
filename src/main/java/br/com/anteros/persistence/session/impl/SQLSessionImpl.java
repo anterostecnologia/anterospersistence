@@ -122,17 +122,17 @@ public class SQLSessionImpl implements SQLSession {
 
 	public long update(String sql) throws Exception {
 		errorIfClosed();
-		return queryRunner.update(this.getConnection(), sql, listeners);
+		return queryRunner.update(this, sql, listeners);
 	}
 
 	public long update(String sql, Object[] params) throws Exception {
 		errorIfClosed();
-		return queryRunner.update(this.getConnection(), sql, params, listeners);
+		return queryRunner.update(this, sql, params, listeners);
 	}
 
 	public long update(String sql, NamedParameter[] params) throws Exception {
 		errorIfClosed();
-		return queryRunner.update(this.getConnection(), sql, params, listeners);
+		return queryRunner.update(this, sql, params, listeners);
 	}
 
 	public Object save(Object object) throws Exception {
@@ -274,6 +274,7 @@ public class SQLSessionImpl implements SQLSession {
 			connection.close();
 		connection = null;
 		LOG.debug("Fechou session " + this);
+		System.out.println("****************  F E C H O U  A  S E S S A O ****************************");
 	}
 
 	public void onBeforeExecuteCommit(Connection connection) throws Exception {
@@ -373,7 +374,7 @@ public class SQLSessionImpl implements SQLSession {
 
 	public void executeDDL(String ddl) throws Exception {
 		errorIfClosed();
-		getRunner().executeDDL(getConnection(), ddl, showSql, formatSql, "");
+		getRunner().executeDDL(this, ddl, showSql, formatSql, "");
 	}
 
 	public EntityHandler createNewEntityHandler(Class<?> resultClass,
@@ -1010,7 +1011,7 @@ public class SQLSessionImpl implements SQLSession {
 
 	@Override
 	public int[] batch(String sql, Object[][] params) throws Exception {
-		return queryRunner.batch(getConnection(), sql, params, showSql, formatSql, listeners,"");
+		return queryRunner.batch(this, sql, params, showSql, formatSql, listeners,"");
 	}
 
 	@Override
@@ -1022,5 +1023,18 @@ public class SQLSessionImpl implements SQLSession {
 	@Override
 	public void validate(Object object, Class<?>... groups) throws Exception {
 		persister.getValidator().validateBean(object, groups);		
+	}
+
+	@Override
+	public void invalidateConnection() throws SQLException {
+		if (this.connection!=null) {
+			try {
+				connection.close();
+			} catch (SQLException e) {
+			}
+		}
+		
+		this.connection = this.getSQLSessionFactory().getDataSource().getConnection();
+		
 	}
 }

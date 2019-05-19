@@ -49,6 +49,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 	protected SessionFactoryConfiguration configuration;
 	protected CurrentSQLSessionContext currentSessionContext;
 	private TransactionManager transactionManager;
+	private CurrentSQLSessionContext currentSessionContextTHL;
 
 	private ShowSQLType[] showSql = {ShowSQLType.NONE};
 	private boolean formatSql = false;
@@ -96,6 +97,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 			this.useBeanValidation = new Boolean(configuration.getProperty(AnterosPersistenceProperties.USE_BEAN_VALIDATION)).booleanValue();
 
 		this.currentSessionContext = buildCurrentSessionContext();
+		this.currentSessionContextTHL = new ThreadLocalSQLSessionContext(this);
 	}
 
 	@Override
@@ -105,6 +107,7 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 		}
 		return currentSessionContext.currentSession();
 	}
+		
 
 	protected CurrentSQLSessionContext buildCurrentSessionContext() throws Exception {
 		String impl = configuration.getProperty(AnterosPersistenceProperties.CURRENT_SESSION_CONTEXT);
@@ -253,14 +256,6 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
 	public void setEntityCacheManager(EntityCacheManager enityCacheManager) {
 		this.entityCacheManager = enityCacheManager;
-	}
-
-	public DataSource getDatasource() {
-		return dataSource;
-	}
-
-	public void setDatasource(DataSource datasource) {
-		this.dataSource = datasource;
 	}
 
 	public boolean isShowSql() {

@@ -81,7 +81,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	}
 
 	public SQLSession openSession() throws Exception {
-		return openSession(this.getDatasource().getConnection());
+		return openSession(this.getDataSource().getConnection());
 	}
 
 	@Override
