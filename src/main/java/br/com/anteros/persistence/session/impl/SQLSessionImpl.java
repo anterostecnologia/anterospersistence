@@ -274,7 +274,6 @@ public class SQLSessionImpl implements SQLSession {
 			connection.close();
 		connection = null;
 		LOG.debug("Fechou session " + this);
-		System.out.println("****************  F E C H O U  A  S E S S A O ****************************");
 	}
 
 	public void onBeforeExecuteCommit(Connection connection) throws Exception {
@@ -1015,7 +1014,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public void validate(Object object) throws Exception {
+	public void validate(Object object) throws Exception  {
 		persister.getValidator().validateBean(object);		
 	}
 
