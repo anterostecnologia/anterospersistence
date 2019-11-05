@@ -90,6 +90,7 @@ public class SQLSessionImpl implements SQLSession {
 	private Map<String, NextValControl> cacheSequenceNumbers = new HashMap<String, SQLSessionImpl.NextValControl>();
 
 	private String clientId;
+	private Object tenantId;
 
 	private boolean validationActive;
 
@@ -1035,5 +1036,15 @@ public class SQLSessionImpl implements SQLSession {
 		
 		this.connection = this.getSQLSessionFactory().getDataSource().getConnection();
 		
+	}
+
+	@Override
+	public void setTenantId(Object value) {
+		this.tenantId = value;		
+	}
+
+	@Override
+	public Object getTenantId() {
+		return this.tenantId;
 	}
 }
