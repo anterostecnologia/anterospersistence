@@ -91,6 +91,7 @@ public class SQLSessionImpl implements SQLSession {
 
 	private String clientId;
 	private Object tenantId;
+	private Object companyId;
 
 	private boolean validationActive;
 
@@ -1046,5 +1047,15 @@ public class SQLSessionImpl implements SQLSession {
 	@Override
 	public Object getTenantId() {
 		return this.tenantId;
+	}
+
+	@Override
+	public void setCompanyId(Object value) {
+		this.companyId = value;		
+	}
+
+	@Override
+	public Object getCompanyId() {
+		return companyId;
 	}
 }
