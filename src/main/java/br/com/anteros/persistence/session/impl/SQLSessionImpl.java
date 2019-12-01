@@ -12,6 +12,7 @@
  *******************************************************************************/
 package br.com.anteros.persistence.session.impl;
 
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -29,6 +30,8 @@ import br.com.anteros.core.utils.StringUtils;
 import br.com.anteros.persistence.handler.EntityHandler;
 import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
+import br.com.anteros.persistence.metadata.EntityListener;
+import br.com.anteros.persistence.metadata.annotation.EventType;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
@@ -39,6 +42,8 @@ import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.proxy.JavassistLazyLoadFactory;
 import br.com.anteros.persistence.proxy.LazyLoadFactory;
+import br.com.anteros.persistence.session.ExternalFileManager;
+import br.com.anteros.persistence.session.FindParameters;
 import br.com.anteros.persistence.session.SQLPersister;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.SQLSessionFactory;
@@ -95,10 +100,13 @@ public class SQLSessionImpl implements SQLSession {
 
 	private boolean validationActive;
 
+	private ExternalFileManager externalFileManager;
+
 	public SQLSessionImpl(SQLSessionFactory sessionFactory, Connection connection,
 			EntityCacheManager entityCacheManager, AbstractSQLRunner queryRunner, DatabaseDialect dialect,
 			ShowSQLType[] showSql, boolean formatSql, int queryTimeout, int lockTimeout,
-			TransactionFactory transactionFactory, int batchSize, boolean validationActive) throws Exception {
+			TransactionFactory transactionFactory, int batchSize, boolean validationActive,
+			ExternalFileManager fileManager) throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.connection = connection;
 		if (connection != null)
@@ -115,6 +123,7 @@ public class SQLSessionImpl implements SQLSession {
 		this.lockManager = new LockManagerJDBC();
 		this.batchSize = batchSize;
 		this.validationActive = validationActive;
+		this.externalFileManager = fileManager;
 
 		String lockTimeoutSql = dialect.getSetLockTimeoutString(lockTimeout);
 		if (!StringUtils.isEmpty(lockTimeoutSql)) {
@@ -378,15 +387,14 @@ public class SQLSessionImpl implements SQLSession {
 		getRunner().executeDDL(this, ddl, showSql, formatSql, "");
 	}
 
-	public EntityHandler createNewEntityHandler(Class<?> resultClass,
-			Set<ExpressionFieldMapper> expressionsFieldMapper,
+	public EntityHandler createNewEntityHandler(Class<?> resultClass, Set<ExpressionFieldMapper> expressionsFieldMapper,
 			Map<SQLQueryAnalyserAlias, Map<String, String[]>> columnAliases, Cache transactionCache,
 			boolean allowDuplicateObjects, Object objectToRefresh, int firstResult, int maxResults, boolean readOnly,
-			LockOptions lockOptions) throws Exception {
+			LockOptions lockOptions, String fieldsToForceLazy) throws Exception {
 		errorIfClosed();
 		EntityHandler handler = new EntityHandler(lazyLoadFactory, resultClass, getEntityCacheManager(),
 				expressionsFieldMapper, columnAliases, this, transactionCache, allowDuplicateObjects, firstResult,
-				maxResults, readOnly, lockOptions);
+				maxResults, readOnly, lockOptions, fieldsToForceLazy);
 		handler.setObjectToRefresh(objectToRefresh);
 		return handler;
 	}
@@ -489,7 +497,32 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	@Override
-	public <T> T find(Class<T> entityClass, Object id, boolean readOnly) throws Exception {
+	public <T> T find(FindParameters<T> params) throws Exception {
+		if (params.getEntityClass() != null && params.getId() != null && params.getLockOptions() != null
+				&& params.getProperties() != null) {
+			return (T) this.find(params.getEntityClass(), params.getId(), params.getLockOptions(), params.getProperties(),
+					params.isReadOnly(), params.getFieldsToForceLazy());
+		} else if (params.getEntityClass() != null && params.getId() != null && params.getLockOptions() != null) {
+			return (T) this.find(params.getEntityClass(), params.getId(), params.getLockOptions(), params.isReadOnly(),params.getFieldsToForceLazy());
+		} else if (params.getEntityClass() != null && params.getId() != null && params.getProperties() != null) {
+			return (T) this.find(params.getEntityClass(), params.getId(), params.getProperties(),
+					params.isReadOnly(), params.getFieldsToForceLazy());
+		} else if (params.getEntityClass() != null && params.getId() != null) {
+			return (T) this.find(params.getEntityClass(), params.getId(), params.isReadOnly(), params.getFieldsToForceLazy());
+		} else if (params.getIdentifier() !=null && params.getProperties() != null && params.getLockOptions() != null) {
+			return (T) this.find(params.getIdentifier(), params.getProperties(), params.getLockOptions(), params.isReadOnly(), params.getFieldsToForceLazy());
+		} else if (params.getIdentifier() !=null && params.getProperties() != null) {
+			return (T) this.find(params.getIdentifier(), params.getProperties(), params.isReadOnly(), params.getFieldsToForceLazy());
+		} else if (params.getIdentifier() !=null && params.getLockOptions() != null) {
+			return (T) this.find(params.getIdentifier(), params.getLockOptions(), params.isReadOnly(), params.getFieldsToForceLazy());
+		} else if (params.getIdentifier() !=null) {
+			return (T) this.find(params.getIdentifier(), params.isReadOnly(), params.getFieldsToForceLazy());
+		}
+		return null;
+
+	}
+
+	public <T> T find(Class<T> entityClass, Object id, boolean readOnly, String fieldsToForceLazy) throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache == null) {
@@ -501,15 +534,14 @@ public class SQLSessionImpl implements SQLSession {
 				throw new SQLSessionException("Objeto ID é do tipo Identifier porém de uma classe diferente da classe "
 						+ entityClass.getName());
 			} else
-				return find((Identifier<T>) id, readOnly);
+				return find((Identifier<T>) id, readOnly, fieldsToForceLazy);
 		}
 		Identifier<T> identifier = Identifier.create(this, entityClass);
 		identifier.setIdIfPossible(id);
-		return find(identifier, readOnly);
+		return find(identifier, readOnly, fieldsToForceLazy);
 	}
 
-	@Override
-	public <T> T find(Class<T> entityClass, Object id, Map<String, Object> properties, boolean readOnly)
+	public <T> T find(Class<T> entityClass, Object id, Map<String, Object> properties, boolean readOnly, String fieldsToForceLazy)
 			throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
@@ -517,13 +549,12 @@ public class SQLSessionImpl implements SQLSession {
 			throw new SQLSessionException(
 					"Classe não foi encontrada na lista de entidades gerenciadas. " + entityClass.getName());
 		}
-		T result = find(entityClass, id, readOnly);
+		T result = find(entityClass, id, readOnly, fieldsToForceLazy);
 		entityCache.setObjectValues(result, properties);
 		return result;
 	}
 
-	@Override
-	public <T> T find(Class<T> entityClass, Object id, LockOptions lockOptions, boolean readOnly) throws Exception {
+	public <T> T find(Class<T> entityClass, Object id, LockOptions lockOptions, boolean readOnly, String fieldsToForceLazy) throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache == null) {
@@ -535,32 +566,31 @@ public class SQLSessionImpl implements SQLSession {
 				throw new SQLSessionException("Objeto ID é do tipo Identifier porém de uma classe diferente da classe "
 						+ entityClass.getName());
 			} else
-				return find((Identifier<T>) id, readOnly);
+				return find((Identifier<T>) id, readOnly, fieldsToForceLazy);
 		}
 		Identifier<T> identifier = Identifier.create(this, entityClass);
 		identifier.setIdIfPossible(id);
-		return find(identifier, lockOptions, readOnly);
+		return find(identifier, lockOptions, readOnly, fieldsToForceLazy);
 	}
 
-	@Override
 	public <T> T find(Class<T> entityClass, Object id, LockOptions lockOptions, Map<String, Object> properties,
-			boolean readOnly) throws Exception {
+			boolean readOnly, String fieldsToForceLazy) throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache == null) {
 			throw new SQLSessionException(
 					"Classe não foi encontrada na lista de entidades gerenciadas. " + entityClass.getName());
 		}
-		T result = find(entityClass, id, lockOptions, readOnly);
+		T result = find(entityClass, id, lockOptions, readOnly, fieldsToForceLazy);
 		entityCache.setObjectValues(result, properties);
 		return result;
 	}
 
-	@Override
-	public <T> T find(Identifier<T> id, boolean readOnly) throws Exception {
+	public <T> T find(Identifier<T> id, boolean readOnly, String fieldsToForceLazy) throws Exception {
 		errorIfClosed();
 		SQLQuery query = createQuery("");
 		query.setReadOnly(readOnly);
+		query.setFieldsToForceLazy(fieldsToForceLazy);
 		List<?> result = query.identifier(id).getResultList();
 		if ((result == null) || (result.size() == 0)) {
 			return null;
@@ -568,11 +598,11 @@ public class SQLSessionImpl implements SQLSession {
 		return (T) result.get(0);
 	}
 
-	@Override
-	public <T> T find(Identifier<T> id, LockOptions lockOptions, boolean readOnly) throws Exception {
+	public <T> T find(Identifier<T> id, LockOptions lockOptions, boolean readOnly, String fieldsToForceLazy) throws Exception {
 		errorIfClosed();
 		SQLQuery query = createQuery("");
 		query.setReadOnly(readOnly);
+		query.setFieldsToForceLazy(fieldsToForceLazy);
 		query.setLockOptions(lockOptions);
 		List<?> result = query.identifier(id).getResultList();
 		if ((result == null) || (result.size() == 0)) {
@@ -581,19 +611,17 @@ public class SQLSessionImpl implements SQLSession {
 		return (T) result.get(0);
 	}
 
-	@Override
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, boolean readOnly) throws Exception {
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, boolean readOnly, String fieldsToForceLazy) throws Exception {
 		errorIfClosed();
-		T result = find(id, readOnly);
+		T result = find(id, readOnly,fieldsToForceLazy);
 		id.getEntityCache().setObjectValues(result, properties);
 		return result;
 	}
 
-	@Override
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockOptions lockOptions, boolean readOnly)
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockOptions lockOptions, boolean readOnly, String fieldsToForceLazy)
 			throws Exception {
 		errorIfClosed();
-		T result = find(id, lockOptions, readOnly);
+		T result = find(id, lockOptions, readOnly,fieldsToForceLazy);
 		id.getEntityCache().setObjectValues(result, properties);
 		return result;
 	}
@@ -611,7 +639,7 @@ public class SQLSessionImpl implements SQLSession {
 					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
-		find(identifier);
+		find(identifier, false,null);
 	}
 
 	@Override
@@ -627,7 +655,7 @@ public class SQLSessionImpl implements SQLSession {
 					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
-		find(identifier);
+		find(identifier, false, null);
 		identifier.getEntityCache().setObjectValues(entity, properties);
 	}
 
@@ -644,7 +672,7 @@ public class SQLSessionImpl implements SQLSession {
 					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
-		find(identifier, lockOptions);
+		find(identifier, lockOptions, false, null);
 	}
 
 	@Override
@@ -660,7 +688,7 @@ public class SQLSessionImpl implements SQLSession {
 					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
-		find(identifier, lockOptions);
+		find(identifier, lockOptions, false, null);
 		identifier.getEntityCache().setObjectValues(entity, properties);
 	}
 
@@ -853,46 +881,46 @@ public class SQLSessionImpl implements SQLSession {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
-	public <T> T find(Class<T> entityClass, Object primaryKey) throws Exception {
-		return find(entityClass, primaryKey, false);
-	}
+//	@Override
+//	public <T> T find(Class<T> entityClass, Object primaryKey) throws Exception {
+//		return find(entityClass, primaryKey, false);
+//	}
 
-	@Override
-	public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties) throws Exception {
-		return find(entityClass, primaryKey, properties, false);
-	}
+//	@Override
+//	public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties) throws Exception {
+//		return find(entityClass, primaryKey, properties, false);
+//	}
 
-	@Override
-	public <T> T find(Class<T> entityClass, Object primaryKey, LockOptions lockOptions) throws Exception {
-		return find(entityClass, primaryKey, lockOptions, false);
-	}
+//	@Override
+//	public <T> T find(Class<T> entityClass, Object primaryKey, LockOptions lockOptions) throws Exception {
+//		return find(entityClass, primaryKey, lockOptions, false);
+//	}
 
-	@Override
-	public <T> T find(Class<T> entityClass, Object primaryKey, LockOptions lockOptions, Map<String, Object> properties)
-			throws Exception {
-		return find(entityClass, primaryKey, lockOptions, properties, false);
-	}
+//	@Override
+//	public <T> T find(Class<T> entityClass, Object primaryKey, LockOptions lockOptions, Map<String, Object> properties)
+//			throws Exception {
+//		return find(entityClass, primaryKey, lockOptions, properties, false);
+//	}
 
-	@Override
-	public <T> T find(Identifier<T> id) throws Exception {
-		return find(id, false);
-	}
+//	@Override
+//	public <T> T find(Identifier<T> id) throws Exception {
+//		return find(id, false);
+//	}
 
-	@Override
-	public <T> T find(Identifier<T> id, LockOptions lockOptions) throws Exception {
-		return find(id, lockOptions, false);
-	}
+//	@Override
+//	public <T> T find(Identifier<T> id, LockOptions lockOptions) throws Exception {
+//		return find(id, lockOptions, false);
+//	}
 
-	@Override
-	public <T> T find(Identifier<T> id, Map<String, Object> properties) throws Exception {
-		return find(id, properties, false);
-	}
+//	@Override
+//	public <T> T find(Identifier<T> id, Map<String, Object> properties) throws Exception {
+//		return find(id, properties, false);
+//	}
 
-	@Override
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockOptions lockOptions) throws Exception {
-		return find(id, properties, lockOptions, false);
-	}
+//	@Override
+//	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockOptions lockOptions) throws Exception {
+//		return find(id, properties, lockOptions, false);
+//	}
 
 	@Override
 	public String applyLock(String sql, Class<?> resultClass, LockOptions lockOptions) throws Exception {
@@ -990,8 +1018,7 @@ public class SQLSessionImpl implements SQLSession {
 									columnModified);
 							if (!(identifierGenerator instanceof IdentifierPostInsert)) {
 								/*
-								 * Gera o próximo número da sequência e seta na
-								 * entidade
+								 * Gera o próximo número da sequência e seta na entidade
 								 */
 								ReflectionUtils.setObjectValueByFieldName(entity, columnModified.getField().getName(),
 										identifierGenerator.generate());
@@ -1012,36 +1039,35 @@ public class SQLSessionImpl implements SQLSession {
 
 	@Override
 	public int[] batch(String sql, Object[][] params) throws Exception {
-		return queryRunner.batch(this, sql, params, showSql, formatSql, listeners,"");
+		return queryRunner.batch(this, sql, params, showSql, formatSql, listeners, "");
 	}
 
 	@Override
-	public void validate(Object object) throws Exception  {
-		persister.getValidator().validateBean(object);		
+	public void validate(Object object) throws Exception {
+		persister.getValidator().validateBean(object);
 	}
-
 
 	@Override
 	public void validate(Object object, Class<?>... groups) throws Exception {
-		persister.getValidator().validateBean(object, groups);		
+		persister.getValidator().validateBean(object, groups);
 	}
 
 	@Override
 	public void invalidateConnection() throws SQLException {
-		if (this.connection!=null) {
+		if (this.connection != null) {
 			try {
 				connection.close();
 			} catch (SQLException e) {
 			}
 		}
-		
+
 		this.connection = this.getSQLSessionFactory().getDataSource().getConnection();
-		
+
 	}
 
 	@Override
 	public void setTenantId(Object value) {
-		this.tenantId = value;		
+		this.tenantId = value;
 	}
 
 	@Override
@@ -1051,11 +1077,47 @@ public class SQLSessionImpl implements SQLSession {
 
 	@Override
 	public void setCompanyId(Object value) {
-		this.companyId = value;		
+		this.companyId = value;
 	}
 
 	@Override
 	public Object getCompanyId() {
 		return companyId;
 	}
+
+	public ExternalFileManager getExternalFileManager() {
+		return externalFileManager;
+	}
+
+	@Override
+	public void notifyListeners(EventType eventType, Object oldObject, Object newObject) throws Exception {
+		EntityCache entityCache = entityCacheManager.getEntityCache(newObject.getClass());
+		if (entityCache.getEntityListeners().size() > 0) {
+			for (EntityListener listener : entityCache.getEntityListeners()) {
+				if (listener.getEventType().equals(eventType)) {
+					if (listener.getMethod().getParameterCount() == 1) {
+						ReflectionUtils.invokeMethod(listener.getMethod(), listener.getTargetObject(), newObject);
+					} else if (listener.getMethod().getParameterCount() == 2) {
+						ReflectionUtils.invokeMethod(listener.getMethod(), listener.getTargetObject(), oldObject,
+								newObject);
+					}
+				}
+			}
+		}
+
+		if (entityCache.getMethodListeners().size() > 0) {
+			for (Method mt : entityCache.getMethodListeners().keySet()) {
+				EventType ev = entityCache.getMethodListeners().get(mt);
+				if (ev.equals(eventType)) {
+					if (mt.getParameterCount() == 0) {
+						ReflectionUtils.invokeMethod(mt, newObject);
+					} else if (mt.getParameterCount() == 1) {
+						ReflectionUtils.invokeMethod(mt, newObject, oldObject);
+					}
+				}
+			}
+		}
+
+	}
+
 }

@@ -25,6 +25,7 @@ import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.session.AbstractSQLSessionFactory;
+import br.com.anteros.persistence.session.ExternalFileManager;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.configuration.AnterosPersistenceProperties;
 import br.com.anteros.persistence.session.configuration.SessionFactoryConfiguration;
@@ -46,8 +47,8 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	private TransactionManager transactionManager;
 
 	public SQLSessionFactoryImpl(EntityCacheManager entityCacheManager, DataSource dataSource,
-			SessionFactoryConfiguration configuration) throws Exception {
-		super(entityCacheManager, dataSource, configuration);	
+			SessionFactoryConfiguration configuration, ExternalFileManager externalFileManager) throws Exception {
+		super(entityCacheManager, dataSource, configuration, externalFileManager);	
 
 		String tmLookupClass = configuration.getProperty(AnterosPersistenceProperties.TRANSACTION_MANAGER_LOOKUP);
 		if (tmLookupClass == null) {
@@ -129,7 +130,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 		setConfigurationClientInfo(connection);
 		return new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(),
 				this.getDialect(), this.getShowSql(), this.isFormatSql(), this.getQueryTimeout(), this.getLockTimeout(),
-				this.getTransactionFactory(), this.getBatchSize(), this.isUseBeanValidation());
+				this.getTransactionFactory(), this.getBatchSize(), this.isUseBeanValidation(), this.externalFileManager);
 	}
 
 }

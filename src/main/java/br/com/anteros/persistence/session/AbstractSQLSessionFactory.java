@@ -59,10 +59,14 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
 	private boolean useBeanValidation=true;
 
-	public AbstractSQLSessionFactory(EntityCacheManager entityCacheManager, DataSource dataSource, SessionFactoryConfiguration configuration) throws Exception {
+	protected ExternalFileManager externalFileManager;
+
+	public AbstractSQLSessionFactory(EntityCacheManager entityCacheManager, DataSource dataSource, SessionFactoryConfiguration configuration,
+			ExternalFileManager externalFileManager) throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.dataSource = dataSource;
 		this.configuration = configuration;
+		this.externalFileManager = externalFileManager;
 
 		if (configuration.getProperty(AnterosPersistenceProperties.DIALECT) == null) {
 			throw new SQLSessionException("Dialeto não definido. Não foi possível instanciar SQLSessionFactory.");

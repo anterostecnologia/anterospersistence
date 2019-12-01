@@ -26,6 +26,7 @@ import br.com.anteros.core.utils.ObjectUtils;
 import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
 import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
 import br.com.anteros.persistence.resource.messages.AnterosPersistenceMessages;
+import br.com.anteros.persistence.session.ExternalFileManager;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.configuration.exception.AnterosConfigurationException;
 import br.com.anteros.persistence.session.impl.SQLSessionFactoryImpl;
@@ -39,16 +40,16 @@ public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigura
 		super();
 	}
 
-	public AnterosPersistenceConfiguration(DataSource dataSource) {
-		super(dataSource);
+	public AnterosPersistenceConfiguration(DataSource dataSource, ExternalFileManager externalFileManager) {
+		super(dataSource, externalFileManager);
 	}
 
-	public AnterosPersistenceConfiguration(PersistenceModelConfiguration modelConfiguration) {
-		super(modelConfiguration);
+	public AnterosPersistenceConfiguration(PersistenceModelConfiguration modelConfiguration, ExternalFileManager externalFileManager) {
+		super(modelConfiguration, externalFileManager);
 	}
 
-	public AnterosPersistenceConfiguration(DataSource dataSource, PersistenceModelConfiguration modelConfiguration) {
-		super(dataSource, modelConfiguration);
+	public AnterosPersistenceConfiguration(DataSource dataSource, PersistenceModelConfiguration modelConfiguration, ExternalFileManager externalFileManager) {
+		super(dataSource, modelConfiguration, externalFileManager);
 	}
 
 	@Override
@@ -62,7 +63,7 @@ public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigura
 		buildDataSource();
 		if (dataSource == null)
 			throw new AnterosConfigurationException(MESSAGES.getMessage(this.getClass().getSimpleName()+".datasourceNotConfigured"));
-		SQLSessionFactoryImpl sessionFactory = new SQLSessionFactoryImpl(entityCacheManager, dataSource, this.getSessionFactoryConfiguration());
+		SQLSessionFactoryImpl sessionFactory = new SQLSessionFactoryImpl(entityCacheManager, dataSource, this.getSessionFactoryConfiguration(), externalFileManager);
 		loadEntities(sessionFactory.getDialect());
 		sessionFactory.generateDDL();
 		return sessionFactory;
