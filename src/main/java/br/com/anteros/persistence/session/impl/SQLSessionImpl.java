@@ -1091,6 +1091,7 @@ public class SQLSessionImpl implements SQLSession {
 
 	@Override
 	public void notifyListeners(EventType eventType, Object oldObject, Object newObject) throws Exception {
+		if (newObject==null) return;
 		EntityCache entityCache = entityCacheManager.getEntityCache(newObject.getClass());
 		if (entityCache.getEntityListeners().size() > 0) {
 			for (EntityListener listener : entityCache.getEntityListeners()) {
