@@ -18,10 +18,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
@@ -32,6 +34,14 @@ import br.com.anteros.persistence.metadata.EntityCache;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.metadata.EntityListener;
 import br.com.anteros.persistence.metadata.annotation.EventType;
+import br.com.anteros.persistence.metadata.annotation.PostPersist;
+import br.com.anteros.persistence.metadata.annotation.PostRemove;
+import br.com.anteros.persistence.metadata.annotation.PostUpdate;
+import br.com.anteros.persistence.metadata.annotation.PostValidate;
+import br.com.anteros.persistence.metadata.annotation.PrePersist;
+import br.com.anteros.persistence.metadata.annotation.PreRemove;
+import br.com.anteros.persistence.metadata.annotation.PreUpdate;
+import br.com.anteros.persistence.metadata.annotation.PreValidate;
 import br.com.anteros.persistence.metadata.annotation.type.CallableType;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionColumn;
 import br.com.anteros.persistence.metadata.descriptor.DescriptionField;
@@ -63,6 +73,7 @@ import br.com.anteros.persistence.session.query.ShowSQLType;
 import br.com.anteros.persistence.session.query.TypedSQLQuery;
 import br.com.anteros.persistence.sql.command.BatchCommandSQL;
 import br.com.anteros.persistence.sql.command.CommandSQL;
+import br.com.anteros.persistence.sql.command.PersisterCommand;
 import br.com.anteros.persistence.sql.dialect.DatabaseDialect;
 import br.com.anteros.persistence.transaction.Transaction;
 import br.com.anteros.persistence.transaction.TransactionFactory;
@@ -81,7 +92,7 @@ public class SQLSessionImpl implements SQLSession {
 	private boolean formatSql;
 	private int queryTimeout = 0;
 	private SQLPersistenceContext persistenceContext;
-	private List<CommandSQL> commandQueue = new ArrayList<CommandSQL>();
+	private ConcurrentLinkedQueue<PersisterCommand> commandQueue = new ConcurrentLinkedQueue<PersisterCommand>();
 	private SQLSessionFactory sessionFactory;
 	private List<SQLSessionListener> listeners = new ArrayList<SQLSessionListener>();
 	private Map<Object, Map<DescriptionColumn, IdentifierPostInsert>> cacheIdentifier = new LinkedHashMap<Object, Map<DescriptionColumn, IdentifierPostInsert>>();
@@ -99,14 +110,19 @@ public class SQLSessionImpl implements SQLSession {
 	private Object companyId;
 
 	private boolean validationActive;
+	private boolean notifyListenersEnabled = true;
 
 	private ExternalFileManager externalFileManager;
+
+	private boolean flushing = false;
+
+	private boolean enableImageCompression;
 
 	public SQLSessionImpl(SQLSessionFactory sessionFactory, Connection connection,
 			EntityCacheManager entityCacheManager, AbstractSQLRunner queryRunner, DatabaseDialect dialect,
 			ShowSQLType[] showSql, boolean formatSql, int queryTimeout, int lockTimeout,
 			TransactionFactory transactionFactory, int batchSize, boolean validationActive,
-			ExternalFileManager fileManager) throws Exception {
+			ExternalFileManager fileManager, boolean enableImageCompression) throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.connection = connection;
 		if (connection != null)
@@ -124,6 +140,7 @@ public class SQLSessionImpl implements SQLSession {
 		this.batchSize = batchSize;
 		this.validationActive = validationActive;
 		this.externalFileManager = fileManager;
+		this.enableImageCompression = enableImageCompression;
 
 		String lockTimeoutSql = dialect.getSetLockTimeoutString(lockTimeout);
 		if (!StringUtils.isEmpty(lockTimeoutSql)) {
@@ -237,23 +254,33 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void flush() throws Exception {
-		errorIfClosed();
-		// synchronized (commandQueue) {
-		if (getCurrentBatchSize() > 0) {
-			if (commandQueue.size() > 0)
-				new BatchCommandSQL(this, commandQueue.toArray(new CommandSQL[] {}), getCurrentBatchSize(),
-						this.getShowSql()).execute();
-		} else {
-			for (CommandSQL command : commandQueue) {
-				try {
-					command.execute();
-				} catch (SQLException ex) {
-					throw this.getDialect().convertSQLException(ex, "Erro enviando comando sql.", command.getSql());
+		try {
+			flushing = true;
+			errorIfClosed();
+			while (!commandQueue.isEmpty()) {
+				if (getCurrentBatchSize() > 0) {
+					if (commandQueue.size() > 0)
+						new BatchCommandSQL(this, commandQueue.toArray(new CommandSQL[] {}), getCurrentBatchSize(),
+								this.getShowSql()).execute();
+					commandQueue.clear();
+				} else {
+					PersisterCommand command = commandQueue.poll();
+					try {
+						command.execute();
+					} catch (SQLException ex) {
+						if (command instanceof CommandSQL)
+							throw this.getDialect().convertSQLException(ex, "Erro enviando comando sql.",
+									((CommandSQL) command).getSql());
+						else {
+							throw ex;
+						}
+					}
 				}
 
 			}
+		} finally {
+			flushing = false;
 		}
-		commandQueue.clear();
 	}
 
 	public void forceFlush(Set<String> tableNames) throws Exception {
@@ -261,10 +288,12 @@ public class SQLSessionImpl implements SQLSession {
 		if (tableNames != null) {
 			synchronized (commandQueue) {
 				boolean foundCommand = false;
-				for (CommandSQL command : commandQueue) {
-					if (tableNames.contains(command.getTargetTableName().toUpperCase())) {
-						foundCommand = true;
-						break;
+				for (PersisterCommand command : commandQueue) {
+					if (command instanceof CommandSQL) {
+						if (tableNames.contains(((CommandSQL)command).getTargetTableName().toUpperCase())) {
+							foundCommand = true;
+							break;
+						}
 					}
 				}
 				if (foundCommand) {
@@ -277,9 +306,7 @@ public class SQLSessionImpl implements SQLSession {
 	public void close() throws Exception {
 		for (SQLSessionListener listener : listeners)
 			listener.onClose(this);
-		synchronized (commandQueue) {
-			commandQueue.clear();
-		}
+		commandQueue.clear();
 		currentBatchSize = 0;
 		if (connection != null && !connection.isClosed())
 			connection.close();
@@ -293,9 +320,7 @@ public class SQLSessionImpl implements SQLSession {
 
 	public void onBeforeExecuteRollback(Connection connection) throws Exception {
 		if (this.getConnection() == connection) {
-			synchronized (commandQueue) {
-				commandQueue.clear();
-			}
+			commandQueue.clear();
 		}
 	}
 
@@ -341,7 +366,7 @@ public class SQLSessionImpl implements SQLSession {
 		return listeners;
 	}
 
-	public List<CommandSQL> getCommandQueue() {
+	public ConcurrentLinkedQueue<PersisterCommand> getCommandQueue() {
 		return commandQueue;
 	}
 
@@ -498,24 +523,40 @@ public class SQLSessionImpl implements SQLSession {
 
 	@Override
 	public <T> T find(FindParameters<T> params) throws Exception {
+		if (params.getEntityClass() != null) {
+			EntityCache entityCache = entityCacheManager.getEntityCache(params.getEntityClass());
+			if (entityCache == null) {
+				throw new SQLSessionException("Classe não foi encontrada na lista de entidades gerenciadas. "
+						+ params.getEntityClass().getName());
+			}
+			if (!entityCache.isVersioned()) {
+				params.lockOptions(LockOptions.NONE);
+			}
+		}
 		if (params.getEntityClass() != null && params.getId() != null && params.getLockOptions() != null
 				&& params.getProperties() != null) {
-			return (T) this.find(params.getEntityClass(), params.getId(), params.getLockOptions(), params.getProperties(),
-					params.isReadOnly(), params.getFieldsToForceLazy());
+			return (T) this.find(params.getEntityClass(), params.getId(), params.getLockOptions(),
+					params.getProperties(), params.isReadOnly(), params.getFieldsToForceLazy());
 		} else if (params.getEntityClass() != null && params.getId() != null && params.getLockOptions() != null) {
-			return (T) this.find(params.getEntityClass(), params.getId(), params.getLockOptions(), params.isReadOnly(),params.getFieldsToForceLazy());
+			return (T) this.find(params.getEntityClass(), params.getId(), params.getLockOptions(), params.isReadOnly(),
+					params.getFieldsToForceLazy());
 		} else if (params.getEntityClass() != null && params.getId() != null && params.getProperties() != null) {
-			return (T) this.find(params.getEntityClass(), params.getId(), params.getProperties(),
-					params.isReadOnly(), params.getFieldsToForceLazy());
+			return (T) this.find(params.getEntityClass(), params.getId(), params.getProperties(), params.isReadOnly(),
+					params.getFieldsToForceLazy());
 		} else if (params.getEntityClass() != null && params.getId() != null) {
-			return (T) this.find(params.getEntityClass(), params.getId(), params.isReadOnly(), params.getFieldsToForceLazy());
-		} else if (params.getIdentifier() !=null && params.getProperties() != null && params.getLockOptions() != null) {
-			return (T) this.find(params.getIdentifier(), params.getProperties(), params.getLockOptions(), params.isReadOnly(), params.getFieldsToForceLazy());
-		} else if (params.getIdentifier() !=null && params.getProperties() != null) {
-			return (T) this.find(params.getIdentifier(), params.getProperties(), params.isReadOnly(), params.getFieldsToForceLazy());
-		} else if (params.getIdentifier() !=null && params.getLockOptions() != null) {
-			return (T) this.find(params.getIdentifier(), params.getLockOptions(), params.isReadOnly(), params.getFieldsToForceLazy());
-		} else if (params.getIdentifier() !=null) {
+			return (T) this.find(params.getEntityClass(), params.getId(), params.isReadOnly(),
+					params.getFieldsToForceLazy());
+		} else if (params.getIdentifier() != null && params.getProperties() != null
+				&& params.getLockOptions() != null) {
+			return (T) this.find(params.getIdentifier(), params.getProperties(), params.getLockOptions(),
+					params.isReadOnly(), params.getFieldsToForceLazy());
+		} else if (params.getIdentifier() != null && params.getProperties() != null) {
+			return (T) this.find(params.getIdentifier(), params.getProperties(), params.isReadOnly(),
+					params.getFieldsToForceLazy());
+		} else if (params.getIdentifier() != null && params.getLockOptions() != null) {
+			return (T) this.find(params.getIdentifier(), params.getLockOptions(), params.isReadOnly(),
+					params.getFieldsToForceLazy());
+		} else if (params.getIdentifier() != null) {
 			return (T) this.find(params.getIdentifier(), params.isReadOnly(), params.getFieldsToForceLazy());
 		}
 		return null;
@@ -541,8 +582,8 @@ public class SQLSessionImpl implements SQLSession {
 		return find(identifier, readOnly, fieldsToForceLazy);
 	}
 
-	public <T> T find(Class<T> entityClass, Object id, Map<String, Object> properties, boolean readOnly, String fieldsToForceLazy)
-			throws Exception {
+	public <T> T find(Class<T> entityClass, Object id, Map<String, Object> properties, boolean readOnly,
+			String fieldsToForceLazy) throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache == null) {
@@ -554,7 +595,8 @@ public class SQLSessionImpl implements SQLSession {
 		return result;
 	}
 
-	public <T> T find(Class<T> entityClass, Object id, LockOptions lockOptions, boolean readOnly, String fieldsToForceLazy) throws Exception {
+	public <T> T find(Class<T> entityClass, Object id, LockOptions lockOptions, boolean readOnly,
+			String fieldsToForceLazy) throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache == null) {
@@ -598,7 +640,8 @@ public class SQLSessionImpl implements SQLSession {
 		return (T) result.get(0);
 	}
 
-	public <T> T find(Identifier<T> id, LockOptions lockOptions, boolean readOnly, String fieldsToForceLazy) throws Exception {
+	public <T> T find(Identifier<T> id, LockOptions lockOptions, boolean readOnly, String fieldsToForceLazy)
+			throws Exception {
 		errorIfClosed();
 		SQLQuery query = createQuery("");
 		query.setReadOnly(readOnly);
@@ -611,17 +654,18 @@ public class SQLSessionImpl implements SQLSession {
 		return (T) result.get(0);
 	}
 
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, boolean readOnly, String fieldsToForceLazy) throws Exception {
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, boolean readOnly, String fieldsToForceLazy)
+			throws Exception {
 		errorIfClosed();
-		T result = find(id, readOnly,fieldsToForceLazy);
+		T result = find(id, readOnly, fieldsToForceLazy);
 		id.getEntityCache().setObjectValues(result, properties);
 		return result;
 	}
 
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockOptions lockOptions, boolean readOnly, String fieldsToForceLazy)
-			throws Exception {
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockOptions lockOptions, boolean readOnly,
+			String fieldsToForceLazy) throws Exception {
 		errorIfClosed();
-		T result = find(id, lockOptions, readOnly,fieldsToForceLazy);
+		T result = find(id, lockOptions, readOnly, fieldsToForceLazy);
 		id.getEntityCache().setObjectValues(result, properties);
 		return result;
 	}
@@ -639,7 +683,7 @@ public class SQLSessionImpl implements SQLSession {
 					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
-		find(identifier, false,null);
+		find(identifier, false, null);
 	}
 
 	@Override
@@ -1091,34 +1135,91 @@ public class SQLSessionImpl implements SQLSession {
 
 	@Override
 	public void notifyListeners(EventType eventType, Object oldObject, Object newObject) throws Exception {
-		if (newObject==null) return;
-		EntityCache entityCache = entityCacheManager.getEntityCache(newObject.getClass());
-		if (entityCache.getEntityListeners().size() > 0) {
-			for (EntityListener listener : entityCache.getEntityListeners()) {
-				if (listener.getEventType().equals(eventType)) {
-					if (listener.getMethod().getParameterCount() == 1) {
-						ReflectionUtils.invokeMethod(listener.getMethod(), listener.getTargetObject(), newObject);
-					} else if (listener.getMethod().getParameterCount() == 2) {
-						ReflectionUtils.invokeMethod(listener.getMethod(), listener.getTargetObject(), oldObject,
-								newObject);
+		if (newObject == null)
+			return;
+		if (notifyListenersEnabled) {
+			EntityCache entityCache = entityCacheManager.getEntityCache(newObject.getClass());
+			if (entityCache.getEntityListeners().size() > 0) {
+				for (EntityListener listener : entityCache.getEntityListeners()) {
+					if (listener.getEventType().equals(eventType)) {
+						if (listener.getMethod().getParameterCount() == 1) {
+							ReflectionUtils.invokeMethod(listener.getMethod(), listener.getTargetObject(), newObject);
+						} else if (listener.getMethod().getParameterCount() == 2) {
+							ReflectionUtils.invokeMethod(listener.getMethod(), listener.getTargetObject(), oldObject,
+									newObject);
+						}
+					}
+				}
+			}
+
+			if (entityCache.getMethodListeners().size() > 0) {
+				for (Method mt : entityCache.getMethodListeners().keySet()) {
+					EventType ev = entityCache.getMethodListeners().get(mt);
+					if (ev.equals(eventType)) {
+						if (mt.getParameterCount() == 0) {
+							ReflectionUtils.invokeMethod(mt, newObject);
+						} else if (mt.getParameterCount() == 1) {
+							ReflectionUtils.invokeMethod(mt, newObject, oldObject);
+						}
 					}
 				}
 			}
 		}
+	}
 
-		if (entityCache.getMethodListeners().size() > 0) {
-			for (Method mt : entityCache.getMethodListeners().keySet()) {
-				EventType ev = entityCache.getMethodListeners().get(mt);
-				if (ev.equals(eventType)) {
-					if (mt.getParameterCount() == 0) {
-						ReflectionUtils.invokeMethod(mt, newObject);
-					} else if (mt.getParameterCount() == 1) {
-						ReflectionUtils.invokeMethod(mt, newObject, oldObject);
-					}
+	@Override
+	public void disableNotifyListeners() {
+		this.notifyListenersEnabled = false;
+	}
+
+	@Override
+	public void enableNotifyListeners() {
+		this.notifyListenersEnabled = true;
+	}
+
+	@Override
+	public void registerEventListener(Object listener, Class<?>... entities) throws Exception {
+		Set<String> cls = new HashSet<String>();
+		cls.add(listener.getClass().getName());
+		Method[] methods = ReflectionUtils.getAllMethodsAnnotatedWith(cls,
+				new Class[] { PrePersist.class, PostPersist.class, PreUpdate.class, PostUpdate.class, PreRemove.class,
+						PostRemove.class, PreValidate.class, PostValidate.class });
+		for (Class<?> entity : entities) {
+			EntityCache entityCache = getEntityCacheManager().getEntityCache(entity);
+			for (Method mt : methods) {
+				if (mt.isAnnotationPresent(PrePersist.class)) {
+					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PrePersist));
+				} else if (mt.isAnnotationPresent(PostPersist.class)) {
+					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PostPersist));
+				} else if (mt.isAnnotationPresent(PreUpdate.class)) {
+					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PreUpdate));
+				} else if (mt.isAnnotationPresent(PostUpdate.class)) {
+					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PostUpdate));
+				} else if (mt.isAnnotationPresent(PreRemove.class)) {
+					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PreRemove));
+				} else if (mt.isAnnotationPresent(PostRemove.class)) {
+					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PostRemove));
+				} else if (mt.isAnnotationPresent(PreValidate.class)) {
+					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PreValidate));
+				} else if (mt.isAnnotationPresent(PostValidate.class)) {
+					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PostValidate));
 				}
 			}
 		}
 
+	}
+
+	@Override
+	public void removeEventListener(Object listener) {
+		getEntityCacheManager().getEntityListeners().remove(listener);
+	}
+
+	public boolean isEnableImageCompression() {
+		return enableImageCompression;
+	}
+
+	public void setEnableImageCompression(boolean enableImageCompression) {
+		this.enableImageCompression = enableImageCompression;
 	}
 
 }

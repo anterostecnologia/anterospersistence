@@ -61,12 +61,15 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
 	protected ExternalFileManager externalFileManager;
 
+	protected boolean enableImageCompression;
+
 	public AbstractSQLSessionFactory(EntityCacheManager entityCacheManager, DataSource dataSource, SessionFactoryConfiguration configuration,
-			ExternalFileManager externalFileManager) throws Exception {
+			ExternalFileManager externalFileManager, boolean enableImageCompression) throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.dataSource = dataSource;
 		this.configuration = configuration;
 		this.externalFileManager = externalFileManager;
+		this.enableImageCompression = enableImageCompression;
 
 		if (configuration.getProperty(AnterosPersistenceProperties.DIALECT) == null) {
 			throw new SQLSessionException("Dialeto não definido. Não foi possível instanciar SQLSessionFactory.");

@@ -40,16 +40,16 @@ public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigura
 		super();
 	}
 
-	public AnterosPersistenceConfiguration(DataSource dataSource, ExternalFileManager externalFileManager) {
-		super(dataSource, externalFileManager);
+	public AnterosPersistenceConfiguration(DataSource dataSource, ExternalFileManager externalFileManager,boolean enableImageCompression) {
+		super(dataSource, externalFileManager,enableImageCompression);
 	}
 
-	public AnterosPersistenceConfiguration(PersistenceModelConfiguration modelConfiguration, ExternalFileManager externalFileManager) {
-		super(modelConfiguration, externalFileManager);
+	public AnterosPersistenceConfiguration(PersistenceModelConfiguration modelConfiguration, ExternalFileManager externalFileManager,boolean enableImageCompression) {
+		super(modelConfiguration, externalFileManager,enableImageCompression);
 	}
 
-	public AnterosPersistenceConfiguration(DataSource dataSource, PersistenceModelConfiguration modelConfiguration, ExternalFileManager externalFileManager) {
-		super(dataSource, modelConfiguration, externalFileManager);
+	public AnterosPersistenceConfiguration(DataSource dataSource, PersistenceModelConfiguration modelConfiguration, ExternalFileManager externalFileManager,boolean enableImageCompression) {
+		super(dataSource, modelConfiguration, externalFileManager,enableImageCompression);
 	}
 
 	@Override
@@ -63,7 +63,7 @@ public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigura
 		buildDataSource();
 		if (dataSource == null)
 			throw new AnterosConfigurationException(MESSAGES.getMessage(this.getClass().getSimpleName()+".datasourceNotConfigured"));
-		SQLSessionFactoryImpl sessionFactory = new SQLSessionFactoryImpl(entityCacheManager, dataSource, this.getSessionFactoryConfiguration(), externalFileManager);
+		SQLSessionFactoryImpl sessionFactory = new SQLSessionFactoryImpl(entityCacheManager, dataSource, this.getSessionFactoryConfiguration(), externalFileManager, enableImageCompression);
 		loadEntities(sessionFactory.getDialect());
 		sessionFactory.generateDDL();
 		return sessionFactory;

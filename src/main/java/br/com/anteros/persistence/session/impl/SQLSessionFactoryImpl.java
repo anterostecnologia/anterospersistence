@@ -47,8 +47,8 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	private TransactionManager transactionManager;
 
 	public SQLSessionFactoryImpl(EntityCacheManager entityCacheManager, DataSource dataSource,
-			SessionFactoryConfiguration configuration, ExternalFileManager externalFileManager) throws Exception {
-		super(entityCacheManager, dataSource, configuration, externalFileManager);	
+			SessionFactoryConfiguration configuration, ExternalFileManager externalFileManager, boolean enableImageCompression) throws Exception {
+		super(entityCacheManager, dataSource, configuration, externalFileManager, enableImageCompression);	
 
 		String tmLookupClass = configuration.getProperty(AnterosPersistenceProperties.TRANSACTION_MANAGER_LOOKUP);
 		if (tmLookupClass == null) {
@@ -130,7 +130,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 		setConfigurationClientInfo(connection);
 		return new SQLSessionImpl(this, connection, this.getEntityCacheManager(), new SQLQueryRunner(),
 				this.getDialect(), this.getShowSql(), this.isFormatSql(), this.getQueryTimeout(), this.getLockTimeout(),
-				this.getTransactionFactory(), this.getBatchSize(), this.isUseBeanValidation(), this.externalFileManager);
+				this.getTransactionFactory(), this.getBatchSize(), this.isUseBeanValidation(), this.externalFileManager, this.enableImageCompression);
 	}
 
 }
