@@ -286,30 +286,32 @@ public class SQLSessionImpl implements SQLSession {
 	public void forceFlush(Set<String> tableNames) throws Exception {
 		errorIfClosed();
 		if (tableNames != null) {
-			synchronized (commandQueue) {
-				boolean foundCommand = false;
-				for (PersisterCommand command : commandQueue) {
-					if (command instanceof CommandSQL) {
-						if (tableNames.contains(((CommandSQL)command).getTargetTableName().toUpperCase())) {
-							foundCommand = true;
-							break;
-						}
+			boolean foundCommand = false;
+			for (PersisterCommand command : commandQueue) {
+				if (command instanceof CommandSQL) {
+					if (tableNames.contains(((CommandSQL) command).getTargetTableName().toUpperCase())) {
+						foundCommand = true;
+						break;
 					}
 				}
-				if (foundCommand) {
-					flush();
-				}
+			}
+			if (foundCommand) {
+				flush();
 			}
 		}
 	}
 
 	public void close() throws Exception {
+		persistenceContext.evictAll();
+		persistenceContext.clearCache();
+		persistenceContext = null;
 		for (SQLSessionListener listener : listeners)
 			listener.onClose(this);
 		commandQueue.clear();
 		currentBatchSize = 0;
 		if (connection != null && !connection.isClosed())
 			connection.close();
+
 		connection = null;
 		LOG.debug("Fechou session " + this);
 	}
