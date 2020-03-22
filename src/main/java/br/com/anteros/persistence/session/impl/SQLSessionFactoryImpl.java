@@ -20,12 +20,12 @@ import java.sql.Connection;
 import javax.sql.DataSource;
 import javax.transaction.TransactionManager;
 
+import br.com.anteros.cloud.integration.filesharing.CloudFileManager;
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.ReflectionUtils;
 import br.com.anteros.persistence.metadata.EntityCacheManager;
 import br.com.anteros.persistence.session.AbstractSQLSessionFactory;
-import br.com.anteros.persistence.session.ExternalFileManager;
 import br.com.anteros.persistence.session.SQLSession;
 import br.com.anteros.persistence.session.configuration.AnterosPersistenceProperties;
 import br.com.anteros.persistence.session.configuration.SessionFactoryConfiguration;
@@ -47,7 +47,7 @@ public class SQLSessionFactoryImpl extends AbstractSQLSessionFactory {
 	private TransactionManager transactionManager;
 
 	public SQLSessionFactoryImpl(EntityCacheManager entityCacheManager, DataSource dataSource,
-			SessionFactoryConfiguration configuration, ExternalFileManager externalFileManager, boolean enableImageCompression) throws Exception {
+			SessionFactoryConfiguration configuration, CloudFileManager externalFileManager, boolean enableImageCompression) throws Exception {
 		super(entityCacheManager, dataSource, configuration, externalFileManager, enableImageCompression);	
 
 		String tmLookupClass = configuration.getProperty(AnterosPersistenceProperties.TRANSACTION_MANAGER_LOOKUP);

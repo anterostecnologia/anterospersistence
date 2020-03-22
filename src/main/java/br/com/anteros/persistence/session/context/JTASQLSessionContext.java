@@ -76,7 +76,7 @@ public class JTASQLSessionContext implements CurrentSQLSessionContext {
 
 		SQLSession currentSession = currentSessionMap.get(txnIdentifier);
 
-		if (currentSession == null) {
+		if (currentSession == null || currentSession.isClosed() || !currentSession.getConnection().isValid(2000)) {
 			currentSession = factory.openSession();
 
 			try {

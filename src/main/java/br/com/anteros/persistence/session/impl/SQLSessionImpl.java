@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import br.com.anteros.cloud.integration.filesharing.CloudFileManager;
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.ReflectionUtils;
@@ -52,7 +53,6 @@ import br.com.anteros.persistence.metadata.identifier.IdentifierPostInsert;
 import br.com.anteros.persistence.parameter.NamedParameter;
 import br.com.anteros.persistence.proxy.JavassistLazyLoadFactory;
 import br.com.anteros.persistence.proxy.LazyLoadFactory;
-import br.com.anteros.persistence.session.ExternalFileManager;
 import br.com.anteros.persistence.session.FindParameters;
 import br.com.anteros.persistence.session.SQLPersister;
 import br.com.anteros.persistence.session.SQLSession;
@@ -112,7 +112,7 @@ public class SQLSessionImpl implements SQLSession {
 	private boolean validationActive;
 	private boolean notifyListenersEnabled = true;
 
-	private ExternalFileManager externalFileManager;
+	private CloudFileManager externalFileManager;
 
 	private boolean flushing = false;
 
@@ -122,7 +122,7 @@ public class SQLSessionImpl implements SQLSession {
 			EntityCacheManager entityCacheManager, AbstractSQLRunner queryRunner, DatabaseDialect dialect,
 			ShowSQLType[] showSql, boolean formatSql, int queryTimeout, int lockTimeout,
 			TransactionFactory transactionFactory, int batchSize, boolean validationActive,
-			ExternalFileManager fileManager, boolean enableImageCompression) throws Exception {
+			CloudFileManager fileManager, boolean enableImageCompression) throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.connection = connection;
 		if (connection != null)
@@ -1131,7 +1131,7 @@ public class SQLSessionImpl implements SQLSession {
 		return companyId;
 	}
 
-	public ExternalFileManager getExternalFileManager() {
+	public CloudFileManager getExternalFileManager() {
 		return externalFileManager;
 	}
 

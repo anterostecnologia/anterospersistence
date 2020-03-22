@@ -15,6 +15,7 @@
  *******************************************************************************/
 package br.com.anteros.persistence.session.context;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,7 +67,16 @@ public class ManagedSQLSessionContext implements CurrentSQLSessionContext {
 			return null;
 		}
 		else {
-			return sessionMap.get( factory );
+			SQLSession session = sessionMap.get( factory );
+			try {
+				if (session.getConnection().isClosed() || !session.getConnection().isValid(2000)) {
+					session = factory.openSession();
+					bind(session);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return session;
 		}
 	}
 

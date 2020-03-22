@@ -19,6 +19,7 @@ import javax.sql.DataSource;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import br.com.anteros.cloud.integration.filesharing.CloudFileManager;
 import br.com.anteros.core.resource.messages.AnterosBundle;
 import br.com.anteros.core.resource.messages.AnterosResourceBundle;
 import br.com.anteros.core.utils.IOUtils;
@@ -26,7 +27,6 @@ import br.com.anteros.core.utils.ObjectUtils;
 import br.com.anteros.persistence.metadata.accessor.PropertyAccessorFactory;
 import br.com.anteros.persistence.metadata.configuration.PersistenceModelConfiguration;
 import br.com.anteros.persistence.resource.messages.AnterosPersistenceMessages;
-import br.com.anteros.persistence.session.ExternalFileManager;
 import br.com.anteros.persistence.session.SQLSessionFactory;
 import br.com.anteros.persistence.session.configuration.exception.AnterosConfigurationException;
 import br.com.anteros.persistence.session.impl.SQLSessionFactoryImpl;
@@ -40,15 +40,15 @@ public class AnterosPersistenceConfiguration extends AnterosPersistenceConfigura
 		super();
 	}
 
-	public AnterosPersistenceConfiguration(DataSource dataSource, ExternalFileManager externalFileManager,boolean enableImageCompression) {
+	public AnterosPersistenceConfiguration(DataSource dataSource, CloudFileManager externalFileManager,boolean enableImageCompression) {
 		super(dataSource, externalFileManager,enableImageCompression);
 	}
 
-	public AnterosPersistenceConfiguration(PersistenceModelConfiguration modelConfiguration, ExternalFileManager externalFileManager,boolean enableImageCompression) {
+	public AnterosPersistenceConfiguration(PersistenceModelConfiguration modelConfiguration, CloudFileManager externalFileManager,boolean enableImageCompression) {
 		super(modelConfiguration, externalFileManager,enableImageCompression);
 	}
 
-	public AnterosPersistenceConfiguration(DataSource dataSource, PersistenceModelConfiguration modelConfiguration, ExternalFileManager externalFileManager,boolean enableImageCompression) {
+	public AnterosPersistenceConfiguration(DataSource dataSource, PersistenceModelConfiguration modelConfiguration, CloudFileManager externalFileManager,boolean enableImageCompression) {
 		super(dataSource, modelConfiguration, externalFileManager,enableImageCompression);
 	}
 

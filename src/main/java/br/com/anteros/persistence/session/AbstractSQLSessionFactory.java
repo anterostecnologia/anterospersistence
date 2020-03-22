@@ -20,6 +20,7 @@ import java.util.Arrays;
 import javax.sql.DataSource;
 import javax.transaction.TransactionManager;
 
+import br.com.anteros.cloud.integration.filesharing.CloudFileManager;
 import br.com.anteros.core.log.Logger;
 import br.com.anteros.core.log.LoggerProvider;
 import br.com.anteros.core.utils.ReflectionUtils;
@@ -59,12 +60,12 @@ public abstract class AbstractSQLSessionFactory implements SQLSessionFactory {
 
 	private boolean useBeanValidation=true;
 
-	protected ExternalFileManager externalFileManager;
+	protected CloudFileManager externalFileManager;
 
 	protected boolean enableImageCompression;
 
 	public AbstractSQLSessionFactory(EntityCacheManager entityCacheManager, DataSource dataSource, SessionFactoryConfiguration configuration,
-			ExternalFileManager externalFileManager, boolean enableImageCompression) throws Exception {
+			CloudFileManager externalFileManager, boolean enableImageCompression) throws Exception {
 		this.entityCacheManager = entityCacheManager;
 		this.dataSource = dataSource;
 		this.configuration = configuration;
