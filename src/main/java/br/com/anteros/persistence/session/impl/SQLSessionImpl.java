@@ -167,6 +167,12 @@ public class SQLSessionImpl implements SQLSession {
 		errorIfClosed();
 		return persister.save(this, object);
 	}
+	
+	@Override
+	public Object save(Object object, Class<?>... groups) throws Exception {
+		errorIfClosed();
+		return persister.save(this, object, groups);
+	}
 
 	@Override
 	public void saveInBatchMode(Object object, int batchSize) throws Exception {
@@ -1223,5 +1229,7 @@ public class SQLSessionImpl implements SQLSession {
 	public void setEnableImageCompression(boolean enableImageCompression) {
 		this.enableImageCompression = enableImageCompression;
 	}
+
+	
 
 }
