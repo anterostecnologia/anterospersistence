@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>br.com.anteros</groupId>
 	<artifactId>Anteros-Persistence</artifactId>
-	<version>1.0.26</version>
+	<version>1.0.27</version>
 
 	<name>Anteros Persistence</name>
 	<description>
@@ -43,13 +43,13 @@
 	</developers>
 
 	<properties>
-		<java.versao>1.6</java.versao>
+		<java.versao>1.8</java.versao>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<bintray.subject>edson</bintray.subject>
 		<bintray.repo>maven</bintray.repo>
 		<bintray.package>anteros-persistence</bintray.package>
-		<maven.compiler.source>1.6</maven.compiler.source>
-		<maven.compiler.target>1.6</maven.compiler.target>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
 
 	<dependencies>
