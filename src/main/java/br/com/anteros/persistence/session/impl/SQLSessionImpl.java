@@ -167,7 +167,7 @@ public class SQLSessionImpl implements SQLSession {
 		errorIfClosed();
 		return persister.save(this, object);
 	}
-	
+
 	@Override
 	public Object save(Object object, Class<?>... groups) throws Exception {
 		errorIfClosed();
@@ -315,8 +315,10 @@ public class SQLSessionImpl implements SQLSession {
 			listener.onClose(this);
 		commandQueue.clear();
 		currentBatchSize = 0;
-		if (connection != null && !connection.isClosed())
+		if (connection != null && !connection.isClosed()) {
+			connection.rollback();
 			connection.close();
+		}
 
 		connection = null;
 		LOG.debug("Fechou session " + this);
@@ -544,7 +546,8 @@ public class SQLSessionImpl implements SQLSession {
 		if (params.getEntityClass() != null && params.getId() != null && params.getLockOptions() != null
 				&& params.getProperties() != null) {
 			return (T) this.find(params.getEntityClass(), params.getId(), params.getLockOptions(),
-					params.getProperties(), params.isReadOnly(), params.getFieldsToForceLazy(), params.isIgnoreTenantId(), params.isIgnoreCompanyId());
+					params.getProperties(), params.isReadOnly(), params.getFieldsToForceLazy(),
+					params.isIgnoreTenantId(), params.isIgnoreCompanyId());
 		} else if (params.getEntityClass() != null && params.getId() != null && params.getLockOptions() != null) {
 			return (T) this.find(params.getEntityClass(), params.getId(), params.getLockOptions(), params.isReadOnly(),
 					params.getFieldsToForceLazy(), params.isIgnoreTenantId(), params.isIgnoreCompanyId());
@@ -557,7 +560,8 @@ public class SQLSessionImpl implements SQLSession {
 		} else if (params.getIdentifier() != null && params.getProperties() != null
 				&& params.getLockOptions() != null) {
 			return (T) this.find(params.getIdentifier(), params.getProperties(), params.getLockOptions(),
-					params.isReadOnly(), params.getFieldsToForceLazy(), params.isIgnoreTenantId(), params.isIgnoreCompanyId());
+					params.isReadOnly(), params.getFieldsToForceLazy(), params.isIgnoreTenantId(),
+					params.isIgnoreCompanyId());
 		} else if (params.getIdentifier() != null && params.getProperties() != null) {
 			return (T) this.find(params.getIdentifier(), params.getProperties(), params.isReadOnly(),
 					params.getFieldsToForceLazy(), params.isIgnoreTenantId(), params.isIgnoreCompanyId());
@@ -565,13 +569,15 @@ public class SQLSessionImpl implements SQLSession {
 			return (T) this.find(params.getIdentifier(), params.getLockOptions(), params.isReadOnly(),
 					params.getFieldsToForceLazy(), params.isIgnoreTenantId(), params.isIgnoreCompanyId());
 		} else if (params.getIdentifier() != null) {
-			return (T) this.find(params.getIdentifier(), params.isReadOnly(), params.getFieldsToForceLazy(), params.isIgnoreTenantId(), params.isIgnoreCompanyId());
+			return (T) this.find(params.getIdentifier(), params.isReadOnly(), params.getFieldsToForceLazy(),
+					params.isIgnoreTenantId(), params.isIgnoreCompanyId());
 		}
 		return null;
 
 	}
 
-	public <T> T find(Class<T> entityClass, Object id, boolean readOnly, String fieldsToForceLazy, boolean ignoreTenantId, boolean ignoreCompanyId) throws Exception {
+	public <T> T find(Class<T> entityClass, Object id, boolean readOnly, String fieldsToForceLazy,
+			boolean ignoreTenantId, boolean ignoreCompanyId) throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache == null) {
@@ -604,7 +610,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public <T> T find(Class<T> entityClass, Object id, LockOptions lockOptions, boolean readOnly,
-			String fieldsToForceLazy, boolean ignoreTenantId, boolean ignoreCompanyId ) throws Exception {
+			String fieldsToForceLazy, boolean ignoreTenantId, boolean ignoreCompanyId) throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache == null) {
@@ -620,23 +626,25 @@ public class SQLSessionImpl implements SQLSession {
 		}
 		Identifier<T> identifier = Identifier.create(this, entityClass);
 		identifier.setIdIfPossible(id);
-		return find(identifier, lockOptions, readOnly, fieldsToForceLazy,ignoreTenantId, ignoreCompanyId);
+		return find(identifier, lockOptions, readOnly, fieldsToForceLazy, ignoreTenantId, ignoreCompanyId);
 	}
 
 	public <T> T find(Class<T> entityClass, Object id, LockOptions lockOptions, Map<String, Object> properties,
-			boolean readOnly, String fieldsToForceLazy, boolean ignoreTenantId, boolean ignoreCompanyId) throws Exception {
+			boolean readOnly, String fieldsToForceLazy, boolean ignoreTenantId, boolean ignoreCompanyId)
+			throws Exception {
 		errorIfClosed();
 		EntityCache entityCache = entityCacheManager.getEntityCache(entityClass);
 		if (entityCache == null) {
 			throw new SQLSessionException(
 					"Classe não foi encontrada na lista de entidades gerenciadas. " + entityClass.getName());
 		}
-		T result = find(entityClass, id, lockOptions, readOnly, fieldsToForceLazy,ignoreTenantId, ignoreCompanyId);
+		T result = find(entityClass, id, lockOptions, readOnly, fieldsToForceLazy, ignoreTenantId, ignoreCompanyId);
 		entityCache.setObjectValues(result, properties);
 		return result;
 	}
 
-	public <T> T find(Identifier<T> id, boolean readOnly, String fieldsToForceLazy,boolean ignoreTenantId, boolean ignoreCompanyId) throws Exception {
+	public <T> T find(Identifier<T> id, boolean readOnly, String fieldsToForceLazy, boolean ignoreTenantId,
+			boolean ignoreCompanyId) throws Exception {
 		errorIfClosed();
 		SQLQuery query = createQuery("");
 		query.setReadOnly(readOnly);
@@ -650,8 +658,8 @@ public class SQLSessionImpl implements SQLSession {
 		return (T) result.get(0);
 	}
 
-	public <T> T find(Identifier<T> id, LockOptions lockOptions, boolean readOnly, String fieldsToForceLazy, boolean ignoreTenantId, boolean ignoreCompanyId)
-			throws Exception {
+	public <T> T find(Identifier<T> id, LockOptions lockOptions, boolean readOnly, String fieldsToForceLazy,
+			boolean ignoreTenantId, boolean ignoreCompanyId) throws Exception {
 		errorIfClosed();
 		SQLQuery query = createQuery("");
 		query.setReadOnly(readOnly);
@@ -666,18 +674,18 @@ public class SQLSessionImpl implements SQLSession {
 		return (T) result.get(0);
 	}
 
-	public <T> T find(Identifier<T> id, Map<String, Object> properties, boolean readOnly, String fieldsToForceLazy,boolean ignoreTenantId, boolean ignoreCompanyId)
-			throws Exception {
+	public <T> T find(Identifier<T> id, Map<String, Object> properties, boolean readOnly, String fieldsToForceLazy,
+			boolean ignoreTenantId, boolean ignoreCompanyId) throws Exception {
 		errorIfClosed();
-		T result = find(id, readOnly, fieldsToForceLazy,ignoreTenantId, ignoreCompanyId);
+		T result = find(id, readOnly, fieldsToForceLazy, ignoreTenantId, ignoreCompanyId);
 		id.getEntityCache().setObjectValues(result, properties);
 		return result;
 	}
 
 	public <T> T find(Identifier<T> id, Map<String, Object> properties, LockOptions lockOptions, boolean readOnly,
-			String fieldsToForceLazy,boolean ignoreTenantId, boolean ignoreCompanyId) throws Exception {
+			String fieldsToForceLazy, boolean ignoreTenantId, boolean ignoreCompanyId) throws Exception {
 		errorIfClosed();
-		T result = find(id, lockOptions, readOnly, fieldsToForceLazy,ignoreTenantId, ignoreCompanyId);
+		T result = find(id, lockOptions, readOnly, fieldsToForceLazy, ignoreTenantId, ignoreCompanyId);
 		id.getEntityCache().setObjectValues(result, properties);
 		return result;
 	}
@@ -695,7 +703,7 @@ public class SQLSessionImpl implements SQLSession {
 					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
-		find(identifier, false, null,false,false);
+		find(identifier, false, null, false, false);
 	}
 
 	@Override
@@ -711,7 +719,7 @@ public class SQLSessionImpl implements SQLSession {
 					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
-		find(identifier, false, null,false,false);
+		find(identifier, false, null, false, false);
 		identifier.getEntityCache().setObjectValues(entity, properties);
 	}
 
@@ -728,7 +736,7 @@ public class SQLSessionImpl implements SQLSession {
 					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
-		find(identifier, lockOptions, false, null,false,false);
+		find(identifier, lockOptions, false, null, false, false);
 	}
 
 	@Override
@@ -744,7 +752,7 @@ public class SQLSessionImpl implements SQLSession {
 					"Classe não foi encontrada na lista de entidades gerenciadas. " + entity.getClass().getName());
 		}
 		Identifier<Object> identifier = Identifier.create(this, entity, true);
-		find(identifier, lockOptions, false, null,false,false);
+		find(identifier, lockOptions, false, null, false, false);
 		identifier.getEntityCache().setObjectValues(entity, properties);
 	}
 
@@ -1171,11 +1179,12 @@ public class SQLSessionImpl implements SQLSession {
 						if (mt.getParameterCount() == 0) {
 							ReflectionUtils.invokeMethod(mt, newObject);
 						} else if (mt.getParameterCount() == 1) {
-							ReflectionUtils.invokeMethod(mt, newObject, oldObject);
+							ReflectionUtils.invokeMethod(mt, oldObject, newObject);
 						}
 					}
 				}
 			}
+
 		}
 	}
 
@@ -1197,24 +1206,26 @@ public class SQLSessionImpl implements SQLSession {
 				new Class[] { PrePersist.class, PostPersist.class, PreUpdate.class, PostUpdate.class, PreRemove.class,
 						PostRemove.class, PreValidate.class, PostValidate.class });
 		for (Class<?> entity : entities) {
-			EntityCache entityCache = getEntityCacheManager().getEntityCache(entity);
-			for (Method mt : methods) {
-				if (mt.isAnnotationPresent(PrePersist.class)) {
-					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PrePersist));
-				} else if (mt.isAnnotationPresent(PostPersist.class)) {
-					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PostPersist));
-				} else if (mt.isAnnotationPresent(PreUpdate.class)) {
-					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PreUpdate));
-				} else if (mt.isAnnotationPresent(PostUpdate.class)) {
-					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PostUpdate));
-				} else if (mt.isAnnotationPresent(PreRemove.class)) {
-					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PreRemove));
-				} else if (mt.isAnnotationPresent(PostRemove.class)) {
-					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PostRemove));
-				} else if (mt.isAnnotationPresent(PreValidate.class)) {
-					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PreValidate));
-				} else if (mt.isAnnotationPresent(PostValidate.class)) {
-					entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PostValidate));
+			EntityCache[] entityCaches = getEntityCacheManager().getEntitiesBySuperClassIncluding(entity);
+			for (EntityCache entityCache : entityCaches) {
+				for (Method mt : methods) {
+					if (mt.isAnnotationPresent(PrePersist.class)) {
+						entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PrePersist));
+					} else if (mt.isAnnotationPresent(PostPersist.class)) {
+						entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PostPersist));
+					} else if (mt.isAnnotationPresent(PreUpdate.class)) {
+						entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PreUpdate));
+					} else if (mt.isAnnotationPresent(PostUpdate.class)) {
+						entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PostUpdate));
+					} else if (mt.isAnnotationPresent(PreRemove.class)) {
+						entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PreRemove));
+					} else if (mt.isAnnotationPresent(PostRemove.class)) {
+						entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PostRemove));
+					} else if (mt.isAnnotationPresent(PreValidate.class)) {
+						entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PreValidate));
+					} else if (mt.isAnnotationPresent(PostValidate.class)) {
+						entityCache.getEntityListeners().add(EntityListener.of(listener, mt, EventType.PostValidate));
+					}
 				}
 			}
 		}
@@ -1233,7 +1244,5 @@ public class SQLSessionImpl implements SQLSession {
 	public void setEnableImageCompression(boolean enableImageCompression) {
 		this.enableImageCompression = enableImageCompression;
 	}
-
-	
 
 }
