@@ -104,6 +104,7 @@ public class SQLSessionImpl implements SQLSession {
 	private int batchSize = 0;
 	private int currentBatchSize = 0;
 	private Map<String, NextValControl> cacheSequenceNumbers = new HashMap<String, SQLSessionImpl.NextValControl>();
+	private ConcurrentLinkedQueue<Event> eventList = new ConcurrentLinkedQueue<>();
 
 	private String clientId;
 	private Object tenantId;
@@ -283,7 +284,15 @@ public class SQLSessionImpl implements SQLSession {
 					}
 				}
 
+			}	
+			if (!this.eventList.isEmpty()) {				
+				ConcurrentLinkedQueue<Event> eventListToProcess = new ConcurrentLinkedQueue<>();
+				eventListToProcess.addAll(eventList);
+				eventList.clear();			
+				eventListToProcess.stream().forEach(event -> this.internalNotifyListeners(event.getEventType(), event.getOldObject(), event.getNewObject()));
+				eventListToProcess.clear();			
 			}
+			
 		} finally {
 			flushing = false;
 		}
@@ -308,6 +317,7 @@ public class SQLSessionImpl implements SQLSession {
 	}
 
 	public void close() throws Exception {
+		this.eventList.clear();
 		persistenceContext.evictAll();
 		persistenceContext.clearCache();
 		persistenceContext = null;
@@ -331,6 +341,7 @@ public class SQLSessionImpl implements SQLSession {
 	public void onBeforeExecuteRollback(Connection connection) throws Exception {
 		if (this.getConnection() == connection) {
 			commandQueue.clear();
+			this.eventList.clear();
 		}
 	}
 
@@ -1157,34 +1168,41 @@ public class SQLSessionImpl implements SQLSession {
 	public void notifyListeners(EventType eventType, Object oldObject, Object newObject) throws Exception {
 		if (newObject == null)
 			return;
-		if (notifyListenersEnabled) {
-			EntityCache entityCache = entityCacheManager.getEntityCache(newObject.getClass());
-			if (entityCache.getEntityListeners().size() > 0) {
-				for (EntityListener listener : entityCache.getEntityListeners()) {
-					if (listener.getEventType().equals(eventType)) {
-						if (listener.getMethod().getParameterCount() == 1) {
-							ReflectionUtils.invokeMethod(listener.getMethod(), listener.getTargetObject(), newObject);
-						} else if (listener.getMethod().getParameterCount() == 2) {
-							ReflectionUtils.invokeMethod(listener.getMethod(), listener.getTargetObject(), oldObject,
-									newObject);
-						}
+		if (notifyListenersEnabled) {			
+			if (eventType.equals(EventType.PostPersist) || eventType.equals(EventType.PostRemove) || eventType.equals(EventType.PostUpdate)) {
+				eventList.add(new Event(eventType,oldObject,newObject));
+			} else {			
+				internalNotifyListeners(eventType, oldObject, newObject);
+			}
+		}
+	}
+
+	protected void internalNotifyListeners(EventType eventType, Object oldObject, Object newObject) {
+		EntityCache entityCache = entityCacheManager.getEntityCache(newObject.getClass());
+		if (entityCache.getEntityListeners().size() > 0) {
+			for (EntityListener listener : entityCache.getEntityListeners()) {
+				if (listener.getEventType().equals(eventType)) {
+					if (listener.getMethod().getParameterCount() == 1) {
+						ReflectionUtils.invokeMethod(listener.getMethod(), listener.getTargetObject(), newObject);
+					} else if (listener.getMethod().getParameterCount() == 2) {
+						ReflectionUtils.invokeMethod(listener.getMethod(), listener.getTargetObject(), oldObject,
+								newObject);
 					}
 				}
 			}
+		}
 
-			if (entityCache.getMethodListeners().size() > 0) {
-				for (Method mt : entityCache.getMethodListeners().keySet()) {
-					EventType ev = entityCache.getMethodListeners().get(mt);
-					if (ev.equals(eventType)) {
-						if (mt.getParameterCount() == 0) {
-							ReflectionUtils.invokeMethod(mt, newObject);
-						} else if (mt.getParameterCount() == 1) {
-							ReflectionUtils.invokeMethod(mt, oldObject, newObject);
-						}
+		if (entityCache.getMethodListeners().size() > 0) {
+			for (Method mt : entityCache.getMethodListeners().keySet()) {
+				EventType ev = entityCache.getMethodListeners().get(mt);
+				if (ev.equals(eventType)) {
+					if (mt.getParameterCount() == 0) {
+						ReflectionUtils.invokeMethod(mt, newObject);
+					} else if (mt.getParameterCount() == 1) {
+						ReflectionUtils.invokeMethod(mt, oldObject, newObject);
 					}
 				}
 			}
-
 		}
 	}
 
@@ -1243,6 +1261,39 @@ public class SQLSessionImpl implements SQLSession {
 
 	public void setEnableImageCompression(boolean enableImageCompression) {
 		this.enableImageCompression = enableImageCompression;
+	}
+	
+	
+	class Event {
+		private EventType eventType;
+		private Object oldObject;
+		private Object newObject;
+		public Event(EventType eventType, Object oldObject, Object newObject) {
+			super();
+			this.eventType = eventType;
+			this.oldObject = oldObject;
+			this.newObject = newObject;
+		}
+		public EventType getEventType() {
+			return eventType;
+		}
+		public void setEventType(EventType eventType) {
+			this.eventType = eventType;
+		}
+		public Object getOldObject() {
+			return oldObject;
+		}
+		public void setOldObject(Object oldObject) {
+			this.oldObject = oldObject;
+		}
+		public Object getNewObject() {
+			return newObject;
+		}
+		public void setNewObject(Object newObject) {
+			this.newObject = newObject;
+		}		
+		
+		
 	}
 
 }
