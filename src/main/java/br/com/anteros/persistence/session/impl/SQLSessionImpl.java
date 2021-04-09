@@ -1147,6 +1147,9 @@ public class SQLSessionImpl implements SQLSession {
 
 	@Override
 	public Object getTenantId() {
+		if (this.tenantId instanceof String && StringUtils.isEmpty(this.tenantId.toString())) {
+			return null;
+		}
 		return this.tenantId;
 	}
 
