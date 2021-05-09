@@ -12,6 +12,7 @@
  *******************************************************************************/
 package br.com.anteros.persistence.session.impl;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -1186,10 +1187,17 @@ public class SQLSessionImpl implements SQLSession {
 			for (EntityListener listener : entityCache.getEntityListeners()) {
 				if (listener.getEventType().equals(eventType)) {
 					if (listener.getMethod().getParameterCount() == 1) {
-						ReflectionUtils.invokeMethod(listener.getMethod(), listener.getTargetObject(), newObject);
+						try {
+							ReflectionUtils.invokeExactMethod(listener.getTargetObject(), listener.getMethod().getName(), newObject);
+						} catch (Exception ex) {
+							ReflectionUtils.handleReflectionException(ex);
+						}
 					} else if (listener.getMethod().getParameterCount() == 2) {
-						ReflectionUtils.invokeMethod(listener.getMethod(), listener.getTargetObject(), oldObject,
-								newObject);
+						try {
+							ReflectionUtils.invokeExactMethod(listener.getTargetObject(), listener.getMethod().getName(), new Object[] {oldObject, newObject});
+						} catch (Exception ex) {
+							ReflectionUtils.handleReflectionException(ex);
+						}
 					}
 				}
 			}
