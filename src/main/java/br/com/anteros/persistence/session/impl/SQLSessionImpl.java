@@ -1188,13 +1188,13 @@ public class SQLSessionImpl implements SQLSession {
 				if (listener.getEventType().equals(eventType)) {
 					if (listener.getMethod().getParameterCount() == 1) {
 						try {
-							ReflectionUtils.invokeExactMethod(listener.getTargetObject(), listener.getMethod().getName(), newObject);
+							ReflectionUtils.invokeMethod(listener.getTargetObject(), listener.getMethod().getName(), newObject);
 						} catch (Exception ex) {
 							ReflectionUtils.handleReflectionException(ex);
 						}
 					} else if (listener.getMethod().getParameterCount() == 2) {
 						try {
-							ReflectionUtils.invokeExactMethod(listener.getTargetObject(), listener.getMethod().getName(), new Object[] {oldObject, newObject});
+							ReflectionUtils.invokeMethod(listener.getTargetObject(), listener.getMethod().getName(), new Object[] {oldObject, newObject});
 						} catch (Exception ex) {
 							ReflectionUtils.handleReflectionException(ex);
 						}
